@@ -635,6 +635,20 @@ async function refreshSeminarDashboard() {
     }
 }
 
+function isSuperAdminAccountClient(u) {
+    if (typeof UserRoles !== 'undefined' && UserRoles.isSuperAdminAccount) {
+        return UserRoles.isSuperAdminAccount(u);
+    }
+    const r = String((u && u.role) || '')
+        .trim()
+        .toLowerCase();
+    const ur = String((u && u.user_role) || '')
+        .trim()
+        .toLowerCase();
+    const staffUr = ['co_admin', 'judge_user', 'scanner_portal_user', 'scanner_dashboard_user', 'reviewer'];
+    return r === 'admin' && !staffUr.includes(ur);
+}
+
 function isDoctorAccount(u) {
     if (!u) return false;
     if (u.account_list === 'staff') return false;
@@ -708,7 +722,7 @@ function openAdminCreateUserModal(kind) {
                 opt.hidden = isDoc || isEmpty;
             }
         });
-        roleSel.value = kind === 'doctor' ? 'doctor' : 'judge_user';
+        roleSel.value = kind === 'doctor' ? 'doctor' : window.PORTAL_IS_AUTISM ? 'co_admin' : 'judge_user';
         roleSel.required = true;
         if (!roleSel.__otpRoleBound) {
             roleSel.__otpRoleBound = true;
@@ -766,7 +780,7 @@ async function loadUsers() {
         users.forEach((u) => {
             window.__adminUsersById[u.id] = u;
             if (isDoctorAccount(u)) doctors.push(u);
-            else staff.push(u);
+            else if (!isSuperAdminAccountClient(u)) staff.push(u);
         });
         window.__adminStaffUsers = staff;
         window.__adminDoctorUsers = doctors;
@@ -792,6 +806,31 @@ async function loadUsers() {
     }
 }
 
+function adminStaffRoleOptionsHtml(userRole) {
+    const ur = String(userRole || '').toLowerCase();
+    const roles = window.PORTAL_IS_AUTISM
+        ? [
+              ['co_admin', 'Co Admin'],
+              ['scanner_portal_user', 'Scanner'],
+              ['scanner_dashboard_user', 'Live check-in board']
+          ]
+        : [
+              ['judge_user', 'Judge'],
+              ['co_admin', 'Co Admin'],
+              ['scanner_portal_user', 'Scanner (volunteer)'],
+              ['scanner_dashboard_user', 'Live scanner dashboard'],
+              ['reviewer', 'Reviewer']
+          ];
+    return (
+                    roles
+        .map(
+            ([val, label]) =>
+                `<option value="${val}" ${ur === val ? 'selected' : ''}>${label}</option>`
+        )
+        .join('') +
+        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>`;
+}
+
 function adminStaffUserRoleValue(u) {
     if (typeof UserRoles !== 'undefined' && UserRoles.effectiveUserRole) {
         const eff = UserRoles.effectiveUserRole(u);
@@ -808,7 +847,8 @@ function adminStaffUserRoleValue(u) {
     ];
     if (staffVals.includes(ur)) return ur;
     if (staffVals.includes(r)) return r;
-    return ur || r || 'judge_user';
+    if (isSuperAdminAccountClient(u)) return 'super_admin';
+    return ur || r || (window.PORTAL_IS_AUTISM ? 'co_admin' : 'judge_user');
 }
 
 function adminClearStaffUsersSearch() {
@@ -849,7 +889,9 @@ function renderStaffUsersTable(staffList) {
     }
     if (!total) {
         staffBody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;">No staff users yet. Use “+ Create staff user” and pick Judge / Co Admin / Scanner / Reviewer.</td></tr>';
+            '<tr><td colspan="9" style="text-align:center;">No staff users yet. Use “+ Create staff user” and pick ' +
+            (window.PORTAL_IS_AUTISM ? 'Co Admin or Scanner.' : 'Judge / Co Admin / Scanner / Reviewer.') +
+            '</td></tr>';
         return;
     }
     if (!rows.length) {
@@ -867,6 +909,10 @@ function renderStaffUsersTable(staffList) {
                 ? ' style="background:#ecfdf5;"'
                 : '';
         const userRole = adminStaffUserRoleValue(u);
+        const roleCell =
+            userRole === 'super_admin'
+                ? '<span style="font-weight:700;color:#0f766e;">Super Admin</span><br><span style="font-size:0.78rem;color:#64748b;">Not listed here — use your admin login</span>'
+                : `<select onchange="updateUserRole(${u.id}, this.value)" style="width:100%;padding:5px;border-radius:4px;border:1px solid #ccc;">${adminStaffRoleOptionsHtml(userRole)}</select>`;
         const modulesBtn =
             isSuperAdminUser() && String(userRole).toLowerCase() === 'co_admin'
                 ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#0d9488;" onclick="openAdminModulesModal(${u.id})">Modules</button>`
@@ -879,16 +925,7 @@ function renderStaffUsersTable(staffList) {
                     <td>${escAdmin(u.phone || '—')}</td>
                     <td style="white-space:nowrap;font-size:0.82rem;">${formatAdminAccountDateTime(u.created_at)}</td>
                     <td style="white-space:nowrap;font-size:0.82rem;">${adminAccountActivationLabel(u)}</td>
-                    <td>
-                        <select onchange="updateUserRole(${u.id}, this.value)" style="width:100%;padding:5px;border-radius:4px;border:1px solid #ccc;">
-                            <option value="judge_user" ${userRole === 'judge_user' ? 'selected' : ''}>Judge</option>
-                            <option value="co_admin" ${userRole === 'co_admin' ? 'selected' : ''}>Co Admin</option>
-                            <option value="scanner_portal_user" ${userRole === 'scanner_portal_user' ? 'selected' : ''}>Scanner (volunteer)</option>
-                            <option value="scanner_dashboard_user" ${userRole === 'scanner_dashboard_user' ? 'selected' : ''}>Live scanner dashboard</option>
-                            <option value="reviewer" ${userRole === 'reviewer' ? 'selected' : ''}>Reviewer</option>
-                            <option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>
-                        </select>
-                    </td>
+                    <td>${roleCell}</td>
                     <td>${adminUserStatusBadge(u)}</td>
                     <td>
                         <button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-right:6px;" onclick="openAdminUserDetail(${u.id})">View</button>

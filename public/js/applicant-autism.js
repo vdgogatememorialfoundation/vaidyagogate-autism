@@ -13,6 +13,30 @@
         'tab-volunteer'
     ];
 
+    function separatePreregAndMainRegistration() {
+        document.querySelectorAll('[data-tab="tab-seminars"]').forEach((el) => el.remove());
+        const tabApps = document.getElementById('tab-applications');
+        if (tabApps) {
+            const h2 = tabApps.querySelector('.section-title');
+            if (h2) h2.textContent = 'Main registration';
+            const lead = tabApps.querySelector('.ak-main-reg-lead');
+            if (lead) {
+                lead.textContent =
+                    'Step 2 — after pre-registration is approved, complete main registration here and track your application.';
+            }
+        }
+        const preregPane = document.getElementById('tab-prereg');
+        if (preregPane) {
+            const ph = preregPane.querySelector('.section-title');
+            if (ph) ph.textContent = 'Pre-registration';
+            const pl = preregPane.querySelector('.ak-prereg-lead');
+            if (pl) {
+                pl.textContent =
+                    'Step 1 — submit pre-registration first. When approved, use Main registration to complete your application.';
+            }
+        }
+    }
+
     function hideAutismDisabledTabs() {
         HIDDEN_TABS.forEach((tabId) => {
             document.querySelectorAll(`[data-tab="${tabId}"]`).forEach((el) => el.remove());
@@ -495,6 +519,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
+        separatePreregAndMainRegistration();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
         if (accountFields) {

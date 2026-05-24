@@ -4,6 +4,8 @@
 (function () {
     'use strict';
 
+    window.PORTAL_IS_AUTISM = true;
+
     const HIDE_MODULES = [
         'tab-case-mgmt',
         'tab-admin-payments',
@@ -132,10 +134,26 @@
         if (sub) sub.textContent = 'Programme management';
         patchApplicationsMenu();
         const staffNote = document.querySelector('#tab-staff-users p');
-        if (staffNote && /Doctors/i.test(staffNote.textContent)) {
+        if (staffNote) {
             staffNote.innerHTML =
-                'Judge, co-admin, scanner, and reviewer accounts appear here. Public sign-ups appear under <strong>Participants</strong>.';
+                'Co-admin and scanner accounts appear here. Your <strong>Super Admin</strong> login is separate and is not listed. Public sign-ups appear under <strong>Participants</strong>.';
         }
+        injectSuperAdminStaffNote();
+    }
+
+    function injectSuperAdminStaffNote() {
+        if (document.getElementById('autism-super-admin-staff-note')) return;
+        const tab = document.getElementById('tab-staff-users');
+        if (!tab) return;
+        const h2 = tab.querySelector('h2');
+        if (!h2) return;
+        const box = document.createElement('div');
+        box.id = 'autism-super-admin-staff-note';
+        box.style.cssText =
+            'margin:-8px 0 16px;padding:12px 14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;font-size:0.88rem;color:#065f46;';
+        box.innerHTML =
+            '<strong>Super Admin</strong> — you keep full admin access. Create <strong>Co Admin</strong> or <strong>Scanner</strong> accounts below for your team.';
+        h2.insertAdjacentElement('afterend', box);
     }
 
     function hideMedicalQualOptions() {
@@ -484,11 +502,27 @@
         });
     }
 
+    function patchCreateStaffUserRoles() {
+        if (typeof openAdminCreateUserModal !== 'function' || openAdminCreateUserModal.__autismHook) return;
+        const orig = openAdminCreateUserModal;
+        window.openAdminCreateUserModal = function (kind) {
+            orig.call(this, kind);
+            const roleSel = document.getElementById('newuser-role');
+            if (!roleSel || kind !== 'staff') return;
+            Array.from(roleSel.options).forEach((opt) => {
+                opt.hidden = ['judge_user', 'reviewer', 'doctor', ''].includes(opt.value);
+            });
+            roleSel.value = 'co_admin';
+        };
+        window.openAdminCreateUserModal.__autismHook = true;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
         patchSaveSeminar();
         patchSeminarPayload();
+        patchCreateStaffUserRoles();
         applyAdminBranding();
         wireSiteImageUpload();
         hideGalleryCmsBlocks();

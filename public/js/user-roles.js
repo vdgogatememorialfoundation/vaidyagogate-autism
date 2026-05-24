@@ -34,15 +34,25 @@
         return ur || r || '';
     }
 
+    function isSuperAdminAccount(row) {
+        if (!row) return false;
+        const ur = normalizeUserRole(row.user_role);
+        const r = normalizeUserRole(row.role);
+        if (r !== 'admin') return false;
+        if (ur === 'co_admin') return false;
+        if (ADMIN_CREATABLE_STAFF_ROLES.includes(ur)) return false;
+        return true;
+    }
+
     function isStaffPortalAccount(row) {
         if (!row) return false;
+        if (isSuperAdminAccount(row)) return false;
         const ur = normalizeUserRole(row.user_role);
         const r = normalizeUserRole(row.role);
         const eff = effectiveUserRole(row);
         if (STAFF_USER_ROLES.has(ur) || STAFF_USER_ROLES.has(r) || STAFF_USER_ROLES.has(eff)) return true;
         if (ADMIN_CREATABLE_STAFF_ROLES.some((s) => s === ur || s === r || s === eff)) return true;
         if (r === 'admin' && ur && ur !== 'doctor') return true;
-        if (!ur && r === 'admin') return true;
         return false;
     }
 
@@ -66,6 +76,7 @@
         ADMIN_CREATABLE_STAFF_ROLES,
         normalizeUserRole,
         effectiveUserRole,
+        isSuperAdminAccount,
         isStaffPortalAccount,
         isDoctorPortalAccount,
         roleColumnForUserRole

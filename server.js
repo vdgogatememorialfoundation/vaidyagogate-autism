@@ -768,8 +768,8 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     siteMenu: siteCmsHelpers.DEFAULT_SITE_MENU,
     doctorUpdates: [
         {
-            title: 'Doctor portal',
-            body: 'Use Available Seminars to register, then Make Payments when your application is approved. Receipts and QR tickets appear under View Orders and View Tickets.',
+            title: 'Applicant dashboard',
+            body: 'Complete pre-registration first, then main registration after approval. Your e-ticket and updates appear here.',
             at: ''
         }
     ],
@@ -6731,14 +6731,32 @@ app.get('/api/admin/seminars/:id/capacity', (req, res) => {
 app.post('/api/admin/notices', withMemoryAwareUpload('pdf'), (req, res) => {
     const { seminar_id, message } = req.body;
     const finish = (pdfPath) => {
-        db.run(
-            `INSERT INTO notices (seminar_id, message, pdf_path) VALUES (?, ?, ?)`,
-            [seminar_id || null, message, pdfPath],
-            function (err) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ success: true, noticeId: this.lastID });
-            }
-        );
+        const runInsert = () => {
+            db.run(
+                `INSERT INTO notices (seminar_id, message, pdf_path) VALUES (?, ?, ?)`,
+                [seminar_id || null, message, pdfPath],
+                function (err) {
+                    if (err && /does not exist/i.test(String(err.message || '')) && pgDb && pgDb.ensureAuxiliaryTables) {
+                        return pgDb
+                            .ensureAuxiliaryTables()
+                            .then(() => {
+                                db.run(
+                                    `INSERT INTO notices (seminar_id, message, pdf_path) VALUES (?, ?, ?)`,
+                                    [seminar_id || null, message, pdfPath],
+                                    function (err2) {
+                                        if (err2) return res.status(500).json({ error: err2.message });
+                                        res.json({ success: true, noticeId: this.lastID });
+                                    }
+                                );
+                            })
+                            .catch(() => res.status(500).json({ error: err.message }));
+                    }
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true, noticeId: this.lastID });
+                }
+            );
+        };
+        runInsert();
     };
     if (!req.file) return finish(null);
     fileStore.persistMulterFile(db, req.file, uploadsDir, (pErr, stored) => {
@@ -8957,21 +8975,33 @@ app.get('/api/admin/users', (req, res) => {
 app.post('/api/admin/users/:userId/role', (req, res) => {
     const { user_role } = req.body;
     const userRoles = require('./lib/user-roles');
-    const validRoles = ['doctor'].concat(userRoles.ADMIN_CREATABLE_STAFF_ROLES);
+    let staffCreatable = userRoles.ADMIN_CREATABLE_STAFF_ROLES.slice();
+    if (!portalProduct.FEATURES.hasJudgePortal) {
+        staffCreatable = ['co_admin', 'scanner_portal_user', 'scanner_dashboard_user'];
+    }
+    const validRoles = ['doctor'].concat(staffCreatable);
 
     if (!validRoles.includes(user_role)) {
         return res.status(400).json({ error: 'Invalid role' });
     }
 
-    const roleCol = userRoles.roleColumnForUserRole(user_role);
-    db.run(
-        `UPDATE users SET user_role = ?, role = ? WHERE id = ?`,
-        [user_role, roleCol, req.params.userId],
-        function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, message: `User role updated to ${user_role}` });
+    db.get(`SELECT id, role, user_role FROM users WHERE id = ?`, [req.params.userId], (e0, row0) => {
+        if (e0) return res.status(500).json({ error: e0.message });
+        if (!row0) return res.status(404).json({ error: 'User not found' });
+        if (userRoles.isSuperAdminAccount(row0)) {
+            return res.status(403).json({ error: 'Super administrator role cannot be changed here.' });
         }
-    );
+
+        const roleCol = userRoles.roleColumnForUserRole(user_role);
+        db.run(
+            `UPDATE users SET user_role = ?, role = ? WHERE id = ?`,
+            [user_role, roleCol, req.params.userId],
+            function (err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ success: true, message: `User role updated to ${user_role}` });
+            }
+        );
+    });
 });
 
 // Admin: Update doctor category + per-user doctor modules

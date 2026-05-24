@@ -501,7 +501,7 @@
 
                 <div id="tab-prereg" class="tab-pane hidden">
                     <h3 class="section-title">Pre-registration</h3>
-                    <p style="color:#64748b;margin-bottom:16px;">Complete pre-registration first. After admin approval, continue to final registration and your e-ticket.</p>
+                    <p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Complete pre-registration first. After admin approval, continue to final registration and your e-ticket.</p>
                     <p id="prereg-track-live" class="hidden" style="margin-bottom:12px;font-size:0.88rem;font-weight:600;color:#1e40af;"></p>
                     <div class="card">
                         <form id="prereg-form">
@@ -539,7 +539,12 @@
                 </div>
 
                 <div id="tab-applications" class="tab-pane hidden">
-                    <h2 class="section-title">Track seminar applications</h2>
+                    <h2 class="section-title">Main registration</h2>
+                    <p class="ak-main-reg-lead" style="color:#64748b;margin:-10px 0 16px;">After pre-registration is approved, complete main registration and track status here.</p>
+                    <div class="card" id="ak-main-reg-start" style="margin-bottom:16px;padding:14px 18px;border-left:4px solid #0f766e;">
+                        <p style="margin:0 0 10px;font-size:0.92rem;color:#475569;">Ready for step 2? Open the main registration form for your event.</p>
+                        <button type="button" class="btn-primary" onclick="switchTab('tab-seminars'); if(typeof loadSeminars==='function') loadSeminars();"><i class="fas fa-file-signature"></i> Open main registration form</button>
+                    </div>
                     <p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;"></p>
                     <div class="card" id="applications-tracker-container"><p style="color:#64748b;">Loading trackers…</p></div>
                     <div class="card">
@@ -838,7 +843,7 @@
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism1"></script>
     <script src="/js/autism-form-preview.js?v=1"></script>
-    <script src="/js/applicant-autism.js?v=autism7"></script>
+    <script src="/js/applicant-autism.js?v=autism8"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
