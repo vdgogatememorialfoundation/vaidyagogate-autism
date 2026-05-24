@@ -4566,13 +4566,17 @@ async function loadApplications(silentPoll) {
     const uid = doctorNumericUserId();
     if (!uid) {
         const list = document.getElementById('applications-list');
-        const trackerContainer = document.getElementById('applications-tracker-container');
+        const trackerContainer =
+            document.getElementById('applications-tracker-container') ||
+            (window.PORTAL_IS_AUTISM ? document.querySelector('#tab-event-track #applications-tracker-container') : null);
         if (list) list.innerHTML = '<tr><td colspan="3">Please sign in again.</td></tr>';
         if (trackerContainer) trackerContainer.innerHTML = '<p style="color:#64748b;">Sign in to track applications.</p>';
             return;
         }
     const list = document.getElementById('applications-list');
-    const trackerContainer = document.getElementById('applications-tracker-container');
+    const trackerContainer =
+        document.getElementById('applications-tracker-container') ||
+        (window.PORTAL_IS_AUTISM ? document.querySelector('#tab-event-track #applications-tracker-container') : null);
     try {
         const res = await fetch(`/api/applications/${uid}`, { cache: 'no-store' });
         const payload = await res.json().catch(() => ({}));
@@ -4597,8 +4601,11 @@ async function loadApplications(silentPoll) {
 
         if (!userApplications.length) {
             if (list) list.innerHTML = '<tr><td colspan="3" style="text-align:center;">No seminar applications yet.</td></tr>';
-            if (trackerContainer) trackerContainer.innerHTML =
-                '<p style="color:#64748b;">No seminar registrations yet. Apply from <strong>Available Seminars</strong>.</p>';
+            if (trackerContainer) {
+                trackerContainer.innerHTML = window.PORTAL_IS_AUTISM
+                    ? '<p style="color:#64748b;">No main registrations yet. Complete pre-registration first, then main registration when approved.</p>'
+                    : '<p style="color:#64748b;">No seminar registrations yet. Apply from <strong>Available Seminars</strong>.</p>';
+            }
         }
 
         refreshOpenApplicationTrackerFromList(userApplications);

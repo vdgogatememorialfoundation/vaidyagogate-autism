@@ -4348,7 +4348,7 @@ function respondApplicationsList(uid, yearFilter, res) {
                 }
                 return { ...r, doc_review };
             });
-            portalTracking.attachRegistrationTimelines(db, withReview, (e2, enriched) => {
+            portalTracking.attachRegistrationTimelines(db, withReview, { noFees: portalProduct.FEATURES.noFees }, (e2, enriched) => {
                 if (e2) {
                     console.error('[applications] timeline attach failed:', e2.message);
                     enriched = (list || []).map((r) => ({ ...r, timeline: { steps: [], status: r.status } }));
@@ -7217,7 +7217,7 @@ app.post('/api/admin/applications/status', (req, res) => {
     db.run(`UPDATE registrations SET status = ? WHERE id = ?`, [newSt, applicationId], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         
-            const logEntries = portalTracking.registrationStatusToLog(newSt, prevStatus);
+            const logEntries = portalTracking.registrationStatusToLog(newSt, prevStatus, portalProduct.FEATURES.noFees);
             logEntries.forEach((entry) => {
                 portalTracking.logRegistrationEvent(
                     db,

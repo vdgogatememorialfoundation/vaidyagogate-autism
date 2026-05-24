@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/css/autism-dashboard.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
-    <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=1">
+    <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=2">
     <link rel="stylesheet" href="/css/ak-form-preview.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -269,11 +269,18 @@
                         <div class="stat-card" style="border-top-color:#ec4899;"><h4 id="stat-ptix">—</h4><p>Participant e‑tickets</p></div>
                         <div class="stat-card" style="border-top-color:#64748b;"><h4 id="stat-suptix">—</h4><p>Support tickets</p></div>
                     </div>
+                    <div class="card ak-hub-card" style="margin-bottom:16px;">
+                        <h3 style="color:#0f766e;margin-bottom:14px;"><i class="fas fa-compass"></i> Registration hub</h3>
+                        <div class="ak-hub-actions">
+                            <button type="button" class="ak-hub-tile" onclick="showEventRegisterView()"><i class="fas fa-calendar-plus"></i><span>Register Event</span><small>Pre-registration</small></button>
+                            <button type="button" class="ak-hub-tile" onclick="showEventTrackView()"><i class="fas fa-route"></i><span>Track Event</span><small>Pre-reg &amp; main status</small></button>
+                            <button type="button" class="ak-hub-tile" onclick="showCompRegisterView()"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload files</small></button>
+                            <button type="button" class="ak-hub-tile" onclick="showCompTrackView()"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry status</small></button>
+                        </div>
+                    </div>
                     <div class="card">
                         <h3 style="color:#0f766e;margin-bottom:10px;"><i class="fas fa-bolt"></i> Quick links</h3>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                            <button type="button" class="btn-primary" onclick="switchTab('tab-seminars')">Register for seminar</button>
-                            <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="switchTab('tab-orders')">Orders</button>
                             <button type="button" class="btn-primary" style="background:#c9a227;" onclick="switchTab('tab-certificate')">My certificates</button>
                             <button type="button" class="btn-primary" style="background:#64748b;" onclick="switchTab('tab-reset-pwd')">Change password</button>
                         </div>
@@ -853,9 +860,9 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism5"></script>
+    <script src="/js/applicant.js?v=autism6"></script>
     <script src="/js/autism-form-preview.js?v=1"></script>
-    <script src="/js/applicant-autism.js?v=autism11"></script>
+    <script src="/js/applicant-autism.js?v=autism12"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>

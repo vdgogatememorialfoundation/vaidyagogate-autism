@@ -15,27 +15,123 @@
 
     function separatePreregAndMainRegistration() {
         document.querySelectorAll('[data-tab="tab-seminars"]').forEach((el) => el.remove());
+        setupAutismHubNavigation();
         const tabApps = document.getElementById('tab-applications');
         if (tabApps) {
-            const h2 = tabApps.querySelector('.section-title');
-            if (h2) h2.textContent = 'Main registration';
-            const lead = tabApps.querySelector('.ak-main-reg-lead');
-            if (lead) {
-                lead.textContent =
-                    'Step 2 — after pre-registration is approved, complete main registration here and track your application.';
-            }
-        }
-        const preregPane = document.getElementById('tab-prereg');
-        if (preregPane) {
-            const ph = preregPane.querySelector('.section-title');
-            if (ph) ph.textContent = 'Pre-registration';
-            const pl = preregPane.querySelector('.ak-prereg-lead');
-            if (pl) {
-                pl.textContent =
-                    'Step 1 — submit pre-registration first. When approved, use Main registration to complete your application.';
-            }
+            document.getElementById('ak-main-reg-start')?.remove();
+            tabApps.querySelector('.data-table')?.closest('.card')?.remove();
         }
     }
+
+    function setupAutismHubNavigation() {
+        const menu = document.querySelector('.menu-items');
+        if (!menu) return;
+        menu.querySelectorAll('[data-tab="tab-prereg"], [data-tab="tab-applications"], [data-tab="tab-competition"]').forEach((el) => el.remove());
+        const hubItems = [
+            { tab: 'tab-event-register', icon: 'fa-calendar-plus', label: 'Register Event' },
+            { tab: 'tab-event-track', icon: 'fa-route', label: 'Track Event' },
+            { tab: 'tab-comp-register', icon: 'fa-cloud-upload-alt', label: 'Register Competition' },
+            { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' }
+        ];
+        const anchor = menu.querySelector('[data-tab="tab-feedback"]');
+        hubItems.forEach((it) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'menu-item';
+            btn.dataset.tab = it.tab;
+            btn.innerHTML = '<i class="fas ' + it.icon + '"></i> ' + it.label;
+            if (anchor) menu.insertBefore(btn, anchor);
+            else menu.appendChild(btn);
+        });
+        wrapAutismRegisterTrackSections();
+    }
+
+    function wrapAutismRegisterTrackSections() {
+        const preregPane = document.getElementById('tab-prereg');
+        if (preregPane && !document.getElementById('tab-event-register')) {
+            const formCard = preregPane.querySelector('#prereg-form')?.closest('.card');
+            const listCard = preregPane.querySelector('#prereg-list')?.closest('.card');
+            const regPane = document.createElement('div');
+            regPane.id = 'tab-event-register';
+            regPane.className = 'tab-pane hidden';
+            regPane.innerHTML =
+                '<h3 class="section-title">Register for event</h3>' +
+                '<p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Submit pre-registration (step 1). After approval, complete main registration from the registration form.</p>';
+            if (formCard) regPane.appendChild(formCard);
+            const trackPane = document.createElement('div');
+            trackPane.id = 'tab-event-track';
+            trackPane.className = 'tab-pane hidden';
+            trackPane.innerHTML =
+                '<h3 class="section-title">Track event registration</h3>' +
+                '<p style="color:#64748b;margin-bottom:16px;">Pre-registration and main registration status.</p>';
+            if (listCard) trackPane.appendChild(listCard);
+            const mainTrack = document.getElementById('applications-tracker-container');
+            if (mainTrack) {
+                const mc = mainTrack.closest('.card') || mainTrack;
+                trackPane.appendChild(mc);
+            }
+            preregPane.replaceWith(regPane, trackPane);
+        }
+        const compPane = document.getElementById('tab-competition');
+        if (compPane && !document.getElementById('tab-comp-register')) {
+            const formCard = compPane.querySelector('#competition-form')?.closest('.card');
+            const listCard = compPane.querySelector('#comp-list')?.closest('.card');
+            const regPane = document.createElement('div');
+            regPane.id = 'tab-comp-register';
+            regPane.className = 'tab-pane hidden';
+            regPane.innerHTML =
+                '<h3 class="section-title">Register competition entry</h3>' +
+                '<p style="color:#64748b;margin-bottom:16px;">Upload photos, videos, PPT, or PDF for competitions.</p>';
+            if (formCard) regPane.appendChild(formCard);
+            const trackPane = document.createElement('div');
+            trackPane.id = 'tab-comp-track';
+            trackPane.className = 'tab-pane hidden';
+            trackPane.innerHTML =
+                '<h3 class="section-title">Track competition entries</h3>' +
+                '<p style="color:#64748b;margin-bottom:16px;">Status of your competition submissions.</p>';
+            if (listCard) trackPane.appendChild(listCard);
+            compPane.replaceWith(regPane, trackPane);
+        }
+    }
+
+    function preregListEl() {
+        return document.getElementById('prereg-list');
+    }
+
+    function compListEl() {
+        return document.getElementById('comp-list');
+    }
+
+    function showEventRegisterView() {
+        if (typeof switchTab === 'function') switchTab('tab-event-register');
+        loadPreregSeminars();
+        loadPreregFormConfig(null).then(() => renderPreregFields(document.getElementById('prereg-fields')));
+    }
+
+    function showEventTrackView() {
+        if (typeof switchTab === 'function') switchTab('tab-event-track');
+        loadPreregList();
+        if (typeof loadApplications === 'function') loadApplications(true);
+    }
+
+    function showCompRegisterView() {
+        if (typeof switchTab === 'function') switchTab('tab-comp-register');
+        loadPreregSeminars().then(() => {
+            const compSel = document.getElementById('comp-seminar-select');
+            const preregSel = document.getElementById('prereg-seminar-select');
+            if (compSel && preregSel) compSel.innerHTML = preregSel.innerHTML;
+        });
+    }
+
+    function showCompTrackView() {
+        if (typeof switchTab === 'function') switchTab('tab-comp-track');
+        loadCompetitionList();
+    }
+
+    window.showEventRegisterView = showEventRegisterView;
+    window.showEventTrackView = showEventTrackView;
+    window.showCompRegisterView = showCompRegisterView;
+    window.showCompTrackView = showCompTrackView;
 
     function hideAutismDisabledTabs() {
         HIDDEN_TABS.forEach((tabId) => {
@@ -249,7 +345,7 @@
     window.beginPreregRevision = async function beginPreregRevision(row) {
         if (!row || !row.id) return;
         preregResubmitId = row.id;
-        if (typeof switchTab === 'function') switchTab('tab-prereg');
+        showEventRegisterView();
         await loadPreregSeminars();
         const sel = document.getElementById('prereg-seminar-select');
         if (sel) {
@@ -366,15 +462,156 @@
         );
     }
 
+    function eventRegStatusMeta(status) {
+        const st = String(status || 'submitted').toLowerCase();
+        const map = {
+            submitted: { label: 'Submitted', color: '#d97706', bg: '#fef3c7' },
+            pending_approval: { label: 'Under review', color: '#2563eb', bg: '#dbeafe' },
+            revision_required: { label: 'Revision needed', color: '#6d28d9', bg: '#ede9fe' },
+            approved_pending_payment: { label: 'Approved', color: '#047857', bg: '#d1fae5' },
+            completed: { label: 'Approved', color: '#047857', bg: '#d1fae5' },
+            e_ticket_issued: { label: 'E-ticket issued', color: '#047857', bg: '#d1fae5' },
+            checked_in: { label: 'Checked in', color: '#047857', bg: '#d1fae5' },
+            certificate_issued: { label: 'Certificate ready', color: '#047857', bg: '#d1fae5' },
+            rejected: { label: 'Not approved', color: '#b91c1c', bg: '#fee2e2' },
+            cancelled: { label: 'Cancelled', color: '#64748b', bg: '#f1f5f9' }
+        };
+        return map[st] || map.submitted;
+    }
+
+    function renderFlipkartFromTimelineSteps(stepDefs, titlePrefix, code) {
+        let cur = 0;
+        stepDefs.forEach((s, i) => {
+            if (s.state === 'active') cur = i;
+            if (s.state === 'completed') cur = Math.max(cur, i + 1);
+        });
+        const lastIdx = Math.max(1, stepDefs.length - 1);
+        const pct = Math.min(100, Math.round((cur / lastIdx) * 100));
+        const html = stepDefs
+            .map((s, i) => {
+                let cls = 'ak-fk-step';
+                const done = s.state === 'completed' || i < cur;
+                const active = s.state === 'active' || (i === cur && !done);
+                if (done) cls += ' is-done';
+                else if (active) cls += ' is-current';
+                const iconClass = String(s.icon || 'fa-circle').startsWith('fa-') ? s.icon : 'fa-' + (s.icon || 'circle');
+                return (
+                    '<div class="' +
+                    cls +
+                    '"><div class="ak-fk-dot"><i class="fas ' +
+                    (done ? 'fa-check' : iconClass) +
+                    '"></i></div><strong>' +
+                    escapeAkHtml(String(s.title || '').slice(0, 32)) +
+                    '</strong></div>'
+                );
+            })
+            .join('');
+        return (
+            '<div class="ak-fk-track"><div class="ak-fk-track-title">' +
+            escapeAkHtml(titlePrefix) +
+            ' · ' +
+            escapeAkHtml(code) +
+            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
+            pct +
+            '%"></span>' +
+            html +
+            '</div></div>'
+        );
+    }
+
+    function escapeAkHtml(s) {
+        return String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderAutismEventRegistrationCard(a) {
+        const st = String(a.status || 'submitted').toLowerCase();
+        const meta = eventRegStatusMeta(st);
+        const tl = a.timeline || {};
+        let stepDefs = (tl.steps || []).filter(
+            (s) => s.key !== 'approved_pending_payment' && s.key !== 'completed'
+        );
+        if (!stepDefs.length) {
+            stepDefs = [
+                { title: 'Submitted', icon: 'fa-clipboard-check', state: 'completed' },
+                { title: 'Review', icon: 'fa-magnifying-glass', state: 'pending' },
+                { title: 'Approved', icon: 'fa-circle-check', state: 'pending' },
+                { title: 'E-ticket', icon: 'fa-qrcode', state: 'pending' }
+            ];
+        }
+        const fk = renderFlipkartFromTimelineSteps(stepDefs, 'Main registration', a.application_no || '');
+        const appIdx =
+            typeof userApplications !== 'undefined'
+                ? userApplications.findIndex((x) => Number(x.id) === Number(a.id))
+                : -1;
+        let revisionBlock = '';
+        if (st === 'revision_required' || st === 'documents_requested') {
+            revisionBlock =
+                '<div class="ak-revision-banner">' +
+                '<p style="margin:0 0 8px;font-weight:600;color:#9a3412;"><i class="fas fa-exclamation-triangle"></i> Documents need correction</p>' +
+                '<button type="button" class="btn-warning" style="padding:6px 12px;font-size:0.85rem;" onclick="openSeminarDocumentResubmitById(' +
+                Number(a.id) +
+                ')">Re-upload documents</button></div>';
+        }
+        const yearBadge = a.portal_year
+            ? '<span class="ak-prereg-pill" style="background:#e0f2fe;color:#0369a1;">' + escapeAkHtml(String(a.portal_year)) + '</span>'
+            : '';
+        return (
+            '<div class="ak-prereg-card ak-event-reg-card">' +
+            fk +
+            '<div class="ak-prereg-card-head">' +
+            '<div><strong>' +
+            escapeAkHtml(a.seminar_title || 'Event registration') +
+            '</strong><br><code style="font-size:0.85rem;">' +
+            escapeAkHtml(a.application_no || '—') +
+            '</code></div>' +
+            '<span class="ak-prereg-pill" style="background:' +
+            meta.bg +
+            ';color:' +
+            meta.color +
+            '">' +
+            escapeAkHtml(meta.label) +
+            '</span>' +
+            yearBadge +
+            '</div>' +
+            revisionBlock +
+            (a.application_no
+                ? '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+                  encodeURIComponent(a.application_no) +
+                  '" alt="Registration barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Application barcode</strong><br><code>' +
+                  escapeAkHtml(a.application_no) +
+                  '</code></div></div>' +
+                  '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
+                  (appIdx >= 0
+                      ? '<button type="button" class="btn-primary" style="padding:6px 12px;font-size:0.85rem;background:#475569;" onclick="downloadApplicationByIndex(' +
+                        appIdx +
+                        ')">Download PDF</button>'
+                      : '') +
+                  '</div>'
+                : '') +
+            '</div>'
+        );
+    }
+
+    window.renderAutismEventRegistrationCard = renderAutismEventRegistrationCard;
+
     async function loadPreregList() {
         const uid = currentUserId();
-        const box = document.getElementById('prereg-list');
+        const box = preregListEl();
         if (!uid || !box) return;
         try {
             const rows = await fetchJson('/api/preregistrations/' + uid);
             if (!rows.length) {
+                const trackOnly = !!box.closest('#tab-event-track');
                 box.innerHTML =
-                    '<p style="color:#64748b;">No pre-registrations yet. Submit the form above to start.</p>';
+                    '<p style="color:#64748b;">' +
+                    (trackOnly
+                        ? 'No pre-registrations to track yet.'
+                        : 'No pre-registrations yet. Submit the form above to start.') +
+                    '</p>';
                 return;
             }
             box.innerHTML = rows
@@ -403,7 +640,7 @@
                             : (r.created_at || '').slice(0, 16)) +
                         '</p>' +
                         (canReg
-                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> You can open <strong>Main registration</strong> to complete final registration.</p>'
+                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Pre-registration approved — complete <strong>main registration</strong> when the form opens.</p>'
                             : r.status === 'revision_required'
                               ? '<p style="margin-top:10px;font-size:0.9rem;color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>' +
                                 '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
@@ -536,7 +773,7 @@
 
     async function loadCompetitionList() {
         const uid = currentUserId();
-        const box = document.getElementById('comp-list');
+        const box = compListEl();
         if (!uid || !box) return;
         try {
             const rows = await fetchJson('/api/competition-submissions/' + uid);
@@ -585,26 +822,45 @@
         }
     }
 
+    function setupDashboardHub() {
+        const dash = document.getElementById('tab-dashboard');
+        if (!dash || dash.querySelector('.ak-hub-actions')) return;
+        const quickCard = dash.querySelector('.card');
+        const hub = document.createElement('div');
+        hub.className = 'card ak-hub-card';
+        hub.style.marginBottom = '16px';
+        hub.innerHTML =
+            '<h3 style="color:#0f766e;margin-bottom:14px;"><i class="fas fa-compass"></i> Registration hub</h3>' +
+            '<div class="ak-hub-actions">' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="event-register"><i class="fas fa-calendar-plus"></i><span>Register Event</span><small>Pre-registration form</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="event-track"><i class="fas fa-route"></i><span>Track Event</span><small>Pre-reg &amp; main status</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload entry files</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry review status</small></button>' +
+            '</div>';
+        if (quickCard) dash.insertBefore(hub, quickCard);
+        else dash.appendChild(hub);
+        hub.querySelectorAll('[data-ak-hub]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const k = btn.dataset.akHub;
+                if (k === 'event-register') showEventRegisterView();
+                else if (k === 'event-track') showEventTrackView();
+                else if (k === 'comp-register') showCompRegisterView();
+                else if (k === 'comp-track') showCompTrackView();
+            });
+        });
+        const ql = dash.querySelector('.card h3');
+        if (ql && ql.textContent.indexOf('Quick') >= 0) {
+            const qlWrap = ql.closest('.card');
+            if (qlWrap) {
+                qlWrap.querySelectorAll('button').forEach((b) => {
+                    const oc = b.getAttribute('onclick') || '';
+                    if (oc.indexOf('tab-seminars') >= 0 || oc.indexOf('tab-orders') >= 0) b.remove();
+                });
+            }
+        }
+    }
+
     function wireAutismTabs() {
-        document.querySelectorAll('[data-tab="tab-prereg"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                loadPreregSeminars();
-                loadPreregFormConfig(null).then(() => {
-                    renderPreregFields(document.getElementById('prereg-fields'));
-                });
-                loadPreregList();
-            });
-        });
-        document.querySelectorAll('[data-tab="tab-competition"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                loadPreregSeminars().then(() => {
-                    const compSel = document.getElementById('comp-seminar-select');
-                    const preregSel = document.getElementById('prereg-seminar-select');
-                    if (compSel && preregSel) compSel.innerHTML = preregSel.innerHTML;
-                });
-                loadCompetitionList();
-            });
-        });
         const preregSel = document.getElementById('prereg-seminar-select');
         if (preregSel) {
             preregSel.addEventListener('change', () => {
@@ -702,6 +958,32 @@
         window.nextStep.__autismSkipQualHook = true;
     }
 
+    function patchSwitchTabForHub() {
+        if (typeof switchTab !== 'function' || switchTab.__akHubHook) return;
+        const orig = switchTab;
+        window.switchTab = function (tabId, menuEl) {
+            orig.call(this, tabId, menuEl);
+            if (tabId === 'tab-event-register') {
+                loadPreregSeminars();
+                loadPreregFormConfig(null).then(() =>
+                    renderPreregFields(document.getElementById('prereg-fields'))
+                );
+            } else if (tabId === 'tab-event-track') {
+                loadPreregList();
+                if (typeof loadApplications === 'function') loadApplications(true);
+            } else if (tabId === 'tab-comp-register') {
+                loadPreregSeminars().then(() => {
+                    const compSel = document.getElementById('comp-seminar-select');
+                    const preregSel = document.getElementById('prereg-seminar-select');
+                    if (compSel && preregSel) compSel.innerHTML = preregSel.innerHTML;
+                });
+            } else if (tabId === 'tab-comp-track') {
+                loadCompetitionList();
+            }
+        };
+        window.switchTab.__akHubHook = true;
+    }
+
     function patchLoadRegistrationFormConfig() {
         if (typeof loadRegistrationFormConfigAndApply !== 'function' || loadRegistrationFormConfigAndApply.__akMainRegHook) {
             return;
@@ -718,6 +1000,8 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
+        setupDashboardHub();
+        patchSwitchTabForHub();
         patchAutismRegistrationFlow();
         patchLoadRegistrationFormConfig();
         applyBranding();
