@@ -66,6 +66,10 @@
 .cg-header-row .cg-header-ticker {
     width: 100%;
     order: 3;
+    display: block !important;
+}
+.cg-header-ticker:not(.hidden) {
+    display: block !important;
 }
 @media (max-width: 640px) {
     .cg-header-ticker .cg-ticker-inner {

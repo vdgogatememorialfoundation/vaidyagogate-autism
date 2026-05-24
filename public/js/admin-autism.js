@@ -185,10 +185,15 @@
         const origLoad = window.loadApplications;
         window.loadApplications = async function () {
             try {
-                const [regsRes, preRes] = await Promise.all([
-                    fetch('/api/admin/applications'),
-                    fetch('/api/admin/preregistrations')
-                ]);
+                const preregUrl =
+                    typeof withActingAdminUrl === 'function'
+                        ? withActingAdminUrl('/api/admin/preregistrations')
+                        : '/api/admin/preregistrations';
+                const appsUrl =
+                    typeof withActingAdminUrl === 'function'
+                        ? withActingAdminUrl('/api/admin/applications')
+                        : '/api/admin/applications';
+                const [regsRes, preRes] = await Promise.all([fetch(appsUrl), fetch(preregUrl)]);
                 const regs = await regsRes.json();
                 const pregs = await preRes.json();
                 const preRows = (Array.isArray(pregs) ? pregs : []).map((p) => {

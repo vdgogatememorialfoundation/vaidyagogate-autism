@@ -1,6 +1,5 @@
 /**
- * Autism portal: replace "doctor" wording with participant/applicant language in the UI.
- * Does not change API roles, element IDs, or backend field names.
+ * Autism portal: replace "doctor" with applicant language in the UI.
  */
 (function (global) {
     'use strict';
@@ -10,51 +9,57 @@
 
     /** Longest phrases first */
     const REPLACEMENTS = [
-        [/Registered doctors/gi, 'Registered participants'],
-        [/Create doctor/gi, 'Create participant'],
-        [/Search doctors/gi, 'Search participants'],
+        [/Registered doctors/gi, 'Registered applicants'],
+        [/Create doctor/gi, 'Create applicant'],
+        [/Search doctors/gi, 'Search applicants'],
         [/Non-doctor accounts/gi, 'Staff & other accounts'],
-        [/Doctor applications \(admin\)/gi, 'Register participant (admin)'],
-        [/Doctor seminar applications/gi, 'Participant registrations'],
-        [/Doctor Support Tickets/gi, 'Participant support tickets'],
-        [/Doctor portal updates/gi, 'Dashboard updates'],
-        [/Doctor portal/gi, 'Participant dashboard'],
-        [/doctor portal/gi, 'participant dashboard'],
-        [/Doctor access/gi, 'Participant access'],
+        [/Doctor applications \(admin\)/gi, 'Register applicant (admin)'],
+        [/Doctor seminar applications/gi, 'Applicant registrations'],
+        [/Doctor Support Tickets/gi, 'Applicant support tickets'],
+        [/Doctor portal updates/gi, 'Applicant dashboard updates'],
+        [/Applicant portal updates/gi, 'Applicant dashboard updates'],
+        [/Doctor portal/gi, 'Applicant dashboard'],
+        [/doctor portal/gi, 'applicant dashboard'],
+        [/Participant dashboard/gi, 'Applicant dashboard'],
+        [/participant dashboard/gi, 'applicant dashboard'],
+        [/Doctor access/gi, 'Applicant access'],
         [/Website & doctor updates/gi, 'Website & dashboard updates'],
         [/User & doctor activity/gi, 'User activity'],
-        [/Look up doctor/gi, 'Look up participant'],
-        [/for a doctor/gi, 'for a participant'],
-        [/to the doctor/gi, 'to the participant'],
-        [/the doctor in/gi, 'the participant in'],
-        [/another doctor account/gi, 'another participant account'],
-        [/Doctor account/gi, 'Participant account'],
-        [/Doctor \(ID/gi, 'Participant (ID'],
-        [/Doctor ID/gi, 'Participant ID'],
+        [/Look up doctor/gi, 'Look up applicant'],
+        [/for a doctor/gi, 'for an applicant'],
+        [/to the doctor/gi, 'to the applicant'],
+        [/the doctor in/gi, 'the applicant in'],
+        [/another doctor account/gi, 'another applicant account'],
+        [/Doctor account/gi, 'Applicant account'],
+        [/Doctor \(ID/gi, 'Applicant (ID'],
+        [/Doctor ID/gi, 'Applicant ID'],
         [/Doctor Name/gi, 'Name'],
-        [/Doctor Name/gi, 'Name'],
-        [/All doctors/gi, 'All participants'],
-        [/all doctors/gi, 'all participants'],
-        [/doctor delegate/gi, 'participant'],
-        [/doctor@example\.com/gi, 'participant@example.com'],
-        [/doctor@email\.com/gi, 'participant@email.com'],
+        [/All doctors/gi, 'All applicants'],
+        [/all doctors/gi, 'all applicants'],
+        [/doctor delegate/gi, 'applicant'],
+        [/doctor@example\.com/gi, 'applicant@example.com'],
+        [/doctor@email\.com/gi, 'applicant@email.com'],
         [/Hi, Doctor/gi, 'Hi there'],
-        [/doctor accounts/gi, 'participant accounts'],
-        [/doctor account/gi, 'participant account'],
-        [/disabled doctor/gi, 'disabled participant'],
-        [/banned\/disabled doctor/gi, 'banned/disabled participant'],
-        [/Select doctor/gi, 'Select participant'],
-        [/Select a doctor/gi, 'Select a participant'],
-        [/shown to doctor/gi, 'shown to participant'],
-        [/for doctors/gi, 'for participants'],
-        [/Doctors see/gi, 'Participants see'],
-        [/Doctors enter/gi, 'Participants enter'],
-        [/Doctors and/gi, 'Participants and'],
-        [/under the <strong>Doctors<\/strong>/gi, 'under <strong>Participants</strong>'],
-        [/\bDoctors\b/g, 'Participants'],
-        [/\bDoctor\b/g, 'Participant'],
-        [/\bdoctors\b/g, 'participants'],
-        [/\bdoctor\b/g, 'participant']
+        [/doctor accounts/gi, 'applicant accounts'],
+        [/doctor account/gi, 'applicant account'],
+        [/disabled doctor/gi, 'disabled applicant'],
+        [/banned\/disabled doctor/gi, 'banned/disabled applicant'],
+        [/Select doctor/gi, 'Select applicant'],
+        [/Select a doctor/gi, 'Select an applicant'],
+        [/shown to doctor/gi, 'shown to applicant'],
+        [/for doctors/gi, 'for applicants'],
+        [/Doctors see/gi, 'Applicants see'],
+        [/Doctors enter/gi, 'Applicants enter'],
+        [/Doctors and/gi, 'Applicants and'],
+        [/under the <strong>Doctors<\/strong>/gi, 'under <strong>Applicants</strong>'],
+        [/Participants/gi, 'Applicants'],
+        [/participants/gi, 'applicants'],
+        [/Participant/gi, 'Applicant'],
+        [/participant/gi, 'applicant'],
+        [/\bDoctors\b/g, 'Applicants'],
+        [/\bDoctor\b/g, 'Applicant'],
+        [/\bdoctors\b/g, 'applicants'],
+        [/\bdoctor\b/g, 'applicant']
     ];
 
     function shouldSkipNode(node) {
@@ -68,7 +73,7 @@
     }
 
     function replaceText(s) {
-        if (!s || !/doctor/i.test(s)) return s;
+        if (!s || !/doctor|participant/i.test(s)) return s;
         let out = s;
         for (const [re, rep] of REPLACEMENTS) {
             out = out.replace(re, rep);
@@ -82,7 +87,7 @@
             acceptNode(node) {
                 if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
                 if (shouldSkipNode(node)) return NodeFilter.FILTER_REJECT;
-                if (!/doctor/i.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+                if (!/doctor|participant/i.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
                 return NodeFilter.FILTER_ACCEPT;
             }
         });
@@ -100,7 +105,7 @@
             if (el.closest('script,style')) return;
             ['placeholder', 'title', 'aria-label'].forEach((attr) => {
                 const v = el.getAttribute(attr);
-                if (v && /doctor/i.test(v)) {
+                if (v && /doctor|participant/i.test(v)) {
                     el.setAttribute(attr, replaceText(v));
                 }
             });
@@ -108,15 +113,10 @@
     }
 
     function relabelAdminMenu() {
-        const doctorsTab = document.querySelector('[data-admin-module="tab-doctors"]');
-        if (doctorsTab) {
-            doctorsTab.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Participants';
-        }
-        const hideModules = [
-            'tab-admin-payments',
-            'tab-pos',
-            'tab-case-mgmt'
-        ];
+        document.querySelectorAll('[data-admin-module="tab-doctors"]').forEach((el) => {
+            el.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Applicants';
+        });
+        const hideModules = ['tab-admin-payments', 'tab-pos', 'tab-case-mgmt'];
         hideModules.forEach((mod) => {
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
                 el.classList.add('hidden');
@@ -124,7 +124,7 @@
             });
         });
         const h2 = document.querySelector('#tab-doctors h2');
-        if (h2) h2.textContent = 'Participants';
+        if (h2) h2.textContent = 'Applicants';
     }
 
     function relabelApplicantDashboard() {
@@ -149,6 +149,8 @@
         if (statReg) statReg.textContent = 'Events joined';
         const caseStat = document.getElementById('stat-abstracts')?.closest('.stat-card');
         if (caseStat) caseStat.classList.add('hidden');
+        const authTitle = document.getElementById('doctor-auth-title');
+        if (authTitle) authTitle.textContent = 'Welcome! Applicant sign in';
     }
 
     function applyAll() {
@@ -180,4 +182,4 @@
     } else {
         init();
     }
-})();
+})(typeof window !== 'undefined' ? window : global);

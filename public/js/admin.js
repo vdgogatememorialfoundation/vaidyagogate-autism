@@ -8172,29 +8172,38 @@ async function setCountdownActive() {
 }
 
 async function addSeminarNotice() {
-    if(!currentManageSeminarId) return;
+    if (!currentManageSeminarId) return;
     const msg = document.getElementById('notice-msg').value;
     const pdfFile = document.getElementById('notice-pdf').files[0];
-    
-    if(!msg) return alert("Message is required.");
+
+    if (!msg) return alert('Message is required.');
 
     const payload = new FormData();
     payload.append('seminar_id', currentManageSeminarId);
     payload.append('message', msg);
-    if(pdfFile) payload.append('pdf', pdfFile);
+    if (pdfFile) payload.append('pdf', pdfFile);
 
     try {
         const res = await fetch('/api/admin/notices', {
             method: 'POST',
             body: payload
         });
-        const result = await res.json();
-        if(result.success) {
-            alert("Notification posted to this seminar's portal successfully!");
+        const result = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            alert(result.error || 'Could not post notification (HTTP ' + res.status + ').');
+            return;
+        }
+        if (result.success) {
+            alert('Notification posted. Applicants tracking this event will see it on their dashboard.');
             document.getElementById('notice-msg').value = '';
             document.getElementById('notice-pdf').value = '';
+        } else {
+            alert(result.error || 'Post failed.');
         }
-    } catch(err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || 'Network error posting notification.');
+    }
 }
 
 function downloadParticipantsExcel() {
