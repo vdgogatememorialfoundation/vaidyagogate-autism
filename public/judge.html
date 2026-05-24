@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judge Portal | VGMF National Seminar</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/responsive-portals.css">
+    <link rel="stylesheet" href="/css/judge-portal.css">
+</head>
+<body data-portal-theme="judge">
+    <div id="auth-overlay">
+        <div class="jp-auth-wrap">
+            <div class="jp-auth-brand">
+                <div data-site-logo data-logo-height="56px" data-logo-width="56px"></div>
+                <h1>Vaidya Gogate Memorial Foundation</h1>
+                <p>National Seminar · Case Presentation Judging</p>
+            </div>
+            <div class="auth-card">
+                <h2><i class="fas fa-scale-balanced"></i> Judge sign in</h2>
+                <p>Use your judge or reviewer account credentials.</p>
+                <form id="judge-login-form" autocomplete="off">
+                    <label for="judge-email">Email address</label>
+                    <input type="email" id="judge-email" name="judge-portal-email" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="you@example.com">
+                    <label for="judge-password">Password</label>
+                    <input type="password" id="judge-password" name="judge-portal-password" required autocomplete="new-password" placeholder="••••••••">
+                    <div id="judge-login-otp-panel" class="hidden" style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <p class="muted" style="margin-bottom:12px;">Verify email and phone OTP on your account.</p>
+                        <div class="otp-row">
+                            <span style="font-weight:700;min-width:48px;font-size:0.82rem;">Email</span>
+                            <button type="button" class="otp-btn" id="judge-send-otp-email">Send</button>
+                            <button type="button" class="otp-btn" id="judge-resend-otp-email">Resend</button>
+                            <input type="text" id="judge-email-otp" placeholder="Code" style="max-width:88px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;">
+                            <button type="button" class="otp-btn" id="judge-verify-otp-email">Verify</button>
+                            <span id="judge-email-otp-ok" style="font-size:0.78rem;color:#059669;"></span>
+                        </div>
+                        <div class="otp-row">
+                            <span style="font-weight:700;min-width:48px;font-size:0.82rem;">Phone</span>
+                            <button type="button" class="otp-btn" id="judge-send-otp-phone">Send</button>
+                            <button type="button" class="otp-btn" id="judge-resend-otp-phone">Resend</button>
+                            <input type="text" id="judge-phone-otp" placeholder="Code" style="max-width:88px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;">
+                            <button type="button" class="otp-btn" id="judge-verify-otp-phone">Verify</button>
+                            <span id="judge-phone-otp-ok" style="font-size:0.78rem;color:#059669;"></span>
+                        </div>
+                    </div>
+                    <p id="login-err" class="hidden"></p>
+                    <button type="submit" class="btn-primary">Sign in to Judge Portal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="judge-app-shell hidden">
+        <header class="jp-header">
+            <div class="jp-header-inner">
+                <div class="jp-header-brand">
+                    <div data-site-logo data-logo-height="44px" data-logo-width="44px"></div>
+                    <div class="jp-header-titles">
+                        <h1><i class="fas fa-scale-balanced"></i> Judge Portal</h1>
+                        <p class="jp-tagline">Score presentations · review files · message participants</p>
+                    </div>
+                </div>
+                <div class="jp-header-actions">
+                    <span class="jp-pill" id="whoami"><i class="fas fa-user-tie"></i> Judge</span>
+                    <span class="jp-pill jp-pill-time hidden" id="judge-login-time"></span>
+                    <button type="button" class="btn btn-ghost" id="btn-refresh" title="Refresh list"><i class="fas fa-arrows-rotate"></i> Refresh</button>
+                    <button type="button" class="btn btn-logout" id="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="jp-main">
+            <div class="jp-stats">
+                <div class="jp-stat">
+                    <div class="jp-stat-icon jp-stat-icon--total"><i class="fas fa-folder-open"></i></div>
+                    <div class="jp-stat-body">
+                        <div class="jp-stat-label">Assignments</div>
+                        <div class="jp-stat-value" id="judge-stat-total">—</div>
+                    </div>
+                </div>
+                <div class="jp-stat">
+                    <div class="jp-stat-icon jp-stat-icon--done"><i class="fas fa-circle-check"></i></div>
+                    <div class="jp-stat-body">
+                        <div class="jp-stat-label">Scored & locked</div>
+                        <div class="jp-stat-value" id="judge-stat-scored">—</div>
+                    </div>
+                </div>
+                <div class="jp-stat">
+                    <div class="jp-stat-icon jp-stat-icon--pending"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="jp-stat-body">
+                        <div class="jp-stat-label">Pending marks</div>
+                        <div class="jp-stat-value" id="judge-stat-pending">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="jp-tip">
+                <div class="jp-tip-icon"><i class="fas fa-comments"></i></div>
+                <div class="jp-tip-text">
+                    <strong>Messages</strong> — Open a case, then use <strong>Messages</strong> to contact the doctor.
+                    Email replies appear in the thread with an <span class="msg-source-email">Email</span> tag and refresh automatically.
+                </div>
+            </div>
+
+            <section class="jp-panel">
+                <div class="jp-panel-head">
+                    <h2><i class="fas fa-list-check"></i> Your case assignments</h2>
+                    <div class="jp-tabs" id="judge-filter-tabs">
+                        <button type="button" class="active" data-filter="all">All</button>
+                        <button type="button" data-filter="pending">Pending</button>
+                        <button type="button" data-filter="scored">Scored</button>
+                    </div>
+                </div>
+                <div class="jp-table-wrap">
+                    <table class="jp-table">
+                        <thead>
+                            <tr>
+                                <th>App ID</th>
+                                <th>Doctor</th>
+                                <th>Category</th>
+                                <th>Topic</th>
+                                <th>Status</th>
+                                <th>Your score</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="case-tbody">
+                            <tr><td colspan="7" class="empty">Loading assignments…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="case-score-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="case-score-title">
+        <div class="jp-modal jp-modal--wide">
+            <div class="jp-modal-head">
+                <div>
+                    <h3 id="case-score-title">Score submission</h3>
+                    <p class="jp-modal-meta" id="case-score-meta"></p>
+                </div>
+                <button type="button" class="jp-modal-close" id="case-score-close" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="jp-modal-body">
+                <div id="case-score-locked" class="jp-locked hidden"><i class="fas fa-lock"></i> Scores submitted and locked — cannot be changed.</div>
+                <div id="case-participant-panel" class="participant-panel hidden"></div>
+                <div class="jp-toolbar">
+                    <button type="button" class="btn" id="case-contact-participant-btn"><i class="fas fa-comments"></i> Messages</button>
+                    <span class="jp-toolbar-label">Transfer case</span>
+                    <select id="case-transfer-judge-select" class="jp-select">
+                        <option value="">Select judge…</option>
+                    </select>
+                    <button type="button" class="btn btn-transfer" id="case-transfer-judge-btn"><i class="fas fa-arrow-right-arrow-left"></i> Transfer</button>
+                </div>
+                <div id="case-score-files" class="case-files-grid"></div>
+                <div id="case-score-criteria"></div>
+                <label class="jp-field-label" for="case-score-remarks">Remarks (optional)</label>
+                <textarea id="case-score-remarks" class="jp-textarea" rows="3" placeholder="Notes for organisers (optional)"></textarea>
+                <div class="jp-score-total">Total marks: <span id="case-score-total">0</span> / <span id="case-score-total-max">25</span></div>
+            </div>
+            <div class="jp-modal-foot">
+                <button type="button" class="btn btn-submit" id="case-score-submit">Submit marks (locks scores)</button>
+                <button type="button" class="btn" id="case-score-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="case-contact-overlay" class="hidden" role="dialog" aria-modal="true">
+        <div class="jp-modal jp-modal--chat">
+            <div class="jp-modal-head">
+                <div>
+                    <h3>Messages</h3>
+                    <p class="jp-modal-meta">App <strong id="case-contact-app-label">—</strong> · <span id="case-contact-to-label">—</span></p>
+                </div>
+                <button type="button" class="jp-modal-close" id="case-contact-cancel-x" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="jp-modal-body" style="display:flex;flex-direction:column;">
+                <p class="muted" style="margin-bottom:12px;font-size:0.82rem;">From: <strong id="case-contact-from-label">Judge | VGMF</strong></p>
+                <div id="case-contact-thread" class="msg-thread"><p class="muted" style="padding:8px;">Loading…</p></div>
+                <label id="case-contact-subject-wrap" class="jp-field-label" for="case-contact-subject">Subject (first message only)</label>
+                <input type="text" id="case-contact-subject" class="jp-input">
+                <label class="jp-field-label" for="case-contact-message">Your message</label>
+                <textarea id="case-contact-message" class="jp-textarea" rows="4" placeholder="Type your message to the participant…"></textarea>
+                <p id="case-contact-err" class="jp-err hidden"></p>
+            </div>
+            <div class="jp-modal-foot">
+                <button type="button" class="btn btn-submit" id="case-contact-send"><i class="fas fa-paper-plane"></i> Send</button>
+                <button type="button" class="btn" id="case-contact-cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/portal-content-protection.js"></script>
+    <script src="/js/portal-theme.js"></script>
+    <script src="/js/site-branding.js"></script>
+    <script src="/js/portal-auth.js"></script>
+    <script>
+        (function () {
+            const overlay = document.getElementById('auth-overlay');
+            const app = document.getElementById('app');
+            const whoami = document.getElementById('whoami');
+            const loginErr = document.getElementById('login-err');
+            const scoreOverlay = document.getElementById('case-score-overlay');
+            let user = PortalAuth.getUser('judge');
+            let activeScoreSubmissionId = null;
+            let caseCriteriaDefs = [];
+            let activeParticipant = null;
+            let judgePeerList = [];
+            let caseRowsCache = [];
+            let caseFilter = 'all';
+            let contactPollTimer = null;
+            const contactOverlay = document.getElementById('case-contact-overlay');
+
+            function judgeNumericUserId(u) {
+                const who = u || user;
+                if (!who) return null;
+                const n = parseInt(who.id, 10);
+                if (Number.isInteger(n) && n > 0) return n;
+                return null;
+            }
+
+            function judgePortalIdString(u) {
+                const who = u || user;
+                return who && who.user_id_string ? String(who.user_id_string) : '';
+            }
+
+            function showLogin() {
+                overlay.classList.remove('hidden');
+                app.classList.add('hidden');
+            }
+
+            function showApp(u) {
+                user = u;
+                overlay.classList.add('hidden');
+                app.classList.remove('hidden');
+                const name = [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || 'Judge';
+                whoami.innerHTML = '<i class="fas fa-user-tie"></i> ' + name;
+                if (typeof PortalAuth !== 'undefined' && PortalAuth.renderLoginTime) {
+                    PortalAuth.renderLoginTime('judge-login-time', u);
+                }
+                loadCaseAssignments();
+                loadJudgePeerList();
+            }
+
+            async function loadJudgePeerList() {
+                const sel = document.getElementById('case-transfer-judge-select');
+                if (!sel || !user) return;
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch(
+                        '/api/judge/case/reviewers?judgeUserId=' +
+                            encodeURIComponent(jid) +
+                            '&judgeUserIdString=' +
+                            encodeURIComponent(judgePortalIdString())
+                    );
+                    const data = await res.json();
+                    judgePeerList = data.judges || [];
+                    sel.innerHTML = '<option value="">Select judge…</option>';
+                    judgePeerList.forEach((j) => {
+                        const opt = document.createElement('option');
+                        opt.value = String(j.id);
+                        opt.textContent = j.name || 'Judge';
+                        sel.appendChild(opt);
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function updateCaseScoreTotal() {
+                let total = 0;
+                document.querySelectorAll('.case-crit-input').forEach((inp) => {
+                    const max = parseInt(inp.dataset.max || '5', 10);
+                    let v = parseInt(inp.value, 10);
+                    if (Number.isNaN(v)) v = 0;
+                    v = Math.min(max, Math.max(0, v));
+                    total += v;
+                });
+                const el = document.getElementById('case-score-total');
+                if (el) el.textContent = String(total);
+                return total;
+            }
+
+            async function loadCaseCriteriaDefs() {
+                if (caseCriteriaDefs.length) return caseCriteriaDefs;
+                try {
+                    const res = await fetch('/api/judge/case/criteria');
+                    const data = await res.json();
+                    caseCriteriaDefs = data.criteria || [];
+                } catch (e) {
+                    console.error(e);
+                    caseCriteriaDefs = [
+                        { key: 'criteria_a', label: 'Criteria A', maxMarks: 5 },
+                        { key: 'criteria_b', label: 'Criteria B', maxMarks: 5 },
+                        { key: 'criteria_c', label: 'Criteria C', maxMarks: 5 },
+                        { key: 'criteria_d', label: 'Criteria D', maxMarks: 5 },
+                        { key: 'criteria_e', label: 'Criteria E', maxMarks: 5 }
+                    ];
+                }
+                return caseCriteriaDefs;
+            }
+
+            function updateJudgeStats(rows) {
+                const total = rows.length;
+                const scored = rows.filter((c) => c.my_score_locked).length;
+                document.getElementById('judge-stat-total').textContent = String(total);
+                document.getElementById('judge-stat-scored').textContent = String(scored);
+                document.getElementById('judge-stat-pending').textContent = String(total - scored);
+            }
+
+            function filteredCaseRows() {
+                if (caseFilter === 'pending') return caseRowsCache.filter((c) => !c.my_score_locked);
+                if (caseFilter === 'scored') return caseRowsCache.filter((c) => c.my_score_locked);
+                return caseRowsCache;
+            }
+
+            function renderCaseTable() {
+                const caseBody = document.getElementById('case-tbody');
+                if (!caseBody) return;
+                const rows = filteredCaseRows();
+                if (!rows.length) {
+                    caseBody.innerHTML = '<tr><td colspan="7" class="empty">No cases match this filter.</td></tr>';
+                    return;
+                }
+                caseBody.innerHTML = '';
+                rows.forEach((c) => {
+                    const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || '—';
+                    const locked = !!c.my_score_locked;
+                    const scoreTxt = c.my_total_score != null ? String(c.my_total_score) : '—';
+                    const statusLabel =
+                        locked && String(c.status || '').toLowerCase() === 'judging'
+                            ? 'Judged (you)'
+                            : locked
+                              ? 'Scored'
+                              : String(c.status || '—');
+                    const scoreBadge = locked
+                        ? '<span class="jp-badge jp-badge--done">Judged · ' + escapeHtml(scoreTxt) + '</span>'
+                        : '<span class="jp-badge jp-badge--pending">Pending</span>';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td><code>' + escapeHtml(String(c.application_no || c.id)) + '</code></td>' +
+                        '<td><strong>' + escapeHtml(name) + '</strong></td>' +
+                        '<td>' + escapeHtml(c.category || '—') + '</td>' +
+                        '<td>' + escapeHtml(c.title || '—') + '</td>' +
+                        '<td><span class="jp-badge jp-badge--status">' + escapeHtml(statusLabel) + '</span></td>' +
+                        '<td>' + scoreBadge + '</td>' +
+                        '<td><button type="button" class="btn jp-btn-action" onclick="openCaseScore(' + c.id + ')">' +
+                        (locked ? 'View' : 'Score') +
+                        '</button></td>';
+                    caseBody.appendChild(tr);
+                });
+            }
+
+            async function loadCaseAssignments() {
+                const caseBody = document.getElementById('case-tbody');
+                if (!caseBody || !user) return;
+                caseBody.innerHTML = '<tr><td colspan="7" class="empty">Loading assignments…</td></tr>';
+                try {
+                    const jid = judgeNumericUserId();
+                    if (!jid) {
+                        caseBody.innerHTML = '<tr><td colspan="7" class="empty">Please sign in again.</td></tr>';
+                        return;
+                    }
+                    const res = await fetch(
+                        '/api/judge/case-assignments?judgeUserId=' +
+                            encodeURIComponent(jid) +
+                            '&judgeUserIdString=' +
+                            encodeURIComponent(judgePortalIdString())
+                    );
+                    const rows = await res.json();
+                    if (!Array.isArray(rows) || !rows.length) {
+                        caseRowsCache = [];
+                        updateJudgeStats([]);
+                        caseBody.innerHTML = '<tr><td colspan="7" class="empty">No case assignments yet.</td></tr>';
+                        return;
+                    }
+                    caseRowsCache = rows;
+                    updateJudgeStats(rows);
+                    renderCaseTable();
+                } catch (e) {
+                    console.error(e);
+                    caseBody.innerHTML = '<tr><td colspan="7" class="empty">Could not load cases. Try Refresh.</td></tr>';
+                }
+            }
+
+            document.getElementById('judge-filter-tabs')?.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('button[data-filter]');
+                if (!btn) return;
+                caseFilter = btn.getAttribute('data-filter') || 'all';
+                document.querySelectorAll('#judge-filter-tabs button').forEach((b) => {
+                    b.classList.toggle('active', b === btn);
+                });
+                renderCaseTable();
+            });
+
+            function closeScoreModal() {
+                scoreOverlay.classList.add('hidden');
+                activeScoreSubmissionId = null;
+                activeParticipant = null;
+            }
+
+            window.openCaseScore = async function (submissionId) {
+                if (!user) return;
+                activeScoreSubmissionId = submissionId;
+                await loadCaseCriteriaDefs();
+                scoreOverlay.classList.remove('hidden');
+                document.getElementById('case-score-criteria').innerHTML = '<p class="muted">Loading criteria…</p>';
+                document.getElementById('case-score-files').innerHTML = '';
+                document.getElementById('case-score-meta').textContent = '';
+                document.getElementById('case-score-remarks').value = '';
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch(
+                        '/api/judge/case/submissions/' +
+                            submissionId +
+                            '/detail?judgeUserId=' +
+                            encodeURIComponent(jid) +
+                            '&judgeUserIdString=' +
+                            encodeURIComponent(judgePortalIdString())
+                    );
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'Could not load submission');
+                        closeScoreModal();
+                        return;
+                    }
+                    const sub = data.submission || {};
+                    const locked = !!(data.myScore && data.myScore.is_locked);
+                    const defs = data.criteria || caseCriteriaDefs;
+                    const totalMax =
+                        data.totalMax != null
+                            ? data.totalMax
+                            : defs.reduce((s, d) => s + (d.maxMarks || 0), 0) || 25;
+                    document.getElementById('case-score-total-max').textContent = String(totalMax);
+                    let existing = [];
+                    if (data.myScore && data.myScore.criteria_json) {
+                        try {
+                            existing = JSON.parse(data.myScore.criteria_json);
+                        } catch (_) {
+                            existing = [];
+                        }
+                    }
+                    document.getElementById('case-score-title').textContent = sub.title || 'Case presentation';
+                    document.getElementById('case-score-meta').textContent =
+                        'App ' +
+                        (sub.application_no || sub.id) +
+                        ' · ' +
+                        (sub.category || '') +
+                        ' · ' +
+                        [sub.first_name, sub.last_name].filter(Boolean).join(' ');
+                    activeParticipant = data.participant || null;
+                    const partEl = document.getElementById('case-participant-panel');
+                    if (partEl && activeParticipant) {
+                        partEl.classList.remove('hidden');
+                        const p = activeParticipant;
+                        partEl.innerHTML =
+                            '<h4><i class="fas fa-user-md"></i> Participant</h4><dl>' +
+                            '<dt>Application</dt><dd><code>' + escapeHtml(p.application_no || '—') + '</code></dd>' +
+                            '<dt>Name</dt><dd>' + escapeHtml(p.fullName || '—') + '</dd>' +
+                            '<dt>Email</dt><dd>' + escapeHtml(p.email || '—') + '</dd>' +
+                            '<dt>Phone</dt><dd>' + escapeHtml(p.phone || '—') + '</dd>' +
+                            '<dt>WhatsApp</dt><dd>' + escapeHtml(p.whatsapp || '—') + '</dd>' +
+                            '<dt>Topic</dt><dd>' + escapeHtml(p.topic || sub.title || '—') + '</dd></dl>';
+                    } else if (partEl) partEl.classList.add('hidden');
+                    const fromLbl = document.getElementById('case-contact-from-label');
+                    if (fromLbl && user) {
+                        const jn = [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || 'Judge';
+                        fromLbl.textContent = jn + ' | Vaidya Gogate Memorial Foundation';
+                    }
+                    document.getElementById('case-score-locked').classList.toggle('hidden', !locked);
+                    const filesEl = document.getElementById('case-score-files');
+                    const files = data.files || [];
+                    filesEl.innerHTML = '';
+                    if (!files.length) {
+                        filesEl.innerHTML = '<p class="muted">No files attached.</p>';
+                    } else {
+                        files.forEach((f) => {
+                            const card = document.createElement('div');
+                            card.className = 'case-file-card';
+                            const kind = f.preview_kind || 'download';
+                            const viewUrl = f.view_url || f.file_path;
+                            const dlUrl = f.download_url || viewUrl;
+                            card.innerHTML =
+                                '<h4>' + escapeHtml(f.original_name || 'File') + '</h4>' +
+                                '<div class="case-file-actions">' +
+                                '<button type="button" class="btn case-preview-btn"><i class="fas fa-eye"></i> Preview</button>' +
+                                '<a class="btn" href="' + escapeHtml(dlUrl) + '" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download</a>' +
+                                '</div><div class="case-file-preview hidden"></div>';
+                            filesEl.appendChild(card);
+                            const previewBox = card.querySelector('.case-file-preview');
+                            card.querySelector('.case-preview-btn').addEventListener('click', async () => {
+                                let url = viewUrl;
+                                if (f.id && jid) {
+                                    try {
+                                        const ar = await fetch(
+                                            '/api/case/files/' + f.id + '/access?judgeUserId=' + encodeURIComponent(jid) + '&download=0'
+                                        );
+                                        const ad = await ar.json();
+                                        if (ar.ok && ad.url) url = ad.url;
+                                    } catch (_) {}
+                                }
+                                previewBox.classList.remove('hidden');
+                                if (kind === 'pdf') {
+                                    previewBox.innerHTML = '<iframe src="' + escapeHtml(url) + '" title="PDF"></iframe>';
+                                } else if (kind === 'video') {
+                                    previewBox.innerHTML = '<video controls src="' + escapeHtml(url) + '"></video>';
+                                } else if (kind === 'image') {
+                                    previewBox.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Preview">';
+                                } else {
+                                    previewBox.innerHTML =
+                                        '<p class="muted" style="padding:16px;">Preview not available. Use Download.</p>';
+                                }
+                            });
+                        });
+                    }
+                    let html =
+                        '<table class="jp-crit-table"><thead><tr><th>Criterion</th><th>Max</th><th>Your marks</th></tr></thead><tbody>';
+                    defs.forEach((def) => {
+                        const row = existing.find((x) => x.key === def.key) || {};
+                        const val = row.score != null ? row.score : '';
+                        html +=
+                            '<tr><td>' + escapeHtml(def.label) + '</td><td>' + def.maxMarks + '</td><td>' +
+                            '<input type="number" min="0" max="' + def.maxMarks + '" class="case-crit-input jp-crit-input" data-key="' +
+                            escapeHtml(def.key) + '" data-max="' + def.maxMarks + '" value="' + escapeHtml(String(val)) + '"' +
+                            (locked ? ' disabled' : '') + '></td></tr>';
+                    });
+                    html += '</tbody></table>';
+                    document.getElementById('case-score-criteria').innerHTML = html;
+                    document.querySelectorAll('.case-crit-input').forEach((inp) => {
+                        inp.addEventListener('input', updateCaseScoreTotal);
+                    });
+                    document.getElementById('case-score-remarks').value = (data.myScore && data.myScore.remarks) || '';
+                    document.getElementById('case-score-remarks').disabled = locked;
+                    const submitBtn = document.getElementById('case-score-submit');
+                    submitBtn.disabled = locked;
+                    submitBtn.textContent = locked ? 'Scores locked' : 'Submit marks (locks scores)';
+                    updateCaseScoreTotal();
+                } catch (e) {
+                    console.error(e);
+                    alert('Network error loading submission');
+                    closeScoreModal();
+                }
+            };
+
+            document.getElementById('case-score-cancel').addEventListener('click', closeScoreModal);
+            document.getElementById('case-score-close').addEventListener('click', closeScoreModal);
+
+            function formatMsgTime(iso) {
+                if (!iso) return '';
+                try {
+                    return new Date(iso).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+                } catch (_) {
+                    return String(iso);
+                }
+            }
+
+            function renderContactThread(messages) {
+                const box = document.getElementById('case-contact-thread');
+                const subWrap = document.getElementById('case-contact-subject-wrap');
+                const subInp = document.getElementById('case-contact-subject');
+                if (!box) return;
+                const list = messages || [];
+                if (!list.length) {
+                    box.innerHTML = '<p class="muted" style="padding:12px;text-align:center;">No messages yet. Send the first message below.</p>';
+                    if (subWrap) subWrap.classList.remove('hidden');
+                    if (subInp) subInp.classList.remove('hidden');
+                    return;
+                }
+                if (subWrap) subWrap.classList.add('hidden');
+                if (subInp) subInp.classList.add('hidden');
+                box.innerHTML = list
+                    .map((m) => {
+                        const isJudge = m.direction === 'judge';
+                        const who = isJudge ? 'You' : escapeHtml(m.authorName || 'Participant');
+                        const viaEmail = m.source === 'email' ? '<span class="msg-source-email">Email</span>' : '';
+                        return (
+                            '<div class="msg-bubble ' + (isJudge ? 'judge' : 'participant') + '">' +
+                            '<div class="msg-meta">' + who + viaEmail + ' · ' + escapeHtml(formatMsgTime(m.createdAt)) + '</div>' +
+                            '<div class="msg-body">' + escapeHtml(m.body || '') + '</div></div>'
+                        );
+                    })
+                    .join('');
+                box.scrollTop = box.scrollHeight;
+            }
+
+            function startContactPoll() {
+                stopContactPoll();
+                contactPollTimer = setInterval(() => {
+                    if (!contactOverlay.classList.contains('hidden')) loadContactThread(true);
+                }, 5000);
+            }
+
+            function stopContactPoll() {
+                if (contactPollTimer) {
+                    clearInterval(contactPollTimer);
+                    contactPollTimer = null;
+                }
+            }
+
+            async function loadContactThread(silent) {
+                const box = document.getElementById('case-contact-thread');
+                if (!box || !activeScoreSubmissionId) return;
+                if (!silent) box.innerHTML = '<p class="muted" style="padding:12px;text-align:center;">Loading…</p>';
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch(
+                        '/api/judge/case/submissions/' + activeScoreSubmissionId + '/messages?judgeUserId=' +
+                            encodeURIComponent(jid) + '&judgeUserIdString=' + encodeURIComponent(judgePortalIdString())
+                    );
+                    const data = await res.json();
+                    if (!res.ok) {
+                        box.innerHTML = '<p class="jp-err" style="padding:12px;">' + escapeHtml(data.error || 'Could not load messages') + '</p>';
+                        return;
+                    }
+                    renderContactThread(data.messages || []);
+                } catch (e) {
+                    box.innerHTML = '<p class="jp-err" style="padding:12px;">Network error</p>';
+                }
+            }
+
+            document.getElementById('case-contact-participant-btn').addEventListener('click', () => {
+                if (!activeParticipant) {
+                    alert('Participant details not loaded.');
+                    return;
+                }
+                document.getElementById('case-contact-app-label').textContent = activeParticipant.application_no || '—';
+                document.getElementById('case-contact-to-label').textContent =
+                    (activeParticipant.fullName || 'Participant') + (activeParticipant.email ? ' · ' + activeParticipant.email : '');
+                document.getElementById('case-contact-subject').value =
+                    'Regarding your case presentation (' + (activeParticipant.application_no || '') + ')';
+                document.getElementById('case-contact-message').value = '';
+                document.getElementById('case-contact-err').classList.add('hidden');
+                document.getElementById('case-contact-subject-wrap').classList.remove('hidden');
+                document.getElementById('case-contact-subject').classList.remove('hidden');
+                contactOverlay.classList.remove('hidden');
+                loadContactThread();
+                startContactPoll();
+            });
+
+            function closeContactModal() {
+                contactOverlay.classList.add('hidden');
+                stopContactPoll();
+            }
+
+            document.getElementById('case-contact-cancel').addEventListener('click', closeContactModal);
+            document.getElementById('case-contact-cancel-x').addEventListener('click', closeContactModal);
+
+            document.getElementById('case-transfer-judge-btn').addEventListener('click', async () => {
+                if (!user || !activeScoreSubmissionId) return;
+                const toJudgeId = parseInt(document.getElementById('case-transfer-judge-select')?.value, 10);
+                if (!Number.isInteger(toJudgeId) || toJudgeId < 1) return alert('Select a judge from the list');
+                const picked = judgePeerList.find((j) => j.id === toJudgeId);
+                const label = picked ? picked.name : 'selected judge';
+                if (!confirm('Transfer this case to ' + label + '? You will no longer see it in your list.')) return;
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch('/api/judge/case/submissions/' + activeScoreSubmissionId + '/transfer-judge', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            judgeUserId: jid,
+                            judgeUserIdString: judgePortalIdString(),
+                            toJudgeUserId: toJudgeId
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) return alert(data.error || 'Transfer failed');
+                    alert('Case transferred to ' + label);
+                    closeScoreModal();
+                    closeContactModal();
+                    loadCaseAssignments();
+                } catch (e) {
+                    alert('Network error');
+                }
+            });
+
+            document.getElementById('case-contact-send').addEventListener('click', async () => {
+                if (!user || !activeScoreSubmissionId) return;
+                const subject = document.getElementById('case-contact-subject').value.trim();
+                const message = document.getElementById('case-contact-message').value.trim();
+                const errEl = document.getElementById('case-contact-err');
+                if (!message) {
+                    errEl.textContent = 'Please enter a message.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch('/api/judge/case/submissions/' + activeScoreSubmissionId + '/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            judgeUserId: jid,
+                            judgeUserIdString: judgePortalIdString(),
+                            subject,
+                            message
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        errEl.textContent = data.error || 'Send failed';
+                        errEl.classList.remove('hidden');
+                        return;
+                    }
+                    errEl.classList.add('hidden');
+                    document.getElementById('case-contact-message').value = '';
+                    await loadContactThread();
+                } catch (e) {
+                    errEl.textContent = 'Network error';
+                    errEl.classList.remove('hidden');
+                }
+            });
+
+            document.getElementById('case-score-submit').addEventListener('click', async () => {
+                if (!user || !activeScoreSubmissionId) return;
+                const criteria = [];
+                document.querySelectorAll('.case-crit-input').forEach((inp) => {
+                    criteria.push({
+                        key: inp.dataset.key,
+                        score: parseInt(inp.value, 10) || 0,
+                        max: parseInt(inp.dataset.max || '5', 10)
+                    });
+                });
+                const remarks = document.getElementById('case-score-remarks').value || '';
+                const totalScore = updateCaseScoreTotal();
+                if (!confirm('Submit marks? You cannot change them after this.')) return;
+                try {
+                    const jid = judgeNumericUserId();
+                    const res = await fetch('/api/judge/case/score', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            judgeUserId: jid,
+                            judgeUserIdString: judgePortalIdString(),
+                            submissionId: activeScoreSubmissionId,
+                            criteria,
+                            remarks
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'Could not submit marks');
+                        return;
+                    }
+                    if (data.success) {
+                        alert('Marks submitted and locked.');
+                        closeScoreModal();
+                        loadCaseAssignments();
+                    } else alert(data.error || 'Failed');
+                } catch (e) {
+                    console.error(e);
+                    alert('Network error');
+                }
+            });
+
+            scoreOverlay.addEventListener('click', (e) => {
+                if (e.target === scoreOverlay) closeScoreModal();
+            });
+            contactOverlay.addEventListener('click', (e) => {
+                if (e.target === contactOverlay) closeContactModal();
+            });
+
+            PortalAuth.bindLoginForm({
+                portal: 'judge',
+                formId: 'judge-login-form',
+                otpPanelId: 'judge-login-otp-panel',
+                emailInputId: 'judge-email',
+                passwordInputId: 'judge-password',
+                otpPrefix: 'judge',
+                resendEmailBtnId: 'judge-resend-otp-email',
+                resendPhoneBtnId: 'judge-resend-otp-phone',
+                onSuccess: showApp,
+                onError: (msg) => {
+                    loginErr.textContent = msg;
+                    loginErr.classList.remove('hidden');
+                }
+            });
+
+            document.getElementById('btn-refresh').addEventListener('click', () => {
+                if (user) loadCaseAssignments();
+            });
+            document.getElementById('btn-logout').addEventListener('click', () => {
+                PortalAuth.clearUser('judge');
+                showLogin();
+            });
+
+            if (user) showApp(user);
+            else showLogin();
+        })();
+    </script>
+</body>
+</html>

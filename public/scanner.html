@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="VGMF Scanner">
+    <link rel="manifest" href="/scanner-manifest.json">
+    <title>VGMF Check-in Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/scanner-portal.css">
+</head>
+<body class="scanner-body">
+    <div id="auth-overlay" class="auth-overlay-scanner">
+        <div class="auth-card-scanner">
+            <div class="auth-brand" data-site-logo data-logo-height="56px" aria-hidden="true"></div>
+            <h2><i class="fas fa-qrcode"></i> Staff check-in</h2>
+            <p class="auth-sub">Scanner account only — no public website access from this app.</p>
+            <form id="scanner-login-form" autocomplete="off">
+                <label for="scanner-email">Email</label>
+                <input type="email" id="scanner-email" name="scanner-portal-email" required autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="email">
+                <label for="scanner-password">Password</label>
+                <input type="password" id="scanner-password" name="scanner-portal-password" required autocomplete="new-password">
+                <div id="scanner-login-otp-panel" class="hidden scanner-otp-panel">
+                    <p class="auth-sub">Verify OTP if your account requires it.</p>
+                    <div class="otp-row">
+                        <button type="button" class="tool-btn" id="scanner-send-otp-email">Email OTP</button>
+                        <button type="button" class="tool-btn" id="scanner-resend-otp-email">Resend</button>
+                        <input type="text" id="scanner-email-otp" placeholder="Code" inputmode="numeric" maxlength="8">
+                        <button type="button" class="tool-btn" id="scanner-verify-otp-email">OK</button>
+                    </div>
+                    <div class="otp-row">
+                        <button type="button" class="tool-btn" id="scanner-send-otp-phone">Phone OTP</button>
+                        <button type="button" class="tool-btn" id="scanner-resend-otp-phone">Resend</button>
+                        <input type="text" id="scanner-phone-otp" placeholder="Code" inputmode="numeric" maxlength="8">
+                        <button type="button" class="tool-btn" id="scanner-verify-otp-phone">OK</button>
+                    </div>
+                </div>
+                <p id="login-err" class="login-err hidden"></p>
+                <button type="submit" class="tool-btn primary auth-submit">Sign in to scanner</button>
+            </form>
+            <p class="auth-foot">VGMF entry scanner · venue staff use only · denies banned/disabled doctor accounts</p>
+        </div>
+    </div>
+
+    <div id="scan-ui" class="scanner-shell hidden">
+        <header class="scanner-top">
+            <div class="scanner-top-main">
+                <p class="scanner-eyebrow">VGMF check-in</p>
+                <h1>Scan tickets</h1>
+                <p class="who" id="scanner-who"></p>
+                <p class="portal-login-time who hidden" id="scanner-login-time"></p>
+            </div>
+            <button type="button" class="tool-btn scanner-logout" id="btn-logout" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+        </header>
+
+        <div class="stats-row">
+            <div class="stat-pill stat-ok"><strong id="stat-ok">0</strong><span>Valid</span></div>
+            <div class="stat-pill stat-err"><strong id="stat-err">0</strong><span>Denied</span></div>
+            <div class="stat-pill stat-dup"><strong id="stat-dup">0</strong><span>Duplicate</span></div>
+        </div>
+
+        <div class="scan-card scan-card-highlight">
+            <label for="scanner-seminar-select"><i class="fas fa-calendar-check"></i> Seminar for check-in</label>
+            <select id="scanner-seminar-select"></select>
+            <p id="scanner-seminar-hint" class="seminar-hint"></p>
+        </div>
+
+        <div class="camera-wrap" id="camera-panel">
+            <div id="reader"></div>
+            <div class="scan-line-anim" aria-hidden="true"></div>
+            <p class="camera-hint">Align QR inside the frame</p>
+        </div>
+
+        <div class="camera-tools">
+            <button type="button" class="tool-btn" id="btn-torch" title="Torch"><i class="fas fa-lightbulb"></i></button>
+            <button type="button" class="tool-btn" id="btn-switch-cam" title="Flip camera"><i class="fas fa-sync"></i></button>
+            <button type="button" class="tool-btn" id="btn-fullscreen" title="Fullscreen"><i class="fas fa-expand"></i></button>
+        </div>
+
+        <div id="result-box" class="hidden"></div>
+
+        <div class="scan-card">
+            <label for="manual-qr"><i class="fas fa-keyboard"></i> Manual entry</label>
+            <div class="manual-row">
+                <input type="text" id="manual-qr" placeholder="E-ticket ID or Application ID" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false">
+                <button type="button" class="tool-btn primary" id="btn-manual">Scan</button>
+            </div>
+        </div>
+
+        <div class="scan-card scan-card-compact">
+            <label><i class="fas fa-history"></i> Recent scans</label>
+            <ul class="history-list" id="scan-history"></ul>
+            <p style="font-size:0.78rem;color:var(--scan-muted);margin-top:10px;line-height:1.45;">Entry is blocked if the doctor account is <strong>disabled</strong> or <strong>banned</strong> in admin, or if the registration was cancelled.</p>
+        </div>
+
+        <button type="button" class="tool-btn scan-next-btn" id="btn-reset">Clear &amp; scan again</button>
+    </div>
+
+    <script src="/js/portal-content-protection.js"></script>
+    <script src="/js/portal-datetime.js"></script>
+    <script src="/js/site-branding.js"></script>
+    <script src="/js/portal-auth.js"></script>
+    <script src="/js/scanner-app.js"></script>
+</body>
+</html>
