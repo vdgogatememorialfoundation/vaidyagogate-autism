@@ -8252,7 +8252,7 @@ app.get('/api/doctor/certificates/:userId', (req, res) => {
 });
 
 function assertAdminPortalActor(adminId, cb) {
-    const userRoles = require('./user-roles');
+    const userRoles = require('./lib/user-roles');
     const aid = parseInt(adminId, 10);
     if (!Number.isInteger(aid) || aid < 1) return cb(new Error('BAD_ACTOR'), null);
     db.get(
