@@ -115,6 +115,9 @@
         document.querySelectorAll('[data-admin-module="tab-final-tracking"]').forEach((el) => {
             if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Final registration tracking';
         });
+        document.querySelectorAll('[data-admin-module="tab-competition-tracking"]').forEach((el) => {
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-palette"></i> Competition management';
+        });
         document.querySelectorAll('[data-admin-module="tab-prereg-tracking"]').forEach((el) => {
             if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-clipboard-check"></i> Pre-registration tracking';
         });

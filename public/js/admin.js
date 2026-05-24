@@ -332,11 +332,18 @@ async function adminDeleteUserAccount(userId, displayName, portalId) {
 function adminCanAccessTab(tabId) {
     let checkId = tabId === 'tab-seminar-details' ? 'tab-seminars' : tabId;
     if (checkId === 'tab-users') checkId = 'tab-staff-users';
+    const autismPortalTabs = new Set([
+        'tab-announcements',
+        'tab-prereg-tracking',
+        'tab-final-tracking',
+        'tab-competition-tracking'
+    ]);
     const globalPages = window.__adminEnabledPages || {};
     const globalKeys = Object.keys(globalPages);
     if (globalKeys.length) {
         const anyOn = globalKeys.some((k) => globalPages[k] === true);
-        if (anyOn && globalPages[checkId] !== true) return false;
+        const autismBypass = window.PORTAL_IS_AUTISM && autismPortalTabs.has(checkId);
+        if (anyOn && globalPages[checkId] !== true && !autismBypass) return false;
     }
     const u = getStoredAdminUser();
     if (String(u.user_role || '').toLowerCase() !== 'co_admin') return true;
@@ -1179,11 +1186,15 @@ const WEBSITE_MENU_PAGE_DEFS = [
 
 const ADMIN_MODULE_TAB_DEFS = [
     ['tab-staff-users', 'Staff users'],
-    ['tab-doctors', 'Doctors'],
-    ['tab-seminars', 'Seminar management'],
+    ['tab-doctors', 'Applicants'],
+    ['tab-seminars', 'Event management'],
     ['tab-event-schedules', 'Event schedules'],
-    ['tab-applications', 'Review applications'],
-    ['tab-feedback', 'Seminar feedback'],
+    ['tab-announcements', 'Announcements'],
+    ['tab-prereg-tracking', 'Pre-registration tracking'],
+    ['tab-final-tracking', 'Final registration tracking'],
+    ['tab-competition-tracking', 'Competition management'],
+    ['tab-applications', 'Registration queue'],
+    ['tab-feedback', 'Event feedback'],
     ['tab-support-tickets', 'Support tickets'],
     ['tab-contact-inquiries', 'Website contact'],
     ['tab-email-compose', 'Send email'],

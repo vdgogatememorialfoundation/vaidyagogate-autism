@@ -114,7 +114,7 @@
                 <a class="menu-item" data-admin-module="tab-announcements" onclick="switchTab('tab-announcements')"><i class="fas fa-bullhorn"></i> Announcements</a>
                 <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration tracking</a>
                 <a class="menu-item" data-admin-module="tab-final-tracking" onclick="switchTab('tab-final-tracking')"><i class="fas fa-file-signature"></i> Final registration tracking</a>
-                <a class="menu-item" data-admin-module="tab-competition-tracking" onclick="switchTab('tab-competition-tracking')"><i class="fas fa-palette"></i> Creative competitions</a>
+                <a class="menu-item" data-admin-module="tab-competition-tracking" onclick="switchTab('tab-competition-tracking'); if(typeof initAdminCompetitionTracking==='function') initAdminCompetitionTracking();"><i class="fas fa-palette"></i> Competition management</a>
                 <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Registration queue</a>
                 <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Event feedback</a>
                 <a class="menu-item" data-admin-module="tab-support-tickets" onclick="switchTab('tab-support-tickets')"><i class="fas fa-ticket-alt"></i> Support Tickets</a>
@@ -294,10 +294,11 @@
                 </div>
             </div>
 
-            <!-- Creative competition tracking -->
+            <!-- Competition management -->
             <div id="tab-competition-tracking" class="tab-pane hidden">
-                <h2 style="margin-bottom: 8px;">Creative competition entries</h2>
-                <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review uploaded art, essays, videos, and presentations. Each entry has a barcode for tracking.</p>
+                <h2 style="margin-bottom: 8px;">Competition management</h2>
+                <p style="color:#64748b;margin-bottom:12px;max-width:720px;">Review all creative competition submissions — art, essays, videos, and presentations. Each entry has a barcode for tracking.</p>
+                <p id="ak-comp-stats" style="font-size:0.88rem;color:#475569;margin-bottom:16px;">Open this tab to load entries.</p>
                 <div class="card">
                     <div class="ak-prereg-toolbar">
                         <div><label for="ak-comp-status-filter">Status</label><select id="ak-comp-status-filter"><option value="all">All</option><option value="submitted">Submitted</option><option value="under_review">Under review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
@@ -305,8 +306,8 @@
                         <button type="button" class="btn-primary" id="ak-comp-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Barcode</th><th>Entry</th><th>Participant</th><th>Event</th><th>Status</th><th>Submitted</th><th>Update</th></tr></thead>
-                        <tbody id="ak-comp-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load�</td></tr></tbody>
+                        <thead><tr><th>Barcode</th><th>Entry</th><th>Participant</th><th>Event</th><th>Files</th><th>Status</th><th>Submitted</th><th>Update</th></tr></thead>
+                        <tbody id="ak-comp-tbody"><tr><td colspan="8" style="text-align:center;">Open this tab to load entries.</td></tr></tbody>
                     </table>
                     <p id="ak-comp-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
                 </div>
@@ -2273,12 +2274,12 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=2"></script>
-    <script src="/js/admin.js?v=20260524c"></script>
+    <script src="/js/admin.js?v=20260525a"></script>
     <script src="/js/admin-prereg-tracking.js?v=7"></script>
     <script src="/js/admin-final-tracking.js?v=2"></script>
-    <script src="/js/admin-competition.js?v=2"></script>
+    <script src="/js/admin-competition.js?v=3"></script>
     <script src="/js/admin-announcements.js?v=3"></script>
-    <script src="/js/admin-autism.js?v=autism9"></script>
+    <script src="/js/admin-autism.js?v=autism10"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>

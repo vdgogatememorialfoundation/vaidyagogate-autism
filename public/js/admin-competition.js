@@ -1,5 +1,5 @@
 /**
- * Admin: creative competition submissions review + barcodes.
+ * Admin: competition submissions review + file previews.
  */
 (function () {
     'use strict';
@@ -27,6 +27,25 @@
         return data;
     }
 
+    function fileLinks(files) {
+        const list = Array.isArray(files) ? files : [];
+        if (!list.length) return '<span style="color:#94a3b8;">No files</span>';
+        return list
+            .map((f) => {
+                const href = f.file_path || '';
+                const name = f.original_name || href.split('/').pop() || 'file';
+                return (
+                    '<a href="' +
+                    esc(href) +
+                    '" target="_blank" rel="noopener" style="display:block;font-size:0.82rem;margin-bottom:4px;">' +
+                    '<i class="fas fa-paperclip"></i> ' +
+                    esc(name) +
+                    '</a>'
+                );
+            })
+            .join('');
+    }
+
     function filteredRows() {
         const q = (document.getElementById('ak-comp-search')?.value || '').trim().toLowerCase();
         const st = (document.getElementById('ak-comp-status-filter')?.value || 'all').toLowerCase();
@@ -34,26 +53,39 @@
             if (st !== 'all' && String(r.status || '').toLowerCase() !== st) return false;
             if (!q) return true;
             const code = r.application_no || 'COMP-' + r.id;
-            return [code, r.title, r.first_name, r.last_name, r.email, r.category, r.seminar_title]
+            return [code, r.title, r.first_name, r.last_name, r.email, r.category, r.seminar_title, r.description]
                 .join(' ')
                 .toLowerCase()
                 .includes(q);
         });
     }
 
+    function renderStats() {
+        const el = document.getElementById('ak-comp-stats');
+        if (!el) return;
+        const total = compRows.length;
+        const submitted = compRows.filter((r) => String(r.status || '').toLowerCase() === 'submitted').length;
+        const approved = compRows.filter((r) => String(r.status || '').toLowerCase() === 'approved').length;
+        el.textContent = total
+            ? total + ' entries · ' + submitted + ' submitted · ' + approved + ' approved'
+            : 'No competition entries yet.';
+    }
+
     function renderTable() {
         const tbody = document.getElementById('ak-comp-tbody');
         if (!tbody) return;
+        renderStats();
         const rows = filteredRows();
         if (!rows.length) {
             tbody.innerHTML =
-                '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">No competition entries match.</td></tr>';
+                '<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">No competition entries match.</td></tr>';
             return;
         }
         tbody.innerHTML = rows
             .map((r) => {
                 const code = r.application_no || 'COMP-' + r.id;
                 const name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
+                const desc = r.description ? '<br><small style="color:#64748b;">' + esc(r.description) + '</small>' : '';
                 return (
                     '<tr>' +
                     '<td><img src="/api/qrcode/' +
@@ -65,7 +97,9 @@
                     esc(r.title || '—') +
                     '</strong><br><small style="color:#64748b;">' +
                     esc(r.category || '') +
-                    '</small></td>' +
+                    '</small>' +
+                    desc +
+                    '</td>' +
                     '<td>' +
                     esc(name) +
                     '<br><small style="color:#64748b;">' +
@@ -73,6 +107,9 @@
                     '</small></td>' +
                     '<td>' +
                     esc(r.seminar_title || '—') +
+                    '</td>' +
+                    '<td>' +
+                    fileLinks(r.files) +
                     '</td>' +
                     '<td>' +
                     badge(r.status) +
@@ -128,12 +165,17 @@
 
     async function refresh() {
         const tbody = document.getElementById('ak-comp-tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading…</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading…</td></tr>';
         try {
             compRows = await api('/api/admin/competition-submissions');
+            if (!Array.isArray(compRows)) compRows = [];
             renderTable();
         } catch (e) {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
+            if (tbody) {
+                tbody.innerHTML =
+                    '<tr><td colspan="8" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
+            }
+            renderStats();
         }
     }
 
