@@ -1,0 +1,50 @@
+/**
+ * Playful dashboard theme for /dashboard
+ */
+html.autism-dashboard,
+body.autism-dashboard {
+    --doctor-primary: #0284c7 !important;
+    --doctor-primary-dark: #0369a1 !important;
+    --doctor-accent: #fbbf24 !important;
+    --doctor-sidebar: #38bdf8 !important;
+    --doctor-bg: #fff9f0 !important;
+    --doctor-text: #1e3a5f !important;
+    font-family: 'Baloo 2', 'Nunito', sans-serif !important;
+}
+
+.autism-dashboard .sidebar {
+    background: linear-gradient(195deg, #0ea5e9 0%, #38bdf8 40%, #a78bfa 100%) !important;
+}
+
+.autism-dashboard .menu-item.active {
+    border-left-color: #fde68a !important;
+    background: rgba(255, 255, 255, 0.22) !important;
+}
+
+.autism-dashboard .sidebar-header h2 {
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    font-size: 1.35rem !important;
+}
+
+.autism-dashboard .btn-primary {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b) !important;
+    color: #78350f !important;
+    box-shadow: 0 4px 0 #d97706 !important;
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+}
+
+.autism-dashboard .section-title {
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    color: #0369a1 !important;
+    border-bottom-color: #fde68a !important;
+}
+
+.autism-dashboard .stat-card {
+    border-top: 5px solid #fb7185 !important;
+    border-radius: 20px !important;
+}
+
+.autism-dashboard .stat-card h4 {
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    color: #0284c7 !important;
+}

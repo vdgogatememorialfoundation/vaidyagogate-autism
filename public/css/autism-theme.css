@@ -1,0 +1,353 @@
+/**
+ * Autism Awareness — full public-site theme (loads last).
+ * Children-friendly, bright, playful; overrides seminar/doctor styling.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+
+body.ak-portal,
+body.autism-kids.ak-portal {
+    --ak-sky: #0ea5e9;
+    --ak-sky-light: #38bdf8;
+    --ak-sky-pale: #e0f2fe;
+    --ak-sun: #fbbf24;
+    --ak-sun-dark: #f59e0b;
+    --ak-coral: #fb7185;
+    --ak-mint: #34d399;
+    --ak-purple: #a78bfa;
+    --ak-ink: #1e3a5f;
+    --ak-muted: #64748b;
+    --ak-bg: #fff9f0;
+    --ak-card: #ffffff;
+    --ak-radius: 22px;
+    --ak-display: 'Baloo 2', 'Nunito', cursive, sans-serif;
+    --ak-body: 'Nunito', system-ui, sans-serif;
+    --brand: var(--ak-sky) !important;
+    --ink: var(--ak-ink) !important;
+    --muted: var(--ak-muted) !important;
+    --paper: var(--ak-bg) !important;
+    --line: #bae6fd !important;
+}
+
+body.ak-portal.congress-site {
+    font-family: var(--ak-body) !important;
+    background: var(--ak-bg) !important;
+    color: var(--ak-ink) !important;
+}
+
+/* Hide legacy seminar chrome */
+body.ak-portal #congress-hero-root,
+body.ak-portal #home-slider,
+body.ak-portal .marketing-hero,
+body.ak-portal .trust-strip {
+    display: none !important;
+}
+
+/* Utility bar */
+body.ak-portal .cg-utility {
+    background: linear-gradient(90deg, #0284c7, #7c3aed) !important;
+    border: none !important;
+    font-size: 0.85rem;
+}
+body.ak-portal .cg-utility a,
+body.ak-portal .cg-utility-link {
+    color: #fff !important;
+}
+body.ak-portal .cg-utility-signup {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* Header */
+body.ak-portal .cg-header {
+    background: rgba(255, 255, 255, 0.97) !important;
+    border-bottom: 4px solid #fde68a !important;
+    box-shadow: 0 10px 30px rgba(14, 165, 233, 0.12) !important;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+body.ak-portal .cg-logo-text h1 {
+    font-family: var(--ak-display) !important;
+    font-size: 1rem !important;
+    color: var(--ak-ink) !important;
+    line-height: 1.2;
+}
+body.ak-portal .cg-logo-text p {
+    font-family: var(--ak-display) !important;
+    color: var(--ak-sky) !important;
+    font-weight: 800 !important;
+    font-size: 0.95rem !important;
+}
+body.ak-portal .cg-nav {
+    background: #fff !important;
+    border-left: 4px solid #fde68a;
+    box-shadow: -8px 0 40px rgba(30, 58, 95, 0.12);
+}
+body.ak-portal .cg-nav a {
+    font-family: var(--ak-display) !important;
+    font-size: 1.05rem !important;
+    padding: 14px 20px !important;
+    border-radius: 0 999px 999px 0 !important;
+    margin: 4px 12px 4px 0;
+}
+body.ak-portal .cg-nav a:hover,
+body.ak-portal .cg-nav a.active {
+    background: #fef3c7 !important;
+    color: #b45309 !important;
+}
+body.ak-portal .cg-menu-toggle {
+    background: #fef3c7 !important;
+    color: #0284c7 !important;
+    border-radius: 14px !important;
+    border: 2px solid #fde68a !important;
+}
+
+/* Ticker */
+body.ak-portal .cg-ticker {
+    background: linear-gradient(90deg, #fef3c7, #fce7f3) !important;
+    border-block: 2px solid #fde68a;
+}
+body.ak-portal .cg-ticker-badge {
+    background: var(--ak-coral) !important;
+    border-radius: 999px;
+    font-family: var(--ak-display);
+}
+
+/* Stats */
+body.ak-portal .vg-stats-strip {
+    background: linear-gradient(90deg, #e0f2fe, #fef3c7, #fce7f3) !important;
+    padding: 28px 16px !important;
+    border: none !important;
+}
+body.ak-portal .vg-stat {
+    background: #fff !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    border: 3px solid #bae6fd !important;
+    box-shadow: 0 8px 20px rgba(56, 189, 248, 0.12);
+    transition: transform 0.2s;
+}
+body.ak-portal .vg-stat:hover {
+    transform: translateY(-4px);
+}
+body.ak-portal .vg-stat strong {
+    font-family: var(--ak-display) !important;
+    font-size: 2rem !important;
+    color: #0284c7 !important;
+}
+body.ak-portal .vg-stat span {
+    font-weight: 700;
+    color: var(--ak-muted);
+}
+
+/* Main content */
+body.ak-portal .main-content {
+    padding: 24px 16px 100px !important;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+body.ak-portal .section-head h2,
+body.ak-portal .vgmf-section h2,
+body.ak-portal .cg-section-head h2 {
+    font-family: var(--ak-display) !important;
+    font-size: clamp(1.6rem, 4vw, 2.2rem) !important;
+    color: var(--ak-ink) !important;
+}
+body.ak-portal .section-head p {
+    font-size: 1.05rem !important;
+    color: var(--ak-muted) !important;
+}
+
+/* Cards */
+body.ak-portal .feature-card,
+body.ak-portal .cards-grid .card,
+body.ak-portal .open-seminar-card {
+    background: #fff !important;
+    border: 3px solid #e0f2fe !important;
+    border-radius: var(--ak-radius) !important;
+    box-shadow: 0 12px 32px rgba(56, 189, 248, 0.1) !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+    padding: 24px !important;
+}
+body.ak-portal .feature-card:hover,
+body.ak-portal .cards-grid .card:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 20px 40px rgba(251, 113, 133, 0.15) !important;
+    border-color: #fde68a !important;
+}
+body.ak-portal .feature-card .card-icon {
+    width: 64px !important;
+    height: 64px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #38bdf8, #a78bfa) !important;
+    color: #fff !important;
+    font-size: 1.5rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+body.ak-portal .feature-card h3 {
+    font-family: var(--ak-display) !important;
+    color: var(--ak-ink) !important;
+}
+
+body.ak-portal .notices-panel {
+    background: linear-gradient(180deg, #fff, #fef3c7) !important;
+    border: 3px dashed #fbbf24 !important;
+    border-radius: var(--ak-radius) !important;
+}
+body.ak-portal .notices-panel h3 {
+    font-family: var(--ak-display) !important;
+    color: #b45309 !important;
+}
+
+/* Speakers */
+body.ak-portal .speaker-card {
+    border-radius: var(--ak-radius) !important;
+    border: 3px solid #e0f2fe !important;
+    overflow: hidden;
+}
+body.ak-portal .speaker-card img {
+    border-bottom: 4px solid #fde68a;
+}
+
+/* Buttons */
+body.ak-portal .btn-primary,
+body.ak-portal button.btn-primary {
+    background: linear-gradient(180deg, #38bdf8, #0284c7) !important;
+    border: none !important;
+    border-radius: 999px !important;
+    font-family: var(--ak-display) !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 5px 0 #0369a1 !important;
+    color: #fff !important;
+}
+body.ak-portal .btn-primary:hover {
+    filter: brightness(1.06);
+}
+body.ak-portal .btn-ghost {
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+}
+
+body.ak-portal .cg-fab-register {
+    background: linear-gradient(180deg, #fb7185, #e11d48) !important;
+    font-family: var(--ak-display) !important;
+    font-size: 1rem !important;
+    padding: 16px 22px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 6px 0 #be123c, 0 14px 32px rgba(251, 113, 133, 0.45) !important;
+    animation: ak-fab-pulse 2.5s ease-in-out infinite;
+}
+@keyframes ak-fab-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+
+/* Forms */
+body.ak-portal .form-group input,
+body.ak-portal .form-group select,
+body.ak-portal .form-group textarea,
+body.ak-portal .contact-form input,
+body.ak-portal .contact-form textarea {
+    min-height: 48px;
+    border-radius: 14px !important;
+    border: 2px solid #bae6fd !important;
+    font-size: 1rem !important;
+}
+body.ak-portal .form-group input:focus,
+body.ak-portal .form-group textarea:focus {
+    border-color: var(--ak-sky-light) !important;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Auth modal */
+body.ak-portal #authModal .modal-content,
+body.ak-portal #forgotPasswordModal .modal-content {
+    border-radius: 28px !important;
+    border: 4px solid #fde68a !important;
+    box-shadow: 0 24px 60px rgba(2, 132, 199, 0.25) !important;
+    max-width: 440px !important;
+}
+body.ak-portal #authModal h3,
+body.ak-portal #authModal .ak-auth-title {
+    font-family: var(--ak-display) !important;
+    font-size: 1.5rem !important;
+    color: #0284c7 !important;
+}
+body.ak-portal .auth-tab-btn.active {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b) !important;
+    color: #78350f !important;
+    border-radius: 999px !important;
+}
+body.ak-portal .auth-tab-btn:not(.active) {
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+}
+
+/* Footer */
+body.ak-portal .footer {
+    background: linear-gradient(180deg, #1e3a5f 0%, #0c4a6e 100%) !important;
+    color: #e0f2fe !important;
+    padding: 48px 20px 32px !important;
+    border-top: 6px solid #fde68a;
+}
+body.ak-portal .footer h4 {
+    font-family: var(--ak-display) !important;
+    color: #fde68a !important;
+}
+body.ak-portal .footer a {
+    color: #7dd3fc !important;
+}
+body.ak-portal .footer a:hover {
+    color: #fff !important;
+}
+
+/* Page panels */
+body.ak-portal .page-panel,
+body.ak-portal .verify-panel,
+body.ak-portal .contact-info,
+body.ak-portal .contact-form {
+    border-radius: var(--ak-radius) !important;
+    border: 3px solid #e0f2fe !important;
+    background: #fff !important;
+}
+
+/* FAQ */
+body.ak-portal .faq-item {
+    border-radius: 16px !important;
+    border: 2px solid #e0f2fe !important;
+    margin-bottom: 10px;
+}
+
+/* Gallery */
+body.ak-portal #gallery-grid img,
+body.ak-portal .gallery-item img {
+    border-radius: 16px !important;
+    border: 4px solid #fff !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Help banner */
+body.ak-portal .help-banner {
+    background: linear-gradient(90deg, #e0f2fe, #fef3c7) !important;
+    border: 3px solid #38bdf8 !important;
+    font-size: 1.05rem !important;
+    padding: 20px 24px !important;
+}
+
+/* Preloader */
+body.ak-portal .preloader-ring {
+    border-color: #fde68a !important;
+    border-top-color: var(--ak-sky-light) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.ak-portal .cg-fab-register {
+        animation: none !important;
+    }
+}

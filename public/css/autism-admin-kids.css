@@ -1,0 +1,105 @@
+/**
+ * Friendly admin login + softer console chrome for autism portal.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+
+body.autism-admin {
+    font-family: 'Nunito', system-ui, sans-serif !important;
+    background: linear-gradient(160deg, #e0f2fe 0%, #fff9f0 45%, #fef3c7 100%) !important;
+}
+
+body.autism-admin #auth-overlay {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(251, 191, 36, 0.2)) !important;
+}
+
+body.autism-admin #auth-overlay > div,
+body.autism-admin #auth-overlay .ak-login-card {
+    border-radius: 28px !important;
+    border: 4px solid #fde68a !important;
+    box-shadow: 0 20px 50px rgba(2, 132, 199, 0.2) !important;
+    padding: 32px 28px !important;
+    max-width: 440px !important;
+}
+
+body.autism-admin #auth-overlay h2 {
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    font-size: 1.6rem !important;
+    color: #0369a1 !important;
+}
+
+body.autism-admin #auth-overlay input[type="email"],
+body.autism-admin #auth-overlay input[type="password"],
+body.autism-admin #auth-overlay input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid #bae6fd;
+    font-size: 1rem;
+    font-family: inherit;
+    margin-top: 10px;
+    box-sizing: border-box;
+}
+
+body.autism-admin #auth-overlay input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25);
+}
+
+body.autism-admin #auth-overlay .btn-primary {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b) !important;
+    color: #78350f !important;
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    font-size: 1.1rem !important;
+    padding: 14px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 5px 0 #d97706 !important;
+    border: none !important;
+}
+
+body.autism-admin .ak-login-error {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #fff1f2;
+    border: 2px solid #fecdd3;
+    color: #9f1239;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+body.autism-admin .ak-login-error.visible {
+    display: block;
+}
+
+body.autism-admin .ak-login-hint {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-top: 12px;
+    line-height: 1.5;
+}
+
+body.autism-admin .sidebar {
+    background: linear-gradient(195deg, #0ea5e9, #38bdf8 50%, #a78bfa) !important;
+}
+
+body.autism-admin .sidebar-header h2 {
+    font-family: 'Baloo 2', cursive, sans-serif !important;
+    color: #fff !important;
+}
+
+body.autism-admin .menu-item {
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.autism-admin .menu-item:hover,
+body.autism-admin .menu-item.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+body.autism-admin .menu-item i {
+    color: #fde68a !important;
+}

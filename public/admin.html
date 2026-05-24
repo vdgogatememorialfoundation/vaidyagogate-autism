@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/autism-admin.css?v=1">
+    <link rel="stylesheet" href="/css/autism-admin-kids.css?v=3">
+    <link rel="stylesheet" href="/css/autism-portals-theme.css?v=3">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: linear-gradient(165deg, #e8f4fc 0%, #f0f9ff 40%, #fdf4ff 100%); color: #1e3a5f; min-height: 100vh; }
@@ -58,16 +60,19 @@
         #auth-overlay h2 { color: #0d9488 !important; }
     </style>
 </head>
-<body class="portal-bright autism-admin">
+<body class="portal-bright autism-admin ak-portal-admin">
 
     <div id="auth-overlay">
-        <div style="background: white; padding: 36px; border-radius: 16px; width: 420px; max-width: 94vw; box-shadow: 0 24px 60px rgba(14,116,144,0.18); border: 1px solid #bae6fd;">
+        <div class="ak-login-card">
             <div data-site-logo data-logo-height="48px" style="margin-bottom:12px;"></div>
-            <h2 style="color: #0d9488; margin-bottom: 8px; font-size: 1.35rem;">Admin portal login</h2>
-            <p style="color: #64748b; font-size: 0.88rem; margin-bottom: 18px; text-align: left;">Staff and super administrators sign in here with email and password only (no login OTP).</p>
+            <h2>Welcome, team! 👋</h2>
+            <p class="ak-login-hint">Sign in to manage registrations, events, and e-tickets for the Autism Awareness Programme.</p>
+            <div id="admin-login-error" class="ak-login-error" role="alert"></div>
             <form id="admin-login-form" autocomplete="off">
-                <input type="email" id="admin-email" name="admin-portal-email" placeholder="Admin email" required autocomplete="off" autocapitalize="off" spellcheck="false">
-                <input type="password" id="admin-password" name="admin-portal-password" placeholder="Password" style="margin-top: 12px;" required autocomplete="new-password">
+                <label for="admin-email" style="font-weight:700;font-size:0.85rem;color:#0369a1;">Email</label>
+                <input type="email" id="admin-email" name="admin-portal-email" placeholder="you@example.com" required autocomplete="off" autocapitalize="off" spellcheck="false">
+                <label for="admin-password" style="font-weight:700;font-size:0.85rem;color:#0369a1;display:block;margin-top:12px;">Password</label>
+                <input type="password" id="admin-password" name="admin-portal-password" placeholder="Your password" required autocomplete="new-password">
                 <div id="admin_login_otp_panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:left;">
                     <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Verify with codes sent to the email and phone on this account.</p>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
@@ -89,7 +94,7 @@
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%; margin-top: 18px;">Sign in</button>
             </form>
-            <p style="margin-top:14px;font-size:0.8rem;color:#94a3b8;">Doctors should use the public site login — not this screen.</p>
+            <p class="ak-login-hint">Participants use the <a href="/" style="color:#0284c7;">main website</a> to sign up — not this screen.</p>
         </div>
     </div>
 
@@ -102,8 +107,8 @@
             </div>
             <div class="menu-items">
                 <a class="menu-item active" data-admin-module="tab-staff-users" onclick="switchTab('tab-staff-users')"><i class="fas fa-user-shield"></i> Staff users</a>
-                <a class="menu-item" data-admin-module="tab-doctors" onclick="switchTab('tab-doctors')"><i class="fas fa-user-md"></i> Doctors</a>
-                <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Seminar Management</a>
+                <a class="menu-item" data-admin-module="tab-doctors" onclick="switchTab('tab-doctors')"><i class="fas fa-users"></i> Participants</a>
+                <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Event management</a>
                 <a class="menu-item" data-admin-module="tab-event-schedules" onclick="switchTab('tab-event-schedules'); loadEventSchedules();"><i class="fas fa-clock"></i> Event Schedules</a>
                 <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Review Applications</a>
                 <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Seminar Feedback</a>
@@ -111,9 +116,9 @@
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
                 <a class="menu-item" data-admin-module="tab-email-compose" onclick="switchTab('tab-email-compose'); initAdminEmailComposeTab();"><i class="fas fa-paper-plane"></i> Send email</a>
                 <a class="menu-item" data-admin-module="tab-transfer" onclick="switchTab('tab-transfer')"><i class="fas fa-exchange-alt"></i> Transfer Applications</a>
-                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-user-md"></i> Doctor applications (admin)</a>
+                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-user-plus"></i> Register participant (admin)</a>
                 <a class="menu-item" data-admin-module="tab-reg-form" onclick="switchTab('tab-reg-form'); loadAdminRegistrationFormConfig();"><i class="fas fa-list-alt"></i> Registration Form Fields</a>
-                <a class="menu-item" data-admin-module="tab-site-cms" onclick="switchTab('tab-site-cms'); loadAdminSiteCms();"><i class="fas fa-globe"></i> Website &amp; doctor updates</a>
+                <a class="menu-item" data-admin-module="tab-site-cms" onclick="switchTab('tab-site-cms'); loadAdminSiteCms();"><i class="fas fa-globe"></i> Website &amp; dashboard updates</a>
                 <a class="menu-item" data-admin-module="tab-admin-payments" onclick="switchTab('tab-admin-payments'); loadAdminPaymentsModule();"><i class="fas fa-file-invoice-dollar"></i> Payments</a>
                 <a class="menu-item" data-admin-module="tab-certificates" onclick="switchTab('tab-certificates'); initAdminCertificatesTab();"><i class="fas fa-award"></i> Certificate Management</a>
                 <a class="menu-item" data-admin-module="tab-volunteers" onclick="switchTab('tab-volunteers'); initAdminVolunteersTab();"><i class="fas fa-hands-helping"></i> Volunteers</a>
@@ -126,7 +131,7 @@
                 <a class="menu-item" data-admin-module="tab-live-scanner" onclick="openAdminLiveScannerBoard();"><i class="fas fa-tv"></i> Live check-in board</a>
                 <a class="menu-item" data-admin-module="tab-pos" onclick="switchTab('tab-pos'); initAdminPosTab();"><i class="fas fa-cash-register"></i> On-spot POS</a>
                 <a class="menu-item" data-admin-module="tab-feedback-form" onclick="switchTab('tab-feedback-form'); loadAdminFeedbackFormConfig();"><i class="fas fa-edit"></i> Feedback form editor</a>
-                <a class="menu-item" data-admin-module="tab-activity-logs" onclick="switchTab('tab-activity-logs'); initAdminActivityLogsTab();"><i class="fas fa-history"></i> User &amp; doctor activity</a>
+                <a class="menu-item" data-admin-module="tab-activity-logs" onclick="switchTab('tab-activity-logs'); initAdminActivityLogsTab();"><i class="fas fa-history"></i> User activity</a>
                 <a class="menu-item" data-admin-module="tab-notifications" onclick="switchTab('tab-notifications'); initAdminNotificationsTab();"><i class="fas fa-bell"></i> Notifications</a>
                 <a class="menu-item" data-admin-module="tab-system-platform" onclick="switchTab('tab-system-platform'); initAdminSystemHealth('platform');"><i class="fas fa-server"></i> System health</a>
                 <a class="menu-item" data-admin-module="tab-system-users" onclick="switchTab('tab-system-users'); initAdminSystemHealth('users');"><i class="fas fa-users-cog"></i> User health</a>
@@ -149,7 +154,7 @@
             <!-- Staff users -->
             <div id="tab-staff-users" class="tab-pane">
                 <h2 style="margin-bottom: 20px;">Staff &amp; portal users</h2>
-                <p style="color:#64748b;font-size:0.88rem;margin:-8px 0 16px;">Judge, co-admin, scanner, and reviewer accounts appear here. Doctors and accounts created on the public website appear under the <strong>Doctors</strong> tab.</p>
+                <p style="color:#64748b;font-size:0.88rem;margin:-8px 0 16px;">Judge, co-admin, scanner, and reviewer accounts appear here. Public sign-ups appear under <strong>Participants</strong>.</p>
                 <div class="card" style="margin-bottom:16px;padding:14px 18px;border-left-color:#0d9488;">
                     <label for="admin-user-lookup" style="font-weight:600;font-size:0.9rem;">Find any account</label>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
@@ -180,17 +185,17 @@
 
             <!-- Doctors -->
             <div id="tab-doctors" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Doctors</h2>
+                <h2 style="margin-bottom: 20px;">Participants</h2>
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px;align-items:center;">
                         <div>
-                            <h3 style="margin:0;">Registered doctors</h3>
+                            <h3 style="margin:0;">Registered participants</h3>
                             <p id="doctors-users-count" style="margin:4px 0 0;font-size:0.82rem;color:#64748b;"></p>
                         </div>
-                        <button class="btn-primary" onclick="openAdminCreateUserModal('doctor')">+ Create doctor</button>
+                        <button class="btn-primary" onclick="openAdminCreateUserModal('doctor')">+ Create participant</button>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label for="doctors-search" style="font-weight:600;font-size:0.9rem;">Search doctors</label>
+                        <label for="doctors-search" style="font-weight:600;font-size:0.9rem;">Search participants</label>
                         <input type="search" id="doctors-search" placeholder="Portal ID, name, email, or phone…" oninput="renderDoctorsUsersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="doctors-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
@@ -2096,6 +2101,8 @@
     <script src="/js/user-roles.js?v=20260522f"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/admin.js?v=20260529a"></script>
-    <script src="/js/admin-autism.js?v=autism1"></script>
+    <script src="/js/admin-autism.js?v=autism2"></script>
+    <script src="/js/autism-theme.js?v=3"></script>
+    <script src="/js/autism-terminology.js?v=1"></script>
 </body>
 </html>

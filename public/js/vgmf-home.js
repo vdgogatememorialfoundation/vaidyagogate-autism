@@ -140,10 +140,23 @@
         { icon: 'fa-network-wired', title: 'Nationwide network', text: 'Collaborate with peers, institutions, and mentors across India.' }
     ];
 
+    const AUTISM_FEATURES = [
+        { icon: 'fa-heart', title: 'Warm & welcoming', text: 'A safe, friendly programme for children, families, and schools.' },
+        { icon: 'fa-palette', title: 'Creative fun', text: 'Join competitions — share drawings, photos, videos, and stories.' },
+        { icon: 'fa-ticket-alt', title: 'Simple e-tickets', text: 'Sign up, pre-register, and download your pass in a few clicks.' },
+        { icon: 'fa-hands-helping', title: 'Helpful team', text: 'Our volunteers guide you at every step — just ask!' }
+    ];
+
     function renderFeatureCards(cards) {
         const featGrid = document.getElementById('feature-cards-grid');
         if (!featGrid) return;
-        const list = cards && cards.length ? cards : DEFAULT_FEATURES;
+        const autismSite = document.body && document.body.classList.contains('ak-portal');
+        const list =
+            cards && cards.length
+                ? cards
+                : autismSite
+                  ? AUTISM_FEATURES
+                  : DEFAULT_FEATURES;
         featGrid.innerHTML = list
             .map((c) => {
                 const icon = escHtml(c.icon || 'fa-star');

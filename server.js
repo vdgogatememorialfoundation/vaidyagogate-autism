@@ -1,6 +1,13 @@
 const express = require('express');
 const db = require('./lib/db');
-const { isPostgresConfigured, validateDatabaseUrl, publicDatabaseHint, sanitizeDbError } = require('./lib/env-db');
+const {
+    isPostgresConfigured,
+    validateDatabaseUrl,
+    publicDatabaseHint,
+    sanitizeDbError,
+    isSslOrCertError,
+    classifyDbConnectError
+} = require('./lib/env-db');
 const pgDb = isPostgresConfigured() ? require('./lib/db-pg') : null;
 const cors = require('cors');
 const multer = require('multer');
@@ -185,21 +192,48 @@ function bootstrapApp(done) {
 
     // Vercel: never block requests on the long SQLite-style migration chain (60s function cap).
     if (process.env.VERCEL) {
-        if (pgDb && pgDb.ensureAuxiliaryTables) {
-            return pgDb
-                .ensureAuxiliaryTables()
-                .then((stillMissing) => {
-                    if (stillMissing && stillMissing.length) {
-                        console.warn('[bootstrap] auxiliary tables still missing:', stillMissing.join(', '));
-                    }
-                    scheduleDeferredMigrations();
+        const vercelPgBoot = () => {
+            if (!pgDb) return Promise.resolve();
+            const steps = [];
+            if (pgDb.ensureMissingCoreTables) {
+                steps.push(
+                    pgDb.ensureMissingCoreTables().catch((e) => {
+                        console.warn('[bootstrap] core tables:', e.message);
+                    })
+                );
+            }
+            if (pgDb.ensureAuxiliaryTables) {
+                steps.push(
+                    pgDb.ensureAuxiliaryTables().then((stillMissing) => {
+                        if (stillMissing && stillMissing.length) {
+                            console.warn('[bootstrap] auxiliary tables still missing:', stillMissing.join(', '));
+                        }
+                    })
+                );
+            }
+            if (pgDb.ensureCertificateVerifyColumns) {
+                steps.push(
+                    pgDb.ensureCertificateVerifyColumns().catch((e) => {
+                        console.warn('[bootstrap] certificate verify columns:', e.message);
+                    })
+                );
+            }
+            steps.push(
+                new Promise((resolve) => {
+                    ensureBootstrapAdmin(db, generateId, (admErr) => {
+                        if (admErr) console.warn('[admin] bootstrap:', admErr.message);
+                        resolve();
+                    });
                 })
-                .catch((e) => {
-                    console.warn('[bootstrap] auxiliary tables:', e.message);
-                    scheduleDeferredMigrations();
-                });
-        }
-        return scheduleDeferredMigrations();
+            );
+            return Promise.all(steps);
+        };
+        return vercelPgBoot()
+            .then(() => scheduleDeferredMigrations())
+            .catch((e) => {
+                console.warn('[bootstrap] vercel pg:', e.message);
+                scheduleDeferredMigrations();
+            });
     }
 
     if (!pgDb) {
@@ -265,8 +299,10 @@ function bootstrapFailureResponse(res, err) {
     const msg = sanitizeDbError(err);
     let code = 'BOOTSTRAP_FAILED';
     if (/timed out/i.test(msg)) code = 'BOOTSTRAP_TIMEOUT';
-    else if (/DATABASE_URL|ECONNREFUSED|ENOTFOUND|password authentication|SSL|timeout|Connection terminated/i.test(msg)) {
-        code = 'DB_CONNECT_FAILED';
+    else if (isSslOrCertError(err) || /certificate|UNABLE_TO_VERIFY/i.test(msg)) {
+        code = 'DB_SSL_FAILED';
+    } else if (/DATABASE_URL|ECONNREFUSED|ENOTFOUND|getaddrinfo|password authentication|SSL|timeout|Connection terminated/i.test(msg)) {
+        code = classifyDbConnectError(err);
     }
     return res.status(503).json({
         error:
@@ -350,7 +386,8 @@ app.get('/api/health', (req, res) => {
         database: {
             mode: isPostgresConfigured() ? 'postgresql' : process.env.VERCEL ? 'unset' : 'sqlite',
             configured: isPostgresConfigured(),
-            valid: urlCheck.ok
+            valid: urlCheck.ok,
+            host: urlCheck.host || undefined
         },
         bootstrap: {
             state: appReadyResolved ? 'ready' : appReadyPromise ? 'in_progress' : appReadyFailed ? 'failed' : 'idle'
@@ -369,12 +406,14 @@ app.get('/api/health', (req, res) => {
     if (appReadyFailed) {
         payload.bootstrap.lastError = sanitizeDbError(appReadyFailed.message);
         payload.bootstrap.failedAt = new Date(appReadyFailed.at).toISOString();
+        payload.code = classifyDbConnectError(appReadyFailed);
+        payload.hint = publicDatabaseHint(payload.code);
     }
     db.connect((err) => {
         if (err) {
-            payload.code = 'DB_CONNECT_FAILED';
+            payload.code = classifyDbConnectError(err);
             payload.error = sanitizeDbError(err);
-            payload.hint = publicDatabaseHint('DB_CONNECT_FAILED');
+            payload.hint = publicDatabaseHint(payload.code);
             return res.status(503).json(payload);
         }
         if (appReadyResolved) {
@@ -11556,8 +11595,23 @@ app.get('/api/cron/pending-registration-reminders', (req, res) => {
 
 app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);
-    console.error('[express] unhandled error:', err && err.message ? err.message : err);
-    res.status(500).json({ error: 'Internal server error' });
+    const msg = sanitizeDbError(err);
+    console.error('[express] unhandled error:', msg);
+    if (isSslOrCertError(err)) {
+        return res.status(503).json({
+            error: 'Database SSL connection failed',
+            code: 'DB_SSL_FAILED',
+            hint: publicDatabaseHint('DB_SSL_FAILED'),
+            detail: process.env.VERCEL_ENV === 'production' ? undefined : msg
+        });
+    }
+    if (/database unavailable|DATABASE_URL|ECONNREFUSED|ENOTFOUND/i.test(msg)) {
+        return bootstrapFailureResponse(res, err);
+    }
+    res.status(500).json({
+        error: 'Internal server error',
+        detail: process.env.VERCEL_ENV === 'production' ? undefined : msg
+    });
 });
 
 module.exports = app;

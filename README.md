@@ -12,6 +12,18 @@ Separate portal from the VGMF doctor/seminar system (`D:\SeminarSystem`).
 | Admin | `https://autism.vaidyagogate.org/admin` |
 | Scanner | `https://autism.vaidyagogate.org/scan` |
 
+## Admin login
+
+See **[ADMIN-LOGIN.md](ADMIN-LOGIN.md)** for full details.
+
+| | Production (Vercel) | Local dev (no env set) |
+|--|---------------------|-------------------------|
+| **URL** | https://autism.vaidyagogate.org/admin | http://localhost:3001/admin |
+| **Email** | Your `ADMIN_EMAIL` env var | `admin@vaidyagogate.org` |
+| **Password** | Your `ADMIN_PASSWORD` env var | `Admin@2026` |
+
+On Vercel, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in project settings, then redeploy.
+
 ## Applicant flow
 
 1. Create account / sign in (same login ID process as doctor portal)

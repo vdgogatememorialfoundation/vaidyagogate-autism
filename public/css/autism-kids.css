@@ -1,0 +1,526 @@
+/**
+ * Children-friendly Autism Awareness theme — bright, playful, animated.
+ * Photos: Unsplash (free to use). Replace URLs in Admin → Site CMS if needed.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+
+.autism-kids {
+    --ak-sky: #38bdf8;
+    --ak-sky-dark: #0284c7;
+    --ak-sun: #fbbf24;
+    --ak-sun-dark: #f59e0b;
+    --ak-coral: #fb7185;
+    --ak-mint: #34d399;
+    --ak-lavender: #a78bfa;
+    --ak-ink: #1e3a5f;
+    --ak-muted: #64748b;
+    --ak-bg: #fff9f0;
+    --ak-card: #ffffff;
+    --ak-radius: 24px;
+    --ak-font: 'Nunito', system-ui, sans-serif;
+    --ak-display: 'Baloo 2', 'Nunito', cursive, sans-serif;
+}
+
+.autism-kids.congress-site {
+    font-family: var(--ak-font);
+    background: var(--ak-bg);
+    color: var(--ak-ink);
+    overflow-x: hidden;
+}
+
+/* Floating background shapes */
+.ak-bg-shapes {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.ak-shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.45;
+    animation: ak-float 8s ease-in-out infinite;
+}
+.ak-shape-1 { width: 280px; height: 280px; background: #fde68a; top: 8%; left: -80px; animation-delay: 0s; }
+.ak-shape-2 { width: 200px; height: 200px; background: #bae6fd; top: 40%; right: -60px; animation-delay: 1.5s; }
+.ak-shape-3 { width: 160px; height: 160px; background: #fbcfe8; bottom: 15%; left: 10%; animation-delay: 3s; }
+.ak-shape-4 { width: 120px; height: 120px; background: #bbf7d0; bottom: 25%; right: 15%; animation-delay: 2s; }
+
+@keyframes ak-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-24px) scale(1.05); }
+}
+
+@keyframes ak-bounce-in {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ak-wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+}
+
+@keyframes ak-pulse-soft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Hide old seminar hero — use kids hero */
+.autism-kids #congress-hero-root {
+    display: none !important;
+}
+
+.autism-kids .cg-shell,
+.autism-kids .main-content,
+.autism-kids .ak-hero,
+.autism-kids .site-footer {
+    position: relative;
+    z-index: 1;
+}
+
+/* Header */
+.autism-kids .cg-utility {
+    background: linear-gradient(90deg, var(--ak-sky-dark), var(--ak-lavender));
+    color: #fff;
+    border: none;
+}
+.autism-kids .cg-utility a { color: #fff !important; }
+
+.autism-kids .cg-header {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 3px solid #fde68a !important;
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12) !important;
+}
+
+.autism-kids .cg-logo-text h1 {
+    font-family: var(--ak-display);
+    font-size: 1.1rem;
+    color: var(--ak-ink);
+}
+.autism-kids .cg-logo-text p {
+    color: var(--ak-sky-dark);
+    font-weight: 800;
+    font-family: var(--ak-display);
+}
+
+.autism-kids .cg-nav a {
+    font-family: var(--ak-display);
+    font-weight: 700;
+    border-radius: 999px;
+    color: var(--ak-ink);
+}
+.autism-kids .cg-nav a:hover,
+.autism-kids .cg-nav a.active {
+    background: #fef3c7;
+    color: var(--ak-sun-dark);
+}
+
+/* Kids hero */
+.ak-hero {
+    padding: clamp(32px, 6vw, 64px) 20px clamp(48px, 8vw, 80px);
+    background: linear-gradient(180deg, #e0f2fe 0%, #fff9f0 55%, #fef3c7 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.ak-hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(24px, 5vw, 48px);
+    align-items: center;
+}
+
+@media (max-width: 900px) {
+    .ak-hero-inner { grid-template-columns: 1fr; text-align: center; }
+    .ak-hero-visual { order: -1; }
+}
+
+.ak-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: var(--ak-coral);
+    font-family: var(--ak-display);
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 8px 18px;
+    border-radius: 999px;
+    box-shadow: 0 6px 0 #fecdd3;
+    margin-bottom: 16px;
+    animation: ak-bounce-in 0.7s ease backwards;
+}
+
+.ak-hero h2 {
+    font-family: var(--ak-display);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.1;
+    color: var(--ak-ink);
+    margin-bottom: 16px;
+    animation: ak-bounce-in 0.8s ease 0.1s backwards;
+}
+
+.ak-hero h2 span {
+    color: var(--ak-sky-dark);
+    display: block;
+}
+
+.ak-hero-lead {
+    font-size: 1.1rem;
+    color: var(--ak-muted);
+    max-width: 520px;
+    margin-bottom: 28px;
+    line-height: 1.7;
+    animation: ak-bounce-in 0.8s ease 0.2s backwards;
+}
+
+@media (max-width: 900px) {
+    .ak-hero-lead { margin-left: auto; margin-right: auto; }
+}
+
+.ak-hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    animation: ak-bounce-in 0.8s ease 0.3s backwards;
+}
+
+@media (max-width: 900px) {
+    .ak-hero-cta { justify-content: center; }
+}
+
+.ak-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-family: var(--ak-display);
+    font-weight: 800;
+    font-size: 1.05rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.ak-btn:active { transform: translateY(3px); }
+
+.ak-btn-primary {
+    background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+    box-shadow: 0 6px 0 #d97706, 0 12px 24px rgba(245, 158, 11, 0.35);
+}
+.ak-btn-primary:hover { filter: brightness(1.05); }
+
+.ak-btn-secondary {
+    background: #fff;
+    color: var(--ak-sky-dark);
+    box-shadow: 0 6px 0 #bae6fd, 0 8px 20px rgba(56, 189, 248, 0.2);
+    border: 3px solid #bae6fd;
+}
+
+/* Photo collage */
+.ak-photo-collage {
+    position: relative;
+    width: min(100%, 480px);
+    margin: 0 auto;
+    aspect-ratio: 1;
+    animation: ak-bounce-in 1s ease 0.2s backwards;
+}
+
+.ak-photo {
+    position: absolute;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 5px solid #fff;
+    box-shadow: 0 16px 40px rgba(30, 58, 95, 0.15);
+    transition: transform 0.3s ease;
+}
+.ak-photo:hover { transform: scale(1.03) rotate(0deg) !important; z-index: 5; }
+.ak-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ak-photo-main {
+    width: 68%;
+    height: 68%;
+    top: 8%;
+    left: 16%;
+    transform: rotate(-2deg);
+    animation: ak-wiggle 4s ease-in-out infinite;
+}
+.ak-photo-a {
+    width: 42%;
+    height: 42%;
+    bottom: 4%;
+    left: 0;
+    transform: rotate(6deg);
+    border-color: #fde68a;
+}
+.ak-photo-b {
+    width: 38%;
+    height: 38%;
+    top: 0;
+    right: 0;
+    transform: rotate(-5deg);
+    border-color: #fbcfe8;
+}
+.ak-photo-c {
+    width: 36%;
+    height: 36%;
+    bottom: 12%;
+    right: 4%;
+    transform: rotate(4deg);
+    border-color: #bbf7d0;
+}
+
+.ak-sticker {
+    position: absolute;
+    font-size: 2.5rem;
+    animation: ak-pulse-soft 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+.ak-sticker-star { top: -8px; right: 20%; animation-delay: 0.5s; }
+.ak-sticker-heart { bottom: 20%; left: -12px; font-size: 2rem; }
+.ak-sticker-rainbow { top: 30%; right: -8px; font-size: 2.2rem; }
+
+/* Journey steps */
+.ak-journey {
+    padding: clamp(48px, 8vw, 72px) 20px;
+    background: #fff;
+    border-radius: var(--ak-radius) var(--ak-radius) 0 0;
+    margin-top: -24px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 -12px 40px rgba(56, 189, 248, 0.08);
+}
+
+.ak-journey-head {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 40px;
+}
+.ak-journey-head h2 {
+    font-family: var(--ak-display);
+    font-size: clamp(1.75rem, 4vw, 2.4rem);
+    color: var(--ak-ink);
+    margin-bottom: 10px;
+}
+.ak-journey-head p { color: var(--ak-muted); font-size: 1.05rem; }
+
+.ak-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+    .ak-steps { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .ak-steps { grid-template-columns: 1fr; }
+}
+
+.ak-step {
+    background: linear-gradient(180deg, #f0f9ff 0%, #fff 100%);
+    border: 3px solid #e0f2fe;
+    border-radius: 20px;
+    padding: 24px 18px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    opacity: 0;
+    transform: translateY(24px);
+}
+.ak-step.ak-visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.ak-step:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(56, 189, 248, 0.15);
+}
+
+.ak-step-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #fff;
+}
+.ak-step:nth-child(1) .ak-step-icon { background: linear-gradient(135deg, #38bdf8, #0284c7); }
+.ak-step:nth-child(2) .ak-step-icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.ak-step:nth-child(3) .ak-step-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.ak-step:nth-child(4) .ak-step-icon { background: linear-gradient(135deg, #34d399, #059669); }
+
+.ak-step h3 {
+    font-family: var(--ak-display);
+    font-size: 1.15rem;
+    color: var(--ak-ink);
+    margin-bottom: 8px;
+}
+.ak-step p { font-size: 0.9rem; color: var(--ak-muted); line-height: 1.5; }
+
+/* Photo gallery strip */
+.ak-gallery-strip {
+    padding: 48px 20px;
+    background: linear-gradient(180deg, #fef3c7 0%, #fce7f3 100%);
+}
+.ak-gallery-strip h2 {
+    font-family: var(--ak-display);
+    text-align: center;
+    font-size: 1.75rem;
+    margin-bottom: 24px;
+    color: var(--ak-ink);
+}
+.ak-gallery-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+@media (max-width: 768px) {
+    .ak-gallery-row { grid-template-columns: repeat(2, 1fr); }
+}
+.ak-gallery-row img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 4px solid #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.25s;
+}
+.ak-gallery-row img:hover { transform: scale(1.04) rotate(1deg); }
+
+/* Feature cards override */
+.autism-kids .cards-grid .card,
+.autism-kids .feature-card {
+    border-radius: 20px !important;
+    border: 3px solid #e0f2fe !important;
+    transition: transform 0.2s !important;
+}
+.autism-kids .section-head h2,
+.autism-kids .vgmf-section h2 {
+    font-family: var(--ak-display) !important;
+    color: var(--ak-ink) !important;
+}
+
+.autism-kids .btn-primary {
+    background: linear-gradient(180deg, #38bdf8, #0284c7) !important;
+    border-radius: 999px !important;
+    font-family: var(--ak-display) !important;
+    font-weight: 800 !important;
+    box-shadow: 0 5px 0 #0369a1 !important;
+}
+
+.autism-kids .cg-fab-register {
+    background: linear-gradient(180deg, #fb7185, #e11d48) !important;
+    font-family: var(--ak-display) !important;
+    animation: ak-pulse-soft 2s ease-in-out infinite !important;
+    box-shadow: 0 6px 0 #be123c, 0 12px 28px rgba(251, 113, 133, 0.4) !important;
+}
+
+.autism-kids .vg-stats-strip {
+    background: linear-gradient(90deg, #e0f2fe, #fef3c7);
+    border: none;
+}
+.autism-kids .vg-stat strong {
+    font-family: var(--ak-display);
+    color: var(--ak-sky-dark);
+}
+
+.autism-kids .site-footer,
+.autism-kids .cg-footer {
+    background: linear-gradient(180deg, #1e3a5f, #0c4a6e) !important;
+}
+
+/* Auth modal kids style */
+.autism-kids #auth-modal .modal-content,
+.autism-kids .modal-content {
+    border-radius: 28px !important;
+    border: 4px solid #fde68a !important;
+}
+
+.autism-kids .preloader-ring {
+    border-color: #fde68a;
+    border-top-color: var(--ak-sky);
+}
+
+/* Reveal utility */
+.ak-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.ak-reveal.ak-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Bigger touch targets & simpler forms */
+.autism-kids .form-group input,
+.autism-kids .form-group select,
+.autism-kids .form-group textarea,
+.autism-kids #auth-modal input,
+.autism-kids #auth-modal select {
+    min-height: 48px;
+    font-size: 1rem;
+    border-radius: 14px !important;
+    border-width: 2px !important;
+}
+
+.autism-kids .auth-tab-btn {
+    font-family: var(--ak-display) !important;
+    font-weight: 700 !important;
+    border-radius: 999px !important;
+    padding: 10px 20px !important;
+}
+
+.autism-kids .cg-menu-toggle {
+    border-radius: 12px;
+    background: #fef3c7;
+    color: var(--ak-sky-dark);
+}
+
+.autism-kids .open-seminar-card,
+.autism-kids .cg-glass-card {
+    border-radius: 20px !important;
+}
+
+.autism-kids .help-banner {
+    max-width: 720px;
+    margin: 0 auto 24px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 3px solid #fde68a;
+    border-radius: 20px;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--ak-muted);
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.15);
+}
+
+.autism-kids .help-banner strong {
+    font-family: var(--ak-display);
+    color: var(--ak-sky-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ak-shape, .ak-photo-main, .ak-sticker, .cg-fab-register { animation: none !important; }
+    .ak-step, .ak-reveal { opacity: 1; transform: none; transition: none; }
+}

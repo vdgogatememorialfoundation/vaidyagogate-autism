@@ -441,11 +441,50 @@ async function adminVerifyLoginOtp(channel) {
     if (okEl) okEl.textContent = 'Verified';
 }
 
+function showAdminLoginError(message) {
+    const box = document.getElementById('admin-login-error');
+    if (!box) {
+        alert(message);
+        return;
+    }
+    box.textContent = message;
+    box.classList.add('visible');
+}
+
+function clearAdminLoginError() {
+    const box = document.getElementById('admin-login-error');
+    if (box) {
+        box.textContent = '';
+        box.classList.remove('visible');
+    }
+}
+
+function formatAdminApiError(data, status) {
+    const parts = [];
+    if (data && data.error) parts.push(String(data.error));
+    if (data && data.hint) parts.push(String(data.hint));
+    if (data && data.detail) parts.push(String(data.detail));
+    if (!parts.length && status === 503) {
+        parts.push('Database is not ready. Wait 10 seconds and try again.');
+        parts.push(
+            'On Vercel: set DATABASE_URL (Neon pooler URL) and ADMIN_EMAIL / ADMIN_PASSWORD, then Redeploy.'
+        );
+    }
+    return parts.join('\n\n') || 'Login failed. Please try again.';
+}
+
 document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAdminLoginError();
     const email = document.getElementById('admin-email').value.trim().toLowerCase();
     const password = document.getElementById('admin-password').value;
     const body = { email, password, portal: 'admin' };
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    let submitBtnLabel = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing in…';
+    }
     try {
         const res = await fetch('/api/auth/login', {
             method: 'POST',
@@ -463,18 +502,18 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
         } else {
             const snippet = (await res.text()).slice(0, 120).replace(/\s+/g, ' ');
             if (res.status === 503 || /maintenance/i.test(snippet)) {
-                alert(
-                    'The site is in maintenance mode and returned a web page instead of login data. Open the admin page from the same address as your server (e.g. http://localhost:3000/admin.html) and try again.'
+                showAdminLoginError(
+                    'The server returned a maintenance page instead of login data. Check DATABASE_URL on Vercel and redeploy, then open https://autism.vaidyagogate.org/admin'
                 );
             } else {
-                alert(
-                    'Login did not receive JSON from the server. Open admin from the app URL (not as a local file). Example: http://localhost:3000/admin.html'
+                showAdminLoginError(
+                    'Login did not receive JSON from the server. Use https://autism.vaidyagogate.org/admin (not a saved offline copy).'
                 );
             }
             return;
         }
         if (!res.ok) {
-            alert(data.error || 'Invalid credentials');
+            showAdminLoginError(formatAdminApiError(data, res.status));
             return;
         }
         if (!data.user) {
@@ -497,7 +536,14 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
         applyCoAdminSidebarVisibility();
     } catch (err) {
         console.error(err);
-        alert('Could not reach the server. Make sure it is running (e.g. node server.js).');
+        showAdminLoginError(
+            'Could not reach the server. If this is production, check Vercel deployment and DATABASE_URL. Locally, run: npm start'
+        );
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = submitBtnLabel || 'Sign in';
+        }
     }
 });
 

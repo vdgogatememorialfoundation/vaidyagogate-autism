@@ -1,26 +1,34 @@
 /**
- * Autism admin portal: hide judge/case/payment UI; show preregistration scheduling.
+ * Autism admin portal: hide judge/case/payment UI; participant-focused labels.
  */
 (function () {
     'use strict';
 
-    const HIDE_MENU = [
-        'nav-case-programs',
-        'nav-judge',
-        'nav-payments-config',
-        'nav-pos'
+    const HIDE_MODULES = [
+        'tab-case-mgmt',
+        'tab-admin-payments',
+        'tab-pos'
+    ];
+
+    const HIDE_TEXT = [
+        'judge',
+        'case presentation',
+        'case program',
+        'payment gateway',
+        'pos on-spot',
+        'on-spot pos'
     ];
 
     function hideMenuItems() {
-        document.querySelectorAll('a, button, .menu-item, .admin-nav-item').forEach((el) => {
+        HIDE_MODULES.forEach((mod) => {
+            document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+        });
+        document.querySelectorAll('a, button, .menu-item').forEach((el) => {
             const t = (el.textContent || '').toLowerCase();
-            if (
-                t.includes('judge') ||
-                t.includes('case presentation') ||
-                t.includes('case program') ||
-                t.includes('payment gateway') ||
-                t.includes('pos on-spot')
-            ) {
+            if (HIDE_TEXT.some((k) => t.includes(k))) {
                 el.classList.add('hidden');
                 el.style.display = 'none';
             }
@@ -66,8 +74,8 @@
     }
 
     function patchSeminarPayload() {
-        const origFetch = window.fetch;
         if (window.__autismFetchPatched) return;
+        const origFetch = window.fetch;
         window.fetch = function (url, opts) {
             if (
                 typeof url === 'string' &&
@@ -99,10 +107,15 @@
     }
 
     function applyAdminBranding() {
-        document.title = document.title.replace(/Seminar|Doctor/gi, 'Autism');
-        const h1 = document.querySelector('.sidebar-header h2, .admin-sidebar h2, header h1');
-        if (h1 && !/autism/i.test(h1.textContent)) {
-            h1.textContent = 'Autism Admin Portal';
+        document.title = (document.title || '').replace(/Seminar|Doctor/gi, 'Autism');
+        const side = document.querySelector('.sidebar-header h2');
+        if (side) side.textContent = 'Autism Admin';
+        const sub = document.querySelector('.sidebar-header p');
+        if (sub) sub.textContent = 'Programme management';
+        const staffNote = document.querySelector('#tab-staff-users p');
+        if (staffNote && /Doctors/i.test(staffNote.textContent)) {
+            staffNote.innerHTML =
+                'Judge, co-admin, scanner, and reviewer accounts appear here. Public sign-ups appear under <strong>Participants</strong>.';
         }
     }
 
@@ -112,5 +125,6 @@
         patchSaveSeminar();
         patchSeminarPayload();
         applyAdminBranding();
+        if (window.AutismTerminology) window.AutismTerminology.applyAll();
     });
 })();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0284c7">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="VGMF Scanner">
@@ -13,9 +13,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/scanner-portal.css">
-    <link rel="stylesheet" href="/css/autism-scanner.css?v=1">
+    <link rel="stylesheet" href="/css/autism-scanner.css?v=3">
+    <link rel="stylesheet" href="/css/autism-portals-theme.css?v=3">
 </head>
-<body class="scanner-body autism-scanner">
+<body class="scanner-body autism-scanner ak-portal-scan">
     <div id="auth-overlay" class="auth-overlay-scanner">
         <div class="auth-card-scanner">
             <div class="auth-brand" data-site-logo data-logo-height="56px" aria-hidden="true"></div>
@@ -44,7 +45,7 @@
                 <p id="login-err" class="login-err hidden"></p>
                 <button type="submit" class="tool-btn primary auth-submit">Sign in to scanner</button>
             </form>
-            <p class="auth-foot">VGMF entry scanner · venue staff use only · denies banned/disabled doctor accounts</p>
+            <p class="auth-foot">Autism programme check-in · staff only · blocks disabled or banned accounts</p>
         </div>
     </div>
 
@@ -96,7 +97,7 @@
         <div class="scan-card scan-card-compact">
             <label><i class="fas fa-history"></i> Recent scans</label>
             <ul class="history-list" id="scan-history"></ul>
-            <p style="font-size:0.78rem;color:var(--scan-muted);margin-top:10px;line-height:1.45;">Entry is blocked if the doctor account is <strong>disabled</strong> or <strong>banned</strong> in admin, or if the registration was cancelled.</p>
+            <p style="font-size:0.78rem;color:var(--scan-muted);margin-top:10px;line-height:1.45;">Entry is blocked if the participant account is <strong>disabled</strong> or <strong>banned</strong> in admin, or if the registration was cancelled.</p>
         </div>
 
         <button type="button" class="tool-btn scan-next-btn" id="btn-reset">Clear &amp; scan again</button>
@@ -107,5 +108,7 @@
     <script src="/js/site-branding.js"></script>
     <script src="/js/portal-auth.js"></script>
     <script src="/js/scanner-app.js"></script>
+    <script src="/js/autism-theme.js?v=3"></script>
+    <script src="/js/autism-terminology.js?v=1"></script>
 </body>
 </html>
