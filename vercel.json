@@ -12,7 +12,10 @@
     { "src": "/dashboard", "dest": "/public/applicant.html" },
     { "src": "/admin", "dest": "/public/admin.html" },
     { "src": "/scan", "dest": "/public/scanner.html" },
-    { "src": "/(applicant|admin|scanner|doctor)\\.html", "dest": "server.js" },
+    { "src": "/verify-certificate.html", "dest": "/public/verify-certificate.html" },
+    { "src": "/judge.html", "dest": "/public/judge.html" },
+    { "src": "/admin-live-scanner.html", "dest": "/public/admin-live-scanner.html" },
+    { "src": "/(.*\\.html)", "dest": "/public/$1" },
     { "src": "/(.*\\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|webmanifest))", "dest": "/public/$1" },
     { "src": "/", "dest": "/public/index.html" },
     { "src": "/(.*)", "dest": "server.js" }

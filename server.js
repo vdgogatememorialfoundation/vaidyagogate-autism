@@ -506,11 +506,20 @@ app.get('/certificate/view', (req, res) => {
 });
 
 app.use(
-    express.static('public', {
+    express.static(path.join(__dirname, 'public'), {
         maxAge: process.env.VERCEL ? '86400000' : 0,
-        etag: true
+        etag: true,
+        fallthrough: true
     })
 );
+
+app.get(/\.html$/i, (req, res, next) => {
+    const rel = String(req.path || '').replace(/^\//, '');
+    if (!rel || rel.includes('..') || rel.includes('\\')) return next();
+    const disk = path.join(__dirname, 'public', rel);
+    if (fs.existsSync(disk)) return res.sendFile(disk);
+    return next();
+});
 
 app.use((req, res, next) => {
     if (!requestNeedsBootstrap(req)) return next();
