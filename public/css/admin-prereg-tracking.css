@@ -1,0 +1,106 @@
+/* Pre-registration & registration pipeline — admin */
+.ak-prereg-wrap { max-width: 1280px; }
+.ak-prereg-pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+    border-radius: 14px;
+    border: 1px solid #c7d2fe;
+}
+.ak-prereg-pipeline span {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: 100%;
+    margin-bottom: 4px;
+}
+.ak-prereg-pipeline .step {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    padding: 10px 8px;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+.ak-prereg-pipeline .step strong { display: block; font-size: 0.7rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
+.ak-prereg-pipeline .step.is-active { border-color: #2563eb; color: #1d4ed8; background: #eff6ff; }
+.ak-prereg-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.ak-prereg-stat {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.ak-prereg-stat:hover, .ak-prereg-stat.is-selected {
+    border-color: #2563eb;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+}
+.ak-prereg-stat .num { font-size: 1.75rem; font-weight: 800; color: #0f172a; line-height: 1; }
+.ak-prereg-stat .lbl { font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.ak-prereg-stat.stat-approved .num { color: #059669; }
+.ak-prereg-stat.stat-rejected .num { color: #dc2626; }
+.ak-prereg-stat.stat-pending .num { color: #d97706; }
+.ak-prereg-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+}
+.ak-prereg-toolbar label { font-size: 0.8rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px; }
+.ak-prereg-toolbar select,
+.ak-prereg-toolbar input[type="search"] {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    min-width: 160px;
+}
+.ak-prereg-detail {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    display: none;
+}
+.ak-prereg-detail.is-open { display: block; }
+.ak-prereg-detail h4 { margin: 0 0 12px; font-size: 1.05rem; }
+.ak-prereg-detail dl {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 8px 16px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+.ak-prereg-detail dt { font-weight: 600; color: #64748b; }
+.ak-prereg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ak-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+.ak-badge-submitted { background: #fef3c7; color: #92400e; }
+.ak-badge-approved { background: #d1fae5; color: #047857; }
+.ak-badge-rejected { background: #fee2e2; color: #b91c1c; }
+.ak-badge-revision_required { background: #ede9fe; color: #6d28d9; }
+.ak-reg-pill { font-size: 0.72rem; color: #475569; }

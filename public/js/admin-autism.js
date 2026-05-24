@@ -106,12 +106,19 @@
         window.__autismFetchPatched = true;
     }
 
+    function patchApplicationsMenu() {
+        document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-folder-open"></i> Final registration';
+        });
+    }
+
     function applyAdminBranding() {
         document.title = (document.title || '').replace(/Seminar|Doctor/gi, 'Autism');
         const side = document.querySelector('.sidebar-header h2');
         if (side) side.textContent = 'Autism Admin';
         const sub = document.querySelector('.sidebar-header p');
         if (sub) sub.textContent = 'Programme management';
+        patchApplicationsMenu();
         const staffNote = document.querySelector('#tab-staff-users p');
         if (staffNote && /Doctors/i.test(staffNote.textContent)) {
             staffNote.innerHTML =

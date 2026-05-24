@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/autism-admin.css?v=1">
+    <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -109,7 +110,8 @@
                 <a class="menu-item" data-admin-module="tab-doctors" onclick="switchTab('tab-doctors')"><i class="fas fa-users"></i> Participants</a>
                 <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Event management</a>
                 <a class="menu-item" data-admin-module="tab-event-schedules" onclick="switchTab('tab-event-schedules'); loadEventSchedules();"><i class="fas fa-clock"></i> Event Schedules</a>
-                <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Review Applications</a>
+                <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration</a>
+                <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Final registration</a>
                 <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Seminar Feedback</a>
                 <a class="menu-item" data-admin-module="tab-support-tickets" onclick="switchTab('tab-support-tickets')"><i class="fas fa-ticket-alt"></i> Support Tickets</a>
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
@@ -205,9 +207,55 @@
                 </div>
             </div>
 
-            <!-- 2. Review Applications -->
+            <!-- Pre-registration tracking -->
+            <div id="tab-prereg-tracking" class="tab-pane hidden">
+                <div class="ak-prereg-wrap">
+                    <h2 style="margin-bottom: 8px;">Pre-registration tracking</h2>
+                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review pre-registrations first. When you <strong>approve</strong>, participants can complete <strong>final registration</strong> in their dashboard. Use <em>Final registration</em> in the menu for the main application queue.</p>
+                    <div class="ak-prereg-pipeline" aria-hidden="true">
+                        <span>Participant journey</span>
+                        <div class="step is-active"><strong>Step 1</strong> Pre-register</div>
+                        <div class="step is-active"><strong>Step 2</strong> Admin approval</div>
+                        <div class="step"><strong>Step 3</strong> Final registration</div>
+                        <div class="step"><strong>Step 4</strong> E-ticket</div>
+                    </div>
+                    <div class="ak-prereg-stats">
+                        <div class="ak-prereg-stat" data-filter="all"><div class="num" id="ak-stat-total">0</div><div class="lbl">Total</div></div>
+                        <div class="ak-prereg-stat stat-pending" data-filter="submitted"><div class="num" id="ak-stat-submitted">0</div><div class="lbl">Pending</div></div>
+                        <div class="ak-prereg-stat stat-approved" data-filter="approved"><div class="num" id="ak-stat-approved">0</div><div class="lbl">Approved</div></div>
+                        <div class="ak-prereg-stat stat-rejected" data-filter="rejected"><div class="num" id="ak-stat-rejected">0</div><div class="lbl">Rejected</div></div>
+                        <div class="ak-prereg-stat" data-filter="revision_required"><div class="num" id="ak-stat-revision_required">0</div><div class="lbl">Revision</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="ak-prereg-toolbar">
+                            <div><label for="ak-prereg-seminar">Event</label><select id="ak-prereg-seminar"><option value="">All events</option></select></div>
+                            <div><label for="ak-prereg-status-filter">Status</label><select id="ak-prereg-status-filter"><option value="all">All</option><option value="submitted">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="revision_required">Revision required</option></select></div>
+                            <div style="flex:1;min-width:200px;"><label for="ak-prereg-search">Search</label><input type="search" id="ak-prereg-search" placeholder="Name, email, application no…"></div>
+                            <button type="button" class="btn-primary" id="ak-prereg-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <table class="data-table">
+                            <thead><tr><th>App no.</th><th>Participant</th><th>Event</th><th>Pre-reg</th><th>Registration</th><th>Submitted</th><th></th></tr></thead>
+                            <tbody id="ak-prereg-tbody"><tr><td colspan="8" style="text-align:center;">Open this tab to load…</td></tr></tbody>
+                        </table>
+                        <div id="ak-prereg-detail" class="ak-prereg-detail">
+                            <h4 id="ak-prereg-detail-title">Details</h4>
+                            <div id="ak-prereg-detail-body"></div>
+                            <div class="ak-prereg-actions">
+                                <button type="button" class="btn-success" id="ak-prereg-approve"><i class="fas fa-check"></i> Approve</button>
+                                <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-prereg-revision"><i class="fas fa-edit"></i> Request revision</button>
+                                <button type="button" class="btn-danger" id="ak-prereg-reject"><i class="fas fa-times"></i> Reject</button>
+                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open final registration queue</button>
+                            </div>
+                            <p id="ak-prereg-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final registration review -->
             <div id="tab-applications" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Application Processing Queue</h2>
+                <h2 style="margin-bottom: 20px;">Final registration queue</h2>
+                <p style="color:#64748b;margin:-8px 0 16px;max-width:720px;">Process main registrations after pre-registration is approved. Issue e-tickets from here when ready.</p>
                 <div class="card">
                     <div style="margin-bottom:12px;">
                         <label for="applications-search" style="font-weight:600;font-size:0.9rem;">Search applications</label>
@@ -2100,7 +2148,8 @@
     <script src="/js/user-roles.js?v=20260522f"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/admin.js?v=20260529a"></script>
-    <script src="/js/admin-autism.js?v=autism2"></script>
+    <script src="/js/admin-prereg-tracking.js?v=1"></script>
+    <script src="/js/admin-autism.js?v=autism3"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>
 </body>

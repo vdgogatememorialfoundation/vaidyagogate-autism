@@ -1,5 +1,5 @@
 /**
- * Autism Awareness — v2 redesign (illustration-only, no stock photos)
+ * Autism Awareness — v2 redesign (curated children photos + modern layout)
  */
 .autism-kids.ak-v2 {
     --ak2-blue: #2563eb;
@@ -155,12 +155,95 @@
     background: linear-gradient(145deg, #eff6ff, #f5f3ff);
     padding: 12px;
 }
-.ak-hero-v2-art img,
-.ak-hero-v2-art svg {
+.ak-hero-photo-stack {
+    position: relative;
+    min-height: 320px;
+}
+.ak-hero-photo-main {
     width: 100%;
-    height: auto;
+    max-width: 420px;
+    border-radius: var(--ak2-radius-lg);
+    box-shadow: var(--ak2-shadow);
     display: block;
-    border-radius: calc(var(--ak2-radius-lg) - 8px);
+    margin: 0 auto;
+    object-fit: cover;
+    aspect-ratio: 1;
+}
+.ak-hero-photo-sub {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 4px solid #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+    bottom: 8px;
+    left: 0;
+}
+.ak-hero-photo-sub-b {
+    left: auto;
+    right: 0;
+    bottom: 48px;
+}
+@media (max-width: 900px) {
+    .ak-hero-photo-sub { width: 80px; height: 80px; }
+}
+
+/* Photo showcase */
+.ak-photo-showcase {
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    padding: 0 20px;
+}
+.ak-photo-showcase-head {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.ak-photo-showcase-head h2 {
+    font-family: var(--ak2-display);
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    margin-bottom: 8px;
+}
+.ak-photo-showcase-head p { color: var(--ak2-muted); }
+.ak-photo-showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 12px;
+}
+.ak-showcase-item {
+    margin: 0;
+    border-radius: var(--ak2-radius);
+    overflow: hidden;
+    position: relative;
+    grid-column: span 3;
+    min-height: 160px;
+}
+.ak-showcase-item.ak-showcase-large {
+    grid-column: span 6;
+    grid-row: span 2;
+    min-height: 280px;
+}
+@media (max-width: 768px) {
+    .ak-showcase-item,
+    .ak-showcase-item.ak-showcase-large { grid-column: span 6; min-height: 140px; }
+}
+.ak-showcase-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    min-height: 140px;
+}
+.ak-showcase-item figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px 12px;
+    background: linear-gradient(transparent, rgba(15, 23, 42, 0.75));
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
 }
 .ak-hero-chips {
     display: flex;

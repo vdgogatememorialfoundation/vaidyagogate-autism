@@ -1,11 +1,11 @@
 /**
- * Autism public site: block stock/CMS photos; use safe placeholders only.
+ * Autism public site: allow only curated /images/autism/* photos; block random CMS uploads.
  */
 (function () {
     'use strict';
     if (!document.body.classList.contains('autism-kids')) return;
 
-    const BLOCKED = /\/images\/autism\/.*\.(jpe?g|png|webp)/i;
+    const ALLOWED_IMG = /^\/images\/autism\/(hero-|gallery-|strip-)[a-z0-9-]+\.(jpe?g|webp)$/i;
 
     function initials(name) {
         const p = String(name || '?')
@@ -16,14 +16,22 @@
         return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
     }
 
+    function isAllowedSrc(src) {
+        if (!src) return false;
+        if (src.endsWith('.svg') && src.includes('/images/autism/')) return true;
+        return ALLOWED_IMG.test(src.split('?')[0]);
+    }
+
     function stripImg(img) {
         if (!img || img.dataset.akSafe === '1') return;
         const src = img.getAttribute('src') || '';
-        if (BLOCKED.test(src) || (/\/uploads\//i.test(src) && /\.(jpe?g|png|webp)/i.test(src))) {
-            img.remove();
+        if (isAllowedSrc(src)) {
+            img.dataset.akSafe = '1';
             return;
         }
-        img.dataset.akSafe = '1';
+        if (/\.(jpe?g|png|webp|gif)/i.test(src)) {
+            img.remove();
+        }
     }
 
     function stripAll(root) {
@@ -48,7 +56,7 @@
         document.querySelectorAll('#gallery-grid img, .vgmf-gallery-thumb').forEach((el) => el.remove());
     }
 
-    function hideRiskyHero() {
+    function sanitizeHeroBanners() {
         const root = document.getElementById('congress-hero-root');
         if (root) root.style.display = 'none';
         document.querySelectorAll('.congress-hero-bg[style*="background-image"]').forEach((el) => {
@@ -70,7 +78,7 @@
             stripAll();
             speakerAvatarsOnly();
             hideGallery();
-            hideRiskyHero();
+            sanitizeHeroBanners();
         };
         window.applySiteCms.__akSafe = true;
     }
@@ -78,7 +86,7 @@
     function init() {
         stripAll();
         hideGallery();
-        hideRiskyHero();
+        sanitizeHeroBanners();
         patchApplyCms();
         const obs = new MutationObserver(() => {
             stripAll();

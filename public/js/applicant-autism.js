@@ -92,7 +92,7 @@
         container.innerHTML = '';
         (preregFields || []).forEach((f) => {
             if (!f || f.enabled === false) return;
-            const fg = document.createElement('motion-div' in document ? 'div' : 'div');
+            const fg = document.createElement('div');
             fg.className = 'form-group';
             const label = document.createElement('label');
             label.textContent = f.label + (f.required ? ' *' : '');
@@ -175,33 +175,97 @@
         }
     }
 
+    function preregStatusMeta(status) {
+        const st = String(status || 'submitted').toLowerCase();
+        const map = {
+            submitted: { label: 'Pending review', color: '#d97706', bg: '#fef3c7', step: 2 },
+            approved: { label: 'Approved', color: '#047857', bg: '#d1fae5', step: 3 },
+            rejected: { label: 'Not approved', color: '#b91c1c', bg: '#fee2e2', step: 2 },
+            revision_required: { label: 'Revision needed', color: '#6d28d9', bg: '#ede9fe', step: 2 }
+        };
+        return map[st] || map.submitted;
+    }
+
+    function renderPreregTracker(rows) {
+        const steps = [
+            { n: 1, title: 'Pre-register', hint: 'Submit your form' },
+            { n: 2, title: 'Admin review', hint: 'We check your details' },
+            { n: 3, title: 'Final registration', hint: 'Complete full registration' },
+            { n: 4, title: 'E-ticket', hint: 'Download your pass' }
+        ];
+        const active = rows.length
+            ? Math.max(...rows.map((r) => preregStatusMeta(r.status).step))
+            : 1;
+        return (
+            '<div class="ak-user-pipeline">' +
+            steps
+                .map((s) => {
+                    const on = s.n <= active ? ' is-done' : '';
+                    const cur = s.n === active ? ' is-current' : '';
+                    return (
+                        '<div class="ak-user-pipeline-step' +
+                        on +
+                        cur +
+                        '"><span class="num">' +
+                        s.n +
+                        '</span><strong>' +
+                        s.title +
+                        '</strong><small>' +
+                        s.hint +
+                        '</small></div>'
+                    );
+                })
+                .join('') +
+            '</div>'
+        );
+    }
+
     async function loadPreregList() {
         const uid = currentUserId();
         const box = document.getElementById('prereg-list');
+        const pipelineBox = document.getElementById('prereg-tracker');
         if (!uid || !box) return;
         try {
             const rows = await fetchJson('/api/preregistrations/' + uid);
+            if (pipelineBox) pipelineBox.innerHTML = renderPreregTracker(rows);
             if (!rows.length) {
-                box.innerHTML = '<p style="color:#64748b;">No pre-registrations yet.</p>';
+                box.innerHTML =
+                    '<p style="color:#64748b;">No pre-registrations yet. Submit the form above to start.</p>';
                 return;
             }
-            box.innerHTML =
-                '<table class="data-table"><thead><tr><th>Event</th><th>Application no.</th><th>Status</th><th>Submitted</th></tr></thead><tbody>' +
-                rows
-                    .map(
-                        (r) =>
-                            '<tr><td>' +
-                            (r.seminar_title || r.seminar_id) +
-                            '</td><td>' +
-                            (r.application_no || '—') +
-                            '</td><td>' +
-                            (r.status || '—') +
-                            '</td><td>' +
-                            (r.created_at || '').slice(0, 16) +
-                            '</td></tr>'
-                    )
-                    .join('') +
-                '</tbody></table>';
+            box.innerHTML = rows
+                .map((r) => {
+                    const meta = preregStatusMeta(r.status);
+                    const canReg = meta.step >= 3;
+                    return (
+                        '<div class="ak-prereg-card">' +
+                        '<div class="ak-prereg-card-head">' +
+                        '<div><strong>' +
+                        (r.seminar_title || 'Event ' + r.seminar_id) +
+                        '</strong><br><code style="font-size:0.85rem;">' +
+                        (r.application_no || '—') +
+                        '</code></div>' +
+                        '<span class="ak-prereg-pill" style="background:' +
+                        meta.bg +
+                        ';color:' +
+                        meta.color +
+                        '">' +
+                        meta.label +
+                        '</span></div>' +
+                        '<p style="font-size:0.88rem;color:#64748b;margin:8px 0 0;">Submitted ' +
+                        (r.created_at || '').slice(0, 16) +
+                        '</p>' +
+                        (canReg
+                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> You can open <strong>Track seminar applications</strong> to complete final registration.</p>'
+                            : r.status === 'revision_required'
+                              ? '<p style="margin-top:10px;font-size:0.9rem;color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>'
+                              : r.status === 'rejected'
+                                ? '<p style="margin-top:10px;font-size:0.9rem;color:#b91c1c;">Contact us if you need help.</p>'
+                                : '<p style="margin-top:10px;font-size:0.9rem;color:#64748b;">We will notify you when pre-registration is approved.</p>') +
+                        '</div>'
+                    );
+                })
+                .join('');
         } catch (e) {
             box.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
         }
