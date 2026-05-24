@@ -5,7 +5,7 @@
     'use strict';
     if (!document.body.classList.contains('autism-kids')) return;
 
-    const ALLOWED_IMG = /^\/images\/autism\/(hero-|gallery-|strip-)[a-z0-9-]+\.(jpe?g|webp)$/i;
+    const ALLOWED_IMG = /^\/images\/autism\/[^?#]+\.(jpe?g|png|webp|avif)$/i;
 
     function initials(name) {
         const p = String(name || '?')

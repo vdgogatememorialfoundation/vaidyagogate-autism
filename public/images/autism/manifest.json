@@ -1,0 +1,62 @@
+{
+  "updatedAt": "2026-05-24T19:37:56.684Z",
+  "note": "Auto-generated. Commit this file + images, then push to deploy. Or use Admin → Website CMS → Site photos upload for instant live updates.",
+  "images": [
+    {
+      "src": "/images/autism/hero-main.jpg",
+      "name": "hero-main.jpg"
+    },
+    {
+      "src": "/images/autism/hero-a.jpg",
+      "name": "hero-a.jpg"
+    },
+    {
+      "src": "/images/autism/hero-b.jpg",
+      "name": "hero-b.jpg"
+    },
+    {
+      "src": "/images/autism/hero-c.jpg",
+      "name": "hero-c.jpg"
+    },
+    {
+      "src": "/images/autism/gallery-1.jpg",
+      "name": "gallery-1.jpg"
+    },
+    {
+      "src": "/images/autism/gallery-2.jpg",
+      "name": "gallery-2.jpg"
+    },
+    {
+      "src": "/images/autism/gallery-3.jpg",
+      "name": "gallery-3.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_207758573_b6gcG682P2kBK7n9nW80heeoXJb15SGW.jpg",
+      "name": "360_F_207758573_b6gcG682P2kBK7n9nW80heeoXJb15SGW.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_401485157_C4jdcChHsIQJ1IXxCxa6COKYvSosVSuX.jpg",
+      "name": "360_F_401485157_C4jdcChHsIQJ1IXxCxa6COKYvSosVSuX.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_432286711_sicMlfbRgcUTOENXQQEPX04x9TzJhD9Q.jpg",
+      "name": "360_F_432286711_sicMlfbRgcUTOENXQQEPX04x9TzJhD9Q.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_729243315_8fP54Y1uPmtgm8t79Y3mvsyiRgWQXAwi.jpg",
+      "name": "360_F_729243315_8fP54Y1uPmtgm8t79Y3mvsyiRgWQXAwi.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_939501313_FpKu8PlTiT8rJ9HWFSBXkN6JipTm2XZi.jpg",
+      "name": "360_F_939501313_FpKu8PlTiT8rJ9HWFSBXkN6JipTm2XZi.jpg"
+    },
+    {
+      "src": "/images/autism/360_F_952906565_xwLmr3jdtgWuhwYIVuEeN9Cid2fRxKeJ.jpg",
+      "name": "360_F_952906565_xwLmr3jdtgWuhwYIVuEeN9Cid2fRxKeJ.jpg"
+    },
+    {
+      "src": "/images/autism/indian-small-kids-playing-colourful-block-toys-with-young-parents-against-white-background_466689-9057.avif",
+      "name": "indian-small-kids-playing-colourful-block-toys-with-young-parents-against-white-background_466689-9057.avif"
+    }
+  ]
+}

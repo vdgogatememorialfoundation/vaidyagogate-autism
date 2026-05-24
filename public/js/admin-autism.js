@@ -126,12 +126,58 @@
         }
     }
 
+    function wireSiteImageUpload() {
+        const btn = document.getElementById('ak-site-images-upload-btn');
+        const input = document.getElementById('ak-site-images-files');
+        const status = document.getElementById('ak-site-images-status');
+        if (!btn || !input) return;
+        btn.addEventListener('click', async () => {
+            const files = input.files;
+            if (!files || !files.length) {
+                if (status) {
+                    status.textContent = 'Choose one or more images first.';
+                    status.style.color = '#b91c1c';
+                }
+                return;
+            }
+            const fd = new FormData();
+            for (let i = 0; i < files.length; i++) fd.append('images', files[i]);
+            if (status) {
+                status.textContent = 'Uploading…';
+                status.style.color = '#64748b';
+            }
+            try {
+                const r = await fetch('/api/admin/autism-site-images/upload', {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.error || r.statusText);
+                if (status) {
+                    status.textContent =
+                        'Uploaded ' + (data.added || files.length) + ' image(s). Live on homepage now (IST ' +
+                        new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) +
+                        ').';
+                    status.style.color = '#047857';
+                }
+                input.value = '';
+            } catch (e) {
+                if (status) {
+                    status.textContent = e.message || 'Upload failed';
+                    status.style.color = '#b91c1c';
+                }
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
         patchSaveSeminar();
         patchSeminarPayload();
         applyAdminBranding();
+        wireSiteImageUpload();
         if (window.AutismTerminology) window.AutismTerminology.applyAll();
     });
 })();

@@ -130,7 +130,6 @@
                 <a class="menu-item" data-admin-module="tab-etickets" onclick="switchTab('tab-etickets'); initAdminEticketsTab();"><i class="fas fa-ticket-alt"></i> E-tickets</a>
                 <a class="menu-item" data-admin-module="tab-scanner-logs" onclick="switchTab('tab-scanner-logs'); initAdminScannerLogsTab();"><i class="fas fa-qrcode"></i> Scanner Activity</a>
                 <a class="menu-item" data-admin-module="tab-live-scanner" onclick="openAdminLiveScannerBoard();"><i class="fas fa-tv"></i> Live check-in board</a>
-                <a class="menu-item" href="/scanner-download.html" target="_blank" rel="noopener"><i class="fas fa-download"></i> Scanner APK download</a>
                 <a class="menu-item" data-admin-module="tab-pos" onclick="switchTab('tab-pos'); initAdminPosTab();"><i class="fas fa-cash-register"></i> On-spot POS</a>
                 <a class="menu-item" data-admin-module="tab-feedback-form" onclick="switchTab('tab-feedback-form'); loadAdminFeedbackFormConfig();"><i class="fas fa-edit"></i> Feedback form editor</a>
                 <a class="menu-item" data-admin-module="tab-activity-logs" onclick="switchTab('tab-activity-logs'); initAdminActivityLogsTab();"><i class="fas fa-history"></i> User activity</a>
@@ -702,6 +701,13 @@
                             </div>
 
             <div id="tab-site-cms" class="tab-pane hidden">
+                <div class="card" id="ak-admin-site-images" style="margin-bottom:20px;border-left:4px solid #2563eb;">
+                    <h3 style="margin:0 0 8px;">Homepage photos (live without redeploy)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Upload images here for instant updates on the public site. Or add files to <code>public/images/autism/</code> on the server, run <code>npm run sync-images</code>, commit, and push. All times on the portal are <strong>IST</strong>.</p>
+                    <input type="file" id="ak-site-images-files" accept="image/jpeg,image/png,image/webp,image/avif" multiple style="max-width:100%;">
+                    <button type="button" class="btn-primary" style="margin-top:10px;" id="ak-site-images-upload-btn"><i class="fas fa-upload"></i> Upload to live site</button>
+                    <p id="ak-site-images-status" style="margin-top:10px;font-size:0.88rem;font-weight:600;"></p>
+                </div>
                 <h2 style="margin-bottom: 12px; color:#0c4a6e;">Public website &amp; doctor portal content</h2>
                 <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons — paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Seminar Management (after payments are complete).</p>
                 <div class="card" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">

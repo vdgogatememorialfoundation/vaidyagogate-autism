@@ -7,6 +7,7 @@
     "start": "node server.js",
     "build:pg-schema": "node scripts/build-pg-schema.js",
     "vercel-build": "node scripts/validate-syntax.js && node scripts/build-pg-schema.js",
+    "sync-images": "node scripts/sync-autism-images.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

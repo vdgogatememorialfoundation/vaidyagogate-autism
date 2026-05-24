@@ -639,7 +639,8 @@ let doctorPortalYear = new Date().getFullYear();
 
 function formatTrackDateTime(iso) {
     if (window.PortalDateTime && window.PortalDateTime.formatLong) {
-        return window.PortalDateTime.formatLong(iso);
+        const s = window.PortalDateTime.formatLong(iso);
+        return s && !/\bIST\b/i.test(s) ? s + ' IST' : s;
     }
     return iso ? String(iso) : '';
 }

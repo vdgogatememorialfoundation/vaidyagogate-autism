@@ -253,7 +253,9 @@
                         meta.label +
                         '</span></div>' +
                         '<p style="font-size:0.88rem;color:#64748b;margin:8px 0 0;">Submitted ' +
-                        (r.created_at || '').slice(0, 16) +
+                        (window.PortalDateTime && window.PortalDateTime.format
+                            ? window.PortalDateTime.format(r.created_at) + ' IST'
+                            : (r.created_at || '').slice(0, 16)) +
                         '</p>' +
                         (canReg
                             ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> You can open <strong>Track seminar applications</strong> to complete final registration.</p>'
