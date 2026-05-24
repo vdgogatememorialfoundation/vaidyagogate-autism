@@ -1133,7 +1133,9 @@ function bootDoctorDashboard(user) {
     loadDoctorDashboardStats();
     loadPortalFlags();
     loadRegistrationFormConfigAndApply();
-    loadDoctorPortalUpdatesFromCms();
+    if (!document.body.classList.contains('ak-portal-dash')) {
+        loadDoctorPortalUpdatesFromCms();
+    }
     loadSiteBranding();
     if (!document.body.classList.contains('ak-portal-dash')) initDoctorVolunteerNav();
     handleEasebuzzPaymentReturnQuery();

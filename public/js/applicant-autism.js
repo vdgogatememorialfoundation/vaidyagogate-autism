@@ -15,18 +15,14 @@
 
     function hideAutismDisabledTabs() {
         HIDDEN_TABS.forEach((tabId) => {
-            document.querySelectorAll(`[data-tab="${tabId}"]`).forEach((el) => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
-            });
-            const pane = document.getElementById(tabId);
-            if (pane) {
-                pane.classList.add('hidden');
-                pane.style.display = 'none';
-            }
+            document.querySelectorAll(`[data-tab="${tabId}"]`).forEach((el) => el.remove());
+            document.getElementById(tabId)?.remove();
         });
         document.getElementById('nav-volunteer')?.remove();
         document.getElementById('tab-volunteer')?.remove();
+        document.querySelector('.announcements-box')?.remove();
+        document.querySelector('[onclick*="tab-orders"]')?.remove();
+        document.getElementById('make-payments-container')?.remove();
     }
 
     function updateProfileDisplayName() {
@@ -41,14 +37,36 @@
     }
 
     function currentUserId() {
-        try {
-            const raw = localStorage.getItem('portalUser') || localStorage.getItem('doctorUser');
-            if (!raw) return null;
-            const u = JSON.parse(raw);
-            return u && u.id ? u.id : null;
-        } catch (_) {
-            return null;
+        if (window.currentUser && window.currentUser.id != null) {
+            const n = Number(window.currentUser.id);
+            return Number.isInteger(n) && n > 0 ? n : null;
         }
+        if (typeof doctorNumericUserId === 'function') {
+            const n = doctorNumericUserId();
+            if (n) return n;
+        }
+        try {
+            if (typeof PortalAuth !== 'undefined') {
+                const u = PortalAuth.getUser('doctor');
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+            const keys = ['seminar_doctor_user', 'portalUser', 'doctorUser', 'seminar_user'];
+            for (let i = 0; i < keys.length; i++) {
+                const raw = localStorage.getItem(keys[i]);
+                if (!raw) continue;
+                const u = JSON.parse(raw);
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
+        return null;
     }
 
     async function fetchJson(url, opts) {

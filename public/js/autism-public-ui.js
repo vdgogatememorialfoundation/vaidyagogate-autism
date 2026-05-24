@@ -8,7 +8,6 @@
     const NAV_LABELS = {
         about: 'About us',
         schedule: 'Programme',
-        gallery: 'Photos',
         verify: 'Find my registration',
         contact: 'Get in touch'
     };
