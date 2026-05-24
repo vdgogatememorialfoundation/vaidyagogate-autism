@@ -25,6 +25,7 @@
         { icon: 'fa-calendar-alt', title: 'Event agenda', text: 'Sessions and timings', section: 'schedule' },
         { icon: 'fa-microphone', title: 'Faculty board', text: 'Featured experts', section: 'home', anchor: 'speakers-section' },
         { icon: 'fa-ticket-alt', title: 'Open windows', text: 'Current registrations', section: 'home', anchor: 'seminars-section' },
+        { icon: 'fa-images', title: 'Seminar gallery', text: 'Past highlights', section: 'gallery' },
         { icon: 'fa-shield-check', title: 'Delegate directory', text: 'Paid participant lookup', section: 'verify' },
         { icon: 'fa-award', title: 'Certificate authenticity', text: 'OTP validation', href: '/verify-certificate.html' },
         { icon: 'fa-info-circle', title: 'Foundation profile', text: 'Mission and history', section: 'about' },

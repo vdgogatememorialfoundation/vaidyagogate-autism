@@ -1,0 +1,50 @@
+.ak-home-ann-section {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    padding: 0 20px;
+}
+.ak-home-ann-inner {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.06);
+}
+.ak-home-ann-inner h2 {
+    font-family: 'Fredoka', 'Baloo 2', cursive, sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+}
+.ak-home-ann-inner > p {
+    color: #64748b;
+    margin-bottom: 18px;
+}
+.ak-home-ann-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.ak-home-ann-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+}
+.ak-home-ann-card h4 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: #0f172a;
+}
+.ak-home-ann-card p {
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+}
+.ak-home-ann-card time {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-weight: 600;
+}

@@ -110,6 +110,7 @@
                 <a class="menu-item" data-admin-module="tab-doctors" onclick="switchTab('tab-doctors')"><i class="fas fa-users"></i> Participants</a>
                 <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Event management</a>
                 <a class="menu-item" data-admin-module="tab-event-schedules" onclick="switchTab('tab-event-schedules'); loadEventSchedules();"><i class="fas fa-clock"></i> Event Schedules</a>
+                <a class="menu-item" data-admin-module="tab-announcements" onclick="switchTab('tab-announcements')"><i class="fas fa-bullhorn"></i> Announcements</a>
                 <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration</a>
                 <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Final registration</a>
                 <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Seminar Feedback</a>
@@ -700,6 +701,41 @@
                             </div>
                             </div>
 
+            <div id="tab-announcements" class="tab-pane hidden">
+                <h2 style="margin-bottom:12px;">Announcements</h2>
+                <p style="color:#64748b;margin-bottom:20px;max-width:800px;">Manage public site announcements and participant dashboard messages. All times are <strong>IST</strong>.</p>
+                <div class="card" style="margin-bottom:18px;border-left:4px solid #0d9488;">
+                    <h3 style="margin:0 0 8px;">Public website</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Homepage ticker, sliding announcement cards, and official notices board.</p>
+                    <button type="button" class="btn-primary" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Open Website CMS</button>
+                </div>
+                <div class="card" style="margin-bottom:18px;border-left:4px solid #2563eb;">
+                    <h3 style="margin:0 0 8px;">All participants (dashboard)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown under <em>Programme updates</em> on every applicant dashboard. Edit in Website CMS → Applicant portal updates, then Save website content.</p>
+                    <button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Edit programme updates</button>
+                </div>
+                <div class="card">
+                    <h3 style="margin:0 0 12px;">Specific participant</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 14px;">Leave user ID empty to broadcast to everyone, or enter a participant numeric user ID.</p>
+                    <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;max-width:720px;">
+                        <div><label>User ID</label><input type="text" id="ak-ann-user-id" placeholder="e.g. 42 (blank = all)"></div>
+                        <div><label>Title *</label><input type="text" id="ak-ann-title" style="width:100%;"></div>
+                        <div style="grid-column:1/-1;"><label>Message</label><textarea id="ak-ann-body" rows="3" style="width:100%;"></textarea></div>
+                    </div>
+                    <button type="button" class="btn-primary" style="margin-top:12px;" id="ak-ann-save">Publish to dashboard</button>
+                    <p id="ak-ann-admin-msg" style="margin-top:10px;font-weight:600;"></p>
+                    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                        <div><label>Filter by user ID</label><input type="text" id="ak-ann-filter-user" placeholder="Optional"></div>
+                        <button type="button" class="btn-primary" id="ak-ann-filter-btn" style="background:#64748b;">Filter</button>
+                        <button type="button" class="btn-primary" id="ak-ann-refresh" style="background:#475569;">Refresh list</button>
+                    </div>
+                    <table class="data-table" style="margin-top:16px;">
+                        <thead><tr><th>Audience</th><th>Message</th><th>Status</th><th>Created (IST)</th><th></th></tr></thead>
+                        <tbody id="ak-ann-admin-tbody"><tr><td colspan="5" style="text-align:center;">Open this tab to load</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="tab-site-cms" class="tab-pane hidden">
                 <div class="card" id="ak-admin-site-images" style="margin-bottom:20px;border-left:4px solid #2563eb;">
                     <h3 style="margin:0 0 8px;">Homepage photos (live without redeploy)</h3>
@@ -955,8 +991,8 @@
                     </div>
 
                     <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
-                        <label style="font-weight:700;">Doctor portal updates</label>
-                        <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on the doctor dashboard as bullet updates.</p>
+                        <label style="font-weight:700;">Applicant portal updates (all participants)</label>
+                        <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on every applicant dashboard under Programme updates. Times display in IST.</p>
                         <div id="cms-doctor-update-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddDoctorUpdateRow()">+ Add update</button>
                     </div>
@@ -2155,7 +2191,8 @@
     <script src="/js/user-roles.js?v=20260522f"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/admin.js?v=20260529a"></script>
-    <script src="/js/admin-prereg-tracking.js?v=1"></script>
+    <script src="/js/admin-prereg-tracking.js?v=2"></script>
+    <script src="/js/admin-announcements.js?v=1"></script>
     <script src="/js/admin-autism.js?v=autism3"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>

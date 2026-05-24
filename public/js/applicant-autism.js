@@ -20,7 +20,11 @@
         });
         document.getElementById('nav-volunteer')?.remove();
         document.getElementById('tab-volunteer')?.remove();
-        document.querySelector('.announcements-box')?.remove();
+        const ann = document.querySelector('.announcements-box');
+        if (ann) {
+            const h = ann.querySelector('h4');
+            if (h) h.innerHTML = '<i class="fas fa-bullhorn"></i> Announcements';
+        }
         document.querySelector('[onclick*="tab-orders"]')?.remove();
         document.getElementById('make-payments-container')?.remove();
     }
@@ -186,48 +190,60 @@
         return map[st] || map.submitted;
     }
 
-    function renderPreregTracker(rows) {
+    function renderFlipkartPrereg(r) {
+        const st = String(r.status || 'submitted').toLowerCase();
+        const regSt = String(r.registration_status || '').toLowerCase();
+        const hasReg = !!r.registration_id;
         const steps = [
-            { n: 1, title: 'Pre-register', hint: 'Submit your form' },
-            { n: 2, title: 'Admin review', hint: 'We check your details' },
-            { n: 3, title: 'Final registration', hint: 'Complete full registration' },
-            { n: 4, title: 'E-ticket', hint: 'Download your pass' }
+            { title: 'Submitted', icon: 'fa-clipboard-check' },
+            { title: 'Review', icon: 'fa-magnifying-glass' },
+            { title: 'Approved', icon: 'fa-circle-check' },
+            { title: 'Registration', icon: 'fa-file-signature' },
+            { title: 'E-ticket', icon: 'fa-qrcode' }
         ];
-        const active = rows.length
-            ? Math.max(...rows.map((r) => preregStatusMeta(r.status).step))
-            : 1;
+        let cur = 0;
+        if (st === 'rejected' || st === 'revision_required') cur = 1;
+        else if (st === 'submitted') cur = 1;
+        else if (st === 'approved') cur = 2;
+        if (hasReg && st === 'approved') cur = 3;
+        if (hasReg && (regSt === 'completed' || regSt === 'checked_in' || regSt === 'e_ticket_issued')) cur = 4;
+        const fail = st === 'rejected';
+        const pct = fail ? 25 : Math.min(100, Math.round((cur / (steps.length - 1)) * 100));
+        const html = steps
+            .map((s, i) => {
+                let cls = 'ak-fk-step';
+                if (fail && i === 1) cls += ' is-fail';
+                else if (i < cur) cls += ' is-done';
+                else if (i === cur) cls += ' is-current';
+                const icon = i < cur ? 'fa-check' : s.icon;
+                return (
+                    '<div class="' +
+                    cls +
+                    '"><div class="ak-fk-dot"><i class="fas ' +
+                    icon +
+                    '"></i></div><strong>' +
+                    s.title +
+                    '</strong></div>'
+                );
+            })
+            .join('');
         return (
-            '<div class="ak-user-pipeline">' +
-            steps
-                .map((s) => {
-                    const on = s.n <= active ? ' is-done' : '';
-                    const cur = s.n === active ? ' is-current' : '';
-                    return (
-                        '<div class="ak-user-pipeline-step' +
-                        on +
-                        cur +
-                        '"><span class="num">' +
-                        s.n +
-                        '</span><strong>' +
-                        s.title +
-                        '</strong><small>' +
-                        s.hint +
-                        '</small></div>'
-                    );
-                })
-                .join('') +
-            '</div>'
+            '<div class="ak-fk-track"><div class="ak-fk-track-title">Pre-registration · ' +
+            (r.application_no || '') +
+            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
+            pct +
+            '%"></span>' +
+            html +
+            '</div></div>'
         );
     }
 
     async function loadPreregList() {
         const uid = currentUserId();
         const box = document.getElementById('prereg-list');
-        const pipelineBox = document.getElementById('prereg-tracker');
         if (!uid || !box) return;
         try {
             const rows = await fetchJson('/api/preregistrations/' + uid);
-            if (pipelineBox) pipelineBox.innerHTML = renderPreregTracker(rows);
             if (!rows.length) {
                 box.innerHTML =
                     '<p style="color:#64748b;">No pre-registrations yet. Submit the form above to start.</p>';
@@ -239,6 +255,7 @@
                     const canReg = meta.step >= 3;
                     return (
                         '<div class="ak-prereg-card">' +
+                        renderFlipkartPrereg(r) +
                         '<div class="ak-prereg-card-head">' +
                         '<div><strong>' +
                         (r.seminar_title || 'Event ' + r.seminar_id) +
@@ -385,6 +402,13 @@
         hideAutismDisabledTabs();
         applyBranding();
         wireAutismTabs();
+        if (typeof loadApplicantAnnouncements === 'function') loadApplicantAnnouncements();
+        if (typeof loadApplications === 'function') {
+            setTimeout(() => {
+                loadApplications();
+                if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
+            }, 800);
+        }
         setTimeout(updateProfileDisplayName, 400);
         setTimeout(updateProfileDisplayName, 2500);
     });

@@ -16,9 +16,7 @@
         'case program',
         'payment gateway',
         'pos on-spot',
-        'on-spot pos',
-        'past seminar gallery',
-        'seminar gallery'
+        'on-spot pos'
     ];
 
     function hideMenuItems() {
@@ -114,6 +112,18 @@
         });
     }
 
+    function hideGalleryCmsBlocks() {
+        document.querySelectorAll('#cms-gallery-years').forEach((el) => {
+            const card = el.closest('.card') || el.parentElement;
+            if (card) card.style.display = 'none';
+        });
+        const semGal = document.getElementById('seminar-gallery');
+        if (semGal) {
+            const wrap = semGal.closest('div')?.parentElement;
+            if (wrap) wrap.style.display = 'none';
+        }
+    }
+
     function applyAdminBranding() {
         document.title = (document.title || '').replace(/Seminar|Doctor/gi, 'Autism');
         const side = document.querySelector('.sidebar-header h2');
@@ -180,6 +190,7 @@
         patchSeminarPayload();
         applyAdminBranding();
         wireSiteImageUpload();
+        hideGalleryCmsBlocks();
         if (window.AutismTerminology) window.AutismTerminology.applyAll();
     });
 })();

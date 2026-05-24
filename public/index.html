@@ -17,7 +17,8 @@
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
     <link rel="stylesheet" href="/css/autism-kids.css?v=6">
     <link rel="stylesheet" href="/css/autism-theme.css?v=4">
-    <link rel="stylesheet" href="/css/autism-redesign.css?v=2">
+    <link rel="stylesheet" href="/css/autism-redesign.css?v=3">
+    <link rel="stylesheet" href="/css/ak-home-announcements.css?v=1">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260522a"></script>
     <script src="/js/portal-datetime.js"></script>
@@ -114,24 +115,17 @@
                 <div class="ak-hero-photo-stack">
                     <img class="ak-hero-photo-main" src="/images/autism/hero-main.jpg" alt="Children enjoying a group activity outdoors" width="520" height="520" loading="eager" decoding="async">
                     <img class="ak-hero-photo-sub" src="/images/autism/hero-a.jpg" alt="Smiling children at a school programme" width="200" height="200" loading="lazy" decoding="async">
-                    <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-b.avif" alt="Happy Indian children smiling" width="200" height="200" loading="lazy" decoding="async">
+                    <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-b.jpg" alt="Children learning together in class" width="200" height="200" loading="lazy" decoding="async">
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="ak-photo-showcase ak-reveal-v2" aria-label="Our community">
-        <div class="ak-photo-showcase-head">
-            <h2>Celebrating every child</h2>
-            <p>Real moments from schools and communities — inclusion, learning, and joy together.</p>
-        </div>
-        <div class="ak-photo-showcase-grid" id="ak-photo-showcase-grid">
-            <figure class="ak-showcase-item ak-showcase-large"><img src="/images/autism/hero-main.jpg" alt="Children in an outdoor group activity" loading="lazy" decoding="async"><figcaption>Together outdoors</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/hero-a.jpg" alt="Happy children at school" loading="lazy" decoding="async"><figcaption>School programme</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/hero-b.jpg" alt="Children in classroom" loading="lazy" decoding="async"><figcaption>Learning together</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/hero-c.jpg" alt="Children playing" loading="lazy" decoding="async"><figcaption>Play &amp; friendship</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/gallery-1.jpg" alt="Group of children smiling" loading="lazy" decoding="async"><figcaption>Community smiles</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/gallery-3.avif" alt="Happy children smiling" loading="lazy" decoding="async"><figcaption>Community smiles</figcaption></figure>
+    <section class="ak-home-ann-section ak-reveal-v2" aria-labelledby="ak-home-ann-title">
+        <div class="ak-home-ann-inner">
+            <h2 id="ak-home-ann-title"><i class="fas fa-bullhorn" aria-hidden="true"></i> Latest announcements</h2>
+            <p>Official updates from the programme team (times in IST)</p>
+            <div id="ak-home-announcements" class="ak-home-ann-grid"><p class="muted">Loading…</p></div>
         </div>
     </section>
 
@@ -576,7 +570,8 @@
     <script src="/js/portal-theme.js"></script>
     <script src="/js/vgmf-congress.js?v=20260520e"></script>
     <script src="/js/autism-home-enhance.js?v=1"></script>
-    <script src="/js/autism-site-images.js?v=1"></script>
+    <script src="/js/autism-site-images.js?v=2"></script>
+    <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/vgmf-home-stats.js"></script>
     <script src="/js/vgmf-marketing.js"></script>
     <script src="/js/otp-ui.js"></script>
@@ -1009,13 +1004,29 @@
         });
 
 
+        function galleryItemsFromCms(cms) {
+            if (Array.isArray(cms.seminarGalleryYears) && cms.seminarGalleryYears.length) {
+                const out = [];
+                cms.seminarGalleryYears.forEach((yg) => {
+                    const year = yg.year || '';
+                    (yg.images || []).forEach((img) => {
+                        if (img && img.src) {
+                            out.push({ src: img.src, caption: img.caption || yg.title || '', year });
+                        }
+                    });
+                });
+                return out;
+            }
+            return Array.isArray(cms.pastSeminarGallery) ? cms.pastSeminarGallery : [];
+        }
+
         function renderAboutGallerySocial(cms) {
             const aboutEl = document.getElementById('about-content');
             if (aboutEl) {
                 const secs = Array.isArray(cms.aboutSections) ? cms.aboutSections : [];
                 aboutEl.innerHTML = secs.length
                     ? secs.map((s) => '<h3 style="font-family:Fraunces,Georgia,serif;color:#78350f;margin:16px 0 8px;">' + escHtml(s.heading || '') + '</h3><p>' + escHtml(s.body || '') + '</p>').join('')
-                    : '<p>The Vaidya Gogate Memorial Foundation runs inclusive autism awareness programmes for children, families, and schools.</p>';
+                    : '<p>The Vaidya Gogate Memorial Foundation advances Ayurveda through national seminars and continuing education.</p>';
             }
             if (typeof renderSocialLinks === 'function') renderSocialLinks(cms);
         }

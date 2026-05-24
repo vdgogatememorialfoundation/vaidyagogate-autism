@@ -1,0 +1,101 @@
+/* Flipkart-style horizontal order tracker */
+.ak-fk-track {
+    margin: 16px 0 8px;
+    padding: 16px 12px 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+.ak-fk-track-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ak-fk-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    gap: 4px;
+}
+.ak-fk-steps::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 8%;
+    right: 8%;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    z-index: 0;
+}
+.ak-fk-steps .ak-fk-bar-fill {
+    position: absolute;
+    top: 18px;
+    left: 8%;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb, #10b981);
+    border-radius: 4px;
+    z-index: 1;
+    transition: width 0.4s ease;
+}
+.ak-fk-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+}
+.ak-fk-dot {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    transition: all 0.25s ease;
+}
+.ak-fk-step.is-done .ak-fk-dot {
+    border-color: #10b981;
+    background: #10b981;
+    color: #fff;
+}
+.ak-fk-step.is-current .ak-fk-dot {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+}
+.ak-fk-step.is-fail .ak-fk-dot {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+.ak-fk-step strong {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    color: #475569;
+    font-weight: 700;
+}
+.ak-fk-step.is-current strong { color: #1d4ed8; }
+.ak-fk-step.is-done strong { color: #047857; }
+.ak-fk-step small {
+    display: block;
+    font-size: 0.65rem;
+    color: #94a3b8;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+@media (max-width: 600px) {
+    .ak-fk-step strong { font-size: 0.65rem; }
+    .ak-fk-dot { width: 30px; height: 30px; font-size: 0.75rem; }
+}
