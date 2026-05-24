@@ -7,10 +7,10 @@ Separate portal from the VGMF doctor/seminar system (`D:\SeminarSystem`).
 
 | Surface | URL |
 |---------|-----|
-| Public site & applicant signup | `https://autism.vaidyagogate.org` |
-| Applicant dashboard | `https://autism.vaidyagogate.org/applicant.html` |
-| Admin | `https://autism.vaidyagogate.org/admin.html` |
-| Scanner (separate subdomain) | `https://scan.autism.vaidyagogate.org` |
+| Public site (signup / login) | `https://autism.vaidyagogate.org/` |
+| Applicant dashboard | `https://autism.vaidyagogate.org/dashboard` |
+| Admin | `https://autism.vaidyagogate.org/admin` |
+| Scanner | `https://autism.vaidyagogate.org/scan` |
 
 ## Applicant flow
 
@@ -59,7 +59,6 @@ NODE_ENV=production
 PORT=3001
 PORTAL_SCHEME=https
 APPLICANT_HOST=autism.vaidyagogate.org
-SCANNER_HOST=scan.autism.vaidyagogate.org
 DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
 ```
 

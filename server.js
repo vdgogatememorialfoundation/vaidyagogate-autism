@@ -291,10 +291,11 @@ function startAppBootstrap() {
                 return reject(err);
             }
             if (process.env.VERCEL) {
-                clearTimeout(timer);
-                appReadyResolved = true;
-                resolve();
-                bootstrapApp();
+                bootstrapApp(() => {
+                    clearTimeout(timer);
+                    appReadyResolved = true;
+                    resolve();
+                });
                 return;
             }
             bootstrapApp(() => {
@@ -437,11 +438,14 @@ function requestNeedsBootstrap(req) {
     const p = req.path || '/';
     if (p === '/api/health') return false;
     if (p.startsWith('/api/branding/logo')) return false;
+    if (p === '/scan' || p === '/scan/') return false;
     if (p === '/scanner' || p === '/scanner/') return false;
+    if (p === '/dashboard' || p.startsWith('/dashboard/')) return false;
     if (/\.(html?|css|js|ico|png|jpe?g|gif|webp|svg|woff2?|json|webmanifest|txt|map)$/i.test(p)) return false;
     if (p.startsWith('/css/') || p.startsWith('/js/') || p.startsWith('/uploads/')) return false;
     if (p.startsWith('/api/')) return true;
-    if (p.startsWith('/admin') || p.startsWith('/doctor') || p.startsWith('/judge')) return true;
+    if (p.startsWith('/admin') || p.startsWith('/dashboard') || p.startsWith('/scan')) return true;
+    if (p.startsWith('/doctor') || p.startsWith('/judge')) return true;
     return false;
 }
 
@@ -449,13 +453,15 @@ app.use(siteKillSwitch.createSiteKillSwitchMiddleware(db));
 
 app.use(subdomainPortalMiddleware);
 
+app.get('/scan', (req, res) => {
+    res.redirect(302, portalUrls.getPortalUrls().scanner);
+});
 app.get('/scanner', (req, res) => {
-    res.redirect(302, '/scanner.html');
+    res.redirect(302, portalUrls.getPortalUrls().scanner);
 });
 app.get('/scanner/', (req, res) => {
-    res.redirect(302, '/scanner.html');
+    res.redirect(302, portalUrls.getPortalUrls().scanner);
 });
-
 app.get('/certificate/view', (req, res) => {
     certRender.handleViewRequest(db, req, res);
 });

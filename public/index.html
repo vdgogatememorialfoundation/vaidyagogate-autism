@@ -752,16 +752,15 @@
         function portalHintForUser(user) {
             const ur = String(user.user_role || '').toLowerCase();
             const r = String(user.role || '').toLowerCase();
-            if (r === 'admin' || ur === 'co_admin') return 'Open the admin portal: /admin.html';
-            if (ur === 'judge_user' || ur === 'reviewer') return 'Open the judge portal: /judge.html';
-            if (ur === 'scanner_portal_user') return 'Open the scanner portal: /scanner.html';
+            if (r === 'admin' || ur === 'co_admin') return 'Open the admin portal: /admin';
+            if (ur === 'scanner_portal_user') return 'Open the scanner portal: /scan';
             return 'Please use the correct portal for your account type.';
         }
 
         /** Public site login is for doctors only; staff use their own portal URLs. */
         function doctorPortalUrl() {
             const app = new URLSearchParams(window.location.search).get('app') === '1';
-            return '/applicant.html' + (app ? '?app=1' : '');
+            return '/dashboard' + (app ? '?app=1' : '');
         }
 
         function routeUserAfterLogin(user) {

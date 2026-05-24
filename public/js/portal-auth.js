@@ -136,7 +136,7 @@
         if (isAdminPortalUser(user)) return 'Use the admin portal: /admin.html';
         if (isJudgeUser(user)) return 'Use the judge portal: /judge.html';
         if (isScannerUser(user)) return 'Use the scanner portal: /scanner.html';
-        if (isDoctorUser(user)) return 'Use the applicant portal: /applicant.html';
+        if (isDoctorUser(user)) return 'Use the applicant dashboard: /dashboard';
         if (r === 'admin') return 'Use the admin portal: /admin.html';
         return 'This account cannot access this portal. Please sign in with the correct account.';
     }
@@ -338,7 +338,7 @@
                         const go = confirm(msg + '\n\nCreate an account now?');
                         if (go) {
                             if (/\/doctor\.html/i.test(String(global.location.pathname || ''))) {
-                                global.location.href = '/applicant.html?register=1';
+                                global.location.href = '/dashboard?register=1';
                             } else {
                                 global.location.href = '/?register=1';
                             }

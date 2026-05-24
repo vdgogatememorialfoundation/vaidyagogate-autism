@@ -305,7 +305,7 @@
 
     function doctorReturnToPage() {
         const q = new URLSearchParams(window.location.search);
-        return q.get('app') === '1' ? 'applicant.html?app=1' : 'applicant.html';
+        return q.get('app') === '1' ? '/dashboard?app=1' : '/dashboard';
     }
 
     function openDoctorForgotPasswordModal() {
@@ -443,7 +443,7 @@
                     href === '/' ||
                     href === '/index.html' ||
                     href.startsWith('/?') ||
-                    (href.startsWith('http') && !href.includes('/applicant.html'))
+                    (href.startsWith('http') && !href.includes('/dashboard'))
                 ) {
                     e.preventDefault();
                     if (href.includes('register')) switchDoctorAuthTab('signup');
