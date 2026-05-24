@@ -60,10 +60,44 @@ PORT=3001
 PORTAL_SCHEME=https
 APPLICANT_HOST=autism.vaidyagogate.org
 SCANNER_HOST=scan.autism.vaidyagogate.org
-DATABASE_URL=postgresql://...
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
 ```
 
-Use a **separate database** from the doctor portal so data stays isolated.
+Copy `.env.example` to `.env` locally. **Never commit `.env`** (it is in `.gitignore`).
+
+### Neon PostgreSQL
+
+Schema is applied automatically on first boot, or run once:
+
+```powershell
+cd D:\autism
+$env:DATABASE_URL="your-neon-pooled-url?sslmode=require"
+node scripts/apply-neon-schema.js
+```
+
+Autism-specific tables: `preregistrations`, `competition_submissions`, `competition_files`, plus `seminars.preregistration_*` columns.
+
+## GitHub repository
+
+Local repo: `D:\autism` (branch `main`, initial commit done).
+
+Create the remote repo and push (after `gh auth login`):
+
+```powershell
+cd D:\autism
+.\scripts\push-autism-github.ps1 -CreateRepo
+```
+
+Default repo: `https://github.com/vdgogatememorialfoundation/vaidyagogate-autism` (private).
+
+Or create the empty repo on GitHub manually, then:
+
+```powershell
+git remote add origin https://github.com/vdgogatememorialfoundation/vaidyagogate-autism.git
+git push -u origin main
+```
+
+Set `DATABASE_URL` in **Vercel → Environment Variables** for Production (same Neon URL, not in git).
 
 ## Deployment notes
 
