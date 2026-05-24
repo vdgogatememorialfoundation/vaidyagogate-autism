@@ -2,7 +2,7 @@
 
 This wraps your **live** scanner page in a native Android shell (Capacitor). The app loads:
 
-`https://YOUR-DOMAIN/scanner.html`
+`https://autism.vaidyagogate.org/scanner.html`
 
 so you can update the scanner UI on the server without republishing the APK.
 
@@ -48,6 +48,16 @@ APK output:
 `android/app/build/outputs/apk/debug/app-debug.apk`
 
 Copy to staff phones and install (enable “Install unknown apps”).
+
+## Public download (website)
+
+After building, copy the APK for deployment:
+
+```powershell
+Copy-Item VGMF-Scanner-debug.apk public\downloads\vgmf-scanner.apk
+```
+
+Staff can download from: **https://autism.vaidyagogate.org/scanner-download.html**
 
 ## Build release APK (production)
 

@@ -3,14 +3,13 @@
   "appName": "VGMF Scanner",
   "webDir": "www",
   "server": {
-    "url": "https://seminar.vaidyagogate.org/scanner.html",
-    "hostname": "seminar.vaidyagogate.org",
+    "url": "https://autism.vaidyagogate.org/scanner.html",
+    "hostname": "autism.vaidyagogate.org",
     "cleartext": false,
     "androidScheme": "https",
     "allowNavigation": [
+      "https://autism.vaidyagogate.org",
       "https://seminar.vaidyagogate.org",
-      "https://admin.vaidyagogate.org",
-      "https://judge.vaidyagogate.org",
       "https://vaidyagogate-seminar.vercel.app"
     ]
   },
