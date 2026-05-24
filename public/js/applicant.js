@@ -1258,6 +1258,39 @@ function registrationQualIsPg() {
     return q === 'PG';
 }
 
+function hideAutismRegistrationQualUi() {
+    if (!document.body.classList.contains('ak-portal-dash')) return;
+    ['step-3', 'step-4', 'reg-block'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+            el.style.display = 'none';
+        }
+    });
+    ['ind-step-3', 'ind-step-4'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    document.getElementById('prev-qual')?.closest('.preview-row')?.classList.add('hidden');
+    document.getElementById('prev-college-box')?.classList.add('hidden');
+    document.getElementById('prev-ncism-box')?.classList.add('hidden');
+    document.getElementById('prev-cert-box')?.classList.add('hidden');
+    const step2 = document.getElementById('step-2');
+    step2?.querySelectorAll('button[onclick*="nextStep(3)"]').forEach((btn) => {
+        btn.setAttribute('onclick', 'nextStep(5)');
+    });
+}
+
+function formatAutismPortalDateTime(iso) {
+    if (!iso) return '—';
+    if (window.PortalDateTime && window.PortalDateTime.format) {
+        const s = window.PortalDateTime.format(iso);
+        return s && !/\bIST\b/i.test(s) ? s + ' IST' : s;
+    }
+    return String(iso);
+}
+
+
 const REGISTRATION_COLLEGE_KEYS = new Set(['cpin', 'college', 'ccity', 'cstate']);
 
 function registrationFieldStep(f) {
@@ -1302,9 +1335,24 @@ const DEFAULT_REGISTRATION_FALLBACK_FIELDS = [
 ];
 
 function getRegistrationFieldsForValidation() {
-    const fields = window.__registrationFormFields;
-    if (fields && fields.length) return fields;
-    return DEFAULT_REGISTRATION_FALLBACK_FIELDS;
+    let fields = window.__registrationFormFields;
+    if (!fields || !fields.length) fields = DEFAULT_REGISTRATION_FALLBACK_FIELDS;
+    if (document.body.classList.contains('ak-portal-dash')) {
+        fields = fields.filter(
+            (f) =>
+                f &&
+                f.key !== 'qual' &&
+                !f.onlyWhenAdvancedQual &&
+                !f.onlyWhenPgCollege &&
+                !REGISTRATION_COLLEGE_KEYS.has(f.key) &&
+                !['ncism', 'certificate'].includes(String(f.key || ''))
+        );
+        fields = fields.filter((f) => {
+            const step = registrationFieldStep(f);
+            return step <= 2 || f.key === 'agree_terms';
+        });
+    }
+    return fields;
 }
 
 function formatRegValidationError(msg) {
@@ -1755,8 +1803,11 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
                     f &&
                     f.key !== 'qual' &&
                     !f.onlyWhenAdvancedQual &&
-                    !f.onlyWhenPgCollege
+                    !f.onlyWhenPgCollege &&
+                    !REGISTRATION_COLLEGE_KEYS.has(f.key) &&
+                    !['ncism', 'certificate'].includes(String(f.key || ''))
             );
+            hideAutismRegistrationQualUi();
         }
     } catch (e) {
         console.error(e);
@@ -1924,7 +1975,10 @@ function registrationWindowState(seminar) {
             ? (v) => window.PortalDateTime.parseMs(v)
             : (v) => (v ? new Date(v).getTime() : null);
     const rs = parseMs(seminar.registration_start);
-    const re = parseMs(seminar.registration_end);
+    const re =
+        window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
+            ? window.PortalDateTime.parseRegistrationEndMs(seminar.registration_end)
+            : parseMs(seminar.registration_end);
     const rsValid = rs != null && !Number.isNaN(rs);
     const reValid = re != null && !Number.isNaN(re);
     if (rsValid && now < rs) {
@@ -3928,7 +3982,9 @@ async function submitApplication() {
         }
     }
 
-    const vErr = validateRegistrationAgainstConfigForSteps(4);
+    const vErr = validateRegistrationAgainstConfigForSteps(
+        document.body.classList.contains('ak-portal-dash') ? 2 : 4
+    );
     if (vErr) {
         alertRegistrationValidation(vErr);
         return;
@@ -3946,7 +4002,9 @@ async function submitApplication() {
         city: document.getElementById('reg-city').value,
         state: document.getElementById('reg-state').value,
         country: document.getElementById('reg-country').value,
-        qual: document.getElementById('reg-qual').value,
+        qual: document.body.classList.contains('ak-portal-dash')
+            ? ''
+            : document.getElementById('reg-qual').value,
         ncism: document.getElementById('reg-ncism').value,
         cpin: document.getElementById('reg-cpin') ? document.getElementById('reg-cpin').value : '',
         college: document.getElementById('reg-college').value,

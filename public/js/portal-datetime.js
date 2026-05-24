@@ -39,6 +39,26 @@
         return norm + IST_OFFSET;
     }
 
+    /** Registration / pre-registration close: inclusive through end minute (e.g. 21:32 → 21:32:59 IST). */
+    function fromRegistrationEndLocal(localStr) {
+        const base = fromDatetimeLocal(localStr);
+        if (!base) return null;
+        const d = parsePortalDateTime(base);
+        if (!d || Number.isNaN(d.getTime())) return base;
+        const g = partsInIst(d);
+        return g('year') + '-' + g('month') + '-' + g('day') + 'T' + g('hour') + ':' + g('minute') + ':59' + IST_OFFSET;
+    }
+
+    function formatStored(iso, opts) {
+        if (!iso) return '';
+        if (window.PortalDateTime && window.PortalDateTime.format) {
+            return window.PortalDateTime.format(iso, opts);
+        }
+        const d = parsePortalDateTime(iso);
+        if (!d || Number.isNaN(d.getTime())) return String(iso).trim();
+        return formatPortalDateTime(iso, opts);
+    }
+
     function toDatetimeLocal(stored) {
         const d = parsePortalDateTime(stored);
         if (!d || Number.isNaN(d.getTime())) return '';
@@ -137,14 +157,31 @@
         return d && !Number.isNaN(d.getTime()) ? d.getTime() : null;
     }
 
+    function parseRegistrationEndMs(iso) {
+        const d = parsePortalDateTime(iso);
+        if (!d || Number.isNaN(d.getTime())) return null;
+        const g = partsInIst(d);
+        const sec = parseInt(g('second'), 10) || 0;
+        if (sec === 0) {
+            const inclusive = parsePortalDateTime(
+                g('year') + '-' + g('month') + '-' + g('day') + 'T' + g('hour') + ':' + g('minute') + ':59' + IST_OFFSET
+            );
+            return inclusive && !Number.isNaN(inclusive.getTime()) ? inclusive.getTime() : d.getTime();
+        }
+        return d.getTime();
+    }
+
     global.PortalDateTime = {
         TZ: PORTAL_DISPLAY_TZ,
         IST_OFFSET,
         parse: parsePortalDateTime,
         parseMs,
+        parseRegistrationEndMs,
         fromDatetimeLocal,
+        fromRegistrationEndLocal,
         toDatetimeLocal,
         format: formatPortalDateTime,
+        formatStored,
         formatLong: formatPortalDateTimeLong,
         formatEvent: formatEventDisplay,
         formatScan: formatScanDateTime

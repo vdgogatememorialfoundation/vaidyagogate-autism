@@ -1269,6 +1269,22 @@ function migrateLegacyRegistrationFormConfig(done) {
 
 const regFormCfg = require('./lib/registration-form-config');
 
+function autismApplicantFormFields(fields) {
+    return (fields || []).filter(
+        (f) =>
+            f &&
+            f.key !== 'qual' &&
+            !f.onlyWhenAdvancedQual &&
+            !f.onlyWhenPgCollege &&
+            !['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate'].includes(String(f.key || ''))
+    );
+}
+
+function registrationFormFieldsForPortal(fields) {
+    if (portalProduct.FEATURES.productId !== 'autism') return fields || [];
+    return autismApplicantFormFields(fields);
+}
+
 function loadGlobalRegistrationFormConfig(callback) {
     db.get(`SELECT value FROM global_settings WHERE key = 'registration_form_config'`, [], (err, row) => {
         if (err || !row || !row.value) {
@@ -1379,7 +1395,7 @@ siteSeoMod.registerSiteSeoRoutes(app, { db, loadPublicSiteCms });
 function isSeminarRegistrationOpen(row) {
     const now = Date.now();
     const rs = seminarDt.parseSeminarMs(row.registration_start);
-    const re = seminarDt.parseSeminarMs(row.registration_end);
+    const re = seminarDt.parseRegistrationEndMs(row.registration_end);
     if (rs != null && now < rs) return false;
     if (re != null && now > re) return false;
     return true;
@@ -3736,7 +3752,7 @@ app.get('/api/registration-form-config', (req, res) => {
         registrationOtpChannelFlags((eFlags, flags) => {
             if (eFlags) return res.status(500).json({ error: eFlags.message });
             const base = {
-                fields: (cfg && cfg.fields) || [],
+                fields: registrationFormFieldsForPortal((cfg && cfg.fields) || []),
                 birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
                 birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
                 otpOnApplication: false,
@@ -4404,7 +4420,7 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
 
             const now = Date.now();
             const rs = seminarDt.parseSeminarMs(sem.registration_start);
-            const re = seminarDt.parseSeminarMs(sem.registration_end);
+            const re = seminarDt.parseRegistrationEndMs(sem.registration_end);
             if (rs != null && !Number.isNaN(rs) && now < rs) {
                     return res.status(400).json({
                         error: 'Registration for this seminar has not opened yet. Please wait until the scheduled registration date.'

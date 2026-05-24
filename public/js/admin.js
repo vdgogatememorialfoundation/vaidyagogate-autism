@@ -8062,7 +8062,7 @@ async function saveSeminar(e) {
             ? window.PortalDateTime.fromDatetimeLocal(document.getElementById('seminar-reg-start').value)
             : document.getElementById('seminar-reg-start').value,
         registration_end: window.PortalDateTime
-            ? window.PortalDateTime.fromDatetimeLocal(document.getElementById('seminar-reg-end').value)
+            ? window.PortalDateTime.fromRegistrationEndLocal(document.getElementById('seminar-reg-end').value)
             : document.getElementById('seminar-reg-end').value,
         event_date: window.PortalDateTime
             ? window.PortalDateTime.fromDatetimeLocal(document.getElementById('seminar-event-date').value)

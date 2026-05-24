@@ -97,7 +97,7 @@
                     }
                     if (window.__autismPreregEnd != null) {
                         data.preregistration_end = window.PortalDateTime
-                            ? window.PortalDateTime.fromDatetimeLocal(window.__autismPreregEnd)
+                            ? window.PortalDateTime.fromRegistrationEndLocal(window.__autismPreregEnd)
                             : window.__autismPreregEnd;
                     }
                     opts = { ...opts, body: JSON.stringify(data) };

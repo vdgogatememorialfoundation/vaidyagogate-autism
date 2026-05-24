@@ -128,6 +128,14 @@
         container.innerHTML = '';
         (preregFields || []).forEach((f) => {
             if (!f || f.enabled === false) return;
+            if (
+                f.key === 'qual' ||
+                f.onlyWhenAdvancedQual ||
+                f.onlyWhenPgCollege ||
+                ['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate'].includes(String(f.key || ''))
+            ) {
+                return;
+            }
             const fg = document.createElement('div');
             fg.className = 'form-group';
             const label = document.createElement('label');
@@ -624,9 +632,21 @@
         updateProfileDisplayName();
     }
 
+    function patchAutismRegistrationFlow() {
+        if (typeof hideAutismRegistrationQualUi === 'function') hideAutismRegistrationQualUi();
+        if (typeof nextStep !== 'function' || nextStep.__autismSkipQualHook) return;
+        const origNext = nextStep;
+        window.nextStep = function (step) {
+            if (step === 3 || step === 4) step = 5;
+            return origNext.call(this, step);
+        };
+        window.nextStep.__autismSkipQualHook = true;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
+        patchAutismRegistrationFlow();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
         if (accountFields) {
