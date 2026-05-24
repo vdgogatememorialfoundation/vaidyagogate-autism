@@ -4474,7 +4474,7 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
 
                 loadRegistrationFormConfig(seminarId, (cfgErr, regCfg) => {
                     if (cfgErr) return res.status(500).json({ error: cfgErr.message });
-                    const list = (regCfg && regCfg.fields) || [];
+                    const list = registrationFormFieldsForPortal((regCfg && regCfg.fields) || []);
                     const hasCertFile =
                         !!req.file || !!(formData && formData.certificate_path);
                     const validationError = validateFormDataAgainstRegistrationConfig(
@@ -4764,7 +4764,7 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
 
             loadRegistrationFormConfig(row.seminar_id, (cfgErr, regCfg) => {
                 if (cfgErr) return res.status(500).json({ error: cfgErr.message });
-                const list = (regCfg && regCfg.fields) || [];
+                const list = registrationFormFieldsForPortal((regCfg && regCfg.fields) || []);
                 const validationError = validateFormDataAgainstRegistrationConfig(
                     merged,
                     hasCert,
@@ -9762,7 +9762,7 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData) {
         const validationError = validateFormDataAgainstRegistrationConfig(
             stored,
             hasCert,
-            (regCfg && regCfg.fields) || [],
+            registrationFormFieldsForPortal((regCfg && regCfg.fields) || []),
             null,
             regCfg
         );

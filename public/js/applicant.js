@@ -1258,26 +1258,106 @@ function registrationQualIsPg() {
     return q === 'PG';
 }
 
+const REGISTRATION_COLLEGE_KEYS = new Set(['cpin', 'college', 'ccity', 'cstate']);
+
+function registrationFieldStep(f) {
+    if (REGISTRATION_COLLEGE_KEYS.has(f.key)) return 4;
+    const s = f.step != null ? parseInt(f.step, 10) : 1;
+    return Number.isNaN(s) ? 1 : s;
+}
+
 function hideAutismRegistrationQualUi() {
     if (!document.body.classList.contains('ak-portal-dash')) return;
-    ['step-3', 'step-4', 'reg-block'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.classList.add('hidden');
-            el.style.display = 'none';
-        }
+    document.querySelectorAll('.ak-medical-reg-only').forEach((el) => {
+        el.style.display = 'none';
     });
-    ['ind-step-3', 'ind-step-4'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-    });
+    document.getElementById('step-4')?.classList.add('hidden');
+    const ind3 = document.getElementById('ind-step-3');
+    if (ind3) {
+        ind3.style.display = '';
+        ind3.textContent = '3. Programme details';
+    }
+    const ind4 = document.getElementById('ind-step-4');
+    if (ind4) ind4.style.display = 'none';
+    const step3 = document.getElementById('step-3');
+    if (step3) {
+        step3.classList.remove('hidden');
+        step3.style.display = '';
+    }
+    const extraWrap = document.getElementById('ak-main-reg-extra');
+    if (extraWrap) extraWrap.classList.remove('hidden');
     document.getElementById('prev-qual')?.closest('.preview-row')?.classList.add('hidden');
     document.getElementById('prev-college-box')?.classList.add('hidden');
     document.getElementById('prev-ncism-box')?.classList.add('hidden');
     document.getElementById('prev-cert-box')?.classList.add('hidden');
-    const step2 = document.getElementById('step-2');
-    step2?.querySelectorAll('button[onclick*="nextStep(3)"]').forEach((btn) => {
-        btn.setAttribute('onclick', 'nextStep(5)');
+    if (typeof window.renderAutismMainRegistrationFields === 'function') {
+        window.renderAutismMainRegistrationFields();
+    }
+}
+
+function getAutismMainRegExtraFields() {
+    const mapped = new Set(Object.keys(REGISTRATION_FIELD_IDS));
+    return (window.__registrationFormFields || []).filter((f) => {
+        if (!f || f.enabled === false) return false;
+        if (mapped.has(f.key)) return false;
+        if (f.key === 'agree_terms') return false;
+        if (f.key === 'qual' || f.onlyWhenAdvancedQual || f.onlyWhenPgCollege) return false;
+        if (REGISTRATION_COLLEGE_KEYS.has(f.key)) return false;
+        if (['ncism', 'certificate'].includes(String(f.key || ''))) return false;
+        const step = registrationFieldStep(f);
+        return step >= 3;
+    });
+}
+
+function getAutismValidationMaxStep() {
+    if (!document.body.classList.contains('ak-portal-dash')) return 4;
+    let max = 2;
+    getAutismMainRegExtraFields().forEach((f) => {
+        const step = registrationFieldStep(f);
+        if (step > max) max = step;
+    });
+    return max;
+}
+
+function collectAutismMainRegExtraFormData() {
+    const o = {};
+    getAutismMainRegExtraFields().forEach((f) => {
+        const el = document.getElementById('reg-field-' + f.key);
+        if (!el) return;
+        if (f.type === 'boolean') o[f.key] = el.checked ? '1' : '';
+        else if (f.type === 'file') o[f.key] = el.files && el.files[0] ? el.files[0].name : '';
+        else o[f.key] = el.value;
+    });
+    return o;
+}
+
+function fieldDisplayLabel(f, raw) {
+    if (!f || raw == null || raw === '') return raw || '';
+    if (f.type === 'select' && Array.isArray(f.options)) {
+        const hit = f.options.find((o) => String(o.value) === String(raw));
+        if (hit) return hit.label || hit.value;
+    }
+    if (f.type === 'boolean') return raw === '1' || raw === true ? 'Yes' : 'No';
+    return raw;
+}
+
+function populateAutismPreviewExtraFields() {
+    const host = document.getElementById('prev-autism-extra');
+    if (!host) return;
+    host.innerHTML = '';
+    getAutismMainRegExtraFields().forEach((f) => {
+        const el = document.getElementById('reg-field-' + f.key);
+        if (!el) return;
+        let raw = f.type === 'boolean' ? (el.checked ? '1' : '') : f.type === 'file' ? (el.files?.[0]?.name || '') : el.value;
+        const row = document.createElement('div');
+        row.className = 'preview-row';
+        row.innerHTML =
+            '<span class="lbl">' +
+            (f.label || f.key) +
+            '</span><span class="val">' +
+            (fieldDisplayLabel(f, raw) || '—') +
+            '</span>';
+        host.appendChild(row);
     });
 }
 
@@ -1290,14 +1370,6 @@ function formatAutismPortalDateTime(iso) {
     return String(iso);
 }
 
-
-const REGISTRATION_COLLEGE_KEYS = new Set(['cpin', 'college', 'ccity', 'cstate']);
-
-function registrationFieldStep(f) {
-    if (REGISTRATION_COLLEGE_KEYS.has(f.key)) return 4;
-    const s = f.step != null ? parseInt(f.step, 10) : 1;
-    return Number.isNaN(s) ? 1 : s;
-}
 
 /** Matches server DEFAULT_REGISTRATION_FORM_CONFIG when API fields are empty. */
 const DEFAULT_REGISTRATION_FALLBACK_FIELDS = [
@@ -1345,12 +1417,9 @@ function getRegistrationFieldsForValidation() {
                 !f.onlyWhenAdvancedQual &&
                 !f.onlyWhenPgCollege &&
                 !REGISTRATION_COLLEGE_KEYS.has(f.key) &&
-                !['ncism', 'certificate'].includes(String(f.key || ''))
+                !['ncism', 'certificate'].includes(String(f.key || '')) &&
+                f.key !== 'agree_terms'
         );
-        fields = fields.filter((f) => {
-            const step = registrationFieldStep(f);
-            return step <= 2 || f.key === 'agree_terms';
-        });
     }
     return fields;
 }
@@ -1427,6 +1496,11 @@ function collectRegistrationFormData() {
         else if (el.type === 'checkbox') o[k] = el.checked ? '1' : '';
         else o[k] = el.value;
     });
+    if (document.body.classList.contains('ak-portal-dash')) {
+        Object.assign(o, collectAutismMainRegExtraFormData());
+        o.agree_terms = document.getElementById('tnc')?.checked ? '1' : '';
+        o.qual = '';
+    }
     return o;
 }
 
@@ -3418,6 +3492,7 @@ async function nextStep(step) {
     // If moving to preview, populate data and generate PDF iframe
     if (step === 1) syncRegistrationOtpUi();
     if (step === REGISTRATION_PREVIEW_STEP) {
+        populateAutismPreviewExtraFields();
         syncRegistrationOtpUi();
         resetRegistrationSubmitOtpState();
         const prevTnc = document.getElementById('prev-tnc-block');
@@ -3553,6 +3628,9 @@ function pdfAddQrCode(doc, qrImgElement, x, y, sizeMm) {
 }
 
 async function generatePdfBlob(qrImgElement) {
+    if (document.body.classList.contains('ak-portal-dash')) {
+        return generateAutismRegistrationPdfBlob(qrImgElement);
+    }
     await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -3648,6 +3726,82 @@ async function generatePdfBlob(qrImgElement) {
     if (currentPdfBlobUrl) URL.revokeObjectURL(currentPdfBlobUrl);
     currentPdfBlobUrl = URL.createObjectURL(pdfBlob);
     
+    document.getElementById('pdf-viewer').src = currentPdfBlobUrl;
+}
+
+async function generateAutismRegistrationPdfBlob(qrImgElement) {
+    await ensurePdfLogoDataUrl();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const accent = [15, 118, 110];
+    const ink = [15, 23, 42];
+    const muted = [71, 85, 105];
+    const seminarName = getSeminarTitleForRegistrationPdf();
+    let y = pdfCongressHeader(doc, {
+        seminarName,
+        footerLine: 'Autism programme — main registration preview'
+    });
+    const drawSection = (title) => {
+        y = pdfCongressSectionTitle(doc, y + 4, title, accent, ink);
+    };
+    const drawTableRow = (label, value) => {
+        const lh = 6.2;
+        doc.setFontSize(9.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...muted);
+        const lines = doc.splitTextToSize(String(value || '-'), 118);
+        const rowH = Math.max(10, lines.length * lh - 1);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, y + rowH, 196, y + rowH);
+        doc.text(label, 18, y + 7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...ink);
+        doc.text(lines, 72, y + 7);
+        y += rowH;
+    };
+    const appNo = window.__draftApplicationNo || '';
+    if (appNo || seminarName) {
+        drawSection('Application');
+        if (seminarName) drawTableRow('Event', seminarName);
+        if (appNo) drawTableRow('Application number', appNo);
+    }
+    drawSection('Participant');
+    drawTableRow(
+        'Full name',
+        `${document.getElementById('reg-fname').value} ${document.getElementById('reg-mname').value} ${document.getElementById('reg-lname').value}`.trim()
+    );
+    drawTableRow('Email', document.getElementById('reg-email').value);
+    drawTableRow('Phone', document.getElementById('reg-phone').value);
+    const dobEl = document.getElementById('reg-dob');
+    if (dobEl && dobEl.value) drawTableRow('Date of birth', dobEl.value);
+    drawSection('Address');
+    drawTableRow('Address', document.getElementById('reg-addr').value);
+    drawTableRow(
+        'City / State / PIN',
+        `${document.getElementById('reg-city').value}, ${document.getElementById('reg-state').value} — ${document.getElementById('reg-pin').value}`
+    );
+    const countryEl = document.getElementById('reg-country');
+    if (countryEl && countryEl.value) drawTableRow('Country', countryEl.value);
+    const extras = getAutismMainRegExtraFields();
+    if (extras.length) {
+        drawSection('Programme details');
+        extras.forEach((f) => {
+            const el = document.getElementById('reg-field-' + f.key);
+            if (!el) return;
+            let raw =
+                f.type === 'boolean' ? (el.checked ? 'Yes' : 'No') : f.type === 'file' ? el.files?.[0]?.name || '—' : el.value;
+            drawTableRow(f.label || f.key, fieldDisplayLabel(f, raw) || raw || '—');
+        });
+    }
+    pdfAddQrCode(doc, qrImgElement, 166, 44, 34);
+    y += 8;
+    doc.setFontSize(11);
+    doc.setTextColor(180, 83, 9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DRAFT PREVIEW — not submitted', 105, y, { align: 'center' });
+    const pdfBlob = doc.output('blob');
+    if (currentPdfBlobUrl) URL.revokeObjectURL(currentPdfBlobUrl);
+    currentPdfBlobUrl = URL.createObjectURL(pdfBlob);
     document.getElementById('pdf-viewer').src = currentPdfBlobUrl;
 }
 
@@ -3983,35 +4137,23 @@ async function submitApplication() {
     }
 
     const vErr = validateRegistrationAgainstConfigForSteps(
-        document.body.classList.contains('ak-portal-dash') ? 2 : 4
+        document.body.classList.contains('ak-portal-dash') ? getAutismValidationMaxStep() : 4
     );
     if (vErr) {
         alertRegistrationValidation(vErr);
         return;
     }
-    
-    const formDataObj = {
-        fname: document.getElementById('reg-fname').value,
-        mname: document.getElementById('reg-mname').value,
-        lname: document.getElementById('reg-lname').value,
-        email: document.getElementById('reg-email').value,
-        phone: document.getElementById('reg-phone').value,
-        dob: document.getElementById('reg-dob') ? document.getElementById('reg-dob').value : '',
-        address: document.getElementById('reg-addr').value,
-        pin: document.getElementById('reg-pin').value,
-        city: document.getElementById('reg-city').value,
-        state: document.getElementById('reg-state').value,
-        country: document.getElementById('reg-country').value,
-        qual: document.body.classList.contains('ak-portal-dash')
-            ? ''
-            : document.getElementById('reg-qual').value,
-        ncism: document.getElementById('reg-ncism').value,
-        cpin: document.getElementById('reg-cpin') ? document.getElementById('reg-cpin').value : '',
-        college: document.getElementById('reg-college').value,
-        ccity: document.getElementById('reg-ccity').value,
-        cstate: document.getElementById('reg-cstate').value,
-        agree_terms: document.getElementById('tnc').checked ? '1' : ''
-    };
+
+    const formDataObj = collectRegistrationFormData();
+    if (!document.body.classList.contains('ak-portal-dash')) {
+        formDataObj.qual = document.getElementById('reg-qual').value;
+        formDataObj.ncism = document.getElementById('reg-ncism').value;
+        formDataObj.cpin = document.getElementById('reg-cpin') ? document.getElementById('reg-cpin').value : '';
+        formDataObj.college = document.getElementById('reg-college').value;
+        formDataObj.ccity = document.getElementById('reg-ccity').value;
+        formDataObj.cstate = document.getElementById('reg-cstate').value;
+        formDataObj.agree_terms = document.getElementById('tnc').checked ? '1' : '';
+    }
 
     const uid = doctorUserIdOrAlert();
     if (!uid) return;
@@ -4689,13 +4831,47 @@ async function downloadViewedAppPdf() {
     row('Street / full address', formData.address || '');
     row('City, state, PIN', `${formData.city || ''}, ${formData.state || ''} — ${formData.pin || ''}`);
 
-    drawSection('Education & college');
-    row('Qualification', formData.qual || '');
-    if (false) {
-        row('Registration / NCISM ID', formData.ncism || '');
+    const isAutismApp =
+        document.body.classList.contains('ak-portal-dash') ||
+        window.PORTAL_IS_AUTISM ||
+        !formData.qual;
+    if (isAutismApp) {
+        drawSection('Programme details');
+        const skip = new Set([
+            'fname',
+            'mname',
+            'lname',
+            'email',
+            'phone',
+            'dob',
+            'address',
+            'pin',
+            'city',
+            'state',
+            'country',
+            'qual',
+            'ncism',
+            'cpin',
+            'college',
+            'ccity',
+            'cstate',
+            'agree_terms',
+            'certificate_path'
+        ]);
+        Object.keys(formData).forEach((k) => {
+            if (skip.has(k) || formData[k] == null || String(formData[k]).trim() === '') return;
+            const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            row(label, formData[k]);
+        });
+    } else {
+        drawSection('Education & college');
+        row('Qualification', formData.qual || '');
+        if (false) {
+            row('Registration / NCISM ID', formData.ncism || '');
+        }
+        row('College', formData.college || '');
+        row('College location', `${formData.ccity || ''}, ${formData.cstate || ''}`);
     }
-    row('College', formData.college || '');
-    row('College location', `${formData.ccity || ''}, ${formData.cstate || ''}`);
 
     const terms = app.terms_conditions || '';
     if (terms) {

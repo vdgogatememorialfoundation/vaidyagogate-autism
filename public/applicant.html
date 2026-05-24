@@ -404,6 +404,7 @@
                         </div>
 
                         <div id="step-3" class="form-step hidden">
+                            <div class="ak-medical-reg-only">
                             <div class="form-group">
                                 <label>Qualification</label>
                                 <select id="reg-qual" onchange="toggleRegBlock(); toggleCollegeStep();">
@@ -418,8 +419,15 @@
                                 <p id="ncism-status" class="hidden" style="color:#059669;font-weight:600;">Verified</p>
                                 <div class="form-group"><label>Certificate upload</label><input type="file" id="reg-cert-file" accept=".pdf,.jpg,.jpeg,.png,image/*"><p id="reg-cert-hint" style="font-size:0.8rem;color:#64748b;margin:6px 0 0;">Max 4 MB per file on this server. iPhone photos are auto-compressed; PDFs may need compression (ilovepdf.com).</p><p id="reg-cert-success" class="hidden" style="font-size:0.85rem;color:#059669;font-weight:600;margin:6px 0 0;"><i class="fas fa-check-circle"></i> <span id="reg-cert-success-text"></span></p></div>
                             </div>
-                            <button type="button" class="btn-primary" onclick="nextRegistrationStepFromQual()">Next</button>
-                            <button type="button" class="btn-primary" style="background:#64748b;margin-left:8px;" onclick="nextStep(2)">Back</button>
+                            <button type="button" class="btn-primary ak-medical-reg-only" onclick="nextRegistrationStepFromQual()">Next</button>
+                            <button type="button" class="btn-primary ak-medical-reg-only" style="background:#64748b;margin-left:8px;" onclick="nextStep(2)">Back</button>
+                            </div>
+                            <div id="ak-main-reg-extra" class="hidden">
+                                <p style="color:#64748b;margin:0 0 14px;font-size:0.9rem;">Complete programme-specific details for this event. Fields are configured by the admin team.</p>
+                                <div id="reg-autism-extra-fields"></div>
+                                <button type="button" class="btn-primary" onclick="nextStep(5)">Preview</button>
+                                <button type="button" class="btn-primary" style="background:#64748b;margin-left:8px;" onclick="nextStep(2)">Back</button>
+                            </div>
                         </div>
 
                         <div id="step-4" class="form-step hidden">
@@ -448,6 +456,7 @@
                                     <div class="preview-row"><span class="lbl">Qualification</span><span class="val" id="prev-qual"></span></div>
                                     <div id="prev-ncism-box" class="preview-row hidden"><span class="lbl">Reg. ID</span><span class="val" id="prev-ncism"></span></div>
                                     <div id="prev-cert-box" class="preview-row hidden"><span class="lbl">NCISM certificate</span><span class="val" id="prev-cert-val" style="color:#059669;font-weight:600;">—</span></div>
+                                    <div id="prev-autism-extra"></div>
                                     <div id="prev-college-box">
                                     <div class="preview-row"><span class="lbl">College</span><span class="val" id="prev-college"></span></div>
                                     <div class="preview-row"><span class="lbl">College loc.</span><span class="val" id="prev-cloc"></span></div>
@@ -844,9 +853,9 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism3"></script>
+    <script src="/js/applicant.js?v=autism4"></script>
     <script src="/js/autism-form-preview.js?v=1"></script>
-    <script src="/js/applicant-autism.js?v=autism10"></script>
+    <script src="/js/applicant-autism.js?v=autism11"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>

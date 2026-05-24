@@ -632,21 +632,94 @@
         updateProfileDisplayName();
     }
 
+    function renderMainRegExtraFields() {
+        const container = document.getElementById('reg-autism-extra-fields');
+        if (!container) return;
+        container.innerHTML = '';
+        const fields =
+            typeof getAutismMainRegExtraFields === 'function'
+                ? getAutismMainRegExtraFields()
+                : (window.__registrationFormFields || []).filter((f) => f && f.step >= 3);
+        if (!fields.length) {
+            container.innerHTML =
+                '<p style="color:#64748b;font-size:0.88rem;">No extra fields configured. Continue to preview.</p>';
+            return;
+        }
+        fields.forEach((f) => {
+            if (!f || f.enabled === false) return;
+            const fg = document.createElement('div');
+            fg.className = 'form-group';
+            const label = document.createElement('label');
+            label.textContent = (f.label || f.key) + (f.required !== false ? ' *' : '');
+            fg.appendChild(label);
+            let input;
+            const t = String(f.type || 'text').toLowerCase();
+            if (t === 'textarea') {
+                input = document.createElement('textarea');
+                input.rows = 3;
+            } else if (t === 'select') {
+                input = document.createElement('select');
+                const blank = document.createElement('option');
+                blank.value = '';
+                blank.textContent = 'Select';
+                input.appendChild(blank);
+                (f.options || []).forEach((o) => {
+                    const opt = document.createElement('option');
+                    opt.value = o.value != null ? o.value : o.label;
+                    opt.textContent = o.label || o.value;
+                    input.appendChild(opt);
+                });
+            } else if (t === 'boolean') {
+                input = document.createElement('input');
+                input.type = 'checkbox';
+            } else if (t === 'file') {
+                input = document.createElement('input');
+                input.type = 'file';
+                input.accept = f.key === 'photo' ? 'image/*' : '*/*';
+            } else {
+                input = document.createElement('input');
+                input.type = t === 'email' ? 'email' : t === 'tel' ? 'tel' : t === 'date' ? 'date' : 'text';
+            }
+            input.id = 'reg-field-' + f.key;
+            input.dataset.fieldKey = f.key;
+            if (f.required !== false && t !== 'boolean' && t !== 'file') input.required = true;
+            if (f.defaultValue && t !== 'boolean' && t !== 'file') input.value = f.defaultValue;
+            fg.appendChild(input);
+            container.appendChild(fg);
+        });
+    }
+
+    window.renderAutismMainRegistrationFields = renderMainRegExtraFields;
+
     function patchAutismRegistrationFlow() {
         if (typeof hideAutismRegistrationQualUi === 'function') hideAutismRegistrationQualUi();
         if (typeof nextStep !== 'function' || nextStep.__autismSkipQualHook) return;
         const origNext = nextStep;
         window.nextStep = function (step) {
-            if (step === 3 || step === 4) step = 5;
+            if (step === 4) step = 5;
             return origNext.call(this, step);
         };
         window.nextStep.__autismSkipQualHook = true;
+    }
+
+    function patchLoadRegistrationFormConfig() {
+        if (typeof loadRegistrationFormConfigAndApply !== 'function' || loadRegistrationFormConfigAndApply.__akMainRegHook) {
+            return;
+        }
+        const orig = loadRegistrationFormConfigAndApply;
+        window.loadRegistrationFormConfigAndApply = async function () {
+            await orig.apply(this, arguments);
+            if (typeof hideAutismRegistrationQualUi === 'function') hideAutismRegistrationQualUi();
+            renderMainRegExtraFields();
+        };
+        window.loadRegistrationFormConfigAndApply.__akMainRegHook = true;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
         patchAutismRegistrationFlow();
+        patchLoadRegistrationFormConfig();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
         if (accountFields) {
