@@ -270,13 +270,13 @@
     }
 
     function applyBranding() {
-        document.title = "Applicant Portal | Autism Awareness Programme";
+        document.title = "Dashboard | Autism Awareness Programme";
         const h2 = document.querySelector('.sidebar-header h2');
-        if (h2) h2.textContent = 'Applicant Portal';
+        if (h2) h2.textContent = 'My Dashboard';
         const sub = document.querySelector('.sidebar-header p');
         if (sub) sub.textContent = 'Autism Awareness Programme';
         const ht = document.querySelector('.header-title');
-        if (ht) ht.textContent = 'Autism Awareness Portal — Applicant Dashboard';
+        if (ht) ht.textContent = 'Autism Awareness Programme — Dashboard';
         const hi = document.getElementById('header-name');
         if (hi && hi.textContent.includes('Doctor')) hi.textContent = hi.textContent.replace('Doctor', 'Applicant');
     }

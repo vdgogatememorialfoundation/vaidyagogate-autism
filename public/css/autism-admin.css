@@ -1,0 +1,50 @@
+/**
+ * Admin CMS — soft indigo theme (/admin)
+ */
+body.autism-admin {
+    font-family: 'Nunito', 'DM Sans', system-ui, sans-serif !important;
+    background: linear-gradient(165deg, #f5f3ff 0%, #faf8ff 50%, #fff7ed 100%) !important;
+    color: #1e1b4b !important;
+}
+
+.autism-admin .btn-primary {
+    background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3) !important;
+    border-radius: 12px !important;
+}
+
+.autism-admin .btn-secondary {
+    color: #4f46e5 !important;
+    border-color: #c7d2fe !important;
+    background: #eef2ff !important;
+}
+
+.autism-admin .sidebar {
+    background: linear-gradient(180deg, #fff 0%, #faf8ff 100%) !important;
+    border-right: 1px solid #e9e5ff !important;
+}
+
+.autism-admin .sidebar-header h2,
+.autism-admin .sidebar-header h3 {
+    color: #4338ca !important;
+}
+
+.autism-admin .menu-item.active,
+.autism-admin .nav-item.active {
+    background: #eef2ff !important;
+    color: #4f46e5 !important;
+    border-left-color: #ec4899 !important;
+}
+
+.autism-admin input:focus,
+.autism-admin select:focus,
+.autism-admin textarea:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
+}
+
+.autism-admin .top-header,
+.autism-admin header.top-bar-admin {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid #e9e5ff !important;
+}

@@ -1,0 +1,273 @@
+/**
+ * Autism Awareness Programme — public site theme (distinct from VGMF seminar green).
+ */
+.autism-site {
+    --as-ink: #1e1b4b;
+    --as-ink-soft: #4338ca;
+    --as-muted: #64748b;
+    --as-line: #e9e5ff;
+    --as-bg: #faf8ff;
+    --as-surface: #ffffff;
+    --as-primary: #6366f1;
+    --as-primary-dark: #4f46e5;
+    --as-primary-light: #818cf8;
+    --as-secondary: #ec4899;
+    --as-secondary-soft: #fce7f3;
+    --as-accent: #f59e0b;
+    --as-accent-soft: #fef3c7;
+    --as-success: #10b981;
+    --as-radius: 20px;
+    --as-radius-lg: 28px;
+    --as-shadow: 0 12px 40px rgba(99, 102, 241, 0.1);
+    --as-font: 'Nunito', 'DM Sans', system-ui, sans-serif;
+    --as-display: 'Fraunces', Georgia, serif;
+    --cg-green: var(--as-primary-dark);
+    --cg-green-mid: var(--as-primary);
+    --cg-green-light: #eef2ff;
+    --cg-gold: var(--as-accent);
+    --cg-gold-soft: var(--as-accent-soft);
+    --cg-ink: var(--as-ink);
+    --cg-muted: var(--as-muted);
+    --cg-line: var(--as-line);
+    --cg-bg: var(--as-bg);
+    --brand: var(--as-primary);
+    --brand-dark: var(--as-primary-dark);
+    --brand-light: var(--as-primary-light);
+    --ink: var(--as-ink);
+    --muted: var(--as-muted);
+    --line: var(--as-line);
+    --ivory: var(--as-bg);
+    --font: var(--as-font);
+    --font-display: var(--as-display);
+}
+
+.autism-site.congress-site {
+    font-family: var(--as-font);
+    background: linear-gradient(165deg, #faf8ff 0%, #f5f3ff 35%, #fff7ed 100%);
+    color: var(--as-ink);
+}
+
+.autism-site .preloader-ring {
+    border-color: #e0e7ff;
+    border-top-color: var(--as-primary);
+}
+
+.autism-site .cg-utility {
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    color: rgba(255, 255, 255, 0.92);
+    border-bottom: none;
+}
+
+.autism-site .cg-utility-link,
+.autism-site .cg-utility a {
+    color: #fff !important;
+}
+
+.autism-site .cg-utility-signin,
+.autism-site .cg-utility-signup {
+    color: #fff;
+    font-weight: 700;
+}
+
+.autism-site .cg-header {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--as-line) !important;
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.06) !important;
+}
+
+.autism-site .cg-logo-text h1 {
+    font-family: var(--as-display);
+    font-size: 1.05rem;
+    color: var(--as-ink);
+    font-weight: 700;
+}
+
+.autism-site .cg-logo-text p {
+    color: var(--as-primary);
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 0.82rem;
+}
+
+.autism-site .cg-nav a {
+    color: var(--as-ink-soft);
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 8px 14px;
+}
+
+.autism-site .cg-nav a:hover,
+.autism-site .cg-nav a.active {
+    background: #eef2ff;
+    color: var(--as-primary-dark);
+}
+
+.autism-site .cg-ticker {
+    background: linear-gradient(90deg, #eef2ff, #fce7f3);
+    border-bottom: 1px solid var(--as-line);
+}
+
+.autism-site .cg-ticker-badge {
+    background: var(--as-secondary);
+    color: #fff;
+}
+
+.autism-site .congress-hero,
+.autism-site .congress-hero-wrap {
+    border-radius: 0 0 var(--as-radius-lg) var(--as-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--as-shadow);
+}
+
+.autism-site .congress-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(30, 27, 75, 0.55) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.autism-site .vg-stats-strip {
+    background: var(--as-surface);
+    border-top: 1px solid var(--as-line);
+    border-bottom: 1px solid var(--as-line);
+    margin-top: -1px;
+}
+
+.autism-site .vg-stat {
+    border-left: 4px solid var(--as-primary);
+    padding-left: 16px;
+}
+
+.autism-site .vg-stat strong {
+    color: var(--as-primary-dark);
+    font-family: var(--as-display);
+}
+
+.autism-site .cg-fab-register {
+    background: linear-gradient(135deg, var(--as-secondary), #db2777) !important;
+    box-shadow: 0 12px 32px rgba(236, 72, 153, 0.35) !important;
+    border-radius: 999px !important;
+    font-weight: 800;
+}
+
+.autism-site .section-head h2,
+.autism-site .vgmf-section h2,
+.autism-site .cg-section-head h2 {
+    font-family: var(--as-display);
+    color: var(--as-ink);
+    font-weight: 700;
+}
+
+.autism-site .section-head p {
+    color: var(--as-muted);
+}
+
+.autism-site .cards-grid .card,
+.autism-site .feature-card,
+.autism-site .open-seminar-card {
+    border-radius: var(--as-radius);
+    border: 1px solid var(--as-line);
+    box-shadow: var(--as-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.autism-site .cards-grid .card:hover,
+.autism-site .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 48px rgba(99, 102, 241, 0.14);
+}
+
+.autism-site .btn-primary,
+.autism-site button.btn-primary {
+    background: linear-gradient(135deg, var(--as-primary), var(--as-primary-dark)) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3) !important;
+    color: #fff !important;
+}
+
+.autism-site .btn-primary:hover {
+    filter: brightness(1.06);
+}
+
+.autism-site .notices-panel {
+    background: linear-gradient(180deg, #fff 0%, #faf8ff 100%);
+    border: 1px solid var(--as-line);
+    border-radius: var(--as-radius);
+    border-top: 4px solid var(--as-accent);
+}
+
+.autism-site .notices-panel h3 {
+    color: var(--as-primary-dark);
+}
+
+.autism-site .speakers-grid .speaker-card {
+    border-radius: var(--as-radius);
+    overflow: hidden;
+}
+
+.autism-site .page-panel,
+.autism-site .verify-panel {
+    border-radius: var(--as-radius);
+    border: 1px solid var(--as-line);
+    box-shadow: var(--as-shadow);
+}
+
+.autism-site .faq-item {
+    border-radius: 14px;
+    border: 1px solid var(--as-line);
+}
+
+.autism-site .site-footer,
+.autism-site .cg-footer {
+    background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+    color: #e0e7ff;
+}
+
+.autism-site .site-footer a,
+.autism-site .cg-footer a {
+    color: #c7d2fe;
+}
+
+.autism-site .site-footer h4,
+.autism-site .cg-footer h4 {
+    color: #fff;
+    font-family: var(--as-display);
+}
+
+.autism-site #auth-modal .modal-content,
+.autism-site .auth-modal-card {
+    border-radius: var(--as-radius-lg);
+    border: 1px solid var(--as-line);
+    box-shadow: 0 28px 80px rgba(99, 102, 241, 0.2);
+}
+
+.autism-site .auth-tab-btn.active {
+    background: var(--as-primary) !important;
+    color: #fff !important;
+}
+
+.autism-site input:focus,
+.autism-site select:focus,
+.autism-site textarea:focus {
+    border-color: var(--as-primary-light) !important;
+    box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.25) !important;
+}
+
+.autism-site .home-split .cards-grid .card i {
+    color: var(--as-primary);
+}
+
+.autism-site .open-seminars-strip .btn-primary {
+    background: linear-gradient(135deg, var(--as-secondary), #be185d) !important;
+}
+
+.autism-site .vg-skip-link:focus {
+    background: var(--as-primary);
+    color: #fff;
+}

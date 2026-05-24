@@ -1,4 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="VGMF">
-  <rect width="32" height="32" rx="6" fill="#0f766e"/>
-  <text x="16" y="21" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="700" fill="#fef3c7">V</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Autism Awareness">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#g)"/>
+  <circle cx="11" cy="14" r="3" fill="#fef08a"/>
+  <circle cx="21" cy="12" r="2.5" fill="#a5f3fc"/>
+  <circle cx="18" cy="22" r="2.5" fill="#fbcfe8"/>
+  <path d="M8 22 Q16 8 24 20" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>

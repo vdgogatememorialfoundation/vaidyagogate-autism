@@ -1,0 +1,180 @@
+/**
+ * Applicant dashboard — warm inclusive theme (/dashboard)
+ */
+.autism-dashboard {
+    --ad-primary: #6366f1;
+    --ad-primary-dark: #4f46e5;
+    --ad-secondary: #ec4899;
+    --ad-accent: #f59e0b;
+    --ad-bg: #f8f7ff;
+    --ad-surface: #ffffff;
+    --ad-ink: #1e1b4b;
+    --ad-muted: #64748b;
+    --ad-sidebar: linear-gradient(195deg, #4338ca 0%, #6366f1 48%, #7c3aed 100%);
+    --ad-font: 'Nunito', 'DM Sans', system-ui, sans-serif;
+}
+
+.autism-dashboard body,
+body.autism-dashboard {
+    font-family: var(--ad-font) !important;
+    background: linear-gradient(160deg, #f5f3ff 0%, #fdf4ff 40%, var(--ad-bg) 100%) !important;
+    color: var(--ad-ink) !important;
+}
+
+.autism-dashboard .sidebar {
+    background: var(--ad-sidebar) !important;
+    box-shadow: 8px 0 40px rgba(79, 70, 229, 0.25) !important;
+    color: #e0e7ff !important;
+}
+
+.autism-dashboard .sidebar-header {
+    border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.autism-dashboard .sidebar-header h2 {
+    color: #fff !important;
+    font-weight: 800 !important;
+}
+
+.autism-dashboard .sidebar-header p {
+    color: #c7d2fe !important;
+    text-transform: none !important;
+    letter-spacing: 0.04em !important;
+}
+
+.autism-dashboard .menu-item {
+    color: #e0e7ff !important;
+    border-radius: 0 14px 14px 0 !important;
+}
+
+.autism-dashboard .menu-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+.autism-dashboard .menu-item.active {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-left-color: var(--ad-accent) !important;
+    color: #fff !important;
+}
+
+.autism-dashboard .top-header {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-bottom: 1px solid #e9e5ff !important;
+    box-shadow: 0 2px 16px rgba(99, 102, 241, 0.06) !important;
+}
+
+.autism-dashboard .header-title {
+    color: var(--ad-primary-dark) !important;
+    font-weight: 800 !important;
+}
+
+.autism-dashboard .hi-user {
+    color: var(--ad-ink) !important;
+}
+
+.autism-dashboard .user-id {
+    background: linear-gradient(135deg, #eef2ff, #fce7f3) !important;
+    color: var(--ad-primary-dark) !important;
+    border-color: #c7d2fe !important;
+}
+
+.autism-dashboard .header-link {
+    color: var(--ad-primary) !important;
+}
+
+.autism-dashboard .doctor-header-photo,
+.autism-dashboard .doctor-sidebar-photo {
+    border-color: var(--ad-accent) !important;
+}
+
+.autism-dashboard .section-title {
+    color: var(--ad-primary-dark) !important;
+    border-bottom-color: #c7d2fe !important;
+    font-weight: 800 !important;
+}
+
+.autism-dashboard .card {
+    border-radius: 18px !important;
+    border: 1px solid #e9e5ff !important;
+    box-shadow: 0 10px 36px rgba(99, 102, 241, 0.08) !important;
+}
+
+.autism-dashboard .btn-primary {
+    background: linear-gradient(135deg, var(--ad-primary), var(--ad-primary-dark)) !important;
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.28) !important;
+    border-radius: 12px !important;
+}
+
+.autism-dashboard .btn-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border-radius: 12px !important;
+}
+
+.autism-dashboard .stat-card {
+    border-top-color: var(--ad-secondary) !important;
+    border-radius: 16px !important;
+}
+
+.autism-dashboard .stat-card h4 {
+    color: var(--ad-primary-dark) !important;
+}
+
+.autism-dashboard .data-table thead th {
+    background: linear-gradient(180deg, #f5f3ff, #eef2ff) !important;
+    color: var(--ad-primary-dark) !important;
+    border-bottom-color: #c7d2fe !important;
+}
+
+.autism-dashboard .data-table tbody tr:hover td {
+    background: #faf8ff !important;
+}
+
+.autism-dashboard .step-indicator {
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+
+.autism-dashboard .step.active {
+    color: var(--ad-primary-dark) !important;
+}
+
+.autism-dashboard .track-step.completed .track-icon {
+    background: var(--ad-success) !important;
+}
+
+.autism-dashboard .track-step.active .track-icon {
+    background: var(--ad-primary) !important;
+    box-shadow: 0 0 0 4px #e0e7ff !important;
+}
+
+.autism-dashboard .notification-bar {
+    background: linear-gradient(90deg, #fef3c7, #fce7f3) !important;
+    border-left-color: var(--ad-accent) !important;
+    color: #92400e !important;
+}
+
+.autism-dashboard .announcements-box {
+    border-color: #e9e5ff !important;
+}
+
+.autism-dashboard #auth-overlay {
+    background: rgba(30, 27, 75, 0.45) !important;
+}
+
+.autism-dashboard .doctor-auth-card,
+.autism-dashboard #auth-overlay > div {
+    border-radius: 20px !important;
+    border: 1px solid #e9e5ff !important;
+}
+
+.autism-dashboard .form-group input:focus,
+.autism-dashboard .form-group select:focus,
+.autism-dashboard .form-group textarea:focus {
+    border-color: var(--ad-primary-light) !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+}
+
+.autism-dashboard .portal-bright .btn-primary {
+    background: linear-gradient(135deg, var(--ad-primary), var(--ad-primary-dark)) !important;
+}

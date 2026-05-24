@@ -21,7 +21,7 @@
 
     const QUICK_ACCESS = [
         { icon: 'fa-user-plus', title: 'Start enrollment', text: 'Create your doctor account', action: 'register' },
-        { icon: 'fa-user', title: "Applicant Dashboard", text: 'Sign in and manage registration', href: '/dashboard' },
+        { icon: 'fa-puzzle-piece', title: 'Participant dashboard', text: 'Pre-register, register, upload entries, get your e-ticket', href: '/dashboard' },
         { icon: 'fa-calendar-alt', title: 'Event agenda', text: 'Sessions and timings', section: 'schedule' },
         { icon: 'fa-microphone', title: 'Faculty board', text: 'Featured experts', section: 'home', anchor: 'speakers-section' },
         { icon: 'fa-ticket-alt', title: 'Open windows', text: 'Current registrations', section: 'home', anchor: 'seminars-section' },

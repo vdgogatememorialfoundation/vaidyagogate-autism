@@ -1,29 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="autism-dashboard">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0f766e">
+    <meta name="theme-color" content="#6366f1">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="shortcut icon" href="/favicon.ico">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Applicant Portal | Autism Awareness Programme</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
-    <link rel="stylesheet" href="/css/vgmf-portal-bright.css">
     <link rel="stylesheet" href="/css/vgmf-mobile-portal.css">
+    <link rel="stylesheet" href="/css/autism-dashboard.css?v=1">
     <style>
         :root {
-            --doctor-primary: #0f766e;
-            --doctor-primary-dark: #115e59;
-            --doctor-accent: #fbbf24;
-            --doctor-sidebar: #0f766e;
-            --doctor-bg: #f8fafc;
-            --doctor-text: #134e4a;
+            --doctor-primary: #6366f1;
+            --doctor-primary-dark: #4f46e5;
+            --doctor-accent: #f59e0b;
+            --doctor-sidebar: #6366f1;
+            --doctor-bg: #f8f7ff;
+            --doctor-text: #1e1b4b;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: linear-gradient(180deg, #f0fdfa 0%, #ecfeff 35%, var(--doctor-bg) 100%); color: var(--doctor-text); }
+        body { font-family: 'Nunito', 'DM Sans', system-ui, sans-serif; background: linear-gradient(180deg, #f5f3ff 0%, #fdf4ff 35%, var(--doctor-bg) 100%); color: var(--doctor-text); }
         
         .hidden { display: none !important; }
         .dashboard-container { display: flex; min-height: 100vh; }
@@ -112,7 +112,7 @@
         #seminar-track-live, #case-track-live { font-size: 0.82rem; color: #0f766e; font-weight: 700; margin-bottom: 10px; }
     </style>
 </head>
-<body class="portal-bright" data-portal-theme="doctor">
+<body class="portal-bright autism-dashboard" data-portal-theme="doctor">
 
     <!-- Doctor portal login -->
     <div id="auth-overlay">
