@@ -7,8 +7,10 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
+const AUTISM = 'https://autism.vaidyagogate.org';
 const SEMINAR = 'https://seminar.vaidyagogate.org';
 const ALLOW = [
+    AUTISM,
     SEMINAR,
     'https://admin.vaidyagogate.org',
     'https://judge.vaidyagogate.org',
@@ -19,7 +21,7 @@ const APPS = [
     { dir: 'admin-mobile', url: `${SEMINAR}/admin.html`, title: 'VGMF Admin' },
     { dir: 'judge-mobile', url: `${SEMINAR}/judge.html`, title: 'VGMF Judge' },
     { dir: 'doctor-mobile', url: `${SEMINAR}/doctor.html?app=1`, title: 'VGMF Doctor' },
-    { dir: 'scanner-mobile', url: `${SEMINAR}/scanner.html`, title: 'VGMF Scanner' }
+    { dir: 'scanner-mobile', url: `${AUTISM}/scanner.html`, title: 'VGMF Scanner' }
 ];
 
 function writeConfig(app) {
