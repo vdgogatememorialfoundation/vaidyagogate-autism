@@ -112,16 +112,16 @@
                     <span class="ak-sticker ak-sticker-heart" aria-hidden="true">💛</span>
                     <span class="ak-sticker ak-sticker-rainbow" aria-hidden="true">🌈</span>
                     <div class="ak-photo ak-photo-main">
-                        <img src="https://images.unsplash.com/photo-1503454537844-31c925c8f3f0?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="Children playing together outdoors" width="800" height="800" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade">
+                        <img src="https://picsum.photos/seed/autism-hero-main/800/800" alt="Children playing together outdoors" width="800" height="800" loading="eager" decoding="async" referrerpolicy="no-referrer">
                     </div>
                     <div class="ak-photo ak-photo-a">
-                        <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Happy children outdoors" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
+                        <img src="https://picsum.photos/seed/autism-hero-a/600/600" alt="Happy children outdoors" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                     </div>
                     <div class="ak-photo ak-photo-b">
-                        <img src="https://images.unsplash.com/photo-1509062522246-3755977927d8?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Learning and activities" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
+                        <img src="https://picsum.photos/seed/autism-hero-b/600/600" alt="Learning and activities" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                     </div>
                     <div class="ak-photo ak-photo-c">
-                        <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Smiling participant" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
+                        <img src="https://picsum.photos/seed/autism-hero-c/600/600" alt="Smiling participant" width="600" height="600" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                     </div>
                 </div>
             </div>
@@ -160,11 +160,11 @@
     <section class="ak-gallery-strip ak-reveal" aria-labelledby="ak-gallery-title">
         <h2 id="ak-gallery-title">Together we learn, play &amp; grow</h2>
         <div class="ak-gallery-row">
-            <img src="https://images.unsplash.com/photo-1472162072942-c51409ebe099?auto=format&amp;fit=crop&amp;w=500&amp;q=80" alt="Community together" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
-            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&amp;fit=crop&amp;w=500&amp;q=80" alt="Learning together" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
-            <img src="https://images.unsplash.com/photo-1516627145497-ae6968311f48?auto=format&amp;fit=crop&amp;w=500&amp;q=80" alt="Outdoor activities" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
-            <img src="https://images.unsplash.com/photo-1596464716127-f3a29c37946b?auto=format&amp;fit=crop&amp;w=500&amp;q=80" alt="Creative time" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
-            <img src="https://images.unsplash.com/photo-1544776193-352d06e1fc2b?auto=format&amp;fit=crop&amp;w=500&amp;q=80" alt="Friends and fun" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer-when-downgrade">
+            <img src="https://picsum.photos/seed/autism-g1/500/320" alt="Community together" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <img src="https://picsum.photos/seed/autism-g2/500/320" alt="Learning together" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <img src="https://picsum.photos/seed/autism-g3/500/320" alt="Outdoor activities" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <img src="https://picsum.photos/seed/autism-g4/500/320" alt="Creative time" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <img src="https://picsum.photos/seed/autism-g5/500/320" alt="Friends and fun" width="500" height="320" loading="lazy" decoding="async" referrerpolicy="no-referrer">
         </div>
     </section>
 
@@ -1713,6 +1713,11 @@
             if (!region) return;
             try {
                 const res = await fetch('/api/public/certificate-verify/schedule');
+                if (!res.ok) {
+                    region.classList.add('hidden');
+                    region.innerHTML = '';
+                    return;
+                }
                 const list = await res.json();
                 const pending = (Array.isArray(list) ? list : []).filter((x) => x.countdown && !x.live);
                 if (!pending.length) {
@@ -1732,7 +1737,7 @@
                     '<p class="cv-home-cd-lbl" style="font-size:0.75rem;color:#57534e;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin:0 0 10px;">' +
                     escHtml(item.countdown.label || 'Certificate verification opens in') +
                     '</p>' +
-                    '<p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">Confirm that a Vaidya Gogate Memorial Foundation seminar certificate is genuine. Verification is available only after the seminar ends and the foundation has enabled it for that event.</p>' +
+                    '<p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">Check that a participation certificate from our programme is genuine. Verification opens after the event ends when enabled by the organisers.</p>' +
                     '<div class="countdown-grid">' +
                     '<div class="box"><h2 class="cv-home-cd-d" style="margin:0;">00</h2><span style="font-size:0.65rem;color:#166534;font-weight:700;">DAYS</span></div>' +
                     '<div class="box"><h2 class="cv-home-cd-h" style="margin:0;">00</h2><span style="font-size:0.65rem;color:#166534;font-weight:700;">HOURS</span></div>' +
@@ -1892,5 +1897,6 @@
     <script src="/js/autism-public-ui.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>
+    <script src="/js/autism-images.js?v=1"></script>
 </body>
 </html>

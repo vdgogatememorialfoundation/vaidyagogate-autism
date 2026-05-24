@@ -108,9 +108,12 @@
     async function loadSchedule() {
         try {
             const res = await fetch('/api/public/certificate-verify/schedule');
-            const list = await res.json();
-            if (!res.ok) throw new Error(list.error || 'Could not load schedule');
-            state.schedule = Array.isArray(list) ? list : [];
+            const list = await res.json().catch(() => []);
+            if (!res.ok || !Array.isArray(list)) {
+                state.schedule = [];
+                return;
+            }
+            state.schedule = list;
         } catch (e) {
             console.error(e);
             state.schedule = [];
@@ -122,8 +125,11 @@
         if (!sel) return;
         try {
             const res = await fetch('/api/public/certificate-verify/seminars');
-            const list = await res.json();
-            if (!res.ok) throw new Error(list.error || 'Could not load seminars');
+            const list = await res.json().catch(() => []);
+            if (!res.ok || !Array.isArray(list)) {
+                sel.innerHTML = '<option value="">No events open for verification yet</option>';
+                return;
+            }
             sel.innerHTML = '<option value="">Select seminar</option>';
             (list || []).forEach((s) => {
                 const opt = document.createElement('option');

@@ -1,8 +1,4 @@
-/** Client-side person name rules (no Dr./Vd./Doctor titles). */
-const NAME_REJECTED_PREFIXES = [
-    'dr', 'dr.', 'doctor', 'vd', 'vd.', 'vaidya', 'prof', 'prof.', 'professor',
-    'mr', 'mr.', 'mrs', 'mrs.', 'ms', 'ms.', 'shri', 'shri.', 'smt', 'smt.'
-];
+/** Client-side person names — autism portal (simple names, no title rules). */
 
 function validatePersonNameClient(name, fieldLabel) {
     const label = fieldLabel || 'Name';
@@ -10,41 +6,59 @@ function validatePersonNameClient(name, fieldLabel) {
         return { valid: false, message: `${label} is required` };
     }
     const trimmed = String(name).trim().replace(/\s+/g, ' ');
-    const lower = trimmed.toLowerCase();
-    for (const prefix of NAME_REJECTED_PREFIXES) {
-        if (lower === prefix || lower.startsWith(prefix + ' ') || lower.startsWith(prefix + '.')) {
-            return {
-                valid: false,
-                message: `${label} cannot include titles like Dr., Vd., or Doctor. Use only your name (e.g. First Rajesh, Middle Raj, Last Dhave).`
-            };
-        }
+    if (trimmed.length < 2) {
+        return { valid: false, message: `${label} must be at least 2 characters` };
     }
     if (/\d/.test(trimmed)) {
         return { valid: false, message: `${label} cannot contain numbers` };
     }
-    if (trimmed.length < 2) {
-        return { valid: false, message: `${label} must be at least 2 characters` };
-    }
     return { valid: true, cleanedName: trimmed };
 }
 
-/** Remove honorifics for display (Dr., Mr., etc.) — keeps given/family name only. */
+/** Optional display cleanup — removes common honorifics only for showing names. */
 function stripPersonNameTitles(name) {
     let s = String(name == null ? '' : name).trim().replace(/\s+/g, ' ');
     if (!s) return '';
-    const lower = s.toLowerCase();
-    for (const prefix of NAME_REJECTED_PREFIXES) {
-        const re = new RegExp('^' + prefix.replace('.', '\\.') + '\\.?\\s+', 'i');
-        if (lower === prefix || lower === prefix + '.') {
-            return '';
+    const prefixes = [
+        'dr',
+        'dr.',
+        'doctor',
+        'vd',
+        'vd.',
+        'vaidya',
+        'prof',
+        'prof.',
+        'mr',
+        'mr.',
+        'mrs',
+        'mrs.',
+        'ms',
+        'ms.'
+    ];
+    let lower = s.toLowerCase();
+    for (let i = 0; i < 20; i++) {
+        let changed = false;
+        for (const p of prefixes) {
+            const re = new RegExp('^' + p.replace('.', '\\.') + '\\.?\\s+', 'i');
+            if (lower === p || lower === p + '.') {
+                s = '';
+                lower = '';
+                changed = true;
+                break;
+            }
+            if (re.test(s)) {
+                s = s.replace(re, '').trim();
+                lower = s.toLowerCase();
+                changed = true;
+            }
         }
-        s = s.replace(re, '');
+        if (!changed) break;
     }
     return s.trim();
 }
 
 function formatPersonDisplayName(parts) {
-    return parts
+    return (parts || [])
         .map((p) => stripPersonNameTitles(p))
         .filter(Boolean)
         .join(' ')
@@ -53,7 +67,11 @@ function formatPersonDisplayName(parts) {
 
 function validateRegistrationNamesClient(formData) {
     const fd = formData || {};
-    const checks = [['fname', 'First name'], ['mname', 'Middle name'], ['lname', 'Last name']];
+    const checks = [
+        ['fname', 'First name'],
+        ['mname', 'Middle name'],
+        ['lname', 'Last name']
+    ];
     for (const [key, label] of checks) {
         const raw = fd[key];
         if (raw == null || String(raw).trim() === '') {

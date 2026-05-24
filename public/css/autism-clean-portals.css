@@ -1,0 +1,194 @@
+/**
+ * Clean white + blue theme — applicant dashboard & admin (autism portal).
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+    --ak-blue: #2563eb;
+    --ak-blue-dark: #1d4ed8;
+    --ak-blue-light: #3b82f6;
+    --ak-blue-pale: #eff6ff;
+    --ak-text: #1e3a8a;
+    --ak-muted: #64748b;
+    --ak-border: #dbeafe;
+    --ak-white: #ffffff;
+}
+
+/* —— Applicant dashboard —— */
+body.ak-portal-dash,
+body.autism-dashboard.ak-portal-dash {
+    --doctor-primary: var(--ak-blue) !important;
+    --doctor-primary-dark: var(--ak-blue-dark) !important;
+    --doctor-accent: var(--ak-blue-light) !important;
+    --doctor-sidebar: var(--ak-blue) !important;
+    --doctor-bg: #f8fafc !important;
+    --doctor-text: var(--ak-text) !important;
+    font-family: 'Inter', 'Nunito', system-ui, sans-serif !important;
+    background: #f8fafc !important;
+    color: var(--ak-text) !important;
+}
+
+body.ak-portal-dash .sidebar {
+    background: var(--ak-white) !important;
+    border-right: 1px solid var(--ak-border) !important;
+    box-shadow: 2px 0 12px rgba(37, 99, 235, 0.06) !important;
+    color: var(--ak-text) !important;
+}
+
+body.ak-portal-dash .sidebar-header {
+    border-bottom: 1px solid var(--ak-border) !important;
+}
+
+body.ak-portal-dash .sidebar-header h2,
+body.ak-portal-dash .sidebar-header p {
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-dash .menu-item {
+    color: var(--ak-text) !important;
+    font-weight: 600 !important;
+}
+
+body.ak-portal-dash .menu-item i {
+    color: var(--ak-blue) !important;
+}
+
+body.ak-portal-dash .menu-item:hover {
+    background: var(--ak-blue-pale) !important;
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-dash .menu-item.active {
+    background: var(--ak-blue-pale) !important;
+    color: var(--ak-blue-dark) !important;
+    border-left-color: var(--ak-blue) !important;
+}
+
+body.ak-portal-dash .top-header,
+body.ak-portal-dash .card,
+body.ak-portal-dash .stat-card,
+body.ak-portal-dash .announcements-box {
+    background: var(--ak-white) !important;
+    border: 1px solid var(--ak-border) !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.06) !important;
+}
+
+body.ak-portal-dash .header-title,
+body.ak-portal-dash .section-title,
+body.ak-portal-dash .hi-user {
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-dash .section-title {
+    border-bottom-color: var(--ak-border) !important;
+}
+
+body.ak-portal-dash .btn-primary {
+    background: var(--ak-blue) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+}
+
+body.ak-portal-dash .btn-primary:hover {
+    background: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-dash .notification-bar {
+    background: var(--ak-blue-pale) !important;
+    color: var(--ak-blue-dark) !important;
+    border-left-color: var(--ak-blue) !important;
+}
+
+body.ak-portal-dash #auth-overlay {
+    background: rgba(248, 250, 252, 0.92) !important;
+}
+
+body.ak-portal-dash .doctor-auth-card,
+body.ak-portal-dash #auth-overlay > div {
+    border: 1px solid var(--ak-border) !important;
+    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.1) !important;
+}
+
+body.ak-portal-dash #doctor-auth-title {
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-dash .form-group label {
+    color: var(--ak-text) !important;
+}
+
+body.ak-portal-dash .form-group input,
+body.ak-portal-dash .form-group select,
+body.ak-portal-dash .form-group textarea {
+    border: 1px solid var(--ak-border) !important;
+    background: var(--ak-white) !important;
+}
+
+/* —— Admin —— */
+body.ak-portal-admin,
+body.autism-admin.ak-portal-admin {
+    font-family: 'Inter', 'Nunito', system-ui, sans-serif !important;
+    background: #f8fafc !important;
+    color: var(--ak-text) !important;
+}
+
+body.ak-portal-admin .sidebar {
+    background: var(--ak-white) !important;
+    border-right: 1px solid var(--ak-border) !important;
+    box-shadow: 2px 0 12px rgba(37, 99, 235, 0.06) !important;
+}
+
+body.ak-portal-admin .sidebar-header h2,
+body.ak-portal-admin .menu-item,
+body.ak-portal-admin .top-header h2 {
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-admin .menu-item {
+    color: var(--ak-text) !important;
+}
+
+body.ak-portal-admin .menu-item:hover,
+body.ak-portal-admin .menu-item.active {
+    background: var(--ak-blue-pale) !important;
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-admin .menu-item i {
+    color: var(--ak-blue) !important;
+}
+
+body.ak-portal-admin .top-header,
+body.ak-portal-admin .card,
+body.ak-portal-admin .main-content {
+    background: var(--ak-white) !important;
+}
+
+body.ak-portal-admin .card {
+    border: 1px solid var(--ak-border) !important;
+    border-left: 4px solid var(--ak-blue) !important;
+}
+
+body.ak-portal-admin .btn-primary {
+    background: var(--ak-blue) !important;
+    color: #fff !important;
+}
+
+body.ak-portal-admin #auth-overlay {
+    background: rgba(248, 250, 252, 0.95) !important;
+}
+
+body.ak-portal-admin #auth-overlay > div,
+body.ak-portal-admin .ak-login-card {
+    border: 1px solid var(--ak-border) !important;
+}
+
+body.ak-portal-admin #auth-overlay h2 {
+    color: var(--ak-blue-dark) !important;
+}
+
+body.ak-portal-admin .data-table th {
+    background: var(--ak-blue-pale) !important;
+    color: var(--ak-blue-dark) !important;
+}

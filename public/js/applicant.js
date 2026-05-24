@@ -91,7 +91,7 @@ function regCertStatusLabel() {
 
 function updateRegistrationPreviewCertificate() {
     const qual = document.getElementById('reg-qual') && document.getElementById('reg-qual').value;
-    const needsCert = qual === 'PG' || qual === 'Practicing Vaidya' || qual === 'Practitioner';
+    const needsCert = false;
     const certName = getRegCertFileLabel();
     const certBox = document.getElementById('prev-cert-box');
     const certVal = document.getElementById('prev-cert-val');
@@ -239,8 +239,9 @@ function escapeHtmlDoctor(s) {
         .replace(/"/g, '&quot;');
 }
 
-function generateCasePreviewPdf() {
+async function generateCasePreviewPdf() {
     if (!window.jspdf) return;
+    await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
@@ -250,8 +251,13 @@ function generateCasePreviewPdf() {
     const files = getCaseSelectedFileMeta();
     const PU = window.PortalUpload;
     const fmt = PU && PU.formatBytes ? PU.formatBytes.bind(PU) : (n) => String(n);
+    const seminarName =
+        (activeCaseProgram && activeCaseProgram.title) || getSeminarTitleForRegistrationPdf() || '';
 
-    let y = pdfCongressHeader(doc, 'Case presentation - draft preview');
+    let y = pdfCongressHeader(doc, {
+        seminarName,
+        footerLine: 'Case presentation — draft preview'
+    });
     const drawSection = (title) => {
         y = pdfCongressSectionTitle(doc, y + 4, title, accent, ink);
     };
@@ -774,9 +780,10 @@ function renderTrackerStepsHtml(timeline) {
 
 function doctorNormalizeQualOptions(options) {
     const canon = {
-        'Practicing Vaidya': { value: 'Practicing Vaidya', label: 'Practicing Vaidya' },
-        Practitioner: { value: 'Practitioner', label: 'Practitioner' },
-        PG: { value: 'PG', label: 'PG' }
+        Participant: { value: 'Participant', label: 'Participant' },
+        Parent: { value: 'Parent', label: 'Parent / Guardian' },
+        Educator: { value: 'Educator', label: 'Educator' },
+        Other: { value: 'Other', label: 'Other' }
     };
     if (!Array.isArray(options) || !options.length) return Object.values(canon);
     const out = [];
@@ -918,8 +925,62 @@ async function loadDoctorPortalYear() {
 }
 
 let siteLogoPath = '';
+let __pdfLogoDataUrl = null;
+const PDF_ORG_NAME = 'Vaidya Gogate Memorial Foundation';
 const COMPUTER_GENERATED_NOTICE =
     'This is a computer-generated document. It does not require a physical signature.';
+
+function fetchImageAsDataUrl(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } catch (e) {
+                reject(e);
+            }
+        };
+        img.onerror = () => reject(new Error('image load failed'));
+        img.src = url;
+    });
+}
+
+async function ensurePdfLogoDataUrl() {
+    if (__pdfLogoDataUrl) return __pdfLogoDataUrl;
+    if (!siteLogoPath && !window.__siteLogoPath) await loadSiteBranding();
+    const candidates = [siteLogoPath, window.__siteLogoPath, '/api/branding/logo/file', '/favicon.svg'].filter(
+        Boolean
+    );
+    for (const url of [...new Set(candidates)]) {
+        try {
+            const data = await fetchImageAsDataUrl(url);
+            if (data) {
+                __pdfLogoDataUrl = data;
+                return data;
+            }
+        } catch (_) {
+            /* try next */
+        }
+    }
+    __pdfLogoDataUrl = '';
+    return '';
+}
+
+function getSeminarTitleForRegistrationPdf() {
+    const el = document.getElementById('registration-seminar-name');
+    if (el && el.textContent) {
+        return String(el.textContent)
+            .replace(/^Registering for:\s*/i, '')
+            .trim();
+    }
+    return (window.__activeSeminarTitle || '').trim();
+}
 
 async function loadSiteBranding() {
     try {
@@ -931,19 +992,30 @@ async function loadSiteBranding() {
             siteLogoPath = (data && data.logoPath) || '';
         }
         siteLogoPath = window.__siteLogoPath || siteLogoPath || '';
+        __pdfLogoDataUrl = null;
+        await ensurePdfLogoDataUrl();
     } catch (e) {
         console.error(e);
     }
 }
 
-function brandingHeaderHtml() {
+function brandingHeaderHtml(seminarName) {
     const logo = siteLogoPath
-        ? '<img src="' + escapeHtml(siteLogoPath) + '" alt="Logo" style="max-height:44px;max-width:140px;object-fit:contain;">'
+        ? '<img src="' + escapeHtml(siteLogoPath) + '" alt="Logo" style="max-height:48px;max-width:120px;object-fit:contain;">'
         : '';
+    const sem = (seminarName || getSeminarTitleForRegistrationPdf() || '').trim();
     return (
-        '<div class="doc-logo-row" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
+        '<div class="doc-logo-row" style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;">' +
         logo +
-        '<strong style="color:#0f766e;">Vaidya Gogate Memorial Foundation</strong></div>'
+        '<div><strong style="color:#0f766e;font-size:1.05rem;">' +
+        escapeHtml(PDF_ORG_NAME) +
+        '</strong>' +
+        (sem
+            ? '<div style="margin-top:6px;font-size:0.95rem;color:#334155;font-weight:600;">' +
+              escapeHtml(sem) +
+              '</div>'
+            : '') +
+        '</div></div>'
     );
 }
 
@@ -1180,13 +1252,14 @@ const DEFAULT_REGISTRATION_FALLBACK_FIELDS = [
         enabled: true,
         required: true,
         options: [
-            { value: 'Practicing Vaidya', label: 'Practicing Vaidya' },
-            { value: 'Practitioner', label: 'Practitioner' },
-            { value: 'PG', label: 'PG' }
+            { value: 'Participant', label: 'Participant' },
+            { value: 'Parent', label: 'Parent / Guardian' },
+            { value: 'Educator', label: 'Educator' },
+            { value: 'Other', label: 'Other' }
         ]
     },
-    { key: 'ncism', label: 'Medical registration / NCISM', type: 'text', step: 3, enabled: true, required: true, onlyWhenAdvancedQual: true },
-    { key: 'certificate', label: 'Certificate upload', type: 'file', step: 3, enabled: true, required: true, onlyWhenAdvancedQual: true },
+    { key: 'ncism', label: 'Medical registration / NCISM', type: 'text', step: 3, enabled: false, required: false, onlyWhenAdvancedQual: true },
+    { key: 'certificate', label: 'Certificate upload', type: 'file', step: 3, enabled: false, required: false, onlyWhenAdvancedQual: true },
     { key: 'cpin', label: 'College PIN code', type: 'text', step: 4, enabled: true, required: true, onlyWhenPgCollege: true },
     { key: 'college', label: 'College name', type: 'text', step: 4, enabled: true, required: true, onlyWhenPgCollege: true },
     { key: 'ccity', label: 'College city', type: 'select', step: 4, enabled: true, required: true, onlyWhenPgCollege: true },
@@ -1219,7 +1292,7 @@ const REGISTRATION_PREVIEW_STEP = 5;
 
 function needsAdvancedQualDoctor() {
     const q = (document.getElementById('reg-qual') || {}).value || '';
-    return q === 'PG' || q === 'Practicing Vaidya' || q === 'Practitioner';
+    return false;
 }
 
 function updateRegistrationDobHint() {
@@ -2088,6 +2161,7 @@ async function startRegistration(seminarId, opts) {
     window.__regSubmitEmailOtpToken = null;
     resetRegistrationSubmitOtpState();
     window.__draftApplicationNo = null;
+    window.__activeSeminarTitle = seminarTitle;
     document.getElementById('registration-seminar-name').innerText = `Registering for: ${seminarTitle}`;
     document.getElementById('seminars-grid-container').classList.add('hidden');
     document.getElementById('seminars-title').classList.add('hidden');
@@ -3042,15 +3116,20 @@ async function submitCaseFileResubmits(submissionId) {
     }
 }
 
-function downloadCaseApplicationPdf() {
+async function downloadCaseApplicationPdf() {
     const c = userCaseApplications[currentCaseViewIndex];
     if (!c || !window.jspdf) return;
+    await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
     const ink = [15, 23, 42];
     const muted = [71, 85, 105];
-    let y = pdfCongressHeader(doc, 'Case presentation application');
+    const seminarName = (c.seminar_title || c.program_title || '').trim();
+    let y = pdfCongressHeader(doc, {
+        seminarName,
+        footerLine: 'Case presentation application'
+    });
     const row = (label, val) => {
         doc.setFontSize(9.5);
         doc.setFont('helvetica', 'bold');
@@ -3264,7 +3343,7 @@ async function nextStep(step) {
                 ? qualEl.options[qualEl.selectedIndex].text
                 : qual;
         document.getElementById('prev-qual').innerText = qualLabel;
-        if(qual === 'PG' || qual === 'Practicing Vaidya' || qual === 'Practitioner') {
+        if(false) {
             document.getElementById('prev-ncism-box').classList.remove('hidden');
             document.getElementById('prev-ncism').innerText = document.getElementById('reg-ncism').value;
             updateRegistrationPreviewCertificate();
@@ -3294,22 +3373,56 @@ async function nextStep(step) {
 let currentPdfBlobUrl = null;
 let currentCasePdfBlobUrl = null;
 
-function pdfCongressHeader(doc, subtitle) {
+function pdfCongressHeader(doc, opts) {
+    const o = typeof opts === 'string' ? { footerLine: opts } : opts || {};
+    const seminarName = String(o.seminarName || '').trim();
+    const footerLine = String(o.footerLine || '').trim();
+    const logoData = __pdfLogoDataUrl;
+
+    let headerH = 36;
+    if (seminarName) headerH += 8;
+    if (footerLine) headerH += 7;
+    if (logoData) headerH = Math.max(headerH, 32);
+
     doc.setFillColor(13, 92, 77);
-    doc.rect(0, 0, 210, 42, 'F');
+    doc.rect(0, 0, 210, headerH, 'F');
     doc.setFillColor(184, 134, 11);
-    doc.rect(0, 40, 210, 2.5, 'F');
-    doc.setFontSize(15);
+    doc.rect(0, headerH - 2.5, 210, 2.5, 'F');
+
+    const textLeft = logoData ? 40 : 14;
+    const textWidth = logoData ? 162 : 182;
+
+    if (logoData) {
+        try {
+            doc.addImage(logoData, 'PNG', 12, 6, 22, 22);
+        } catch (_) {
+            /* skip broken logo */
+        }
+    }
+
+    doc.setFontSize(12.5);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('Vaidya Gogate Memorial Foundation', 105, 17, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(subtitle || 'National Seminar Portal', 105, 28, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setTextColor(236, 253, 245);
-    doc.text('National Seminar · Ayurveda Congress', 105, 35, { align: 'center' });
-    return 50;
+    const orgLines = doc.splitTextToSize(PDF_ORG_NAME, textWidth);
+    doc.text(orgLines, textLeft, 13);
+
+    let y = 13 + orgLines.length * 5.2 + 2;
+    if (seminarName) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(236, 253, 245);
+        const semLines = doc.splitTextToSize(seminarName, 182);
+        doc.text(semLines, 14, y);
+        y += semLines.length * 5 + 2;
+    }
+    if (footerLine) {
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(220, 252, 231);
+        doc.text(footerLine, 14, y);
+    }
+
+    return headerH + 10;
 }
 
 function pdfCongressSectionTitle(doc, y, title, accent, ink) {
@@ -3341,14 +3454,19 @@ function pdfAddQrCode(doc, qrImgElement, x, y, sizeMm) {
     doc.rect(x, y, sz, sz, 'S');
 }
 
-function generatePdfBlob(qrImgElement) {
+async function generatePdfBlob(qrImgElement) {
+    await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
     const ink = [15, 23, 42];
     const muted = [71, 85, 105];
+    const seminarName = getSeminarTitleForRegistrationPdf();
 
-    let y = pdfCongressHeader(doc, 'Seminar registration — draft preview');
+    let y = pdfCongressHeader(doc, {
+        seminarName,
+        footerLine: 'Seminar registration — draft preview'
+    });
 
     const drawSection = (title) => {
         y = pdfCongressSectionTitle(doc, y + 4, title, accent, ink);
@@ -3371,9 +3489,10 @@ function generatePdfBlob(qrImgElement) {
     };
 
     const appNo = window.__draftApplicationNo || '';
-    if (appNo) {
+    if (appNo || seminarName) {
         drawSection('Application');
-        drawTableRow('Application number', appNo);
+        if (seminarName) drawTableRow('Event / seminar', seminarName);
+        if (appNo) drawTableRow('Application number', appNo);
     }
 
     drawSection('Candidate');
@@ -3394,14 +3513,14 @@ function generatePdfBlob(qrImgElement) {
     drawSection('Professional & college');
     drawTableRow('Qualification', document.getElementById('reg-qual').value);
     const qual = document.getElementById('reg-qual').value;
-    if (qual === 'PG' || qual === 'Practicing Vaidya' || qual === 'Practitioner') {
+    if (false) {
         drawTableRow('Registration ID', document.getElementById('reg-ncism').value);
     }
     drawTableRow('College', document.getElementById('reg-college').value);
     drawTableRow('College city / state', `${document.getElementById('reg-ccity').value}, ${document.getElementById('reg-cstate').value}`);
     drawSection('Documents uploaded');
     const certDoc = regCertStatusLabel();
-    if (qual === 'PG' || qual === 'Practicing Vaidya' || qual === 'Practitioner') {
+    if (false) {
         drawTableRow('NCISM certificate', certDoc || 'Not attached');
     } else {
         drawTableRow('NCISM certificate', 'Not required for this qualification');
@@ -3556,7 +3675,7 @@ async function autofillAddress() {
 
 function toggleRegBlock() {
     const qual = document.getElementById('reg-qual').value;
-    if(qual === 'PG' || qual === 'Practicing Vaidya' || qual === 'Practitioner') {
+    if(false) {
         document.getElementById('reg-block').classList.remove('hidden');
     } else {
         document.getElementById('reg-block').classList.add('hidden');
@@ -4388,7 +4507,7 @@ document.getElementById('view-app-modal').querySelector('button').onclick = func
     document.getElementById('view-app-modal').style.display = '';
 };
 
-function downloadViewedAppPdf() {
+async function downloadViewedAppPdf() {
     if (!currentlyViewedApp) return;
     const app = currentlyViewedApp;
     let formData = {};
@@ -4396,25 +4515,46 @@ function downloadViewedAppPdf() {
         formData = JSON.parse(app.form_data || '{}');
     } catch (e) {}
 
+    await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
     const ink = [15, 23, 42];
     const muted = [71, 85, 105];
+    const seminarName = (app.seminar_title || app.title || '').trim();
 
-    let y = pdfCongressHeader(doc, 'Submitted seminar application');
-    doc.setFontSize(11);
-    doc.setTextColor(...accent);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Application summary', 14, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(...ink);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Application number: ' + String(app.application_no || '—'), 14, y);
-    y += 7;
-    doc.text('Current status: ' + String(app.status || '').toUpperCase(), 14, y);
-    y += 12;
+    let y = pdfCongressHeader(doc, {
+        seminarName,
+        footerLine: 'Submitted seminar application'
+    });
+
+    const drawSection = (title) => {
+        doc.setFillColor(240, 253, 250);
+        doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...accent);
+        doc.text(title, 18, y + 6.5);
+        y += 14;
+    };
+
+    drawSection('Application');
+    const rowEarly = (label, val) => {
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, y + 8, 196, y + 8);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...muted);
+        doc.text(label, 18, y + 6);
+        const lines = doc.splitTextToSize(String(val == null ? '—' : val), 118);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...ink);
+        doc.text(lines, 72, y + 6);
+        y += Math.max(12, lines.length * 5.5 + 4);
+    };
+    rowEarly('Application number', app.application_no || '—');
+    rowEarly('Status', String(app.status || '').toUpperCase());
+    if (seminarName) rowEarly('Event / seminar', seminarName);
 
     const row = (label, val) => {
         doc.setDrawColor(226, 232, 240);
@@ -4430,36 +4570,20 @@ function downloadViewedAppPdf() {
         y += Math.max(12, lines.length * 5.5 + 4);
     };
 
-    doc.setFillColor(240, 253, 250);
-    doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...accent);
-    doc.text('Personal & contact', 18, y + 6.5);
-    y += 14;
+    drawSection('Personal & contact');
     row('Candidate name', `${formData.fname || ''} ${formData.mname || ''} ${formData.lname || ''}`.trim());
     row('Email', formData.email || '');
     row('Phone', formData.phone || '');
+    if (formData.dob) row('Date of birth', formData.dob);
+    if (formData.country) row('Country', formData.country);
 
-    doc.setFillColor(240, 253, 250);
-    doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...accent);
-    doc.text('Address', 18, y + 6.5);
-    y += 14;
+    drawSection('Address');
     row('Street / full address', formData.address || '');
     row('City, state, PIN', `${formData.city || ''}, ${formData.state || ''} — ${formData.pin || ''}`);
 
-    doc.setFillColor(240, 253, 250);
-    doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...accent);
-    doc.text('Education & college', 18, y + 6.5);
-    y += 14;
+    drawSection('Education & college');
     row('Qualification', formData.qual || '');
-    if (formData.qual === 'PG' || formData.qual === 'Practicing Vaidya' || formData.qual === 'Practitioner') {
+    if (false) {
         row('Registration / NCISM ID', formData.ncism || '');
     }
     row('College', formData.college || '');
@@ -4471,13 +4595,7 @@ function downloadViewedAppPdf() {
             doc.addPage();
             y = 20;
         }
-        doc.setFillColor(240, 253, 250);
-        doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(...accent);
-        doc.text('Seminar terms & conditions', 18, y + 6.5);
-        y += 14;
+        drawSection('Seminar terms & conditions');
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...ink);
@@ -4592,7 +4710,7 @@ function openDoctorRazorpayCheckout(result, regId, methodId) {
         key: checkoutKey,
                     amount: result.order.amount,
         currency: result.order.currency || 'INR',
-                    name: 'Vaidya Gogate Memorial Foundation National Seminar',
+                    name: 'Autism Awareness Programme',
                     description: 'Seminar Registration',
                     order_id: result.order.id,
                     handler: function (response) {
@@ -5101,10 +5219,10 @@ async function openDoctorOrderReceipt(orderDbId) {
     const lines = [
         '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment receipt</title>',
         '<style>' + receiptPrintCss() + '</style></head><body>',
-        brandingHeaderHtml(),
+        brandingHeaderHtml(o.seminar_title || ''),
         '<div class="rh">' + headerInner + '</div>',
         '<h1>Payment receipt</h1>',
-        '<p class="sub">Vaidya Gogate Memorial Foundation — National Seminar portal</p>',
+        '<p class="sub">Payment receipt — participant portal</p>',
         '<div class="receipt-hero"><div class="amt">₹' +
             escapeHtml(o.amount != null ? String(o.amount) : '—') +
             '</div><div class="meta">' +
@@ -5865,7 +5983,7 @@ async function editApplication(index) {
 
 function seminarResubmitNeedsCertificate(qual) {
     const q = String(qual || '').trim();
-    return q === 'PG' || q === 'Practicing Vaidya' || q === 'Practitioner';
+    return false;
 }
 
 function closeSeminarDocumentResubmitModal() {

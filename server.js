@@ -7870,27 +7870,54 @@ app.post('/api/admin/certificates/:id/toggle', (req, res) => {
 });
 
 // Public certificate verification (enabled per seminar after event ends)
+function withCertVerifyReady(handler) {
+    certVerify.ensureCertificateVerifySchema(
+        db,
+        () => {},
+        () => {
+            if (pgDb && pgDb.ensureCertificateVerifyColumns) {
+                return pgDb.ensureCertificateVerifyColumns().finally(() => handler());
+            }
+            handler();
+        }
+    );
+}
+
 app.get('/api/public/certificate-verify/seminars', (req, res) => {
-    certVerify.listPublicVerifySeminars(db, (err, list) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(list || []);
+    withCertVerifyReady(() => {
+        certVerify.listPublicVerifySeminars(db, (err, list) => {
+            if (err) {
+                console.warn('[cert-verify] seminars:', err.message);
+                return res.json([]);
+            }
+            res.json(list || []);
+        });
     });
 });
 
 app.get('/api/public/certificate-verify/schedule', (req, res) => {
-    certVerify.listPublicVerifySchedule(db, (err, list) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(list || []);
+    withCertVerifyReady(() => {
+        certVerify.listPublicVerifySchedule(db, (err, list) => {
+            if (err) {
+                console.warn('[cert-verify] schedule:', err.message);
+                return res.json([]);
+            }
+            res.json(list || []);
+        });
     });
 });
 
 app.post('/api/public/certificate-verify/lookup', (req, res) => {
     const { seminarId, applicationNo, prn, token, certKind } = req.body || {};
+    withCertVerifyReady(() => {
     certVerify.resolveCertForPublicLookup(
         db,
         { seminarId, applicationNo, prn, token, certKind },
         (err, out) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.warn('[cert-verify] lookup:', err.message);
+                return res.status(500).json({ error: 'Verification is temporarily unavailable. Please try again later.' });
+            }
             if (!out || !out.ok) return res.status(400).json(out || { ok: false, error: 'Lookup failed' });
             res.json({
                 ok: true,
@@ -7905,6 +7932,7 @@ app.post('/api/public/certificate-verify/lookup', (req, res) => {
             });
         }
     );
+    });
 });
 
 function sendCertificateVerifyOtpChannel(channel, destination, meta, cb) {
