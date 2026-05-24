@@ -828,23 +828,27 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     ],
     seo: { ...siteSeoMod.DEFAULT_SEO },
     footer: {
-        tagline: 'Promoting Ayurveda education since 1972',
+        tagline: 'Promoting autism awareness and inclusion',
         copyright: '© 2026 Vaidya Gogate Memorial Foundation. All rights reserved.',
         exploreTitle: 'Explore',
-        doctorTitle: 'Doctor access',
+        doctorTitle: 'Applicant access',
         contactTitle: 'Contact',
         creditHtml:
             'Developed by <a href="https://capturevisualstudios.com" target="_blank" rel="noopener noreferrer">Capture Visual Studios</a>',
         exploreLinks: [
             { label: 'Home', section: 'home' },
             { label: 'About', section: 'about' },
-            { label: 'Schedule', section: 'schedule' },
-            { label: 'Gallery', section: 'gallery' }
+            { label: 'Programme', section: 'schedule' },
+            { label: 'Contact', section: 'contact' }
         ],
         doctorLinks: [
             { label: 'Sign in', action: 'login' },
             { label: 'Create account', action: 'signup' }
         ]
+    },
+    siteHeader: {
+        foundationName: 'Vaidya Gogate Memorial Foundation',
+        programmeName: 'Autism Awareness Programme'
     }
 };
 const DEFAULT_PUBLIC_SITE_CMS_JSON = JSON.stringify(DEFAULT_PUBLIC_SITE_CMS);
@@ -3972,7 +3976,7 @@ app.post('/api/admin/site-cms', (req, res) => {
         }
         if (typeof incoming.tickerText === 'string') merged.tickerText = incoming.tickerText;
         if (typeof incoming.bannerImage === 'string') merged.bannerImage = incoming.bannerImage;
-        ['topBar', 'hero', 'contact', 'schedulePage', 'footer'].forEach((k) => {
+        ['topBar', 'hero', 'contact', 'schedulePage', 'footer', 'siteHeader'].forEach((k) => {
             if (incoming[k] && typeof incoming[k] === 'object') {
                 merged[k] = { ...(merged[k] || {}), ...incoming[k] };
             }

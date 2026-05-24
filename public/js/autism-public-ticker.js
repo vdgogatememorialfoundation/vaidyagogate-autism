@@ -1,5 +1,5 @@
 /**
- * Autism public site: header announcement ticker (right → left).
+ * Autism public site: header announcement ticker (right → left, single pass, no duplicate items).
  */
 (function () {
     'use strict';
@@ -9,75 +9,69 @@
         {
             title: 'Autism Awareness Programme 2026',
             body: 'Free registration — sign in and pre-register from your applicant dashboard.'
-        },
-        {
-            title: 'Welcome',
-            body: 'Creative competitions, e-tickets, and certificates — all at no cost.'
         }
     ];
+
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function itemLabel(it) {
+        const title = String(it.title || it.headline || '').trim();
+        const body = String(it.body || it.description || it.subtitle || it.text || '').trim();
+        if (title && body && title !== body) return title + ' — ' + body;
+        return title || body;
+    }
 
     function mergeTickerItems(cms) {
         const out = [];
         const seen = new Set();
         function add(item) {
             if (!item) return;
-            const title = item.title || item.headline || '';
-            const body = item.body || item.description || item.subtitle || item.text || '';
-            if (!title && !body) return;
-            const key = String(title) + '|' + String(body).slice(0, 60);
+            const label = itemLabel(item);
+            if (!label) return;
+            const key = label.toLowerCase();
             if (seen.has(key)) return;
             seen.add(key);
-            out.push({ title: title || body.slice(0, 80), body, link: item.link || '' });
+            out.push({ title: label, body: '', link: item.link || '' });
         }
         (cms.scrollingAnnouncements || []).forEach(add);
-        (cms.publicNotices || []).forEach((n) =>
-            add({ title: n.title || 'Notice', body: n.body || n.description || '', link: n.link || '' })
-        );
-        if (cms.ticker && String(cms.ticker).trim()) {
-            add({ title: String(cms.ticker).trim(), body: '' });
+        const tt = cms.tickerText || cms.ticker;
+        if (tt && String(tt).trim()) {
+            add({ title: String(tt).trim(), body: '' });
         }
         return out.length ? out : FALLBACK_TICKER.slice();
     }
 
     function renderAutismTicker(cms) {
-        const items = mergeTickerItems(cms || {});
-        if (typeof window.renderCongressTicker === 'function') {
-            window.renderCongressTicker(items);
-            const wrap = document.getElementById('scrolling-announce-wrap');
-            if (wrap) wrap.classList.remove('hidden');
-            return;
-        }
         const wrap = document.getElementById('scrolling-announce-wrap');
         const track = document.getElementById('scrolling-announce-track');
         if (!wrap || !track) return;
-        wrap.classList.remove('hidden');
-        track.className = 'cg-ticker-track';
-        const esc = (s) =>
-            String(s == null ? '' : s)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;');
-        const html = items
-            .map((it) => {
-                const text = esc(it.title || it.body || 'Update');
-                return '<span class="cg-ticker-item">' + text + '</span>';
-            })
-            .join('');
-        track.innerHTML = html + html;
-    }
 
-    const origCongressTicker = window.renderCongressTicker;
-    window.renderCongressTicker = function renderCongressTickerAutism(items) {
-        const list =
-            items && items.length
-                ? items
-                : FALLBACK_TICKER.slice();
-        if (typeof origCongressTicker === 'function') {
-            origCongressTicker(list);
-            const wrap = document.getElementById('scrolling-announce-wrap');
-            if (wrap && list.length) wrap.classList.remove('hidden');
+        const items = mergeTickerItems(cms || {});
+        if (!items.length) {
+            wrap.classList.add('hidden');
+            track.innerHTML = '';
             return;
         }
-        renderAutismTicker({ scrollingAnnouncements: list });
+
+        wrap.classList.remove('hidden');
+        const line = items.map((it) => itemLabel(it)).filter(Boolean).join('   ·   ');
+        track.className = 'cg-ticker-track ak-ticker-marquee';
+        track.innerHTML = '<span class="cg-ticker-item">' + esc(line) + '</span>';
+        const dur = Math.min(36, Math.max(12, 10 + line.length * 0.1));
+        track.style.setProperty('--ak-ticker-dur', dur + 's');
+    }
+
+    window.renderCongressTicker = function renderCongressTickerAutism(items) {
+        if (Array.isArray(items) && items.length && (items[0].title || items[0].body)) {
+            renderAutismTicker({ scrollingAnnouncements: items });
+            return;
+        }
+        renderAutismTicker(items && typeof items === 'object' ? items : { scrollingAnnouncements: items || [] });
     };
 
     const origApply = window.applySiteCms;
@@ -92,21 +86,8 @@
 
     async function bootstrapTicker() {
         try {
-            const [cmsRes, annRes] = await Promise.all([
-                fetch('/api/public/site-cms', { cache: 'no-store' }),
-                fetch('/api/public/announcements', { cache: 'no-store' })
-            ]);
-            const merged = {};
-            if (cmsRes.ok) Object.assign(merged, await cmsRes.json());
-            if (annRes.ok) {
-                const ann = await annRes.json();
-                if (ann.ticker) merged.ticker = ann.ticker;
-                merged.scrollingAnnouncements = [
-                    ...(merged.scrollingAnnouncements || []),
-                    ...(ann.scrollingAnnouncements || [])
-                ];
-                merged.publicNotices = [...(merged.publicNotices || []), ...(ann.publicNotices || [])];
-            }
+            const cmsRes = await fetch('/api/public/site-cms', { cache: 'no-store' });
+            const merged = cmsRes.ok ? await cmsRes.json() : {};
             renderAutismTicker(merged);
         } catch (_) {
             renderAutismTicker({});

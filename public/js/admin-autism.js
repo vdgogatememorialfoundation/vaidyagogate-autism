@@ -517,12 +517,34 @@
         window.openAdminCreateUserModal.__autismHook = true;
     }
 
+    function collapseDuplicateCmsFields() {
+        const hideSecond = (id) => {
+            const nodes = document.querySelectorAll('#' + id);
+            if (nodes.length < 2) return;
+            const grid = nodes[1].closest('div[style*="grid-template-columns"]');
+            if (grid && grid.querySelector('#' + id)) grid.style.display = 'none';
+        };
+        ['cms-footer-tagline', 'cms-top-email'].forEach(hideSecond);
+    }
+
+    function patchLoadAdminSiteCms() {
+        if (typeof loadAdminSiteCms !== 'function' || loadAdminSiteCms.__akCmsHook) return;
+        const orig = loadAdminSiteCms;
+        window.loadAdminSiteCms = async function () {
+            await orig.apply(this, arguments);
+            collapseDuplicateCmsFields();
+        };
+        window.loadAdminSiteCms.__akCmsHook = true;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
         patchSaveSeminar();
         patchSeminarPayload();
         patchCreateStaffUserRoles();
+        patchLoadAdminSiteCms();
+        collapseDuplicateCmsFields();
         applyAdminBranding();
         wireSiteImageUpload();
         hideGalleryCmsBlocks();

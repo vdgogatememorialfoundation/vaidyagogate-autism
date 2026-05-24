@@ -207,6 +207,18 @@
         setText('footer-tagline', cms.footer && cms.footer.tagline);
         setText('footer-copyright', cms.footer && cms.footer.copyright);
         const foot = cms.footer || {};
+        const header = cms.siteHeader || {};
+        const logoH1 = document.getElementById('site-header-foundation');
+        const logoP = document.getElementById('site-header-programme');
+        if (logoH1) {
+            const name = header.foundationName || (cms.hero && cms.hero.title) || logoH1.textContent;
+            if (name) logoH1.textContent = name;
+        }
+        if (logoP) {
+            const sub = header.programmeName || (cms.hero && cms.hero.subtitle) || logoP.textContent;
+            if (sub) logoP.textContent = sub;
+        }
+        setText('footer-foundation-heading', header.foundationName || (cms.hero && cms.hero.title));
         setText('footer-explore-title', foot.exploreTitle || 'Explore');
         setText('footer-doctor-title', foot.doctorTitle || 'Doctor access');
         const contactCol = document.querySelector('.footer-col h4');

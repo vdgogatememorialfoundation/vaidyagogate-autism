@@ -828,7 +828,8 @@ function adminStaffRoleOptionsHtml(userRole) {
                 `<option value="${val}" ${ur === val ? 'selected' : ''}>${label}</option>`
         )
         .join('') +
-        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>`;
+        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>`
+    );
 }
 
 function adminStaffUserRoleValue(u) {
@@ -10048,8 +10049,9 @@ function cmsApplyHeroFieldsToForm(cms) {
     const foot = cms.footer || {};
     const stats = Array.isArray(cms.heroStats) ? cms.heroStats : [];
     const set = (id, v) => {
-        const el = document.getElementById(id);
-        if (el) el.value = v != null ? String(v) : '';
+        document.querySelectorAll('#' + id).forEach((el) => {
+            el.value = v != null ? String(v) : '';
+        });
     };
     set('cms-hero-eyebrow', hero.eyebrow);
     set('cms-hero-title', hero.title);
@@ -10073,6 +10075,9 @@ function cmsApplyHeroFieldsToForm(cms) {
     set('cms-contact-phone', contact.phone);
     set('cms-contact-email', contact.email);
     set('cms-contact-hours', contact.hours);
+    const header = cms.siteHeader || {};
+    set('cms-header-foundation', header.foundationName || (cms.hero && cms.hero.title) || '');
+    set('cms-header-programme', header.programmeName || (cms.hero && cms.hero.subtitle) || '');
     set('cms-footer-tagline', foot.tagline);
     set('cms-footer-copy', foot.copyright);
     set('cms-footer-explore-title', foot.exploreTitle);
@@ -10123,6 +10128,10 @@ function cmsCollectHeroFieldsFromForm() {
             creditHtml: gv('cms-footer-credit'),
             exploreLinks: cmsCollectFooterExploreLinks(),
             doctorLinks: cmsCollectFooterDoctorLinks()
+        },
+        siteHeader: {
+            foundationName: gv('cms-header-foundation'),
+            programmeName: gv('cms-header-programme')
         },
         featureCards: cmsCollectFeatureCardsFromDom(),
         faq: cmsCollectFaqFromDom()

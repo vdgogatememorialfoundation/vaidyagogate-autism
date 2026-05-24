@@ -913,6 +913,29 @@
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#15803d;" onclick="sendVenueBroadcast()">Send venue update to paid registrants</button>
                     <p id="venue-broadcast-status" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
+<div class="card" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;">
+                    <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Site header &amp; footer</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright. Click <strong>Save website &amp; portal content</strong> at the bottom of this page.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div><label style="font-size:0.8rem;">Header — foundation name</label><input type="text" id="cms-header-foundation" style="width:100%" placeholder="Vaidya Gogate Memorial Foundation"></div>
+                        <div><label style="font-size:0.8rem;">Header — programme line</label><input type="text" id="cms-header-programme" style="width:100%" placeholder="Autism Awareness Programme"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div><label style="font-size:0.8rem;">Top bar email</label><input type="text" id="cms-top-email" style="width:100%"></div>
+                        <div><label style="font-size:0.8rem;">Top bar phone</label><input type="text" id="cms-top-phone" style="width:100%"></div>
+                        <div><label style="font-size:0.8rem;">Top bar date line</label><input type="text" id="cms-top-date" style="width:100%"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div style="grid-column:1/-1;"><label>Footer tagline</label><input type="text" id="cms-footer-tagline" style="width:100%"></div>
+                        <div style="grid-column:1/-1;"><label>Footer copyright</label><input type="text" id="cms-footer-copy" style="width:100%"></div>
+                        <div><label>Footer — Explore title</label><input type="text" id="cms-footer-explore-title" style="width:100%"></div>
+                        <div><label>Footer — Applicant access title</label><input type="text" id="cms-footer-doctor-title" style="width:100%"></div>
+                        <div><label>Footer — Contact title</label><input type="text" id="cms-footer-contact-title" style="width:100%"></div>
+                        <div style="grid-column:1/-1;"><label>Footer credit HTML</label><input type="text" id="cms-footer-credit" style="width:100%"></div>
+                        <div style="grid-column:1/-1;"><label>Explore links</label><div id="cms-footer-explore-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterExploreRow()">+ Link</button></div>
+                        <div style="grid-column:1/-1;"><label>Applicant access links</label><div id="cms-footer-doctor-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterDoctorRow()">+ Link</button></div>
+                    </div>
+                </div>
 <div class="card">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                         <div><label>Homepage ticker text</label><input type="text" id="cms-ticker" placeholder="Short announcement line (single line)"></div>
@@ -2209,12 +2232,12 @@
     <script src="/js/portal-upload.js?v=20260522"></script>
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
-    <script src="/js/admin.js?v=20260524a"></script>
+    <script src="/js/admin.js?v=20260524b"></script>
     <script src="/js/autism-admin-api.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=2"></script>
     <script src="/js/admin-announcements.js?v=2"></script>
-    <script src="/js/admin-autism.js?v=autism5"></script>
+    <script src="/js/admin-autism.js?v=autism6"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
 </body>

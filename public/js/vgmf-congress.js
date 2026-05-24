@@ -592,7 +592,9 @@
                 .replace(/,\s+and\b/gi, ' and');
         }
         renderCongressHero(cms);
-        renderCongressTicker(cms.scrollingAnnouncements || []);
+        if (!document.body.classList.contains('ak-portal')) {
+            renderCongressTicker(cms.scrollingAnnouncements || []);
+        }
         renderCongressPastSeminars(cms);
         renderCongressVideos(cms);
     };

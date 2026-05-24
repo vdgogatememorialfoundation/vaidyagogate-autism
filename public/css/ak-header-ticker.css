@@ -30,18 +30,23 @@
     display: flex;
     gap: 48px;
     width: max-content;
-    animation: ak-header-ticker-rtl 28s linear infinite;
     will-change: transform;
+}
+.cg-header-ticker .cg-ticker-track.ak-ticker-marquee {
+    display: inline-block;
+    white-space: nowrap;
+    min-width: 100%;
+    animation: ak-ticker-marquee-rtl var(--ak-ticker-dur, 16s) linear infinite;
 }
 .cg-header-ticker:hover .cg-ticker-track {
     animation-play-state: paused;
 }
-@keyframes ak-header-ticker-rtl {
+@keyframes ak-ticker-marquee-rtl {
     0% {
-        transform: translateX(0);
+        transform: translateX(100%);
     }
     100% {
-        transform: translateX(-50%);
+        transform: translateX(-100%);
     }
 }
 .cg-header-ticker .cg-ticker-item {
