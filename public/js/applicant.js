@@ -1827,13 +1827,11 @@ function validateRegistrationAgainstConfigForSteps(upToStepInclusive) {
             const tok = (window.__fieldOtpTokens || {})[f.key];
             if (!tok) return `Please verify OTP for: ${f.label || f.key}`;
         }
-        if (sn === 1 && window.__otpOnStep1) {
-            const needE = window.__otpRequiresEmail !== false;
-            const needP = !!window.__otpRequiresPhone;
-            if (needE && !registrationEmailVerified()) {
+        if (sn === 1 && (window.__otpOnStep1 || registrationFormRequiresAnyFieldOtp())) {
+            if (registrationFieldNeedsEmailOtp() && !registrationEmailVerified()) {
                 return 'Please verify your email with the code sent to your inbox before continuing.';
             }
-            if (needP && !registrationPhoneVerified()) {
+            if (registrationFieldNeedsPhoneOtp() && !registrationPhoneVerified()) {
                 return 'Please verify your phone with the WhatsApp code before continuing.';
             }
         }
@@ -1870,6 +1868,12 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
         window.__otpRequiresPhone = !!data.otpRequiresPhone;
         window.__emailConfigured = !!data.emailConfigured;
         window.__whatsappConfigured = !!data.whatsappConfigured;
+        window.__registrationFormFields = (window.__registrationFormFields || []).map((f) => {
+            if (!f) return f;
+            if (f.key === 'email' && f.verifyOtp && !data.emailConfigured) return { ...f, verifyOtp: false };
+            if (f.key === 'phone' && f.verifyOtp && !data.whatsappConfigured) return { ...f, verifyOtp: false };
+            return f;
+        });
         syncRegistrationOtpUi();
         if (document.body.classList.contains('ak-portal-dash')) {
             window.__registrationFormFields = (window.__registrationFormFields || []).filter(
@@ -1938,20 +1942,50 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
     await initRegistrationAddressUi();
 }
 
+function registrationEmailFieldHasVerifyOtp() {
+    return (window.__registrationFormFields || []).some(
+        (f) => f && f.key === 'email' && f.verifyOtp && f.enabled !== false
+    );
+}
+
+function registrationPhoneFieldHasVerifyOtp() {
+    return (window.__registrationFormFields || []).some(
+        (f) => f && f.key === 'phone' && f.verifyOtp && f.enabled !== false
+    );
+}
+
+function registrationFieldNeedsEmailOtp() {
+    if (!window.__emailConfigured) return false;
+    return !!(window.__otpOnStep1 || registrationEmailFieldHasVerifyOtp());
+}
+
+function registrationFieldNeedsPhoneOtp() {
+    if (!window.__whatsappConfigured) return false;
+    return !!(window.__otpOnStep1 || registrationPhoneFieldHasVerifyOtp());
+}
+
+function registrationFormRequiresAnyFieldOtp() {
+    return registrationFieldNeedsEmailOtp() || registrationFieldNeedsPhoneOtp();
+}
+
 function syncRegistrationOtpUi() {
     const otpPanel = document.getElementById('reg-seminar-otp-panel');
     const hint = document.getElementById('reg-otp-panel-hint');
+    const needsFieldOtp = registrationFormRequiresAnyFieldOtp();
     if (otpPanel) {
-        if (window.__otpOnApplication) otpPanel.classList.remove('hidden');
+        if (window.__otpOnApplication || needsFieldOtp) otpPanel.classList.remove('hidden');
         else otpPanel.classList.add('hidden');
     }
     if (hint) {
         let parts = [];
         if (window.__otpOnStep1) parts.push('personal details (step 1)');
+        else if (needsFieldOtp) parts.push('personal details (step 1) — verify email/phone below');
         if (window.__otpOnSubmit) parts.push('preview before submit');
         hint.textContent = parts.length
             ? 'Verify email and/or WhatsApp on: ' + parts.join(' and ') + '.'
-            : 'OTP is disabled for this seminar.';
+            : needsFieldOtp
+              ? 'Verify email and/or phone using the Send code buttons on step 1 before submitting.'
+              : 'OTP is disabled for this event.';
     }
     const submitPanel = document.getElementById('reg-submit-otp-panel');
     if (submitPanel) {
@@ -1965,17 +1999,23 @@ function syncRegistrationOtpUi() {
     const emailOtpRow = document.getElementById('reg-otp-email-row');
     const phoneOtpRow = document.getElementById('reg-otp-phone-row');
     if (emailOtpRow) {
-        emailOtpRow.style.display = window.__otpOnStep1 ? '' : 'none';
-        if (window.__otpOnStep1 && !window.__emailConfigured) {
+        emailOtpRow.style.display = registrationFieldNeedsEmailOtp() ? '' : 'none';
+        if (registrationEmailFieldHasVerifyOtp() && !window.__emailConfigured) {
             const st = document.getElementById('reg-otp-status-email');
             if (st) st.textContent = 'Email OTP unavailable — configure SMTP in admin integrations.';
+        } else if (!registrationFieldNeedsEmailOtp()) {
+            const st = document.getElementById('reg-otp-status-email');
+            if (st) st.textContent = '';
         }
     }
     if (phoneOtpRow) {
-        phoneOtpRow.style.display = window.__otpOnStep1 && window.__whatsappConfigured ? '' : 'none';
-        if (window.__otpOnStep1 && !window.__whatsappConfigured) {
+        phoneOtpRow.style.display = registrationFieldNeedsPhoneOtp() ? '' : 'none';
+        if (registrationPhoneFieldHasVerifyOtp() && !window.__whatsappConfigured) {
             const st = document.getElementById('reg-otp-status-phone');
             if (st) st.textContent = 'WhatsApp OTP unavailable — configure WhatsApp in admin integrations.';
+        } else if (!registrationFieldNeedsPhoneOtp()) {
+            const st = document.getElementById('reg-otp-status-phone');
+            if (st) st.textContent = '';
         }
     }
 }
@@ -4125,12 +4165,12 @@ async function submitApplication() {
             return;
         }
     }
-    if (window.__otpOnStep1) {
-        if (window.__emailConfigured && !registrationEmailVerified()) {
+    if (window.__otpOnStep1 || registrationFormRequiresAnyFieldOtp()) {
+        if (registrationFieldNeedsEmailOtp() && !registrationEmailVerified()) {
             alert('Verify your email on the personal details step (step 1) before submitting.');
             return;
         }
-        if (window.__whatsappConfigured && !registrationPhoneVerified()) {
+        if (registrationFieldNeedsPhoneOtp() && !registrationPhoneVerified()) {
             alert('Verify your phone on the personal details step (step 1) before submitting.');
             return;
         }

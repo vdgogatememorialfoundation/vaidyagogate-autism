@@ -4495,20 +4495,29 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
                     const skipFieldKeys = otpStep1 ? ['email', 'phone'] : [];
 
                     function runFieldOtpsThenInsert() {
-                        otpLib.validateAllFieldOtpTokens(
-                            db,
-                            sidNum,
-                            fieldOtpTokensObj,
-                            list,
-                            (ferr, fv) => {
-                                if (ferr) return res.status(500).json({ error: ferr.message });
-                                if (!fv || !fv.ok) {
-                                    return res.status(400).json({ error: (fv && fv.error) || 'Field OTP verification failed' });
-                                }
-                                insertRegistration();
-                            },
-                            { skipFieldKeys }
-                        );
+                        integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
+                            const otpChannelOpts = {
+                                skipFieldKeys,
+                                emailConfigured: integrationSettings.isEmailConfiguredFromSettings(),
+                                whatsappConfigured: integrationSettings.isWhatsAppConfiguredFromSettings()
+                            };
+                            otpLib.validateAllFieldOtpTokens(
+                                db,
+                                sidNum,
+                                fieldOtpTokensObj,
+                                list,
+                                (ferr, fv) => {
+                                    if (ferr) return res.status(500).json({ error: ferr.message });
+                                    if (!fv || !fv.ok) {
+                                        return res
+                                            .status(400)
+                                            .json({ error: (fv && fv.error) || 'Field OTP verification failed' });
+                                    }
+                                    insertRegistration();
+                                },
+                                otpChannelOpts
+                            );
+                        });
                     }
 
                     function insertRegistration() {
@@ -4814,20 +4823,28 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
                 }
 
                 function runFieldOtps() {
-                    otpLib.validateAllFieldOtpTokens(
-                        db,
-                        sidNum,
-                        fieldOtpTokensObj,
-                        list,
-                        (ferr, fv) => {
-                            if (ferr) return res.status(500).json({ error: ferr.message });
-                            if (!fv || !fv.ok) {
-                                return res.status(400).json({ error: (fv && fv.error) || 'Field OTP verification failed' });
+                    integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
+                        otpLib.validateAllFieldOtpTokens(
+                            db,
+                            sidNum,
+                            fieldOtpTokensObj,
+                            list,
+                            (ferr, fv) => {
+                                if (ferr) return res.status(500).json({ error: ferr.message });
+                                if (!fv || !fv.ok) {
+                                    return res
+                                        .status(400)
+                                        .json({ error: (fv && fv.error) || 'Field OTP verification failed' });
+                                }
+                                persistUpdate();
+                            },
+                            {
+                                skipFieldKeys,
+                                emailConfigured: integrationSettings.isEmailConfiguredFromSettings(),
+                                whatsappConfigured: integrationSettings.isWhatsAppConfiguredFromSettings()
                             }
-                            persistUpdate();
-                        },
-                        { skipFieldKeys }
-                    );
+                        );
+                    });
                 }
 
                 if (otpApp) {
