@@ -114,7 +114,7 @@
                 <div class="ak-hero-photo-stack">
                     <img class="ak-hero-photo-main" src="/images/autism/hero-main.jpg" alt="Children enjoying a group activity outdoors" width="520" height="520" loading="eager" decoding="async">
                     <img class="ak-hero-photo-sub" src="/images/autism/hero-a.jpg" alt="Smiling children at a school programme" width="200" height="200" loading="lazy" decoding="async">
-                    <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-b.jpg" alt="Children learning together in class" width="200" height="200" loading="lazy" decoding="async">
+                    <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-b.avif" alt="Happy Indian children smiling" width="200" height="200" loading="lazy" decoding="async">
                 </div>
             </div>
         </div>
@@ -131,7 +131,7 @@
             <figure class="ak-showcase-item"><img src="/images/autism/hero-b.jpg" alt="Children in classroom" loading="lazy" decoding="async"><figcaption>Learning together</figcaption></figure>
             <figure class="ak-showcase-item"><img src="/images/autism/hero-c.jpg" alt="Children playing" loading="lazy" decoding="async"><figcaption>Play &amp; friendship</figcaption></figure>
             <figure class="ak-showcase-item"><img src="/images/autism/gallery-1.jpg" alt="Group of children smiling" loading="lazy" decoding="async"><figcaption>Community smiles</figcaption></figure>
-            <figure class="ak-showcase-item"><img src="/images/autism/gallery-3.jpg" alt="Children at an event" loading="lazy" decoding="async"><figcaption>Event day</figcaption></figure>
+            <figure class="ak-showcase-item"><img src="/images/autism/gallery-3.avif" alt="Happy children smiling" loading="lazy" decoding="async"><figcaption>Community smiles</figcaption></figure>
         </div>
     </section>
 
@@ -626,10 +626,7 @@
             const pages = (window.__portalAuth && window.__portalAuth.websiteMenuPages) || {};
             const keys = Object.keys(pages);
             const restrict = keys.length && keys.some((k) => pages[k] === true);
-            const isShown = (key) => {
-                if (key === 'gallery') return false;
-                return !restrict || pages[key] === true;
-            };
+            const isShown = (key) => !restrict || pages[key] === true;
             document
                 .querySelectorAll('#cg-nav-menu-links a[data-nav-section], #cg-nav-menu-links a[data-menu-key]')
                 .forEach((a) => {
@@ -1018,7 +1015,7 @@
                 const secs = Array.isArray(cms.aboutSections) ? cms.aboutSections : [];
                 aboutEl.innerHTML = secs.length
                     ? secs.map((s) => '<h3 style="font-family:Fraunces,Georgia,serif;color:#78350f;margin:16px 0 8px;">' + escHtml(s.heading || '') + '</h3><p>' + escHtml(s.body || '') + '</p>').join('')
-                    : '<p>The Vaidya Gogate Memorial Foundation runs autism awareness programmes for children, families, and schools.</p>';
+                    : '<p>The Vaidya Gogate Memorial Foundation runs inclusive autism awareness programmes for children, families, and schools.</p>';
             }
             if (typeof renderSocialLinks === 'function') renderSocialLinks(cms);
         }
@@ -1133,7 +1130,6 @@
         }
 
         window.showSection = function showSection(section) {
-            if (section === 'gallery') section = 'home';
             if (typeof window.closeMobileNav === 'function') window.closeMobileNav();
             if (typeof window.highlightCongressNav === 'function') window.highlightCongressNav(section);
             const map = {

@@ -838,8 +838,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         exploreLinks: [
             { label: 'Home', section: 'home' },
             { label: 'About', section: 'about' },
-            { label: 'Schedule', section: 'schedule' },
-            { label: 'Gallery', section: 'gallery' }
+            { label: 'Schedule', section: 'schedule' }
         ],
         doctorLinks: [
             { label: 'Sign in', action: 'login' },

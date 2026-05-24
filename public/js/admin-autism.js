@@ -16,26 +16,10 @@
         'case program',
         'payment gateway',
         'pos on-spot',
-        'on-spot pos'
+        'on-spot pos',
+        'past seminar gallery',
+        'seminar gallery'
     ];
-
-    function hideGalleryCms() {
-        document.querySelectorAll('#website-menu-policy-card label').forEach((label) => {
-            const inp = label.querySelector('input[type="checkbox"]');
-            if (inp && inp.id && /gallery/i.test(inp.id)) label.style.display = 'none';
-        });
-        const galBlock = document.getElementById('cms-gallery-years');
-        if (galBlock) {
-            const card = galBlock.closest('.card');
-            if (card) card.style.display = 'none';
-        }
-        document.querySelectorAll('label').forEach((label) => {
-            if (/past seminar gallery/i.test(label.textContent || '')) {
-                const card = label.closest('.card') || label.closest('div[style*="margin-top"]');
-                if (card) card.style.display = 'none';
-            }
-        });
-    }
 
     function hideMenuItems() {
         HIDE_MODULES.forEach((mod) => {
@@ -196,7 +180,6 @@
         patchSeminarPayload();
         applyAdminBranding();
         wireSiteImageUpload();
-        hideGalleryCms();
         if (window.AutismTerminology) window.AutismTerminology.applyAll();
     });
 })();

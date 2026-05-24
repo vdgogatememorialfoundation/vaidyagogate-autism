@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-24T19:37:56.684Z",
+  "updatedAt": "2026-05-24T19:43:50.039Z",
   "note": "Auto-generated. Commit this file + images, then push to deploy. Or use Admin → Website CMS → Site photos upload for instant live updates.",
   "images": [
     {
@@ -9,6 +9,10 @@
     {
       "src": "/images/autism/hero-a.jpg",
       "name": "hero-a.jpg"
+    },
+    {
+      "src": "/images/autism/hero-b.avif",
+      "name": "hero-b.avif"
     },
     {
       "src": "/images/autism/hero-b.jpg",
@@ -25,6 +29,10 @@
     {
       "src": "/images/autism/gallery-2.jpg",
       "name": "gallery-2.jpg"
+    },
+    {
+      "src": "/images/autism/gallery-3.avif",
+      "name": "gallery-3.avif"
     },
     {
       "src": "/images/autism/gallery-3.jpg",
@@ -55,8 +63,20 @@
       "name": "360_F_952906565_xwLmr3jdtgWuhwYIVuEeN9Cid2fRxKeJ.jpg"
     },
     {
+      "src": "/images/autism/group-happy-indian-little-kids-smiling-looking-camera_979520-58310.avif",
+      "name": "group-happy-indian-little-kids-smiling-looking-camera_979520-58310.avif"
+    },
+    {
       "src": "/images/autism/indian-small-kids-playing-colourful-block-toys-with-young-parents-against-white-background_466689-9057.avif",
       "name": "indian-small-kids-playing-colourful-block-toys-with-young-parents-against-white-background_466689-9057.avif"
+    },
+    {
+      "src": "/images/autism/istockphoto-1696713978-612x612.jpg",
+      "name": "istockphoto-1696713978-612x612.jpg"
+    },
+    {
+      "src": "/images/autism/UjxUnpMLv1627V4EJsmq.jpg",
+      "name": "UjxUnpMLv1627V4EJsmq.jpg"
     }
   ]
 }
