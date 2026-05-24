@@ -10,19 +10,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Autism Awareness Programme | Vaidya Gogate Memorial Foundation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/vgmf-site.css">
     <link rel="stylesheet" href="/css/vgmf-congress.css">
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
     <link rel="stylesheet" href="/css/gallery-lightbox.css">
-    <link rel="stylesheet" href="/css/autism-kids.css?v=5">
-    <link rel="stylesheet" href="/css/autism-theme.css?v=3">
+    <link rel="stylesheet" href="/css/autism-kids.css?v=6">
+    <link rel="stylesheet" href="/css/autism-theme.css?v=4">
+    <link rel="stylesheet" href="/css/autism-redesign.css?v=1">
     <script src="/js/site-seo.js?v=20260522a"></script>
     <script src="/js/portal-datetime.js"></script>
     <script src="/js/gallery-lightbox.js"></script>
 </head>
-<body class="congress-site autism-kids ak-portal" data-portal-theme="public">
+<body class="congress-site autism-kids ak-portal ak-v2" data-portal-theme="public">
     <div class="ak-bg-shapes" aria-hidden="true">
         <span class="ak-shape ak-shape-1"></span>
         <span class="ak-shape ak-shape-2"></span>
@@ -94,40 +95,49 @@
         </div>
     </div>
 
-    <section class="ak-hero" id="ak-hero" aria-label="Welcome">
-        <div class="ak-hero-inner">
-            <div class="ak-hero-copy">
-                <span class="ak-hero-badge"><i class="fas fa-star" aria-hidden="true"></i> Autism Awareness Programme 2026</span>
-                <h2>Every child shines<br><span>in their own beautiful way</span></h2>
-                <p class="ak-hero-lead">Join our friendly programme — sign up, pre-register, take part in competitions, and get your e-ticket. Simple steps, big smiles, and a community that cares.</p>
-                <div class="ak-hero-cta">
-                    <button type="button" class="ak-btn ak-btn-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-rocket" aria-hidden="true"></i> Start your journey</button>
-                    <button type="button" class="ak-btn ak-btn-secondary" data-ak-goto-dashboard><i class="fas fa-door-open" aria-hidden="true"></i> My dashboard</button>
+    <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" aria-label="Welcome">
+        <div class="ak-hero-v2-grid">
+            <div class="ak-hero-v2-copy">
+                <span class="ak-hero-v2-badge"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Autism Awareness Programme 2026</span>
+                <h1>Every child shines <em>in their own beautiful way</em></h1>
+                <p class="ak-hero-v2-lead">A warm, free programme for families and schools — sign up, pre-register, join creative competitions, and get your e-ticket. No fees, just community and care.</p>
+                <div class="ak-hero-v2-cta">
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-rocket" aria-hidden="true"></i> Start your journey</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost" data-ak-goto-dashboard><i class="fas fa-door-open" aria-hidden="true"></i> My dashboard</button>
+                </div>
+                <div class="ak-hero-chips">
+                    <span class="ak-hero-chip"><i class="fas fa-check-circle" style="color:#10b981"></i> Free registration</span>
+                    <span class="ak-hero-chip"><i class="fas fa-palette" style="color:#7c3aed"></i> Competitions</span>
+                    <span class="ak-hero-chip"><i class="fas fa-ticket-alt" style="color:#2563eb"></i> E-tickets</span>
                 </div>
             </div>
-            <div class="ak-hero-visual">
-                <div class="ak-photo-collage">
-                    <span class="ak-sticker ak-sticker-star" aria-hidden="true">⭐</span>
-                    <span class="ak-sticker ak-sticker-heart" aria-hidden="true">💛</span>
-                    <span class="ak-sticker ak-sticker-rainbow" aria-hidden="true">🌈</span>
-                    <div class="ak-photo ak-photo-main">
-                        <img src="/images/autism/hero-main.jpg" alt="Indian children playing together outdoors" width="800" height="800" loading="eager" decoding="async">
-                    </div>
-                    <div class="ak-photo ak-photo-a">
-                        <img src="/images/autism/hero-a.jpg" alt="Group of Indian children smiling in Bengaluru" width="600" height="600" loading="lazy" decoding="async">
-                    </div>
-                    <div class="ak-photo ak-photo-b">
-                        <img src="/images/autism/hero-b.jpg" alt="Indian school children in Bengaluru" width="600" height="600" loading="lazy" decoding="async">
-                    </div>
-                    <div class="ak-photo ak-photo-c">
-                        <img src="/images/autism/hero-c.jpg" alt="Indian children at school in Rameswaram" width="600" height="600" loading="lazy" decoding="async">
-                    </div>
-                </div>
+            <div class="ak-hero-v2-art" aria-hidden="true">
+                <img src="/images/autism/hero-illustration.svg" alt="" width="640" height="520" loading="eager" decoding="async">
             </div>
         </div>
     </section>
 
-    <section class="ak-journey ak-reveal" aria-labelledby="ak-journey-title">
+    <section class="ak-pillars ak-reveal-v2" aria-label="Our focus">
+        <div class="ak-pillars-grid">
+            <article class="ak-pillar">
+                <div class="ak-pillar-icon blue"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
+                <h3>Awareness</h3>
+                <p>Learn about autism with simple talks, activities, and resources for children, parents, and teachers.</p>
+            </article>
+            <article class="ak-pillar">
+                <div class="ak-pillar-icon violet"><i class="fas fa-hands-holding-heart" aria-hidden="true"></i></div>
+                <h3>Inclusion</h3>
+                <p>Celebrate every child’s strengths. Our programme is designed to be welcoming, safe, and joyful for all.</p>
+            </article>
+            <article class="ak-pillar">
+                <div class="ak-pillar-icon mint"><i class="fas fa-star" aria-hidden="true"></i></div>
+                <h3>Celebration</h3>
+                <p>Creative competitions, certificates, and community events — share talents and make new friends.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="ak-journey ak-reveal-v2" aria-labelledby="ak-journey-title">
         <div class="ak-journey-head">
             <h2 id="ak-journey-title">How it works — easy peasy!</h2>
             <p>Four simple steps from hello to your e-ticket. Parents and teachers can help too.</p>
@@ -155,6 +165,49 @@
             </article>
         </div>
     </section>
+
+    <section class="ak-bento ak-reveal-v2" aria-labelledby="ak-bento-title">
+        <div class="ak-bento-head">
+            <h2 id="ak-bento-title">Everything in one friendly place</h2>
+            <p>Register online, track your progress, and stay updated — built for families and schools.</p>
+        </div>
+        <div class="ak-bento-grid">
+            <article class="ak-bento-card wide">
+                <div class="ak-bento-icon" style="background:#dbeafe;color:#2563eb"><i class="fas fa-clipboard-check"></i></div>
+                <h3>Pre-register &amp; register</h3>
+                <p>After you create an account, open your dashboard to pre-register, complete full registration, and upload competition entries when you are ready.</p>
+            </article>
+            <article class="ak-bento-card">
+                <div class="ak-bento-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-qrcode"></i></div>
+                <h3>E-ticket</h3>
+                <p>Download your pass with a QR code — show it at check-in on event day.</p>
+            </article>
+            <article class="ak-bento-card">
+                <div class="ak-bento-icon" style="background:#d1fae5;color:#059669"><i class="fas fa-award"></i></div>
+                <h3>Certificates</h3>
+                <p>Verify participation certificates online anytime from the Certificate page.</p>
+            </article>
+            <article class="ak-bento-card tall">
+                <div class="ak-bento-icon" style="background:#fef3c7;color:#d97706"><i class="fas fa-bullhorn"></i></div>
+                <h3>Live updates</h3>
+                <p>Watch the announcement ticker and official notices for schedule changes and reminders.</p>
+            </article>
+            <article class="ak-bento-card">
+                <div class="ak-bento-icon" style="background:#ffe4e6;color:#e11d48"><i class="fas fa-envelope"></i></div>
+                <h3>Need help?</h3>
+                <p>Use Contact us — our team replies to registration and general questions.</p>
+            </article>
+        </div>
+    </section>
+
+    <nav class="ak-quick-band ak-reveal-v2" aria-label="Quick links">
+        <div class="ak-quick-inner">
+            <a href="#" class="ak-quick-link" data-ak-section="schedule"><i class="fas fa-calendar-days"></i> Programme</a>
+            <a href="#" class="ak-quick-link" data-ak-section="about"><i class="fas fa-heart"></i> About us</a>
+            <a href="#" class="ak-quick-link" data-ak-section="verify"><i class="fas fa-search"></i> Find registration</a>
+            <a href="/verify-certificate.html" class="ak-quick-link"><i class="fas fa-certificate"></i> Certificate</a>
+        </div>
+    </nav>
 
     <section id="congress-hero-root" class="congress-hero" aria-label="Featured">
         <div id="congress-hero-slides"></div>
@@ -221,12 +274,20 @@
                 <div id="open-seminars-strip" class="open-seminars-strip"></div>
             </section>
 
-            <section class="vgmf-section hidden" id="faq-section">
+            <section class="vgmf-section ak-reveal-v2" id="faq-section">
                 <div class="section-head">
                     <h2>Frequently asked questions</h2>
                     <p>Pre-registration, main registration, and e-tickets</p>
                         </div>
                 <div class="faq-list" id="faq-list"></div>
+            </section>
+
+            <section class="ak-cta-band ak-reveal-v2">
+                <div class="ak-cta-band-inner">
+                    <h2>Ready to join us?</h2>
+                    <p>Create your free account in minutes. Parents and teachers can help children through each step in the dashboard.</p>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-user-plus"></i> Create free account</button>
+                </div>
             </section>
 
             <section class="vgmf-section reviews-wrap hidden" id="reviews-section">
@@ -504,6 +565,8 @@
     <script src="/js/vgmf-home.js"></script>
     <script src="/js/portal-theme.js"></script>
     <script src="/js/vgmf-congress.js?v=20260520e"></script>
+    <script src="/js/autism-media-safe.js?v=1"></script>
+    <script src="/js/autism-home-enhance.js?v=1"></script>
     <script src="/js/vgmf-home-stats.js"></script>
     <script src="/js/vgmf-marketing.js"></script>
     <script src="/js/otp-ui.js"></script>

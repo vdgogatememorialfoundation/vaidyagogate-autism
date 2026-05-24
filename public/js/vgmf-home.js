@@ -107,16 +107,28 @@
                 '<p class="speakers-placeholder muted" style="text-align:center;max-width:42rem;margin:0 auto;padding:24px 16px;">Faculty lineup will be announced shortly. Session speakers also appear on the <a href="#" data-nav-section="schedule">programme</a> page.</p>';
             return;
         }
+        const autismNoPhotos = document.body && document.body.classList.contains('autism-kids');
         grid.innerHTML = speakers
             .map((s) => {
-                const imgSrc = mediaUrl(s.image || s.imagePath);
-                const avatar = imgSrc
-                    ? '<div class="speaker-photo-wrap"><img src="' +
-                      escHtml(imgSrc) +
-                      '" alt="' +
-                      escHtml(s.name || 'Speaker') +
-                      '" class="speaker-photo" loading="lazy"></div>'
-                    : '<div class="speaker-avatar" aria-hidden="true"><i class="fas fa-user-md"></i></div>';
+                const imgSrc = !autismNoPhotos && mediaUrl(s.image || s.imagePath);
+                const initial = escHtml(
+                    String(s.name || '?')
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => w[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase() || '?'
+                );
+                const avatar = autismNoPhotos
+                    ? '<div class="speaker-avatar ak-speaker-initial" aria-hidden="true">' + initial + '</div>'
+                    : imgSrc
+                      ? '<div class="speaker-photo-wrap"><img src="' +
+                        escHtml(imgSrc) +
+                        '" alt="' +
+                        escHtml(s.name || 'Speaker') +
+                        '" class="speaker-photo" loading="lazy"></div>'
+                      : '<div class="speaker-avatar" aria-hidden="true"><i class="fas fa-user-md"></i></div>';
                 const seminarLine = s.seminar || s.seminarTitle;
                 return (
                     '<article class="speaker-card">' +
