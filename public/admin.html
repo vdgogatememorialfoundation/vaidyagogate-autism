@@ -65,7 +65,7 @@
     <div id="auth-overlay">
         <div class="ak-login-card">
             <div data-site-logo data-logo-height="48px" style="margin-bottom:12px;"></div>
-            <h2>Welcome, team! 👋</h2>
+            <h2>Welcome, team! ??</h2>
             <p class="ak-login-hint">Sign in to manage registrations, events, and e-tickets for the Autism Awareness Programme.</p>
             <div id="admin-login-error" class="ak-login-error" role="alert"></div>
             <form id="admin-login-form" autocomplete="off">
@@ -95,7 +95,7 @@
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%; margin-top: 18px;">Sign in</button>
             </form>
-            <p class="ak-login-hint">Participants use the <a href="/" style="color:#0284c7;">main website</a> to sign up — not this screen.</p>
+            <p class="ak-login-hint">Participants use the <a href="/" style="color:#0284c7;">main website</a> to sign up � not this screen.</p>
         </div>
     </div>
 
@@ -112,10 +112,11 @@
                 <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Event management</a>
                 <a class="menu-item" data-admin-module="tab-event-schedules" onclick="switchTab('tab-event-schedules'); loadEventSchedules();"><i class="fas fa-clock"></i> Event Schedules</a>
                 <a class="menu-item" data-admin-module="tab-announcements" onclick="switchTab('tab-announcements')"><i class="fas fa-bullhorn"></i> Announcements</a>
-                <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration</a>
+                <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration tracking</a>
+                <a class="menu-item" data-admin-module="tab-final-tracking" onclick="switchTab('tab-final-tracking')"><i class="fas fa-file-signature"></i> Final registration tracking</a>
                 <a class="menu-item" data-admin-module="tab-competition-tracking" onclick="switchTab('tab-competition-tracking')"><i class="fas fa-palette"></i> Creative competitions</a>
-                <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Final registration</a>
-                <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Seminar Feedback</a>
+                <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Registration queue</a>
+                <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Event feedback</a>
                 <a class="menu-item" data-admin-module="tab-support-tickets" onclick="switchTab('tab-support-tickets')"><i class="fas fa-ticket-alt"></i> Support Tickets</a>
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
                 <a class="menu-item" data-admin-module="tab-email-compose" onclick="switchTab('tab-email-compose'); initAdminEmailComposeTab();"><i class="fas fa-paper-plane"></i> Send email</a>
@@ -177,12 +178,12 @@
                         <button class="btn-primary" onclick="openAdminCreateUserModal('staff')">+ Create staff user</button>
                     </div>
                     <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                        <input type="search" id="staff-users-search" placeholder="Search staff by name, email, phone, portal ID, or role…" oninput="adminFilterStaffUsersList()" style="flex:1;min-width:200px;max-width:520px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;">
+                        <input type="search" id="staff-users-search" placeholder="Search staff by name, email, phone, portal ID, or role�" oninput="adminFilterStaffUsersList()" style="flex:1;min-width:200px;max-width:520px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;">
                         <button type="button" class="btn-secondary" onclick="adminClearStaffUsersSearch()">Clear search</button>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>12-Digit ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Created</th><th>Activated</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody id="staff-users-list"><tr><td colspan="9" style="text-align: center;">Loading…</td></tr></tbody>
+                        <tbody id="staff-users-list"><tr><td colspan="9" style="text-align: center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -200,12 +201,12 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="doctors-search" style="font-weight:600;font-size:0.9rem;">Search participants</label>
-                        <input type="search" id="doctors-search" placeholder="Portal ID, name, email, or phone…" oninput="renderDoctorsUsersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="doctors-search" placeholder="Portal ID, name, email, or phone�" oninput="renderDoctorsUsersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="doctors-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>12-Digit ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Created</th><th>Activated</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody id="doctors-list"><tr><td colspan="8" style="text-align: center;">Loading…</td></tr></tbody>
+                        <tbody id="doctors-list"><tr><td colspan="8" style="text-align: center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -233,12 +234,12 @@
                         <div class="ak-prereg-toolbar">
                             <div><label for="ak-prereg-seminar">Event</label><select id="ak-prereg-seminar"><option value="">All events</option></select></div>
                             <div><label for="ak-prereg-status-filter">Status</label><select id="ak-prereg-status-filter"><option value="all">All</option><option value="submitted">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="revision_required">Revision required</option></select></div>
-                            <div style="flex:1;min-width:200px;"><label for="ak-prereg-search">Search</label><input type="search" id="ak-prereg-search" placeholder="Name, email, application no…"></div>
+                            <div style="flex:1;min-width:200px;"><label for="ak-prereg-search">Search</label><input type="search" id="ak-prereg-search" placeholder="Name, email, application no�"></div>
                             <button type="button" class="btn-primary" id="ak-prereg-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
                         </div>
                         <table class="data-table">
                             <thead><tr><th>Barcode / ID</th><th>Participant</th><th>Event</th><th>Pre-reg</th><th>Registration</th><th>Submitted</th><th></th></tr></thead>
-                            <tbody id="ak-prereg-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load…</td></tr></tbody>
+                            <tbody id="ak-prereg-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load�</td></tr></tbody>
                         </table>
                         <div id="ak-prereg-detail" class="ak-prereg-detail">
                             <h4 id="ak-prereg-detail-title">Details</h4>
@@ -247,9 +248,47 @@
                                 <button type="button" class="btn-success" id="ak-prereg-approve"><i class="fas fa-check"></i> Approve</button>
                                 <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-prereg-revision"><i class="fas fa-edit"></i> Request revision</button>
                                 <button type="button" class="btn-danger" id="ak-prereg-reject"><i class="fas fa-times"></i> Reject</button>
-                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open final registration queue</button>
+                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open final registration tracking</button>
                             </div>
                             <p id="ak-prereg-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final registration tracking -->
+            <div id="tab-final-tracking" class="tab-pane hidden">
+                <div class="ak-prereg-wrap">
+                    <h2 style="margin-bottom: 8px;">Final registration tracking</h2>
+                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Track main registrations after pre-registration is approved. Request revisions, issue e-tickets, and review application details.</p>
+                    <div class="ak-prereg-stats">
+                        <div class="ak-final-stat ak-prereg-stat" data-filter="all"><div class="num" id="ak-final-stat-total">0</div><div class="lbl">Total</div></div>
+                        <div class="ak-final-stat ak-prereg-stat stat-pending" data-filter="pending_approval"><div class="num" id="ak-final-stat-pending_approval">0</div><div class="lbl">Pending</div></div>
+                        <div class="ak-final-stat ak-prereg-stat" data-filter="revision_required"><div class="num" id="ak-final-stat-revision_required">0</div><div class="lbl">Revision</div></div>
+                        <div class="ak-final-stat ak-prereg-stat stat-approved" data-filter="e_ticket_issued"><div class="num" id="ak-final-stat-e_ticket_issued">0</div><div class="lbl">E-ticket</div></div>
+                        <div class="ak-final-stat ak-prereg-stat stat-rejected" data-filter="rejected"><div class="num" id="ak-final-stat-rejected">0</div><div class="lbl">Rejected</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="ak-prereg-toolbar">
+                            <div><label for="ak-final-seminar">Event</label><select id="ak-final-seminar"><option value="">All events</option></select></div>
+                            <div><label for="ak-final-status-filter">Status</label><select id="ak-final-status-filter"><option value="all">All</option><option value="submitted">Submitted</option><option value="pending_approval">Pending approval</option><option value="revision_required">Revision required</option><option value="e_ticket_issued">E-ticket issued</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select></div>
+                            <div style="flex:1;min-width:200px;"><label for="ak-final-search">Search</label><input type="search" id="ak-final-search" placeholder="Name, email, application no�"></div>
+                            <button type="button" class="btn-primary" id="ak-final-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <table class="data-table">
+                            <thead><tr><th>Barcode / ID</th><th>Applicant</th><th>Event</th><th>Status</th><th>Submitted</th><th>Update</th><th></th></tr></thead>
+                            <tbody id="ak-final-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load�</td></tr></tbody>
+                        </table>
+                        <div id="ak-final-detail" class="ak-prereg-detail">
+                            <h4 id="ak-final-detail-title">Details</h4>
+                            <div id="ak-final-detail-body"></div>
+                            <div class="ak-prereg-actions">
+                                <button type="button" class="btn-success" id="ak-final-approve"><i class="fas fa-check"></i> Issue e-ticket</button>
+                                <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-final-revision"><i class="fas fa-edit"></i> Request revision</button>
+                                <button type="button" class="btn-danger" id="ak-final-reject"><i class="fas fa-times"></i> Reject</button>
+                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-final-open-queue"><i class="fas fa-folder-open"></i> Open registration queue</button>
+                            </div>
+                            <p id="ak-final-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
                         </div>
                     </div>
                 </div>
@@ -262,12 +301,12 @@
                 <div class="card">
                     <div class="ak-prereg-toolbar">
                         <div><label for="ak-comp-status-filter">Status</label><select id="ak-comp-status-filter"><option value="all">All</option><option value="submitted">Submitted</option><option value="under_review">Under review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
-                        <div style="flex:1;min-width:200px;"><label for="ak-comp-search">Search</label><input type="search" id="ak-comp-search" placeholder="Barcode, title, name, email…"></div>
+                        <div style="flex:1;min-width:200px;"><label for="ak-comp-search">Search</label><input type="search" id="ak-comp-search" placeholder="Barcode, title, name, email�"></div>
                         <button type="button" class="btn-primary" id="ak-comp-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>Barcode</th><th>Entry</th><th>Participant</th><th>Event</th><th>Status</th><th>Submitted</th><th>Update</th></tr></thead>
-                        <tbody id="ak-comp-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load…</td></tr></tbody>
+                        <tbody id="ak-comp-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load�</td></tr></tbody>
                     </table>
                     <p id="ak-comp-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
                 </div>
@@ -280,32 +319,32 @@
                 <div class="card">
                     <div style="margin-bottom:12px;">
                         <label for="applications-search" style="font-weight:600;font-size:0.9rem;">Search applications</label>
-                        <input type="search" id="applications-search" placeholder="Application no., doctor ID, name, email, phone, or status…" oninput="adminFilterApplicationsList()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="applications-search" placeholder="Application no., Applicant ID, name, email, phone, or status�" oninput="adminFilterApplicationsList()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="applications-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>App ID (Barcode)</th><th>Doctor ID</th><th>Doctor Name</th><th>Current Status</th><th>Action</th></tr></thead>
+                        <thead><tr><th>App ID (Barcode)</th><th>Applicant ID</th><th>Applicant name</th><th>Current Status</th><th>Action</th></tr></thead>
                         <tbody id="applications-list"><tr><td colspan="5" style="text-align: center;">Loading applications...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Seminar Management -->
+            <!-- Event management -->
             <div id="tab-seminars" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Seminar Management</h2>
+                <h2 style="margin-bottom: 20px;">Event management</h2>
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <h3>Active Seminars</h3>
-                        <button class="btn-primary" onclick="openCreateSeminarModal()">+ Create Seminar</button>
+                        <h3>Active events</h3>
+                        <button class="btn-primary" onclick="openCreateSeminarModal()">+ Create event</button>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label for="seminars-search" style="font-weight:600;font-size:0.9rem;">Search seminars</label>
-                        <input type="search" id="seminars-search" placeholder="ID, title, year, or status…" oninput="renderSeminarsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <label for="seminars-search" style="font-weight:600;font-size:0.9rem;">Search events</label>
+                        <input type="search" id="seminars-search" placeholder="ID, title, year, or status�" oninput="renderSeminarsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="seminars-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>ID</th><th>Title</th><th>Event Date</th><th>Price</th><th>Check-in Enabled?</th><th>Actions</th></tr></thead>
-                        <tbody id="seminars-list"><tr><td colspan="6" style="text-align: center;">Loading seminars...</td></tr></tbody>
+                        <tbody id="seminars-list"><tr><td colspan="6" style="text-align: center;">Loading events...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -341,7 +380,7 @@
                     </div>
                     <div class="card" style="margin-bottom: 0;" id="stat-seats-card">
                         <h4 style="color: #64748b;">Seats</h4>
-                        <h2 id="stat-seats" style="color: #7c3aed;font-size:1.05rem;">—</h2>
+                        <h2 id="stat-seats" style="color: #7c3aed;font-size:1.05rem;">�</h2>
                     </div>
                 </div>
 
@@ -394,7 +433,7 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="event-schedules-search" style="font-weight:600;font-size:0.9rem;">Search schedules</label>
-                        <input type="search" id="event-schedules-search" placeholder="Title, seminar, speaker, or location…" oninput="renderEventSchedulesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="event-schedules-search" placeholder="Title, seminar, speaker, or location�" oninput="renderEventSchedulesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="event-schedules-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -439,7 +478,7 @@
                     <h3 style="margin-top: 20px; margin-bottom: 10px;">Detailed Feedback</h3>
                     <div style="margin-bottom:12px;">
                         <label for="feedback-search" style="font-weight:600;font-size:0.9rem;">Search feedback</label>
-                        <input type="search" id="feedback-search" placeholder="Attendee name or comments…" oninput="renderFeedbackTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="feedback-search" placeholder="Attendee name or comments�" oninput="renderFeedbackTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="feedback-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -466,12 +505,12 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="contact-inquiries-search" style="font-weight:600;font-size:0.9rem;">Search inquiries</label>
-                        <input type="search" id="contact-inquiries-search" placeholder="Name, email, phone, subject, or status…" oninput="renderContactInquiriesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="contact-inquiries-search" placeholder="Name, email, phone, subject, or status�" oninput="renderContactInquiriesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="contact-inquiries-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead>
-                        <tbody id="contact-inquiries-list"><tr><td colspan="7" style="text-align:center;">Loading…</td></tr></tbody>
+                        <tbody id="contact-inquiries-list"><tr><td colspan="7" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
                 <div id="contact-inquiry-detail" class="card hidden" style="margin-top:16px;">
@@ -494,7 +533,7 @@
                         <label>Subject</label>
                         <input type="text" id="contact-reply-subject" style="width:100%;max-width:560px;padding:8px;margin-bottom:8px;" placeholder="Re: your enquiry">
                         <label>Message</label>
-                        <textarea id="contact-reply-body" rows="5" style="width:100%;max-width:560px;padding:8px;" placeholder="Type your reply…"></textarea>
+                        <textarea id="contact-reply-body" rows="5" style="width:100%;max-width:560px;padding:8px;" placeholder="Type your reply�"></textarea>
                         <p id="contact-reply-msg" style="margin:8px 0;font-size:0.88rem;"></p>
                         <button type="button" class="btn-primary" onclick="sendContactInquiryEmail()"><i class="fas fa-paper-plane"></i> Send email to visitor</button>
                     </div>
@@ -520,8 +559,8 @@
                         <div><label>Audience</label>
                             <select id="mail-bulk-audience" style="width:100%;padding:8px;" onchange="onMailBulkAudienceChange()">
                                 <option value="all_doctors">All doctors</option>
-                                <option value="seminar_paid">Paid registrants — seminar</option>
-                                <option value="seminar_all">All registrants — seminar</option>
+                                <option value="seminar_paid">Paid registrants � seminar</option>
+                                <option value="seminar_all">All registrants � seminar</option>
                                 <option value="custom_emails">Custom email list</option>
                             </select>
                         </div>
@@ -595,11 +634,11 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="support-tickets-search" style="font-weight:600;font-size:0.9rem;">Search tickets</label>
-                        <input type="search" id="support-tickets-search" placeholder="Ticket ID, doctor, subject, category, or status…" oninput="renderSupportTicketsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="support-tickets-search" placeholder="Ticket ID, doctor, subject, category, or status�" oninput="renderSupportTicketsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="support-tickets-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Ticket ID</th><th>Doctor Name</th><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
+                        <thead><tr><th>Ticket ID</th><th>Applicant name</th><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
                         <tbody id="support-tickets-list"><tr><td colspan="8" style="text-align: center;">Loading tickets...</td></tr></tbody>
                     </table>
                 </div>
@@ -630,10 +669,10 @@
             <!-- Admin: seminar application on behalf of doctor (live save) -->
             <div id="tab-behalf-reg" class="tab-pane hidden">
                 <h2 style="margin-bottom: 12px;">Doctor seminar applications (admin workspace)</h2>
-                <p style="color:#64748b;margin-bottom:18px;max-width:920px;">Register a doctor using the <strong>same fields as the doctor portal</strong> (from <em>Seminar registration form</em> settings). Data is stored in <code>registrations.form_data</code> as JSON — that is what the old JSON box was for. After saving, use <strong>Process application</strong> below for verify → payment → e-ticket QR.</p>
+                <p style="color:#64748b;margin-bottom:18px;max-width:920px;">Register a doctor using the <strong>same fields as the doctor portal</strong> (from <em>Seminar registration form</em> settings). Data is stored in <code>registrations.form_data</code> as JSON � that is what the old JSON box was for. After saving, use <strong>Process application</strong> below for verify ? payment ? e-ticket QR.</p>
                 <div id="behalf-applicant-otp-wrap" class="card" style="margin-bottom:16px;padding:14px;border:1px solid #bfdbfe;background:#eff6ff;">
                     <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the doctor (phone &amp; email on the form below)</strong>
-                    <p style="font-size:0.85rem;color:#475569;margin:0 0 10px;">Send codes to the applicant — not your admin login. Verify both before saving.</p>
+                    <p style="font-size:0.85rem;color:#475569;margin:0 0 10px;">Send codes to the applicant � not your admin login. Verify both before saving.</p>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;">
                         <span style="font-size:0.85rem;">Applicant email</span>
                         <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.8rem;background:#64748b;" onclick="behalfSendApplicantOtp('email')">Send OTP</button>
@@ -653,11 +692,11 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label>Doctor account</label>
-                            <select id="behalf-doctor-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">— Select doctor —</option></select>
+                            <select id="behalf-doctor-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">� Select doctor �</option></select>
                         </div>
                         <div>
                             <label>Seminar</label>
-                            <select id="behalf-seminar-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">— Select seminar —</option></select>
+                            <select id="behalf-seminar-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">� Select seminar �</option></select>
                     </div>
                     </div>
                     <p id="behalf-app-summary" style="margin-top:12px;font-size:0.9rem;color:#475569;">Select a doctor and seminar to load or create an application.</p>
@@ -731,7 +770,7 @@
                 </div>
                 <div class="card" style="margin-bottom:18px;border-left:4px solid #2563eb;">
                     <h3 style="margin:0 0 8px;">All participants (dashboard)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown under <em>Programme updates</em> on every applicant dashboard. Edit in Website CMS → Applicant portal updates, then Save website content.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown under <em>Programme updates</em> on every applicant dashboard. Edit in Website CMS ? Applicant portal updates, then Save website content.</p>
                     <button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Edit programme updates</button>
                 </div>
                 <div class="card">
@@ -765,12 +804,12 @@
                     <p id="ak-site-images-status" style="margin-top:10px;font-size:0.88rem;font-weight:600;"></p>
                 </div>
                 <h2 style="margin-bottom: 12px; color:#0c4a6e;">Public website &amp; doctor portal content</h2>
-                <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons — paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Seminar Management (after payments are complete).</p>
+                <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons � paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Event management (after payments are complete).</p>
                 <div class="card" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Public portal sign-in &amp; security</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving doctor applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> still override signup/login OTP when set to 0 or 1.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-signup" checked> Show “Create account” on main site</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-signup" checked> Show �Create account� on main site</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-login" checked> Show sign-in entry on main site</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-signup-otp" checked> Require signup OTP (email + WhatsApp)</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-login-otp" checked> Require login OTP on public site &amp; doctor portal (never on admin/judge/scanner apps)</label>
@@ -789,7 +828,7 @@
                 </div>
                 <div class="card" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;" id="admin-pages-policy-card">
                     <h3 style="margin:0 0 10px;color:#4338ca;font-size:1.05rem;">Admin menu pages (global)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Super administrator only: choose which admin sidebar sections are visible for <strong>all</strong> staff (including co-admins). Co-admin users can still have further limits per user under Staff users → Modules.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Super administrator only: choose which admin sidebar sections are visible for <strong>all</strong> staff (including co-admins). Co-admin users can still have further limits per user under Staff users ? Modules.</p>
                     <div id="admin-global-pages-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;max-height:320px;overflow-y:auto;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></div>
                     <p style="font-size:0.82rem;color:#64748b;margin:10px 0 0;">Leave all checked to show every page. Uncheck to hide a section from the admin sidebar.</p>
                 </div>
@@ -890,7 +929,7 @@
                     <p id="pr-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
                 <div class="card" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;">
-                    <h3 style="margin:0 0 10px;color:#4338ca;font-size:1.05rem;">Judge → participant emails (monitoring)</h3>
+                    <h3 style="margin:0 0 10px;color:#4338ca;font-size:1.05rem;">Judge ? participant emails (monitoring)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When judges contact participants, emails are sent from the organisation address with sender name <em>Judge Name | Vaidya Gogate Memorial Foundation</em>. A copy goes to the admin contact email if configured.</p>
                     <button type="button" class="btn-primary" style="background:#4338ca;padding:8px 14px;font-size:0.9rem;" onclick="loadJudgeCommunicationsAdmin()">Refresh log</button>
                     <div style="overflow-x:auto;margin-top:12px;">
@@ -904,7 +943,7 @@
                     <h3 style="margin:0 0 10px;color:#166534;font-size:1.05rem;">Venue change broadcast</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">After updating <em>Venue line</em> below, send email and WhatsApp to all <strong>paid</strong> registrants. Seminar dates in notifications use India Standard Time (IST).</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;">
-                        <div><label style="font-size:0.82rem;">Seminar (optional — blank = all)</label><select id="venue-broadcast-seminar" class="form-control"><option value="">All paid seminars</option></select></div>
+                        <div><label style="font-size:0.82rem;">Seminar (optional � blank = all)</label><select id="venue-broadcast-seminar" class="form-control"><option value="">All paid seminars</option></select></div>
                         <div><label style="font-size:0.82rem;">New venue / message</label><input type="text" id="venue-broadcast-msg" class="form-control" placeholder="Convention Centre Hall B, Pune"></div>
                     </div>
                     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:14px;font-size:0.9rem;">
@@ -918,8 +957,8 @@
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Site header &amp; footer</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright. Click <strong>Save website &amp; portal content</strong> at the bottom of this page.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                        <div><label style="font-size:0.8rem;">Header — foundation name</label><input type="text" id="cms-header-foundation" style="width:100%" placeholder="Vaidya Gogate Memorial Foundation"></div>
-                        <div><label style="font-size:0.8rem;">Header — programme line</label><input type="text" id="cms-header-programme" style="width:100%" placeholder="Autism Awareness Programme"></div>
+                        <div><label style="font-size:0.8rem;">Header � foundation name</label><input type="text" id="cms-header-foundation" style="width:100%" placeholder="Vaidya Gogate Memorial Foundation"></div>
+                        <div><label style="font-size:0.8rem;">Header � programme line</label><input type="text" id="cms-header-programme" style="width:100%" placeholder="Autism Awareness Programme"></div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
                         <div><label style="font-size:0.8rem;">Top bar email</label><input type="text" id="cms-top-email" style="width:100%"></div>
@@ -929,9 +968,9 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div style="grid-column:1/-1;"><label>Footer tagline</label><input type="text" id="cms-footer-tagline" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><label>Footer copyright</label><input type="text" id="cms-footer-copy" style="width:100%"></div>
-                        <div><label>Footer — Explore title</label><input type="text" id="cms-footer-explore-title" style="width:100%"></div>
-                        <div><label>Footer — Applicant access title</label><input type="text" id="cms-footer-doctor-title" style="width:100%"></div>
-                        <div><label>Footer — Contact title</label><input type="text" id="cms-footer-contact-title" style="width:100%"></div>
+                        <div><label>Footer � Explore title</label><input type="text" id="cms-footer-explore-title" style="width:100%"></div>
+                        <div><label>Footer � Applicant access title</label><input type="text" id="cms-footer-doctor-title" style="width:100%"></div>
+                        <div><label>Footer � Contact title</label><input type="text" id="cms-footer-contact-title" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><label>Footer credit HTML</label><input type="text" id="cms-footer-credit" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><label>Explore links</label><div id="cms-footer-explore-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterExploreRow()">+ Link</button></div>
                         <div style="grid-column:1/-1;"><label>Applicant access links</label><div id="cms-footer-doctor-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterDoctorRow()">+ Link</button></div>
@@ -1074,7 +1113,7 @@
                     </div>
                     <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Past seminar gallery (by year)</label>
-                        <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Group photos by year (e.g. 2025 — 10 images, 2024 — 20 images). Use <strong>Upload multiple images</strong> — each photo uploads separately (large phone photos are auto-compressed). Then click <strong>Save website &amp; portal content</strong>. Keep each image under ~4 MB.</p>
+                        <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Group photos by year (e.g. 2025 � 10 images, 2024 � 20 images). Use <strong>Upload multiple images</strong> � each photo uploads separately (large phone photos are auto-compressed). Then click <strong>Save website &amp; portal content</strong>. Keep each image under ~4 MB.</p>
                         <div id="cms-gallery-years"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddGalleryYear()">+ Add year album</button>
                     </div>
@@ -1115,8 +1154,8 @@
                     <p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">Create extra charges (workshop fee, late fee, etc.). Doctors see them under Payments; you can mark cash received at the desk.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:960px;">
                         <div><label>Doctor portal User ID</label><input type="text" id="sup-pay-user-id" placeholder="e.g. USR_TINBS1V70" autocomplete="off" style="width:100%;padding:8px;"></div>
-                        <div><label>Seminar (optional)</label><select id="sup-pay-seminar" style="width:100%;padding:8px;"><option value="">—</option></select></div>
-                        <div><label>Amount (₹)</label><input type="number" id="sup-pay-amount" step="0.01" style="width:100%;padding:8px;"></div>
+                        <div><label>Seminar (optional)</label><select id="sup-pay-seminar" style="width:100%;padding:8px;"><option value="">�</option></select></div>
+                        <div><label>Amount (?)</label><input type="number" id="sup-pay-amount" step="0.01" style="width:100%;padding:8px;"></div>
                     </div>
                     <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:960px;">
                         <div><label>Title</label><input type="text" id="sup-pay-title" placeholder="e.g. Workshop fee" style="width:100%;padding:8px;"></div>
@@ -1128,12 +1167,12 @@
                     <button type="button" class="btn-primary" style="background:#64748b;margin-bottom:10px;" onclick="loadAdminSupplementalPayments()">Refresh list</button>
                     <div style="margin-bottom:12px;">
                         <label for="supplemental-payments-search" style="font-weight:600;font-size:0.9rem;">Search additional payments</label>
-                        <input type="search" id="supplemental-payments-search" placeholder="Doctor ID, name, email, title, or status…" oninput="renderAdminSupplementalPaymentsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="supplemental-payments-search" placeholder="Applicant ID, name, email, title, or status�" oninput="renderAdminSupplementalPaymentsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="supplemental-payments-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>ID</th><th>Doctor</th><th>Title</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody id="admin-supplemental-tbody"><tr><td colspan="6" style="text-align:center;">—</td></tr></tbody>
+                        <tbody id="admin-supplemental-tbody"><tr><td colspan="6" style="text-align:center;">�</td></tr></tbody>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:16px;border:1px solid #99f6e4;background:#f0fdfa;">
@@ -1167,7 +1206,7 @@
                     <button type="button" class="btn-primary" style="margin-bottom:12px;background:#64748b;" onclick="loadAdminEnrichedOrders()">Refresh orders</button>
                     <div style="margin-bottom:12px;">
                         <label for="payments-orders-search" style="font-weight:600;font-size:0.9rem;">Search orders</label>
-                        <input type="search" id="payments-orders-search" placeholder="Order ID, doctor, seminar, application, gateway, or status…" oninput="renderAdminEnrichedOrdersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="payments-orders-search" placeholder="Order ID, doctor, seminar, application, gateway, or status�" oninput="renderAdminEnrichedOrdersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="payments-orders-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -1182,12 +1221,12 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="cancellation-requests-search" style="font-weight:600;font-size:0.9rem;">Search cancellation requests</label>
-                        <input type="search" id="cancellation-requests-search" placeholder="Doctor, seminar, application, reason, or status…" oninput="renderAdminCancellationRequestsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="cancellation-requests-search" placeholder="Doctor, seminar, application, reason, or status�" oninput="renderAdminCancellationRequestsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="cancellation-requests-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>Requested</th><th>Doctor</th><th>Seminar</th><th>App</th><th>Reason</th><th>Policy refund</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody id="admin-cancel-req-tbody"><tr><td colspan="8" style="text-align:center;">—</td></tr></tbody>
+                        <tbody id="admin-cancel-req-tbody"><tr><td colspan="8" style="text-align:center;">�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1215,8 +1254,8 @@
                         </div>
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-                        <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('participant')"><i class="fas fa-award"></i> VGMF design — Participant</button>
-                        <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('volunteer')"><i class="fas fa-hands-helping"></i> VGMF design — Volunteer</button>
+                        <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('participant')"><i class="fas fa-award"></i> VGMF design � Participant</button>
+                        <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('volunteer')"><i class="fas fa-hands-helping"></i> VGMF design � Volunteer</button>
                         <button type="button" class="btn-primary" style="background:#475569;" onclick="uploadAdminCertificateTemplate()"><i class="fas fa-upload"></i> Upload custom file</button>
                     </div>
                     <p id="cert-mgmt-msg" style="margin-top:10px;font-size:0.88rem;"></p>
@@ -1260,7 +1299,7 @@
                     </label>
                     <label style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:8px;">
                         <input type="checkbox" id="cert-verify-manual">
-                        Enable now (manual override — before seminar has ended)
+                        Enable now (manual override � before seminar has ended)
                     </label>
                     <div style="margin-bottom:10px;">
                         <label style="font-size:0.85rem;font-weight:600;">Scheduled opening (optional)</label>
@@ -1281,7 +1320,7 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="cert-candidates-search" style="font-weight:600;font-size:0.9rem;">Search candidates</label>
-                        <input type="search" id="cert-candidates-search" placeholder="PRN, name, application no., ticket, or status…" oninput="renderAdminCertificateCandidatesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="cert-candidates-search" placeholder="PRN, name, application no., ticket, or status�" oninput="renderAdminCertificateCandidatesTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="cert-candidates-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -1293,7 +1332,7 @@
 
             <div id="tab-volunteer-assignments" class="tab-pane hidden">
                 <h2 style="margin-bottom: 12px;">Volunteer assignments</h2>
-                <p style="color:#64748b;margin-bottom:18px;max-width:900px;">Track each volunteer’s registration, fill their application from admin, assign duties, and issue a free ticket (₹0) only after registration is submitted.</p>
+                <p style="color:#64748b;margin-bottom:18px;max-width:900px;">Track each volunteer�s registration, fill their application from admin, assign duties, and issue a free ticket (?0) only after registration is submitted.</p>
                 <div class="card" style="margin-bottom:16px;">
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:flex-end;">
                         <div><label>Seminar</label><select id="vol-assign-seminar" style="width:100%;padding:8px;" onchange="loadAdminVolunteerAssignments()"></select></div>
@@ -1308,11 +1347,11 @@
                 </div>
                 <div class="card">
                     <label for="vol-assign-search" style="font-weight:600;font-size:0.9rem;">Search assignments</label>
-                    <input type="search" id="vol-assign-search" placeholder="Seminar, name, portal ID, email, ticket, registration status…" oninput="renderAdminVolunteerAssignmentsTable()" style="width:100%;max-width:640px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                    <input type="search" id="vol-assign-search" placeholder="Seminar, name, portal ID, email, ticket, registration status�" oninput="renderAdminVolunteerAssignmentsTable()" style="width:100%;max-width:640px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                     <p id="vol-assign-search-count" style="margin:6px 0 12px;font-size:0.82rem;color:#64748b;"></p>
                     <table class="data-table">
-                        <thead><tr><th>Seminar</th><th>Doctor</th><th>Assignment</th><th>Registration</th><th>Ticket (₹0)</th><th>Duties</th><th>Actions</th></tr></thead>
-                        <tbody id="vol-assign-list"><tr><td colspan="7" style="text-align:center;">Loading…</td></tr></tbody>
+                        <thead><tr><th>Seminar</th><th>Doctor</th><th>Assignment</th><th>Registration</th><th>Ticket (?0)</th><th>Duties</th><th>Actions</th></tr></thead>
+                        <tbody id="vol-assign-list"><tr><td colspan="7" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1327,12 +1366,12 @@
                         <div><label>Admin notes</label><input type="text" id="vol-mgmt-notes" style="width:100%;padding:8px;"></div>
                     </div>
                     <button type="button" class="btn-primary" onclick="addAdminVolunteer()">Add volunteer</button>
-                    <p style="font-size:0.85rem;color:#64748b;margin-top:12px;max-width:720px;">Assigns the doctor as a <strong>volunteer</strong> in the portal. They must complete seminar registration themselves. After registration is submitted, a <strong>free e-ticket (₹0)</strong>, dual certificates, and notifications are issued automatically — not before.</p>
+                    <p style="font-size:0.85rem;color:#64748b;margin-top:12px;max-width:720px;">Assigns the doctor as a <strong>volunteer</strong> in the portal. They must complete seminar registration themselves. After registration is submitted, a <strong>free e-ticket (?0)</strong>, dual certificates, and notifications are issued automatically � not before.</p>
                 </div>
                 <div class="card" style="margin-top:16px;">
                     <div style="margin-bottom:12px;">
                         <label for="volunteers-search" style="font-weight:600;font-size:0.9rem;">Search volunteers</label>
-                        <input type="search" id="volunteers-search" placeholder="Portal ID, name, email, ticket, or status…" oninput="renderAdminVolunteersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="volunteers-search" placeholder="Portal ID, name, email, ticket, or status�" oninput="renderAdminVolunteersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="volunteers-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -1350,7 +1389,7 @@
                     <input type="hidden" id="case-prog-edit-id" value="">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;">
                         <div><label>Title *</label><input type="text" id="case-prog-title" style="width:100%;padding:8px;"></div>
-                        <div><label>Linked seminar</label><select id="case-prog-seminar" style="width:100%;padding:8px;"><option value="">— None —</option></select></div>
+                        <div><label>Linked seminar</label><select id="case-prog-seminar" style="width:100%;padding:8px;"><option value="">� None �</option></select></div>
                         <div style="grid-column:1/-1;"><label>Description</label><textarea id="case-prog-desc" rows="2" style="width:100%;padding:8px;"></textarea></div>
                         <div style="grid-column:1/-1;"><label>Instructions (shown to doctors)</label><textarea id="case-prog-instructions" rows="2" style="width:100%;padding:8px;"></textarea></div>
                         <div><label>Registration opens (IST)</label><input type="datetime-local" id="case-prog-start" style="width:100%;padding:8px;"></div>
@@ -1370,7 +1409,7 @@
                     <h4 style="margin:16px 0 8px;">Application form fields</h4>
                     <table class="data-table" style="margin-bottom:12px;">
                         <thead><tr><th>Field</th><th>Label</th><th>Enabled</th><th>Required</th></tr></thead>
-                        <tbody id="case-prog-fields-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+                        <tbody id="case-prog-fields-tbody"><tr><td colspan="4">Loading�</td></tr></tbody>
                     </table>
                     <h4 style="margin:16px 0 8px;">Judging criteria (marks per criterion)</h4>
                     <p style="color:#64748b;font-size:0.85rem;margin-bottom:8px;">Judges score each submission against these criteria. Total marks = sum of max marks below.</p>
@@ -1385,7 +1424,7 @@
                     <button type="button" class="btn-primary" style="background:#64748b;margin-left:8px;" onclick="resetAdminCaseProgramForm()">Clear / new</button>
                     <div style="margin-top:14px;margin-bottom:8px;">
                         <label for="case-prog-search" style="font-weight:600;font-size:0.9rem;">Search saved programs</label>
-                        <input type="search" id="case-prog-search" placeholder="Program title or dates…" oninput="renderAdminCaseProgramsList()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="case-prog-search" placeholder="Program title or dates�" oninput="renderAdminCaseProgramsList()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="case-prog-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <div id="case-prog-list" style="margin-top:14px;"></div>
@@ -1393,8 +1432,8 @@
                     <h4 style="margin:0 0 8px;">Priority select (no application yet)</h4>
                     <p style="color:#64748b;font-size:0.85rem;margin-bottom:10px;">Creates a pre-filled case application for a doctor who was selected but never applied. They complete missing fields in the doctor portal; review is fast-tracked. Seminar registration override is applied when the program is linked to a seminar.</p>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-                        <div><label style="font-size:0.8rem;">Program</label><select id="case-priority-program" style="min-width:220px;padding:8px;"><option value="">— Select program —</option></select></div>
-                        <div><label style="font-size:0.8rem;">Doctor portal ID / email</label><input type="text" id="case-priority-user" placeholder="USR_… or email" style="padding:8px;min-width:200px;"></div>
+                        <div><label style="font-size:0.8rem;">Program</label><select id="case-priority-program" style="min-width:220px;padding:8px;"><option value="">� Select program �</option></select></div>
+                        <div><label style="font-size:0.8rem;">Doctor portal ID / email</label><input type="text" id="case-priority-user" placeholder="USR_� or email" style="padding:8px;min-width:200px;"></div>
                         <div><label style="font-size:0.8rem;">Category</label><select id="case-priority-category" style="padding:8px;"><option value="agnikarma">Agnikarma</option><option value="viddhakarma">Viddhakarma</option><option value="both">Both</option></select></div>
                         <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="adminPriorityInviteDoctor()">Create priority application</button>
                     </div>
@@ -1404,18 +1443,18 @@
                     <button type="button" class="btn-primary" style="background:#64748b;margin-bottom:12px;" onclick="loadAdminCaseSubmissions()">Refresh submissions</button>
                     <div style="margin-bottom:12px;">
                         <label for="case-submissions-search" style="font-weight:600;font-size:0.9rem;">Search submissions</label>
-                        <input type="search" id="case-submissions-search" placeholder="Application ID, doctor, category, topic, or status…" oninput="renderAdminCaseSubmissionsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="case-submissions-search" placeholder="Application ID, doctor, category, topic, or status�" oninput="renderAdminCaseSubmissionsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="case-submissions-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>App ID</th><th>Doctor</th><th>Category</th><th>Topic</th><th>Status</th><th>Files</th><th>Actions</th></tr></thead>
-                        <tbody id="case-mgmt-list"><tr><td colspan="6" style="text-align:center;">Loading…</td></tr></tbody>
+                        <tbody id="case-mgmt-list"><tr><td colspan="6" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
                 <div id="case-mgmt-detail" class="card hidden" style="margin-top:16px;"></div>
                 <div class="card" style="margin-top:16px;">
                     <h3 style="margin-bottom:8px;">Case results (auto-ranked)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Average judge scores. Highest row highlighted — you still choose admission via <strong>Mark winner</strong>.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Average judge scores. Highest row highlighted � you still choose admission via <strong>Mark winner</strong>.</p>
                     <label style="font-size:0.82rem;font-weight:700;">Program filter</label>
                     <select id="case-results-program" style="width:100%;max-width:360px;padding:8px;margin:8px 0 12px;" onchange="loadAdminCaseResults(); loadAdminCaseMarksheetPreview();">
                         <option value="">All programs</option>
@@ -1424,10 +1463,10 @@
                         <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadCaseMarksheet('xlsx')"><i class="fas fa-file-excel"></i> Download Excel marksheet</button>
                         <button type="button" class="btn-primary" style="background:#1e40af;" onclick="downloadCaseMarksheet('pdf')"><i class="fas fa-file-pdf"></i> Download PDF / print</button>
                     </div>
-                    <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Marksheet includes each judge’s criteria scores, totals, doctor &amp; judge IDs, and auto eligibility (≥60% of max by default).</p>
-                    <div id="case-results-panel"><p style="color:#64748b;">Loading results…</p></div>
+                    <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Marksheet includes each judge�s criteria scores, totals, doctor &amp; judge IDs, and auto eligibility (=60% of max by default).</p>
+                    <div id="case-results-panel"><p style="color:#64748b;">Loading results�</p></div>
                     <h4 style="margin:20px 0 10px;">Full marksheet preview</h4>
-                    <div id="case-marksheet-panel" style="overflow-x:auto;"><p style="color:#64748b;">Loading marksheet…</p></div>
+                    <div id="case-marksheet-panel" style="overflow-x:auto;"><p style="color:#64748b;">Loading marksheet�</p></div>
                 </div>
             </div>
 
@@ -1477,7 +1516,7 @@
                     <button type="button" class="btn-primary" onclick="saveAdminRegistrationOverride()">Save override</button>
                     <table class="data-table" style="margin-top:16px;">
                         <thead><tr><th>Doctor</th><th>Seminar</th><th>Enabled</th><th>Note</th></tr></thead>
-                        <tbody id="reg-ov-list"><tr><td colspan="4" style="text-align:center;">—</td></tr></tbody>
+                        <tbody id="reg-ov-list"><tr><td colspan="4" style="text-align:center;">�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1509,7 +1548,7 @@
                     </div>
                     <table class="data-table">
                         <thead><tr><th>Time (IST)</th><th>User</th><th>Role</th><th>Action</th><th>Resource</th><th>Details</th><th>IP</th></tr></thead>
-                        <tbody id="activity-logs-list"><tr><td colspan="7" style="text-align:center;">Loading…</td></tr></tbody>
+                        <tbody id="activity-logs-list"><tr><td colspan="7" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1517,7 +1556,7 @@
             <!-- E-tickets: lookup, generate, send -->
             <div id="tab-etickets" class="tab-pane hidden">
                 <h2 style="margin-bottom: 12px;">E-tickets</h2>
-                <p style="color:#64748b;margin-bottom:18px;max-width:900px;">Look up a doctor’s e-ticket by <strong>12-digit ticket ID</strong>, <strong>application ID</strong>, <strong>email</strong>, or <strong>phone</strong>. Generate if missing, preview the printable ticket, then send via email and/or WhatsApp.</p>
+                <p style="color:#64748b;margin-bottom:18px;max-width:900px;">Look up a doctor�s e-ticket by <strong>12-digit ticket ID</strong>, <strong>application ID</strong>, <strong>email</strong>, or <strong>phone</strong>. Generate if missing, preview the printable ticket, then send via email and/or WhatsApp.</p>
                 <div class="card" style="margin-bottom:16px;">
                     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
                         <div style="flex:1;min-width:220px;">
@@ -1550,7 +1589,7 @@
                 <div class="card" style="max-width:640px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (₹)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div><label>Amount (?)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
                         <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
                         <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
                         <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
@@ -1559,7 +1598,7 @@
                     </div>
                     <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
                         <input type="checkbox" id="pos-send-ticket-email" style="margin-top:3px;">
-                        <span>Queue ticket email after registration (off by default — use printed QR at venue; avoids Zoho rate limits)</span>
+                        <span>Queue ticket email after registration (off by default � use printed QR at venue; avoids Zoho rate limits)</span>
                     </label>
                     <button type="button" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
                     <p id="pos-status" style="margin-top:12px;font-weight:600;"></p>
@@ -1598,12 +1637,12 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="scanner-logs-search" style="font-weight:600;font-size:0.9rem;">Search scan logs</label>
-                        <input type="search" id="scanner-logs-search" placeholder="Doctor ID, name, app no., ticket, scanner, or seminar…" oninput="renderAdminScannerLogsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="scanner-logs-search" placeholder="Applicant ID, name, app no., ticket, scanner, or seminar�" oninput="renderAdminScannerLogsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="scanner-logs-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Time</th><th>Doctor ID</th><th>Doctor name</th><th>App no.</th><th>Ticket</th><th>Scanned by (staff)</th><th>Seminar</th></tr></thead>
-                        <tbody id="scanner-logs-list"><tr><td colspan="7" style="text-align:center;">Loading…</td></tr></tbody>
+                        <thead><tr><th>Time</th><th>Applicant ID</th><th>Applicant name</th><th>App no.</th><th>Ticket</th><th>Scanned by (staff)</th><th>Seminar</th></tr></thead>
+                        <tbody id="scanner-logs-list"><tr><td colspan="7" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -1631,7 +1670,7 @@
                 <div class="card" style="margin-bottom: 20px; overflow-x: auto;">
                     <table class="data-table">
                         <thead><tr><th>Event</th><th>Channels</th><th>Enabled</th><th>Scope</th><th>Updated</th><th></th></tr></thead>
-                        <tbody id="notif-templates-tbody"><tr><td colspan="6" style="text-align:center;">Loading…</td></tr></tbody>
+                        <tbody id="notif-templates-tbody"><tr><td colspan="6" style="text-align:center;">Loading�</td></tr></tbody>
                     </table>
                 </div>
                 <div id="notif-editor-panel" class="card hidden" style="margin-bottom: 20px;">
@@ -1682,13 +1721,13 @@
                     </div>
                     <table class="data-table">
                         <thead><tr><th>Time (IST)</th><th>Event</th><th>Channel</th><th>To</th><th>Status</th><th>Error</th></tr></thead>
-                        <tbody id="notif-logs-tbody"><tr><td colspan="6" style="text-align:center;">—</td></tr></tbody>
+                        <tbody id="notif-logs-tbody"><tr><td colspan="6" style="text-align:center;">�</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="tab-system-platform" class="tab-pane hidden">
-                <h2 style="margin-bottom:12px;color:#0c4a6e;">System health — platform &amp; apps</h2>
+                <h2 style="margin-bottom:12px;color:#0c4a6e;">System health � platform &amp; apps</h2>
                 <p style="color:#475569;margin-bottom:16px;max-width:900px;">Live status for admin backend, doctor/judge/scanner portals, mobile app URLs, database, email/WhatsApp, and notification queue. Refreshes every 12 seconds. Issues trigger automatic remediation where possible.</p>
                 <div class="card">
                     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
@@ -1747,8 +1786,8 @@
                         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 12px;">Visitors see a clean maintenance page. Preview the live site and schedule automatic go-live while maintenance is on.</p>
                         <label>Site status</label>
                         <select id="setting-disabled" style="border-color: #ef4444; margin-bottom: 12px;">
-                            <option value="0">Live — public site open</option>
-                            <option value="1">Maintenance — public site closed</option>
+                            <option value="0">Live � public site open</option>
+                            <option value="1">Maintenance � public site closed</option>
                         </select>
                         <label>Headline (public page)</label>
                         <input type="text" id="maint-headline" placeholder="We'll be back soon" style="width:100%;margin-bottom:10px;">
@@ -1772,7 +1811,7 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
                         <p style="font-size:0.85rem;margin-bottom:12px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;"><strong>Wix + subdomains:</strong> Main site on Wix; point seminar, admin, judge DNS to your VPS. See deploy/WIX-DNS.md</p>
                         <div><label>Seminar portal URL</label><input type="url" id="int-public-base-url" placeholder="https://seminar.vaidyagogate.org" style="width:100%"></div>
-                        <div><label>Wix main website (reference only — not linked from seminar portal)</label><input type="url" id="int-wix-url" placeholder="https://www.vaidyagogate.org" style="width:100%"></div>
+                        <div><label>Wix main website (reference only � not linked from seminar portal)</label><input type="url" id="int-wix-url" placeholder="https://www.vaidyagogate.org" style="width:100%"></div>
                         <div><label>Seminar host (DNS)</label><input type="text" id="int-seminar-host" placeholder="seminar.vaidyagogate.org" style="width:100%"></div>
                         <div><label>Admin host (DNS)</label><input type="text" id="int-admin-host" placeholder="admin.vaidyagogate.org" style="width:100%"></div>
                         <div><label>Judge host (DNS)</label><input type="text" id="int-judge-host" placeholder="judge.vaidyagogate.org" style="width:100%"></div>
@@ -1788,16 +1827,16 @@
                         <div style="grid-column:1/-1;"><h4 style="margin:8px 0;color:#0c4a6e;">Meta WhatsApp Business</h4>
                         <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Webhook: <code id="int-wa-webhook-url">https://your-domain/api/webhooks/whatsapp</code><br>
                         Access token = permanent System User token (not App Secret). Phone number ID from API Setup.<br>
-                        <strong>Required for “WhatsApp configured”:</strong> save <em>Access token</em> + <em>Phone number ID</em> below (re-paste token if you only changed other fields).<br>
+                        <strong>Required for �WhatsApp configured�:</strong> save <em>Access token</em> + <em>Phone number ID</em> below (re-paste token if you only changed other fields).<br>
                         <strong><a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener">Cloud API setup</a></p></div>
-                        <div style="grid-column:1/-1;"><label>Access token (System User)</label><input type="password" id="int-wa-token" placeholder="Permanent token — not App Secret" style="width:100%"></div>
+                        <div style="grid-column:1/-1;"><label>Access token (System User)</label><input type="password" id="int-wa-token" placeholder="Permanent token � not App Secret" style="width:100%"></div>
                         <div><label>Phone number ID</label><input type="text" id="int-wa-phone-id" placeholder="1066436679893640" style="width:100%"></div>
                         <div><label>WhatsApp Business Account ID (WABA)</label><input type="text" id="int-wa-waba-id" placeholder="From Meta ? WhatsApp Manager ? Account overview" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><button type="button" class="btn-secondary btn-sm" onclick="checkWhatsAppTemplateOnMeta()">Check template on Meta</button>
                         <button type="button" class="btn-secondary btn-sm" style="margin-left:6px;" onclick="checkWhatsAppWebhookStatus()">Check webhook</button>
                         <span style="font-size:0.8rem;color:#64748b;margin-left:8px;">Webhook verify token must match Meta exactly</span></div>
 
-                        <div><label>Webhook verify token</label><input type="text" id="int-wa-verify" placeholder="e.g. vgmf_whatsapp_verify_2026 — must match Meta exactly" style="width:100%" autocomplete="off" spellcheck="false"></div>
+                        <div><label>Webhook verify token</label><input type="text" id="int-wa-verify" placeholder="e.g. vgmf_whatsapp_verify_2026 � must match Meta exactly" style="width:100%" autocomplete="off" spellcheck="false"></div>
                         <p style="font-size:0.78rem;color:#64748b;margin:4px 0 0;grid-column:1/-1;">Must match Meta exactly. Save integrations, then use Check webhook.</p>
                         <div><label>Default WhatsApp template language (Meta code)</label><input type="text" id="int-wa-lang" placeholder="en (English in Meta)" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><h4 style="margin:12px 0 8px;color:#0c4a6e;">OTP notifications (email + WhatsApp)</h4>
@@ -1810,7 +1849,7 @@
                             <div style="overflow-x:auto;max-height:320px;border:1px solid #e2e8f0;border-radius:8px;">
                                 <table class="data-table" style="width:100%;font-size:0.85rem;">
                                     <thead><tr><th>Event</th><th>Channel</th><th>Meta template name</th><th>Meta lang</th></tr></thead>
-                                    <tbody id="wa-event-templates-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
+                                    <tbody id="wa-event-templates-tbody"><tr><td colspan="4">Loading�</td></tr></tbody>
                                 </table>
                             </div>
                             <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="saveWhatsAppEventTemplates()">Save WhatsApp template names</button>
@@ -1880,7 +1919,7 @@
         <div style="background: white; padding: 28px; border-radius: 16px; width: 520px; max-width: 94vw; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid #bae6fd;">
             <button type="button" onclick="document.getElementById('admin-modules-modal').classList.add('hidden')" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
             <h2 style="color:#0c4a6e;margin-bottom:8px;">Co-admin modules</h2>
-            <p style="color:#64748b;font-size:0.88rem;margin-bottom:16px;">Tick the sections this co-admin may open. <strong>Leave every box unchecked and save</strong> to clear the map — they will then have access to all modules until you restrict again.</p>
+            <p style="color:#64748b;font-size:0.88rem;margin-bottom:16px;">Tick the sections this co-admin may open. <strong>Leave every box unchecked and save</strong> to clear the map � they will then have access to all modules until you restrict again.</p>
             <p style="font-size:0.82rem;color:#475569;margin-bottom:12px;">User: <strong id="admin-modules-user-label"></strong></p>
             <input type="hidden" id="admin-modules-target-user-id" value="">
             <div id="admin-modules-checkboxes" style="display:grid;gap:10px;"></div>
@@ -1915,7 +1954,7 @@
                 </label>
                 <label id="newuser-is-demo-wrap" style="display:flex;align-items:flex-start;gap:8px;font-size:0.88rem;padding:10px 12px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;">
                     <input type="checkbox" id="newuser-is-demo" style="margin-top:3px;">
-                    <span><strong>Dummy account</strong> — for testing on live: login and registration accept <em>any</em> OTP code (e.g. 0000, 1234). Real SMS/email OTP is optional.</span>
+                    <span><strong>Dummy account</strong> � for testing on live: login and registration accept <em>any</em> OTP code (e.g. 0000, 1234). Real SMS/email OTP is optional.</span>
                 </label>
                 <div id="newuser-pass-wrap" style="display:none;">
                     <input type="password" id="newuser-pass" placeholder="Custom password" style="width:100%;">
@@ -1987,8 +2026,8 @@
                     <div><label>WhatsApp group / invite URL</label><input type="text" id="seminar-whatsapp" placeholder="https://chat.whatsapp.com/..."></div>
                     <div style="margin-top:10px;"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="seminar-otp-app" checked onchange="syncSeminarOtpOptionsUi()"> Enable application OTP verification</label></div>
                     <div id="seminar-otp-subopts" style="margin:8px 0 0 22px;display:grid;gap:6px;">
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-otp-step1" checked> Step 1 — personal details (email + WhatsApp codes)</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-otp-submit" checked> Preview step — fresh codes before submit</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-otp-step1" checked> Step 1 � personal details (email + WhatsApp codes)</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-otp-submit" checked> Preview step � fresh codes before submit</label>
                     </div>
                     <div style="margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;">
                         <label style="font-weight:600;">Cancellation &amp; refund policy</label>
@@ -2065,7 +2104,7 @@
                         <div><label>Enable Check-in Scanning?</label><select id="seminar-checkin-enabled"><option value="0">No (Disabled)</option><option value="1">Yes (Enabled)</option></select></div>
                         <div><label>Check-in Allowed Date</label><input type="date" id="seminar-checkin-date"></div>
                         <div><label>Scans required for certificate</label><select id="seminar-cert-scans-required"><option value="1">1 scan (entry only)</option><option value="2">2 scans (entry + exit)</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Doctors need this many ticket scans before a certificate can be enabled.</p></div>
-                        <div><label>Publish participant list on website?</label><select id="seminar-public-list-enabled"><option value="0">No — Verify page hidden</option><option value="1">Yes — show paid &amp; admitted delegates</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Enable only after verification and payments are complete.</p></div>
+                        <div><label>Publish participant list on website?</label><select id="seminar-public-list-enabled"><option value="0">No � Verify page hidden</option><option value="1">Yes � show paid &amp; admitted delegates</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Enable only after verification and payments are complete.</p></div>
                     </div>
                 </div>
                 <button type="submit" class="btn-primary">Save Seminar</button>
@@ -2144,7 +2183,7 @@
                 <input type="hidden" id="schedule-id">
                 <div><label>Title</label><input type="text" id="schedule-title" required></div>
                 <div><label>Description</label><textarea id="schedule-description" rows="2"></textarea></div>
-                <div><label>Seminar / event</label><select id="schedule-seminar" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%;"><option value="">Loading seminars…</option></select><p style="font-size:0.8rem;color:#64748b;margin-top:6px;">Pick the seminar this session belongs to. Use <strong>Schedule</strong> on Seminar Management to pre-fill this.</p></div>
+                <div><label>Seminar / event</label><select id="schedule-seminar" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%;"><option value="">Loading seminars�</option></select><p style="font-size:0.8rem;color:#64748b;margin-top:6px;">Pick the seminar this session belongs to. Use <strong>Schedule</strong> on Event management to pre-fill this.</p></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label>Start Time</label><input type="datetime-local" id="schedule-start-time" required></div>
                     <div><label>End Time</label><input type="datetime-local" id="schedule-end-time" required></div>
@@ -2235,11 +2274,12 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=2"></script>
     <script src="/js/admin.js?v=20260524c"></script>
-    <script src="/js/admin-prereg-tracking.js?v=5"></script>
+    <script src="/js/admin-prereg-tracking.js?v=7"></script>
+    <script src="/js/admin-final-tracking.js?v=2"></script>
     <script src="/js/admin-competition.js?v=2"></script>
     <script src="/js/admin-announcements.js?v=3"></script>
-    <script src="/js/admin-autism.js?v=autism7"></script>
+    <script src="/js/admin-autism.js?v=autism9"></script>
     <script src="/js/autism-theme.js?v=3"></script>
-    <script src="/js/autism-terminology.js?v=2"></script>
+    <script src="/js/autism-terminology.js?v=4"></script>
 </body>
 </html>

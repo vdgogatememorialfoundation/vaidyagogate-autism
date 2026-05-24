@@ -105,8 +105,11 @@
         return data;
     }
 
+    window.PORTAL_IS_AUTISM = true;
+
   let preregFields = [];
   let preregSeminars = [];
+  let preregResubmitId = null;
 
     async function loadPreregFormConfig(seminarId) {
         const q = seminarId ? `?seminarId=${encodeURIComponent(seminarId)}` : '';
@@ -191,6 +194,22 @@
         });
         const msg = document.getElementById('prereg-status-msg');
         try {
+            if (preregResubmitId) {
+                await fetchJson('/api/preregistrations/resubmit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: uid, preregistrationId: preregResubmitId, formData })
+                });
+                preregResubmitId = null;
+                const sel = document.getElementById('prereg-seminar-select');
+                if (sel) sel.disabled = false;
+                if (msg) {
+                    msg.textContent = 'Pre-registration updated and sent for review again.';
+                    msg.style.color = '#047857';
+                }
+                loadPreregList();
+                return;
+            }
             await fetchJson('/api/preregistrations/submit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -208,6 +227,77 @@
             }
         }
     }
+
+    function fillPreregFormFromData(formData) {
+        (preregFields || []).forEach((f) => {
+            if (!f || f.enabled === false) return;
+            const el = document.getElementById('prereg-field-' + f.key);
+            if (!el || formData[f.key] == null) return;
+            if (f.type === 'boolean') el.checked = !!formData[f.key];
+            else el.value = formData[f.key];
+        });
+    }
+
+    window.beginPreregRevision = async function beginPreregRevision(row) {
+        if (!row || !row.id) return;
+        preregResubmitId = row.id;
+        if (typeof switchTab === 'function') switchTab('tab-prereg');
+        await loadPreregSeminars();
+        const sel = document.getElementById('prereg-seminar-select');
+        if (sel) {
+            sel.value = String(row.seminar_id || '');
+            sel.disabled = true;
+        }
+        await loadPreregFormConfig(row.seminar_id || null);
+        renderPreregFields(document.getElementById('prereg-fields'));
+        let fd = {};
+        try {
+            fd = typeof row.form_data === 'string' ? JSON.parse(row.form_data || '{}') : row.form_data || {};
+        } catch (_) {}
+        fillPreregFormFromData(fd);
+        const msg = document.getElementById('prereg-status-msg');
+        if (msg) {
+            msg.textContent = 'Update your pre-registration below, then submit again.';
+            msg.style.color = '#6d28d9';
+        }
+        document.getElementById('prereg-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    async function downloadPreregPdf(row) {
+        if (!row || !window.jspdf) {
+            alert('PDF download is not available. Refresh the page and try again.');
+            return;
+        }
+        let fd = {};
+        try {
+            fd = typeof row.form_data === 'string' ? JSON.parse(row.form_data || '{}') : row.form_data || {};
+        } catch (_) {}
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 18;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('Pre-registration application', 14, y);
+        y += 10;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Application no.: ' + (row.application_no || '—'), 14, y);
+        y += 6;
+        doc.text('Event: ' + (row.seminar_title || row.seminar_id || '—'), 14, y);
+        y += 6;
+        doc.text('Status: ' + String(row.status || 'submitted').replace(/_/g, ' '), 14, y);
+        y += 10;
+        Object.keys(fd).forEach((k) => {
+            if (y > 270) {
+                doc.addPage();
+                y = 18;
+            }
+            doc.text(k + ': ' + String(fd[k] == null ? '' : fd[k]).slice(0, 120), 14, y);
+            y += 6;
+        });
+        doc.save('prereg-' + (row.application_no || row.id) + '.pdf');
+    }
+    window.downloadPreregPdf = downloadPreregPdf;
 
     function preregStatusMeta(status) {
         const st = String(status || 'submitted').toLowerCase();
@@ -305,9 +395,16 @@
                             : (r.created_at || '').slice(0, 16)) +
                         '</p>' +
                         (canReg
-                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> You can open <strong>Track seminar applications</strong> to complete final registration.</p>'
+                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> You can open <strong>Main registration</strong> to complete final registration.</p>'
                             : r.status === 'revision_required'
-                              ? '<p style="margin-top:10px;font-size:0.9rem;color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>'
+                              ? '<p style="margin-top:10px;font-size:0.9rem;color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>' +
+                                '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
+                                '<button type="button" class="btn-warning" style="padding:6px 12px;font-size:0.85rem;" data-ak-prereg-edit="' +
+                                r.id +
+                                '">Edit &amp; resubmit</button>' +
+                                '<button type="button" class="btn-primary" style="padding:6px 12px;font-size:0.85rem;background:#475569;" data-ak-prereg-dl="' +
+                                r.id +
+                                '">Download PDF</button></div>'
                               : r.status === 'rejected'
                                 ? '<p style="margin-top:10px;font-size:0.9rem;color:#b91c1c;">Contact us if you need help.</p>'
                                 : '<p style="margin-top:10px;font-size:0.9rem;color:#64748b;">We will notify you when pre-registration is approved.</p>') +
@@ -322,6 +419,16 @@
                     );
                 })
                 .join('');
+            const rowsById = {};
+            rows.forEach((r) => {
+                rowsById[r.id] = r;
+            });
+            box.querySelectorAll('[data-ak-prereg-edit]').forEach((btn) => {
+                btn.addEventListener('click', () => beginPreregRevision(rowsById[parseInt(btn.dataset.akPreregEdit, 10)]));
+            });
+            box.querySelectorAll('[data-ak-prereg-dl]').forEach((btn) => {
+                btn.addEventListener('click', () => downloadPreregPdf(rowsById[parseInt(btn.dataset.akPreregDl, 10)]));
+            });
         } catch (e) {
             box.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
         }

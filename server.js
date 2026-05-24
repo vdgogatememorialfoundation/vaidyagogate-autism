@@ -4727,7 +4727,7 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
                     error: 'This application can no longer be edited after it has moved forward in the workflow.'
                 });
             }
-            if (st === 'revision_required') {
+            if (st === 'revision_required' && !portalProduct.FEATURES.noFees) {
                 return res.status(400).json({
                     error: 'Use Re-upload documents for this application (certificate and NCISM only).'
                 });
@@ -4780,12 +4780,19 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
                         }
                     );
 
+                    const nextStatus = st === 'revision_required' ? 'pending_approval' : row.status;
                     db.run(
-                        `UPDATE registrations SET form_data = ? WHERE id = ?`,
-                        [JSON.stringify(mergedStored), req.params.applicationId],
+                        `UPDATE registrations SET form_data = ?, status = ? WHERE id = ?`,
+                        [JSON.stringify(mergedStored), nextStatus, req.params.applicationId],
                         function (err2) {
                             if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ success: true, message: 'Application updated successfully' });
+                            res.json({
+                                success: true,
+                                message:
+                                    st === 'revision_required'
+                                        ? 'Application updated and sent back for review.'
+                                        : 'Application updated successfully'
+                            });
                         }
                     );
                 }
@@ -6842,12 +6849,28 @@ app.get('/api/admin/seminars/:id/applications', (req, res) => {
 
 // Admin: Get all applications
 app.get('/api/admin/applications', (req, res) => {
-    db.all(`
-        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, u.first_name, u.middle_name, u.last_name, u.user_id_string
+    const seminarId = parseInt(req.query.seminarId, 10);
+    const statusFilter = String(req.query.status || '').toLowerCase();
+    let sql = `
+        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
+               u.first_name, u.middle_name, u.last_name, u.email, u.phone, u.user_id_string,
+               s.title AS seminar_title
         FROM registrations a
         JOIN users u ON a.user_id = u.id
-        ORDER BY a.created_at DESC
-    `, [], (err, rows) => {
+        LEFT JOIN seminars s ON s.id = a.seminar_id`;
+    const params = [];
+    const where = [];
+    if (Number.isInteger(seminarId) && seminarId > 0) {
+        where.push(`a.seminar_id = ?`);
+        params.push(seminarId);
+    }
+    if (statusFilter && statusFilter !== 'all') {
+        where.push(`LOWER(a.status) = ?`);
+        params.push(statusFilter);
+    }
+    if (where.length) sql += ` WHERE ` + where.join(' AND ');
+    sql += ` ORDER BY a.created_at DESC LIMIT 500`;
+    db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows || []);
     });

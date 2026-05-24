@@ -8,6 +8,39 @@
         'SCRIPT,STYLE,CODE,PRE,INPUT,TEXTAREA,SELECT,OPTION,NOSCRIPT,SVG,MATH';
 
     /** Longest phrases first */
+    const SEMINAR_REPLACEMENTS = [
+        [/Seminar registration tracking/gi, 'Event registration tracking'],
+        [/Track seminar applications/gi, 'Track main registration'],
+        [/Seminar applications/gi, 'Main registrations'],
+        [/seminar applications/gi, 'main registrations'],
+        [/Seminar application/gi, 'Registration application'],
+        [/seminar application/gi, 'registration application'],
+        [/Available Seminars/gi, 'Open events'],
+        [/Available seminars/gi, 'Open events'],
+        [/Register for seminar/gi, 'Register for event'],
+        [/Seminar verification/gi, 'Event verification'],
+        [/Seminar Feedback/gi, 'Event feedback'],
+        [/Seminar feedback/gi, 'Event feedback'],
+        [/Seminar Management/gi, 'Event management'],
+        [/Active Seminars/gi, 'Active events'],
+        [/Create Seminar/gi, 'Create event'],
+        [/Search seminars/gi, 'Search events'],
+        [/Select a seminar/gi, 'Select an event'],
+        [/Select seminar/gi, 'Select event'],
+        [/Applications for this Seminar/gi, 'Applications for this event'],
+        [/seminar registrants/gi, 'event registrants'],
+        [/Submitted seminar application/gi, 'Submitted registration application'],
+        [/Event \/ seminar/gi, 'Event'],
+        [/No seminar registrations yet/gi, 'No event registrations yet'],
+        [/No seminar applications yet/gi, 'No registrations yet'],
+        [/Apply from <strong>Available Seminars<\/strong>/gi, 'Apply from <strong>Main registration</strong>'],
+        [/Seminar ·/gi, 'Event ·'],
+        [/\bSeminars\b/g, 'Events'],
+        [/\bSeminar\b/g, 'Event'],
+        [/\bseminars\b/g, 'events'],
+        [/\bseminar\b/g, 'event']
+    ];
+
     const REPLACEMENTS = [
         [/Registered doctors/gi, 'Registered applicants'],
         [/Create doctor/gi, 'Create applicant'],
@@ -59,7 +92,8 @@
         [/\bDoctors\b/g, 'Applicants'],
         [/\bDoctor\b/g, 'Applicant'],
         [/\bdoctors\b/g, 'applicants'],
-        [/\bdoctor\b/g, 'applicant']
+        [/\bdoctor\b/g, 'applicant'],
+        ...SEMINAR_REPLACEMENTS
     ];
 
     function shouldSkipNode(node) {
@@ -73,7 +107,7 @@
     }
 
     function replaceText(s) {
-        if (!s || !/doctor|participant/i.test(s)) return s;
+        if (!s || !/doctor|participant|seminar/i.test(s)) return s;
         let out = s;
         for (const [re, rep] of REPLACEMENTS) {
             out = out.replace(re, rep);
@@ -87,7 +121,7 @@
             acceptNode(node) {
                 if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
                 if (shouldSkipNode(node)) return NodeFilter.FILTER_REJECT;
-                if (!/doctor|participant/i.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+                if (!/doctor|participant|seminar/i.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
                 return NodeFilter.FILTER_ACCEPT;
             }
         });
@@ -105,7 +139,7 @@
             if (el.closest('script,style')) return;
             ['placeholder', 'title', 'aria-label'].forEach((attr) => {
                 const v = el.getAttribute(attr);
-                if (v && /doctor|participant/i.test(v)) {
+                if (v && /doctor|participant|seminar/i.test(v)) {
                     el.setAttribute(attr, replaceText(v));
                 }
             });
@@ -125,6 +159,16 @@
         });
         const h2 = document.querySelector('#tab-doctors h2');
         if (h2) h2.textContent = 'Applicants';
+        document.querySelectorAll('[data-admin-module="tab-seminars"]').forEach((el) => {
+            el.innerHTML = '<i class="fas fa-calendar-alt" aria-hidden="true"></i> Event management';
+        });
+        document.querySelectorAll('[data-admin-module="tab-feedback"]').forEach((el) => {
+            el.innerHTML = '<i class="fas fa-comments" aria-hidden="true"></i> Event feedback';
+        });
+        const semH2 = document.querySelector('#tab-seminars h2');
+        if (semH2) semH2.textContent = 'Event management';
+        const semH3 = document.querySelector('#tab-seminars h3');
+        if (semH3 && /Active Seminars/i.test(semH3.textContent)) semH3.textContent = 'Active events';
     }
 
     function relabelApplicantDashboard() {

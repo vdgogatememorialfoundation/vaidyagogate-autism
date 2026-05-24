@@ -110,7 +110,13 @@
 
     function patchApplicationsMenu() {
         document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
-            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-folder-open"></i> Final registration';
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-folder-open"></i> Registration queue';
+        });
+        document.querySelectorAll('[data-admin-module="tab-final-tracking"]').forEach((el) => {
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Final registration tracking';
+        });
+        document.querySelectorAll('[data-admin-module="tab-prereg-tracking"]').forEach((el) => {
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-clipboard-check"></i> Pre-registration tracking';
         });
     }
 

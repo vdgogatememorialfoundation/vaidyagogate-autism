@@ -4366,10 +4366,11 @@ async function loadApplications(silentPoll) {
         userApplications.forEach((a, index) => {
             // Render Table Row
             const st = String(a.status || '').toLowerCase();
-            const canEdit = a.status === 'submitted' || a.status === 'pending_approval';
-            const needsResubmit = st === 'revision_required' || st === 'documents_requested';
+            const canEdit = st === 'submitted' || st === 'pending_approval' || st === 'revision_required';
+            const needsResubmit =
+                !window.PORTAL_IS_AUTISM && (st === 'revision_required' || st === 'documents_requested');
             const editBtn = canEdit
-                ? `<button class="btn-warning" style="padding: 5px 10px; margin-right: 5px;" onclick="editApplication(${index})">Edit</button>`
+                ? `<button class="btn-warning" style="padding: 5px 10px; margin-right: 5px;" onclick="editApplication(${index})">${st === 'revision_required' ? 'Edit & resubmit' : 'Edit'}</button>`
                 : '';
             const resubmitBtn = needsResubmit
                 ? `<button class="btn-warning" style="padding: 5px 10px; margin-right: 5px;" onclick="openSeminarDocumentResubmitByIndex(${index})">${st === 'documents_requested' ? 'Upload docs' : 'Re-upload docs'}</button>`
@@ -4388,7 +4389,7 @@ async function loadApplications(silentPoll) {
                 <tr>
                     <td><strong>${a.application_no}</strong></td>
                     <td><span style="background: ${a.status === 'rejected' ? '#fee2e2' : '#fef3c7'}; padding: 5px; border-radius: 5px;">${a.status.toUpperCase()}</span></td>
-                    <td>${editBtn}${resubmitBtn}${cancelBtn}<button class="btn-primary" style="padding: 5px 10px;" onclick="viewApplication(${index})">View Details</button></td>
+                    <td>${editBtn}${resubmitBtn}${cancelBtn}<button class="btn-primary" style="padding: 5px 10px; margin-right: 5px;" onclick="viewApplication(${index})">View</button><button class="btn-primary" style="padding: 5px 10px; background:#475569;" onclick="downloadApplicationByIndex(${index})">PDF</button></td>
                 </tr>
             `;
             }
@@ -4546,10 +4547,15 @@ function viewApplication(index) {
 }
 
 // Ensure closing the modal removes flex
-document.getElementById('view-app-modal').querySelector('button').onclick = function() {
+document.getElementById('view-app-close-btn')?.addEventListener('click', function () {
     document.getElementById('view-app-modal').classList.add('hidden');
     document.getElementById('view-app-modal').style.display = '';
-};
+});
+document.getElementById('view-app-modal')?.querySelector('button:not(#view-app-download-btn)')?.addEventListener('click', function () {
+    if (this.id === 'view-app-close-btn') return;
+    document.getElementById('view-app-modal').classList.add('hidden');
+    document.getElementById('view-app-modal').style.display = '';
+});
 
 async function downloadViewedAppPdf() {
     if (!currentlyViewedApp) return;
@@ -4569,7 +4575,7 @@ async function downloadViewedAppPdf() {
 
     let y = pdfCongressHeader(doc, {
         seminarName,
-        footerLine: 'Submitted seminar application'
+        footerLine: 'Submitted registration application'
     });
 
     const drawSection = (title) => {
@@ -4598,7 +4604,7 @@ async function downloadViewedAppPdf() {
     };
     rowEarly('Application number', app.application_no || '—');
     rowEarly('Status', String(app.status || '').toUpperCase());
-    if (seminarName) rowEarly('Event / seminar', seminarName);
+    if (seminarName) rowEarly('Event', seminarName);
 
     const row = (label, val) => {
         doc.setDrawColor(226, 232, 240);
@@ -6077,6 +6083,14 @@ async function saveProfile(event) {
 }
 
 // Application Edit Functionality
+async function downloadApplicationByIndex(index) {
+    if (userApplications[index]) {
+        currentlyViewedApp = userApplications[index];
+        await downloadViewedAppPdf();
+    }
+}
+window.downloadApplicationByIndex = downloadApplicationByIndex;
+
 async function editApplication(index) {
     const app = userApplications[index];
     let formData = {};
@@ -6084,10 +6098,10 @@ async function editApplication(index) {
         formData = JSON.parse(app.form_data || '{}');
     } catch(e) {}
     
-    // Show edit form with pre-filled data
-    alert('Edit Application Feature: ' + app.application_no + '\nForm data will be pre-filled in a modal for editing.');
-    
-    // For now, reload the form with the application data
+    // Open registration form with pre-filled data
+    if (String(app.status || '').toLowerCase() === 'revision_required') {
+        if (typeof switchTab === 'function') switchTab('tab-seminars');
+    }
     document.getElementById('fname').value = formData.fname || '';
     document.getElementById('lname').value = formData.lname || '';
     document.getElementById('email').value = formData.email || '';

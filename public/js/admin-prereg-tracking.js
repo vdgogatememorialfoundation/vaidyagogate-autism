@@ -266,13 +266,7 @@
         document.getElementById('ak-prereg-revision')?.addEventListener('click', () => setStatus('revision_required'));
         document.getElementById('ak-prereg-goto-reg')?.addEventListener('click', () => {
             if (typeof switchTab === 'function') {
-                switchTab('tab-applications');
-                const search = document.getElementById('applications-search');
-                const row = preregRows.find((r) => r.id === selectedId);
-                if (search && row && row.application_no) {
-                    search.value = row.application_no;
-                    if (typeof adminFilterApplicationsList === 'function') adminFilterApplicationsList();
-                }
+                switchTab('tab-final-tracking');
             }
         });
     };

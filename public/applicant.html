@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="autism-dashboard ak-portal-dash">
 <head>
     <meta charset="UTF-8">
@@ -781,7 +781,10 @@
             <h3 style="color:#0f766e;margin-bottom:12px;">Application details</h3>
             <div id="view-app-content"></div>
             <div id="view-app-tracking" style="margin-top:16px;"></div>
-            <button type="button" class="btn-primary" style="margin-top:16px;background:#64748b;">Close</button>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+                <button type="button" class="btn-primary" id="view-app-download-btn" onclick="downloadViewedAppPdf()">Download PDF</button>
+                <button type="button" class="btn-primary" id="view-app-close-btn" style="background:#64748b;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -841,9 +844,9 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism1"></script>
+    <script src="/js/applicant.js?v=autism2"></script>
     <script src="/js/autism-form-preview.js?v=1"></script>
-    <script src="/js/applicant-autism.js?v=autism8"></script>
+    <script src="/js/applicant-autism.js?v=autism9"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
