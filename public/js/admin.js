@@ -36,6 +36,23 @@ function getStoredAdminUser() {
     }
 }
 
+function hasValidAdminSession() {
+    try {
+        const u = JSON.parse(localStorage.getItem('admin_user') || 'null');
+        if (!u || u.id == null) return false;
+        const n = Number(u.id);
+        return Number.isInteger(n) && n > 0;
+    } catch (_) {
+        return false;
+    }
+}
+
+function clearAdminSession() {
+    localStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_user');
+    resetAdminSensitiveOtpTokens();
+}
+
 function resetAdminSensitiveOtpTokens() {
     __adminSensitivePhoneOtpToken = null;
     __adminSensitiveEmailOtpToken = null;
@@ -352,7 +369,7 @@ async function refreshAdminLoginOtpPanel() {
 
 window.onload = () => {
     refreshAdminLoginOtpPanel();
-    if (localStorage.getItem('admin_auth')) {
+    if (localStorage.getItem('admin_auth') && hasValidAdminSession()) {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
         loadAllData();
@@ -360,6 +377,8 @@ window.onload = () => {
             .then(() => applyCoAdminSidebarVisibility())
             .catch(() => applyCoAdminSidebarVisibility());
         refreshAdminSensitiveOtpRequirement();
+    } else {
+        clearAdminSession();
     }
 };
 
@@ -476,7 +495,8 @@ function formatAdminApiError(data, status) {
 document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     clearAdminLoginError();
-    const email = document.getElementById('admin-email').value.trim().toLowerCase();
+    const rawId = document.getElementById('admin-email').value.trim();
+    const email = rawId.includes('@') ? rawId.toLowerCase() : rawId.replace(/\s/g, '');
     const password = document.getElementById('admin-password').value;
     const body = { email, password, portal: 'admin' };
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -523,7 +543,9 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
         const role = String(data.user.role || '').toLowerCase();
         const userRole = String(data.user.user_role || '').toLowerCase();
         if (role !== 'admin' && userRole !== 'co_admin') {
-            alert('This account does not have admin portal access.');
+            showAdminLoginError(
+                'This account does not have admin portal access.\n\nUse ADMIN_EMAIL and ADMIN_PASSWORD from Vercel (Production env), then redeploy.'
+            );
             return;
         }
         localStorage.setItem('admin_auth', 'true');

@@ -3481,6 +3481,10 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     if (portalIdLogin) {
                         return res.status(401).json({
                             error: 'No account found with this portal user ID, or password is wrong.',
+                            hint:
+                                loginPortal === 'admin'
+                                    ? 'Super admin sign-in uses ADMIN_EMAIL from Vercel, not a 12-digit portal ID.'
+                                    : undefined,
                             needsLogin: true
                         });
                     }
@@ -3489,12 +3493,23 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         if (e2) return res.status(500).json({ error: e2.message });
                         if (!exists) {
                             return res.status(401).json({
-                                error: 'No account found with this email. Please create an account first.',
-                                needsSignup: true
+                                error:
+                                    loginPortal === 'admin'
+                                        ? 'No admin account found with this email.'
+                                        : 'No account found with this email. Please create an account first.',
+                                hint:
+                                    loginPortal === 'admin'
+                                        ? 'Set ADMIN_EMAIL and ADMIN_PASSWORD in Vercel, redeploy, then sign in with that email.'
+                                        : undefined,
+                                needsSignup: loginPortal !== 'admin'
                             });
                         }
                         return res.status(401).json({
                             error: 'Invalid password. Use Forgot password or sign in with OTP if enabled.',
+                            hint:
+                                loginPortal === 'admin'
+                                    ? 'Password must match ADMIN_PASSWORD in Vercel exactly (redeploy after changing it).'
+                                    : undefined,
                             needsLogin: true,
                             accountExists: true
                         });
@@ -3508,6 +3523,21 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 }
                 if (Number(row.is_disabled) === 1) {
                     return res.status(403).json({ error: 'Your account has been disabled. Please contact support.' });
+                }
+
+                const userRoles = require('./lib/user-roles');
+                if (loginPortal === 'admin') {
+                    const rCol = String(row.role || '').toLowerCase();
+                    const ur = userRoles.normalizeUserRole(row.user_role);
+                    const adminPortalOk =
+                        rCol === 'admin' && (userRoles.isSuperAdminAccount(row) || ur === 'co_admin');
+                    if (!adminPortalOk) {
+                        return res.status(403).json({
+                            error: 'This account cannot sign in to the admin console.',
+                            hint:
+                                'Use the exact ADMIN_EMAIL and ADMIN_PASSWORD from Vercel environment variables, then redeploy. Do not use a participant or judge portal ID here.'
+                        });
+                    }
                 }
 
                 function markEmailVerifiedFromOtp(cb) {
@@ -8217,17 +8247,18 @@ app.get('/api/doctor/certificates/:userId', (req, res) => {
 });
 
 function assertAdminPortalActor(adminId, cb) {
+    const userRoles = require('./user-roles');
     const aid = parseInt(adminId, 10);
     if (!Number.isInteger(aid) || aid < 1) return cb(new Error('BAD_ACTOR'), null);
     db.get(
-        `SELECT id, role, user_role FROM users WHERE id = ? AND IFNULL(is_disabled,0) = 0`,
+        `SELECT id, role, user_role FROM users WHERE id = ? AND COALESCE(is_disabled, 0) = 0`,
         [aid],
         (e, adm) => {
             if (e) return cb(e, null);
             if (!adm) return cb(new Error('FORBIDDEN'), null);
-            const ur = String(adm.user_role || '').toLowerCase();
+            const ur = userRoles.normalizeUserRole(adm.user_role);
             const ok =
-                String(adm.role || '').toLowerCase() === 'admin' ||
+                userRoles.isSuperAdminAccount(adm) ||
                 ur === 'co_admin' ||
                 ur === 'scanner_dashboard_user';
             if (!ok) return cb(new Error('FORBIDDEN'), null);
