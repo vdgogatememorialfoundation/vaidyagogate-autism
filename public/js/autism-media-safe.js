@@ -50,12 +50,6 @@
         });
     }
 
-    function hideGallery() {
-        const g = document.getElementById('gallerySection');
-        if (g) g.classList.add('hidden');
-        document.querySelectorAll('#gallery-grid img, .vgmf-gallery-thumb').forEach((el) => el.remove());
-    }
-
     function sanitizeHeroBanners() {
         const root = document.getElementById('congress-hero-root');
         if (root) root.style.display = 'none';
@@ -85,7 +79,6 @@
 
     function init() {
         stripAll();
-        hideGallery();
         sanitizeHeroBanners();
         patchApplyCms();
         const obs = new MutationObserver(() => {

@@ -40,7 +40,11 @@
     function renderQuickAccess() {
         const grid = document.getElementById('cg-quick-grid');
         if (!grid) return;
-        grid.innerHTML = QUICK_ACCESS.map((c) => {
+        const items =
+            document.body && document.body.classList.contains('autism-kids')
+                ? QUICK_ACCESS.filter((c) => c.section !== 'gallery')
+                : QUICK_ACCESS;
+        grid.innerHTML = items.map((c) => {
             let onclick = '';
             if (c.section && typeof showSection === 'function') {
                 onclick = `onclick="showSection('${c.section}');${c.anchor ? "document.getElementById('" + c.anchor + "')?.scrollIntoView({behavior:'smooth'});" : ''} return false;"`;
@@ -379,6 +383,7 @@
     };
 
     window.renderCongressPastSeminars = function renderCongressPastSeminars(cms) {
+        if (document.body && document.body.classList.contains('autism-kids')) return;
         const root = document.getElementById('cg-past-timeline');
         if (!root) return;
         const gallery = galleryItemsFromCms(cms);
