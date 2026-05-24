@@ -4745,6 +4745,14 @@ async function loadAdminUserActivityPanel(userId, bodyEl) {
 
 let globalAdminApps = [];
 
+window.__setGlobalAdminApps = function (apps) {
+    globalAdminApps = Array.isArray(apps) ? apps : [];
+};
+
+window.__getGlobalAdminApps = function () {
+    return globalAdminApps;
+};
+
 async function loadApplications() {
     try {
         const res = await fetch('/api/admin/applications');
@@ -4760,13 +4768,14 @@ function adminApplicationSearchBlob(a) {
         formData = JSON.parse(a.form_data || '{}');
     } catch (_) {}
     const candidateName = formData.fname
-        ? `${formData.fname} ${formData.lname || ''}`
-        : `${a.first_name || ''} ${a.last_name || ''}`;
+        ? [formData.fname, formData.mname, formData.lname].filter(Boolean).join(' ')
+        : [a.first_name, a.middle_name, a.last_name].filter(Boolean).join(' ');
     return [
         a.application_no,
         a.user_id_string,
         candidateName,
         a.first_name,
+        a.middle_name,
         a.last_name,
         a.status,
         formData.fname,
@@ -4813,8 +4822,8 @@ function renderApplicationsTable() {
             ? `<br><a href="${escAdmin(publicFileHref(formData.certificate_path))}" target="_blank" style="color:blue;font-size:0.8rem;">📄 View Certificate</a>`
             : '';
         const candidateName = formData.fname
-            ? `${formData.fname} ${formData.lname || ''}`
-            : `${a.first_name || ''} ${a.last_name || ''}`;
+            ? [formData.fname, formData.mname, formData.lname].filter(Boolean).join(' ')
+            : [a.first_name, a.middle_name, a.last_name].filter(Boolean).join(' ');
 
         tbody.innerHTML += `
                 <tr>

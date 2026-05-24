@@ -18,7 +18,7 @@
 
     function updateLiveLabels() {
         const t = formatIstNow();
-        ['seminar-track-live', 'prereg-track-live', 'dashboard-live-status'].forEach((id) => {
+        ['seminar-track-live', 'prereg-track-live', 'comp-track-live', 'dashboard-live-status'].forEach((id) => {
             const el = document.getElementById(id);
             if (!el) return;
             el.classList.remove('hidden');
@@ -31,6 +31,48 @@
     function tabVisible(id) {
         const el = document.getElementById(id);
         return el && !el.classList.contains('hidden');
+    }
+
+    function shouldPollComp() {
+        return tabVisible('tab-competition');
+    }
+
+    let compTimer = null;
+    let lastCompFp = '';
+
+    async function pollCompetition() {
+        if (!shouldPollComp()) return;
+        const uid =
+            typeof doctorNumericUserId === 'function'
+                ? doctorNumericUserId()
+                : window.currentUser && window.currentUser.id;
+        if (!uid) return;
+        try {
+            const r = await fetch('/api/competition-submissions/' + uid, { cache: 'no-store' });
+            const rows = await r.json();
+            if (!r.ok || !Array.isArray(rows)) return;
+            const fp = rows.map((x) => [x.id, x.status, x.updated_at].join(':')).join('|');
+            if (fp === lastCompFp) {
+                updateLiveLabels();
+                return;
+            }
+            lastCompFp = fp;
+            if (typeof window.loadCompetitionList === 'function') window.loadCompetitionList();
+            updateLiveLabels();
+        } catch (_) {}
+    }
+
+    function startCompPoll() {
+        if (compTimer) return;
+        compTimer = setInterval(pollCompetition, POLL_MS);
+        pollCompetition();
+    }
+
+    function stopCompPoll() {
+        if (compTimer) {
+            clearInterval(compTimer);
+            compTimer = null;
+        }
     }
 
     function shouldPollPrereg() {
@@ -95,6 +137,7 @@
             });
         }
         startPreregPoll();
+        startCompPoll();
     }
 
     const origSwitch = window.switchTab;
@@ -102,7 +145,7 @@
         window.switchTab = function (tabId) {
             origSwitch.apply(this, arguments);
             updateLiveLabels();
-            if (tabId === 'tab-applications' || tabId === 'tab-prereg') {
+            if (tabId === 'tab-applications' || tabId === 'tab-prereg' || tabId === 'tab-competition') {
                 if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
             }
         };
@@ -119,9 +162,12 @@
     }
 
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) stopPreregPoll();
-        else {
+        if (document.hidden) {
+            stopPreregPoll();
+            stopCompPoll();
+        } else {
             startPreregPoll();
+            startCompPoll();
             if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
         }
     });

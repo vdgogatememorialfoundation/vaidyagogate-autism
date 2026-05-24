@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
     <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=1">
+    <link rel="stylesheet" href="/css/ak-form-preview.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -284,16 +285,21 @@
                     <div class="card" style="margin-bottom:16px;padding:18px 20px;background:linear-gradient(135deg,#e0f2fe,#fef3c7);border:2px solid #bae6fd;border-radius:20px;">
                         <h3 style="margin:0 0 8px;font-size:1.1rem;color:#0284c7;font-family:'Baloo 2',cursive;">Your name</h3>
                         <p id="profile-display-name" style="margin:0;font-size:1.35rem;font-weight:800;color:#1e3a5f;">—</p>
-                        <p style="margin:10px 0 0;font-size:0.88rem;color:#64748b;">Names are shown without titles (no Dr., Mr., etc.). Update your name when you signed up if needed — contact support to change account name.</p>
                     </div>
                     <div class="card ak-profile-simple">
                         <form id="profile-form" onsubmit="return saveProfile(event)">
+                            <div id="profile-account-fields" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                                <div class="form-group" style="margin:0;"><label>First name *</label><input type="text" id="profile-first-name" required autocomplete="given-name"></div>
+                                <div class="form-group" style="margin:0;"><label>Middle name</label><input type="text" id="profile-middle-name" autocomplete="additional-name"></div>
+                                <div class="form-group" style="margin:0;"><label>Last name *</label><input type="text" id="profile-last-name" required autocomplete="family-name"></div>
+                                <div class="form-group" style="margin:0;"><label>Email *</label><input type="email" id="profile-email" required autocomplete="email"></div>
+                                <div class="form-group" style="margin:0;grid-column:1/-1;"><label>Mobile *</label><input type="tel" id="profile-account-phone" required autocomplete="tel" placeholder="10-digit mobile"></div>
+                            </div>
                             <div class="form-group ak-profile-medical hidden"><label>Specialization</label><input type="text" id="profile-specialization"></div>
                             <div class="form-group ak-profile-medical hidden"><label>Registration number</label><input type="text" id="profile-registration-no"></div>
                             <div class="form-group ak-profile-medical hidden"><label>Qualifications</label><textarea id="profile-qualifications" rows="2"></textarea></div>
                             <div class="form-group ak-profile-medical hidden"><label>Years of experience</label><input type="number" id="profile-experience" min="0"></div>
                             <div class="form-group ak-profile-medical hidden"><label>Hospital / clinic</label><input type="text" id="profile-hospital"></div>
-                            <div class="form-group"><label>Mobile (from your account)</label><input type="text" id="profile-account-phone" readonly style="background:#f1f5f9;color:#475569;"></div>
                             <div class="form-group ak-profile-medical hidden"><label>Extra contact</label><input type="tel" id="profile-contact" placeholder="Optional"></div>
                             <div class="form-group"><label>About you <span style="font-weight:400;color:#64748b;">(optional)</span></label><textarea id="profile-bio" rows="3" placeholder="A short note about you or your child (optional)"></textarea></div>
                             <div class="form-group"><label>Profile photo</label>
@@ -501,7 +507,10 @@
                         <form id="prereg-form">
                             <div class="form-group"><label>Event</label><select id="prereg-seminar-select" required><option value="">Select event</option></select></div>
                             <div id="prereg-fields"></div>
-                            <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;">
+                                <button type="button" class="btn-primary" style="background:#475569;" onclick="previewPreregistration()"><i class="fas fa-eye"></i> Preview form &amp; barcode</button>
+                                <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
+                            </div>
                             <p id="prereg-status-msg" style="margin-top:12px;font-weight:600;"></p>
                         </form>
                     </div>
@@ -511,6 +520,7 @@
                 <div id="tab-competition" class="tab-pane hidden">
                     <h3 class="section-title">Competition uploads</h3>
                     <p style="color:#64748b;margin-bottom:16px;">Upload photos, videos, PPT, or PDF entries for competitions.</p>
+                    <p id="comp-track-live" class="hidden" style="margin-bottom:12px;font-size:0.88rem;font-weight:600;color:#1e40af;"></p>
                     <div class="card">
                         <form id="competition-form">
                             <div class="form-group"><label>Event (optional)</label><select id="comp-seminar-select"><option value="">Select event</option></select></div>
@@ -518,7 +528,10 @@
                             <div class="form-group"><label>Category</label><select id="comp-category"><option value="art">Art &amp; Drawing</option><option value="essay">Essay</option><option value="video">Video</option><option value="presentation">Presentation (PPT)</option></select></div>
                             <div class="form-group"><label>Description</label><textarea id="comp-description" rows="3"></textarea></div>
                             <div class="form-group"><label>Files (images, video, PPT, PDF) *</label><input type="file" id="comp-files" multiple accept="image/*,video/*,.ppt,.pptx,.pdf"></div>
-                            <button type="submit" class="btn-primary"><i class="fas fa-cloud-upload-alt"></i> Submit entry</button>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                                <button type="button" class="btn-primary" style="background:#475569;" onclick="previewCompetitionEntry()"><i class="fas fa-eye"></i> Preview entry</button>
+                                <button type="submit" class="btn-primary"><i class="fas fa-cloud-upload-alt"></i> Submit entry</button>
+                            </div>
                             <p id="comp-status-msg" style="margin-top:12px;font-weight:600;"></p>
                         </form>
                     </div>
@@ -824,10 +837,25 @@
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism1"></script>
-    <script src="/js/applicant-autism.js?v=autism6"></script>
+    <script src="/js/autism-form-preview.js?v=1"></script>
+    <script src="/js/applicant-autism.js?v=autism7"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
-    <script src="/js/autism-applicant-live.js?v=1"></script>
+    <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>
+
+    <div id="ak-form-preview-modal" class="ak-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ak-preview-title">
+        <div class="ak-preview-backdrop" onclick="closeFormPreviewModal()"></div>
+        <div class="ak-preview-sheet">
+            <button type="button" class="ak-preview-close" onclick="closeFormPreviewModal()" aria-label="Close">&times;</button>
+            <h3 id="ak-preview-title">Form preview</h3>
+            <div id="ak-preview-barcode" class="ak-preview-barcode"></div>
+            <div id="ak-preview-body" class="ak-preview-body"></div>
+            <div class="ak-preview-actions">
+                <button type="button" class="btn-primary" style="background:#64748b;" onclick="closeFormPreviewModal()">Back to edit</button>
+                <button type="button" class="btn-primary" id="ak-preview-confirm-btn">Confirm &amp; submit</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

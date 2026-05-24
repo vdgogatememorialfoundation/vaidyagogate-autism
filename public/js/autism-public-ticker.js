@@ -1,5 +1,5 @@
 /**
- * Autism public site: announcement ticker + CMS hooks.
+ * Autism public site: header announcement ticker (right → left).
  */
 (function () {
     'use strict';
@@ -17,7 +17,7 @@
         }
         (cms.scrollingAnnouncements || []).forEach(add);
         (cms.publicNotices || []).forEach((n) =>
-            add({ title: n.title || 'Notice', body: n.body || '', link: n.link || '' })
+            add({ title: n.title || 'Notice', body: n.body || n.description || '', link: n.link || '' })
         );
         return out;
     }
@@ -41,10 +41,21 @@
 
     async function bootstrapTicker() {
         try {
-            const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
-            if (!res.ok) return;
-            const cms = await res.json();
-            renderAutismTicker(cms);
+            const [cmsRes, annRes] = await Promise.all([
+                fetch('/api/public/site-cms', { cache: 'no-store' }),
+                fetch('/api/public/announcements', { cache: 'no-store' })
+            ]);
+            const merged = {};
+            if (cmsRes.ok) Object.assign(merged, await cmsRes.json());
+            if (annRes.ok) {
+                const ann = await annRes.json();
+                merged.scrollingAnnouncements = [
+                    ...(merged.scrollingAnnouncements || []),
+                    ...(ann.scrollingAnnouncements || [])
+                ];
+                merged.publicNotices = [...(merged.publicNotices || []), ...(ann.publicNotices || [])];
+            }
+            renderAutismTicker(merged);
         } catch (_) {
             /* optional */
         }

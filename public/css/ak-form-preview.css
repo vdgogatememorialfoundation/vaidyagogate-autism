@@ -1,0 +1,101 @@
+.ak-preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.ak-preview-modal.hidden {
+    display: none !important;
+}
+.ak-preview-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+}
+.ak-preview-sheet {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border-radius: 20px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+    padding: 24px 22px 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+}
+.ak-preview-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #64748b;
+}
+.ak-preview-barcode {
+    text-align: center;
+    margin: 14px 0 18px;
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+}
+.ak-preview-barcode img {
+    width: 120px;
+    height: 120px;
+    display: block;
+    margin: 0 auto 8px;
+}
+.ak-preview-barcode code {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.ak-preview-barcode small {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+.ak-preview-body dl {
+    display: grid;
+    grid-template-columns: minmax(100px, 38%) 1fr;
+    gap: 8px 12px;
+    margin: 0;
+    font-size: 0.92rem;
+}
+.ak-preview-body dt {
+    font-weight: 700;
+    color: #475569;
+}
+.ak-preview-body dd {
+    margin: 0;
+    color: #0f172a;
+}
+.ak-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+.ak-barcode-inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.ak-barcode-inline img {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+}

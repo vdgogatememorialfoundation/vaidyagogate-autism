@@ -452,10 +452,34 @@ async function prepareUploadFileOrAlert(file) {
 }
 
 function doctorNumericUserId() {
-    if (!currentUser) return null;
-    const raw = currentUser.id != null ? currentUser.id : currentUser.user_id;
-    const n = parseInt(raw, 10);
-    if (Number.isInteger(n) && n > 0) return n;
+    if (currentUser) {
+        const raw = currentUser.id != null ? currentUser.id : currentUser.user_id;
+        const n = parseInt(raw, 10);
+        if (Number.isInteger(n) && n > 0) return n;
+    }
+    if (document.body && document.body.classList.contains('ak-portal-dash')) {
+        try {
+            if (typeof PortalAuth !== 'undefined') {
+                const u = PortalAuth.getUser('doctor');
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+            const keys = ['seminar_doctor_user', 'portalUser', 'doctorUser', 'seminar_user'];
+            for (let i = 0; i < keys.length; i++) {
+                const raw = localStorage.getItem(keys[i]);
+                if (!raw) continue;
+                const u = JSON.parse(raw);
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
+    }
     return null;
 }
 
@@ -486,6 +510,12 @@ function parseDoctorModulesMap(raw) {
 function formatApplicantDisplayName(user) {
     if (!user) return '';
     const parts = [user.first_name, user.middle_name, user.last_name];
+    if (document.body && document.body.classList.contains('ak-portal-dash')) {
+        return parts
+            .map((p) => String(p || '').trim())
+            .filter(Boolean)
+            .join(' ');
+    }
     if (typeof formatPersonDisplayName === 'function') {
         return formatPersonDisplayName(parts);
     }
@@ -1136,6 +1166,8 @@ function bootDoctorDashboard(user) {
     loadRegistrationFormConfigAndApply();
     if (!document.body.classList.contains('ak-portal-dash')) {
         loadDoctorPortalUpdatesFromCms();
+    } else if (typeof loadApplicantAnnouncements === 'function') {
+        loadApplicantAnnouncements();
     }
     loadSiteBranding();
     if (!document.body.classList.contains('ak-portal-dash')) initDoctorVolunteerNav();
@@ -1717,6 +1749,15 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
         window.__emailConfigured = !!data.emailConfigured;
         window.__whatsappConfigured = !!data.whatsappConfigured;
         syncRegistrationOtpUi();
+        if (document.body.classList.contains('ak-portal-dash')) {
+            window.__registrationFormFields = (window.__registrationFormFields || []).filter(
+                (f) =>
+                    f &&
+                    f.key !== 'qual' &&
+                    !f.onlyWhenAdvancedQual &&
+                    !f.onlyWhenPgCollege
+            );
+        }
     } catch (e) {
         console.error(e);
         window.__registrationFormFields = [];
@@ -5773,15 +5814,41 @@ async function loadProfile() {
     try {
         const uid = doctorNumericUserId();
         if (!uid) return;
+        const isAutismDash = document.body.classList.contains('ak-portal-dash');
+        const accountFields = document.getElementById('profile-account-fields');
+        if (accountFields) {
+            if (isAutismDash) {
+                accountFields.classList.remove('hidden');
+                accountFields.style.display = 'grid';
+            } else {
+                accountFields.classList.add('hidden');
+                accountFields.style.display = 'none';
+            }
+        }
         const accountPhoneEl = document.getElementById('profile-account-phone');
-        if (accountPhoneEl && currentUser && currentUser.phone) {
+        if (!isAutismDash && accountPhoneEl && currentUser && currentUser.phone) {
             accountPhoneEl.value = currentUser.phone;
+            accountPhoneEl.readOnly = true;
         }
         try {
             const accRes = await fetch(`/api/doctor/account/${uid}`);
             if (accRes.ok) {
                 const acc = await accRes.json();
                 renderDoctorAccountMeta(acc);
+                if (isAutismDash) {
+                    const fn = document.getElementById('profile-first-name');
+                    const mn = document.getElementById('profile-middle-name');
+                    const ln = document.getElementById('profile-last-name');
+                    const em = document.getElementById('profile-email');
+                    if (fn) fn.value = acc.firstName || currentUser?.first_name || '';
+                    if (mn) mn.value = acc.middleName || currentUser?.middle_name || '';
+                    if (ln) ln.value = acc.lastName || currentUser?.last_name || '';
+                    if (em) em.value = acc.email || currentUser?.email || '';
+                    if (accountPhoneEl) {
+                        accountPhoneEl.value = acc.phone || currentUser?.phone || '';
+                        accountPhoneEl.readOnly = false;
+                    }
+                }
             } else if (currentUser) {
                 renderDoctorAccountMeta({
                     createdAt: currentUser.created_at,
@@ -5893,6 +5960,57 @@ async function saveProfile(event) {
     const formData = new FormData();
     const uid = doctorNumericUserId();
     if (!uid) return alert('Session invalid. Please sign in again with your email.');
+    const isAutismDash = document.body.classList.contains('ak-portal-dash');
+    if (isAutismDash) {
+        const firstName = (document.getElementById('profile-first-name')?.value || '').trim();
+        const middleName = (document.getElementById('profile-middle-name')?.value || '').trim();
+        const lastName = (document.getElementById('profile-last-name')?.value || '').trim();
+        const email = (document.getElementById('profile-email')?.value || '').trim();
+        const phone = (document.getElementById('profile-account-phone')?.value || '').trim();
+        if (!firstName || !lastName) return alert('First name and last name are required.');
+        if (!email) return alert('Email is required.');
+        if (!phone) return alert('Mobile number is required.');
+        try {
+            const accRes = await fetch('/api/applicant/account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: uid,
+                    firstName,
+                    middleName,
+                    lastName,
+                    email,
+                    phone
+                })
+            });
+            const accData = await accRes.json().catch(() => ({}));
+            if (!accRes.ok) {
+                alert(accData.error || 'Could not update account details.');
+                return false;
+            }
+            if (currentUser) {
+                currentUser.first_name = firstName;
+                currentUser.middle_name = middleName;
+                currentUser.last_name = lastName;
+                currentUser.email = email;
+                currentUser.phone = phone;
+            }
+            if (typeof PortalAuth !== 'undefined' && PortalAuth.setUser) {
+                PortalAuth.setUser('doctor', { ...(currentUser || {}), id: uid });
+            }
+            try {
+                localStorage.setItem('seminar_doctor_user', JSON.stringify(currentUser || {}));
+            } catch (_) {}
+            const displayName = formatApplicantDisplayName(currentUser);
+            const profileNameEl = document.getElementById('profile-display-name');
+            if (profileNameEl) profileNameEl.textContent = displayName || '—';
+            const headerName = document.getElementById('header-name');
+            if (headerName) headerName.innerText = displayName ? `Hi, ${displayName}` : 'Hi there';
+        } catch (e) {
+            alert('Network error updating account.');
+            return false;
+        }
+    }
     formData.append('userId', uid);
     formData.append('specialization', document.getElementById('profile-specialization').value);
     formData.append('registration_no', document.getElementById('profile-registration-no').value);
@@ -5936,8 +6054,13 @@ async function saveProfile(event) {
                 hospital_name: document.getElementById('profile-hospital').value
             };
             updateProfileCompleteBanner(window.__doctorProfile);
-            alert('✅ Profile saved successfully! You can now apply for seminars.');
+            alert(
+                isAutismDash
+                    ? '✅ Profile saved successfully!'
+                    : '✅ Profile saved successfully! You can now apply for seminars.'
+            );
             await loadProfile();
+            if (isAutismDash && typeof loadApplicantAnnouncements === 'function') loadApplicantAnnouncements();
             return true;
         }
         const msg =

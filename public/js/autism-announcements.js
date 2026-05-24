@@ -18,15 +18,45 @@
         return String(iso).slice(0, 16);
     }
 
+    function resolveApplicantUserId() {
+        if (typeof doctorNumericUserId === 'function') {
+            const n = doctorNumericUserId();
+            if (n) return n;
+        }
+        if (window.currentUser && window.currentUser.id != null) {
+            const n = Number(window.currentUser.id);
+            if (Number.isInteger(n) && n > 0) return n;
+        }
+        try {
+            if (typeof PortalAuth !== 'undefined') {
+                const u = PortalAuth.getUser('doctor');
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+            const keys = ['seminar_doctor_user', 'portalUser', 'doctorUser', 'seminar_user'];
+            for (let i = 0; i < keys.length; i++) {
+                const raw = localStorage.getItem(keys[i]);
+                if (!raw) continue;
+                const u = JSON.parse(raw);
+                if (u && u.id != null) {
+                    const n = Number(u.id);
+                    if (Number.isInteger(n) && n > 0) return n;
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
+        return null;
+    }
+
     async function loadApplicantAnnouncements() {
         const box = document.getElementById('doctor-updates-list');
         if (!box) return;
-        const uid =
-            typeof doctorNumericUserId === 'function'
-                ? doctorNumericUserId()
-                : window.currentUser && window.currentUser.id;
+        const uid = resolveApplicantUserId();
         if (!uid) {
-            box.innerHTML = '<li style="color:#64748b;">Sign in to see updates.</li>';
+            box.innerHTML = '<li style="color:#64748b;">Loading updates…</li>';
             return;
         }
         try {
@@ -79,6 +109,11 @@
     function initApplicant() {
         if (!document.body.classList.contains('ak-portal-dash')) return;
         loadApplicantAnnouncements();
+        let retries = 0;
+        const retryTimer = setInterval(() => {
+            if (resolveApplicantUserId() || retries++ > 12) clearInterval(retryTimer);
+            if (!document.hidden) loadApplicantAnnouncements();
+        }, 500);
         setInterval(() => {
             if (!document.hidden) loadApplicantAnnouncements();
         }, 30000);
@@ -87,51 +122,8 @@
         });
     }
 
-    async function loadHomeAnnouncements() {
-        const board = document.getElementById('ak-home-announcements');
-        if (!board) return;
-        try {
-            const r = await fetch('/api/public/announcements', { cache: 'no-store' });
-            const data = await r.json();
-            if (!r.ok) return;
-            const cards = (data.scrollingAnnouncements || []).slice(0, 4);
-            const notices = (data.publicNotices || []).slice(0, 4);
-            const items = [
-                ...cards.map((c) => ({
-                    title: c.title || c.headline || 'Announcement',
-                    body: c.subtitle || c.text || c.body || '',
-                    at: c.date || null
-                })),
-                ...notices.map((n) => ({
-                    title: n.title || 'Notice',
-                    body: n.description || n.body || '',
-                    at: n.date || null
-                }))
-            ];
-            if (!items.length) {
-                board.innerHTML = '<p class="muted">No announcements at the moment.</p>';
-                return;
-            }
-            board.innerHTML = items
-                .map(
-                    (it) =>
-                        '<article class="ak-home-ann-card"><h4>' +
-                        esc(it.title) +
-                        '</h4><p>' +
-                        esc(it.body) +
-                        '</p>' +
-                        (it.at ? '<time>' + esc(formatAt(it.at)) + '</time>' : '') +
-                        '</article>'
-                )
-                .join('');
-        } catch (_) {
-            board.innerHTML = '<p class="muted">Announcements load when you are online.</p>';
-        }
-    }
-
     function initPublic() {
-        if (!document.body.classList.contains('autism-kids')) return;
-        loadHomeAnnouncements();
+        /* Homepage announcements use header ticker only (autism-public-ticker.js). */
     }
 
     if (document.readyState === 'loading') {

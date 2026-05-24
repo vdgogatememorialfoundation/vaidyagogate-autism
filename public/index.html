@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/css/autism-kids.css?v=6">
     <link rel="stylesheet" href="/css/autism-theme.css?v=4">
     <link rel="stylesheet" href="/css/autism-redesign.css?v=3">
-    <link rel="stylesheet" href="/css/ak-home-announcements.css?v=1">
+    <link rel="stylesheet" href="/css/ak-header-ticker.css?v=1">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260522a"></script>
     <script src="/js/portal-datetime.js"></script>
@@ -82,17 +82,16 @@
                 <a href="#" data-nav-section="contact"><i class="fas fa-envelope" aria-hidden="true"></i> Contact</a>
             </span>
         </nav>
-    </div>
-    </div>
-    <div class="cg-nav-backdrop" id="cg-nav-backdrop" aria-hidden="true"></div>
-
-    <div id="scrolling-announce-wrap" class="cg-ticker hidden" aria-label="Announcements">
-        <div class="cg-ticker-inner">
-            <span class="cg-ticker-badge">Live</span>
-            <div class="cg-ticker-viewport">
-                <div id="scrolling-announce-track" class="cg-ticker-track"></div>
+        <div id="scrolling-announce-wrap" class="cg-ticker cg-header-ticker hidden" aria-label="Live announcements">
+            <div class="cg-ticker-inner">
+                <span class="cg-ticker-badge"><i class="fas fa-bullhorn" aria-hidden="true"></i> Updates</span>
+                <div class="cg-ticker-viewport">
+                    <div id="scrolling-announce-track" class="cg-ticker-track"></div>
+                </div>
             </div>
         </div>
+    </div>
+    <div class="cg-nav-backdrop" id="cg-nav-backdrop" aria-hidden="true"></div>
     </div>
 
     <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" aria-label="Welcome">
@@ -118,14 +117,6 @@
                     <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-b.jpg" alt="Children learning together in class" width="200" height="200" loading="lazy" decoding="async">
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="ak-home-ann-section ak-reveal-v2" aria-labelledby="ak-home-ann-title">
-        <div class="ak-home-ann-inner">
-            <h2 id="ak-home-ann-title"><i class="fas fa-bullhorn" aria-hidden="true"></i> Latest announcements</h2>
-            <p>Official updates from the programme team (times in IST)</p>
-            <div id="ak-home-announcements" class="ak-home-ann-grid"><p class="muted">Loading…</p></div>
         </div>
     </section>
 
@@ -1894,7 +1885,7 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/autism-kids.js?v=3"></script>
     <script src="/js/autism-public-ui.js?v=3"></script>
-    <script src="/js/autism-public-ticker.js?v=1"></script>
+    <script src="/js/autism-public-ticker.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>
 </body>

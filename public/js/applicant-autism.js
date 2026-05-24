@@ -88,6 +88,11 @@
         const q = seminarId ? `?seminarId=${encodeURIComponent(seminarId)}` : '';
         const data = await fetchJson('/api/preregistration-form-config' + q);
         preregFields = data.fields || [];
+        if (typeof window.__akExposePreregFields === 'function') {
+            window.__akExposePreregFields(preregFields);
+        } else {
+            window.__akPreregFields = preregFields;
+        }
         return data;
     }
 
@@ -134,6 +139,7 @@
         try {
             const list = await fetchJson('/api/seminars');
             preregSeminars = Array.isArray(list) ? list : list.seminars || [];
+            window.__akPreregSeminars = preregSeminars;
             sel.innerHTML = '<option value="">Select event</option>';
             preregSeminars.forEach((s) => {
                 const opt = document.createElement('option');
@@ -281,6 +287,13 @@
                               : r.status === 'rejected'
                                 ? '<p style="margin-top:10px;font-size:0.9rem;color:#b91c1c;">Contact us if you need help.</p>'
                                 : '<p style="margin-top:10px;font-size:0.9rem;color:#64748b;">We will notify you when pre-registration is approved.</p>') +
+                        (r.application_no
+                            ? '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+                              encodeURIComponent(r.application_no) +
+                              '" alt="Pre-reg barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Pre-reg barcode</strong><br><code>' +
+                              (r.application_no || '') +
+                              '</code></div></div>'
+                            : '') +
                         '</div>'
                     );
                 })
@@ -288,6 +301,61 @@
         } catch (e) {
             box.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
         }
+    }
+
+    function compStatusMeta(status) {
+        const st = String(status || 'submitted').toLowerCase();
+        const map = {
+            draft: { label: 'Draft', color: '#64748b', bg: '#f1f5f9', step: 0 },
+            submitted: { label: 'Submitted', color: '#d97706', bg: '#fef3c7', step: 1 },
+            under_review: { label: 'Under review', color: '#2563eb', bg: '#dbeafe', step: 2 },
+            approved: { label: 'Approved', color: '#047857', bg: '#d1fae5', step: 3 },
+            rejected: { label: 'Not selected', color: '#b91c1c', bg: '#fee2e2', step: 2 }
+        };
+        return map[st] || map.submitted;
+    }
+
+    function renderFlipkartCompetition(r) {
+        const st = String(r.status || 'submitted').toLowerCase();
+        const steps = [
+            { title: 'Submitted', icon: 'fa-upload' },
+            { title: 'Review', icon: 'fa-magnifying-glass' },
+            { title: 'Decision', icon: 'fa-trophy' }
+        ];
+        let cur = 0;
+        if (st === 'submitted') cur = 1;
+        else if (st === 'under_review') cur = 1;
+        else if (st === 'approved' || st === 'rejected') cur = 2;
+        const fail = st === 'rejected';
+        const pct = fail ? 66 : Math.min(100, Math.round((cur / (steps.length - 1)) * 100));
+        const html = steps
+            .map((s, i) => {
+                let cls = 'ak-fk-step';
+                if (fail && i === 2) cls += ' is-fail';
+                else if (i < cur) cls += ' is-done';
+                else if (i === cur) cls += ' is-current';
+                const icon = i < cur ? 'fa-check' : s.icon;
+                return (
+                    '<div class="' +
+                    cls +
+                    '"><div class="ak-fk-dot"><i class="fas ' +
+                    icon +
+                    '"></i></div><strong>' +
+                    s.title +
+                    '</strong></div>'
+                );
+            })
+            .join('');
+        const code = r.application_no || 'COMP-' + r.id;
+        return (
+            '<div class="ak-fk-track"><div class="ak-fk-track-title">Competition · ' +
+            code +
+            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
+            pct +
+            '%"></span>' +
+            html +
+            '</div></div>'
+        );
     }
 
     async function submitCompetition(ev) {
@@ -338,16 +406,40 @@
                 return;
             }
             box.innerHTML = rows
-                .map(
-                    (r) =>
-                        '<div class="card" style="margin-bottom:12px;"><strong>' +
+                .map((r) => {
+                    const meta = compStatusMeta(r.status);
+                    const code = r.application_no || 'COMP-' + r.id;
+                    return (
+                        '<div class="ak-prereg-card">' +
+                        renderFlipkartCompetition(r) +
+                        '<div class="ak-prereg-card-head"><div><strong>' +
                         (r.title || 'Entry') +
-                        '</strong> — ' +
-                        (r.status || 'submitted') +
-                        '<br><small style="color:#64748b;">' +
+                        '</strong>' +
+                        (r.seminar_title ? '<br><small style="color:#64748b;">' + r.seminar_title + '</small>' : '') +
+                        '</div><span class="ak-prereg-pill" style="background:' +
+                        meta.bg +
+                        ';color:' +
+                        meta.color +
+                        '">' +
+                        meta.label +
+                        '</span></div>' +
+                        '<p style="font-size:0.88rem;color:#64748b;margin:8px 0 0;">' +
                         (r.files || []).length +
-                        ' file(s)</small></div>'
-                )
+                        ' file(s) · ' +
+                        (r.category || 'general') +
+                        '</p>' +
+                        (r.admin_notes
+                            ? '<p style="margin-top:8px;font-size:0.88rem;color:#475569;"><strong>Office note:</strong> ' +
+                              String(r.admin_notes).replace(/</g, '&lt;') +
+                              '</p>'
+                            : '') +
+                        '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+                        encodeURIComponent(code) +
+                        '" alt="Entry barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Entry barcode</strong><br><code>' +
+                        code +
+                        '</code></div></div></div>'
+                    );
+                })
                 .join('');
         } catch (e) {
             box.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
@@ -387,6 +479,9 @@
         document.getElementById('competition-form')?.addEventListener('submit', submitCompetition);
     }
 
+    window.loadPreregList = loadPreregList;
+    window.loadCompetitionList = loadCompetitionList;
+
     function applyBranding() {
         document.title = "Dashboard | Autism Awareness Programme";
         const h2 = document.querySelector('.sidebar-header h2');
@@ -401,6 +496,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         applyBranding();
+        const accountFields = document.getElementById('profile-account-fields');
+        if (accountFields) {
+            accountFields.classList.remove('hidden');
+            accountFields.style.display = 'grid';
+        }
         wireAutismTabs();
         if (typeof loadApplicantAnnouncements === 'function') loadApplicantAnnouncements();
         if (typeof loadApplications === 'function') {

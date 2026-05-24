@@ -838,7 +838,8 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         exploreLinks: [
             { label: 'Home', section: 'home' },
             { label: 'About', section: 'about' },
-            { label: 'Schedule', section: 'schedule' }
+            { label: 'Schedule', section: 'schedule' },
+            { label: 'Gallery', section: 'gallery' }
         ],
         doctorLinks: [
             { label: 'Sign in', action: 'login' },
@@ -4922,7 +4923,7 @@ app.get('/api/doctor/account/:userId', (req, res) => {
     const uid = parseInt(req.params.userId, 10);
     if (!Number.isInteger(uid) || uid < 1) return res.status(400).json({ error: 'Invalid user' });
     db.get(
-        `SELECT id, user_id_string, first_name, last_name, email, phone, role, user_role,
+        `SELECT id, user_id_string, first_name, middle_name, last_name, email, phone, role, user_role,
                 created_at, activated_at, last_login_at, IFNULL(email_verified,1) AS email_verified,
                 IFNULL(is_disabled,0) AS is_disabled, COALESCE(is_banned,0) AS is_banned
          FROM users WHERE id = ?`,
@@ -4933,6 +4934,11 @@ app.get('/api/doctor/account/:userId', (req, res) => {
             res.json({
                 userId: row.id,
                 userIdString: row.user_id_string,
+                firstName: row.first_name,
+                middleName: row.middle_name,
+                lastName: row.last_name,
+                email: row.email,
+                phone: row.phone,
                 createdAt: row.created_at,
                 activatedAt: row.activated_at,
                 lastLoginAt: row.last_login_at,
@@ -4941,6 +4947,47 @@ app.get('/api/doctor/account/:userId', (req, res) => {
             });
         }
     );
+});
+
+// Applicant self-service account update (name, email, phone)
+app.post('/api/applicant/account', (req, res) => {
+    const uid = parseInt((req.body && req.body.userId) || '', 10);
+    if (!Number.isInteger(uid) || uid < 1) {
+        return res.status(400).json({ error: 'Invalid session. Please sign in again.' });
+    }
+    const { firstName, middleName, lastName, email, phone } = req.body || {};
+    const emailV = contactValidation.validateEmail(email);
+    if (!emailV.valid) return res.status(400).json({ error: emailV.message });
+    const phoneV = contactValidation.validatePhone(phone);
+    if (!phoneV.valid) return res.status(400).json({ error: phoneV.message });
+    const cleanFirst = String(firstName || '').trim();
+    const cleanLast = String(lastName || '').trim();
+    if (!cleanFirst || !cleanLast) {
+        return res.status(400).json({ error: 'First name and last name are required.' });
+    }
+    if (cleanFirst.length < 2 || cleanLast.length < 2) {
+        return res.status(400).json({ error: 'First and last name must be at least 2 characters.' });
+    }
+    db.get(`SELECT id FROM users WHERE email = ? AND id <> ?`, [emailV.cleanedEmail, uid], (dupErr, dup) => {
+        if (dupErr) return res.status(500).json({ error: dupErr.message });
+        if (dup) return res.status(400).json({ error: 'This email is already registered to another account.' });
+        db.run(
+            `UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, email = ?, phone = ? WHERE id = ?`,
+            [
+                cleanFirst,
+                String(middleName || '').trim() || null,
+                cleanLast,
+                emailV.cleanedEmail,
+                phoneV.cleanedPhone,
+                uid
+            ],
+            function (err) {
+                if (err) return res.status(500).json({ error: err.message });
+                if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
+                res.json({ success: true, message: 'Account updated' });
+            }
+        );
+    });
 });
 
 // Get doctor profile
@@ -6724,7 +6771,7 @@ app.get('/api/admin/seminars/:id/scans', (req, res) => {
 // Admin: Get applications for specific seminar
 app.get('/api/admin/seminars/:id/applications', (req, res) => {
     const query = `
-        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, u.first_name, u.last_name, u.user_id_string
+        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, u.first_name, u.middle_name, u.last_name, u.user_id_string
         FROM registrations a
         JOIN users u ON a.user_id = u.id
         WHERE a.seminar_id = ?
@@ -6739,7 +6786,7 @@ app.get('/api/admin/seminars/:id/applications', (req, res) => {
 // Admin: Get all applications
 app.get('/api/admin/applications', (req, res) => {
     db.all(`
-        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, u.first_name, u.last_name, u.user_id_string
+        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, u.first_name, u.middle_name, u.last_name, u.user_id_string
         FROM registrations a
         JOIN users u ON a.user_id = u.id
         ORDER BY a.created_at DESC

@@ -103,7 +103,7 @@
         if (!tbody) return;
         const rows = filteredRows();
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">No pre-registrations match your filters.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">No pre-registrations match your filters.</td></tr>';
             return;
         }
         tbody.innerHTML = rows
@@ -116,7 +116,9 @@
                     '"' +
                     sel +
                     '>' +
-                    '<td><code>' +
+                    '<td><img src="/api/qrcode/' +
+                    encodeURIComponent(r.application_no || '') +
+                    '" alt="" width="44" height="44" style="display:block;margin-bottom:4px;"><code>' +
                     esc(r.application_no || '—') +
                     '</code></td>' +
                     '<td>' +
@@ -168,7 +170,9 @@
             '<dl>' +
             '<dt>Application no.</dt><dd><code>' +
             esc(row.application_no) +
-            '</code></dd>' +
+            '</code><br><img src="/api/qrcode/' +
+            encodeURIComponent(row.application_no || '') +
+            '" alt="Barcode" width="96" height="96" style="margin-top:8px;"></dd>' +
             '<dt>Email / phone</dt><dd>' +
             esc(row.email) +
             ' · ' +
