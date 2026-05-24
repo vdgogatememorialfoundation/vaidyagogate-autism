@@ -477,7 +477,33 @@ function parseDoctorModulesMap(raw) {
     }
 }
 
+function formatApplicantDisplayName(user) {
+    if (!user) return '';
+    const parts = [user.first_name, user.middle_name, user.last_name];
+    if (typeof formatPersonDisplayName === 'function') {
+        return formatPersonDisplayName(parts);
+    }
+    return parts
+        .map((p) => String(p || '').trim())
+        .filter(Boolean)
+        .join(' ');
+}
+
 function applyDoctorModuleAccessFromUser(user) {
+    if (document.body.classList.contains('ak-portal-dash')) {
+        __doctorAllowedTabs = null;
+        document.querySelectorAll('.menu-item[data-tab]').forEach((el) => {
+            const tab = el.getAttribute('data-tab');
+            if (tab === 'tab-volunteer') {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+                return;
+            }
+            el.classList.remove('hidden');
+            el.style.display = '';
+        });
+        return;
+    }
     const category = String((user && user.doctor_category) || 'regular').toLowerCase();
     let mods = parseDoctorModulesMap(user && user.doctor_modules);
     if (!mods && category === 'volunteer') {
@@ -1015,7 +1041,10 @@ function bootDoctorDashboard(user) {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
     initDoctorMobileNav();
-        document.getElementById('header-name').innerText = `Hi, Dr. ${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
+        const _name = formatApplicantDisplayName(currentUser);
+        document.getElementById('header-name').innerText = _name ? `Hi, ${_name}` : 'Hi there';
+        const profileNameEl = document.getElementById('profile-display-name');
+        if (profileNameEl) profileNameEl.textContent = _name || '—';
     document.getElementById('header-id').innerText =
         `ID: ${currentUser.user_id_string || '---'}` +
         (window.__allowDemoAccounts !== false && Number(currentUser.is_demo) === 1 ? ' · Dummy' : '');
@@ -1034,7 +1063,7 @@ function bootDoctorDashboard(user) {
     loadRegistrationFormConfigAndApply();
     loadDoctorPortalUpdatesFromCms();
     loadSiteBranding();
-    initDoctorVolunteerNav();
+    if (!document.body.classList.contains('ak-portal-dash')) initDoctorVolunteerNav();
     handleEasebuzzPaymentReturnQuery();
 }
 
@@ -2191,6 +2220,7 @@ function switchTab(tabId, menuEl) {
         startCertTrackingPoll();
     }
     if (tabId === 'tab-volunteer') {
+        if (document.body.classList.contains('ak-portal-dash')) return;
         loadDoctorVolunteerPanel();
     }
     if (tabId === 'tab-abstract') {
@@ -5539,6 +5569,9 @@ async function submitSupportTicket() {
 
 // Doctor Profile Management
 function isDoctorProfileComplete(profile) {
+    if (document.body.classList.contains('ak-portal-dash')) {
+        return true;
+    }
     const p = profile || {};
     return !!(
         String(p.specialization || '').trim() &&
@@ -5654,6 +5687,11 @@ async function loadProfile() {
         }
         updateDoctorProfilePhotoUi(window.__doctorProfile);
         updateProfileCompleteBanner(window.__doctorProfile);
+        if (document.body.classList.contains('ak-portal-dash') && currentUser) {
+            const displayName = formatApplicantDisplayName(currentUser);
+            const profileNameEl = document.getElementById('profile-display-name');
+            if (profileNameEl) profileNameEl.textContent = displayName || '—';
+        }
     } catch (err) {
         console.error('Error loading profile:', err);
     }

@@ -7,6 +7,7 @@
   "routes": [
     { "src": "/css/(.*)", "dest": "/public/css/$1" },
     { "src": "/js/(.*)", "dest": "/public/js/$1" },
+    { "src": "/images/(.*)", "dest": "/public/images/$1" },
     { "src": "/uploads/(.*)", "dest": "server.js" },
     { "src": "/dashboard", "dest": "/public/applicant.html" },
     { "src": "/admin", "dest": "/public/admin.html" },

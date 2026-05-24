@@ -9,7 +9,8 @@
         'tab-case-track',
         'tab-orders',
         'tab-receipts',
-        'tab-payments'
+        'tab-payments',
+        'tab-volunteer'
     ];
 
     function hideAutismDisabledTabs() {
@@ -19,8 +20,24 @@
                 el.style.display = 'none';
             });
             const pane = document.getElementById(tabId);
-            if (pane) pane.classList.add('hidden');
+            if (pane) {
+                pane.classList.add('hidden');
+                pane.style.display = 'none';
+            }
         });
+        document.getElementById('nav-volunteer')?.remove();
+        document.getElementById('tab-volunteer')?.remove();
+    }
+
+    function updateProfileDisplayName() {
+        if (typeof formatApplicantDisplayName !== 'function') return;
+        const user = window.currentUser;
+        if (!user) return;
+        const name = formatApplicantDisplayName(user);
+        const profileEl = document.getElementById('profile-display-name');
+        if (profileEl) profileEl.textContent = name || '—';
+        const hi = document.getElementById('header-name');
+        if (hi) hi.textContent = name ? `Hi, ${name}` : 'Hi there';
     }
 
     function currentUserId() {
@@ -277,13 +294,14 @@
         if (sub) sub.textContent = 'Autism Awareness Programme';
         const ht = document.querySelector('.header-title');
         if (ht) ht.textContent = 'Autism Awareness Programme — Dashboard';
-        const hi = document.getElementById('header-name');
-        if (hi && hi.textContent.includes('Doctor')) hi.textContent = hi.textContent.replace('Doctor', 'Applicant');
+        updateProfileDisplayName();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         applyBranding();
         wireAutismTabs();
+        setTimeout(updateProfileDisplayName, 400);
+        setTimeout(updateProfileDisplayName, 2500);
     });
 })();

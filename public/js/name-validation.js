@@ -28,6 +28,29 @@ function validatePersonNameClient(name, fieldLabel) {
     return { valid: true, cleanedName: trimmed };
 }
 
+/** Remove honorifics for display (Dr., Mr., etc.) — keeps given/family name only. */
+function stripPersonNameTitles(name) {
+    let s = String(name == null ? '' : name).trim().replace(/\s+/g, ' ');
+    if (!s) return '';
+    const lower = s.toLowerCase();
+    for (const prefix of NAME_REJECTED_PREFIXES) {
+        const re = new RegExp('^' + prefix.replace('.', '\\.') + '\\.?\\s+', 'i');
+        if (lower === prefix || lower === prefix + '.') {
+            return '';
+        }
+        s = s.replace(re, '');
+    }
+    return s.trim();
+}
+
+function formatPersonDisplayName(parts) {
+    return parts
+        .map((p) => stripPersonNameTitles(p))
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+}
+
 function validateRegistrationNamesClient(formData) {
     const fd = formData || {};
     const checks = [['fname', 'First name'], ['mname', 'Middle name'], ['lname', 'Last name']];
