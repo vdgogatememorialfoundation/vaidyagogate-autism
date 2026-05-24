@@ -226,6 +226,11 @@ function bootstrapApp(done) {
                     });
                 })
             );
+            steps.push(
+                new Promise((resolve) => {
+                    autismPortal.ensureAutismSchema(db, ignoreSchemaMigrationErr, () => resolve());
+                })
+            );
             return Promise.all(steps);
         };
         return vercelPgBoot()

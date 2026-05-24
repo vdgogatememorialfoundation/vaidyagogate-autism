@@ -211,9 +211,16 @@
                     typeof withActingAdminUrl === 'function'
                         ? withActingAdminUrl('/api/admin/applications')
                         : '/api/admin/applications';
-                const [regsRes, preRes] = await Promise.all([fetch(appsUrl), fetch(preregUrl)]);
-                const regs = await regsRes.json();
-                const pregs = await preRes.json();
+                const fetchJson = async (url) => {
+                    if (typeof window.autismAdminFetch === 'function') {
+                        return window.autismAdminFetch(url);
+                    }
+                    const r = await fetch(url, { credentials: 'same-origin' });
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data.error || r.statusText);
+                    return data;
+                };
+                const [regs, pregs] = await Promise.all([fetchJson(appsUrl), fetchJson(preregUrl)]);
                 const preRows = (Array.isArray(pregs) ? pregs : []).map((p) => {
                     let formData = {};
                     try {
@@ -261,7 +268,7 @@
             const q = String((document.getElementById('applications-search') || {}).value || '')
                 .trim()
                 .toLowerCase();
-            const apps =
+            let apps =
                 typeof window.__getGlobalAdminApps === 'function' ? window.__getGlobalAdminApps() : [];
             if (filter === 'pending') {
                 apps = apps.filter(
@@ -353,17 +360,30 @@
 
         window.updateAutismPreregStatus = async function (preregistrationId, status) {
             try {
-                const r = await fetch('/api/admin/preregistrations/status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ preregistrationId, status })
-                });
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(data.error || r.statusText);
+                const call =
+                    typeof window.autismAdminFetch === 'function'
+                        ? window.autismAdminFetch('/api/admin/preregistrations/status', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ preregistrationId, status })
+                          })
+                        : fetch('/api/admin/preregistrations/status', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              credentials: 'same-origin',
+                              body: JSON.stringify(
+                                  typeof withActingAdminBody === 'function'
+                                      ? withActingAdminBody({ preregistrationId, status })
+                                      : { preregistrationId, status }
+                              )
+                          }).then(async (r) => {
+                              const data = await r.json().catch(() => ({}));
+                              if (!r.ok) throw new Error(data.error || r.statusText);
+                              return data;
+                          });
+                await call;
                 if (typeof window.loadApplications === 'function') window.loadApplications();
-                if (typeof window.AkAdminPrereg !== 'undefined' && window.AkAdminPrereg.reload) {
-                    window.AkAdminPrereg.reload();
-                }
+                if (typeof window.initAdminPreregTracking === 'function') window.initAdminPreregTracking();
             } catch (e) {
                 alert(e.message || 'Could not update pre-registration status.');
             }

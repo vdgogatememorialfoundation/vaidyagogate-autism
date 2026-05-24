@@ -6225,10 +6225,14 @@ async function adminVerifySeminarApplication(appId, decision) {
 
 async function updateAppStatus(appId, status) {
     try {
+        const body = { applicationId: appId, status };
+        const payload =
+            typeof withActingAdminBody === 'function' ? withActingAdminBody(body) : body;
         const res = await fetch('/api/admin/applications/status', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ applicationId: appId, status })
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

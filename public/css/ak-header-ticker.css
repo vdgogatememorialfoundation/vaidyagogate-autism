@@ -36,7 +36,7 @@
     display: inline-block;
     white-space: nowrap;
     min-width: 100%;
-    animation: ak-ticker-marquee-rtl var(--ak-ticker-dur, 16s) linear infinite;
+    animation: ak-ticker-marquee-rtl var(--ak-ticker-dur, 24s) linear infinite;
 }
 .cg-header-ticker:hover .cg-ticker-track {
     animation-play-state: paused;

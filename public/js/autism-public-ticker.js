@@ -62,7 +62,7 @@
         const line = items.map((it) => itemLabel(it)).filter(Boolean).join('   ·   ');
         track.className = 'cg-ticker-track ak-ticker-marquee';
         track.innerHTML = '<span class="cg-ticker-item">' + esc(line) + '</span>';
-        const dur = Math.min(36, Math.max(12, 10 + line.length * 0.1));
+        const dur = Math.min(48, Math.max(20, 16 + line.length * 0.14));
         track.style.setProperty('--ak-ticker-dur', dur + 's');
     }
 
