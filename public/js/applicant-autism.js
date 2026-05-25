@@ -62,13 +62,22 @@
             trackPane.id = 'tab-event-track';
             trackPane.className = 'tab-pane hidden';
             trackPane.innerHTML =
-                '<h3 class="section-title">Track event registration</h3>' +
-                '<p style="color:#64748b;margin-bottom:16px;">Pre-registration and main registration status.</p>';
-            if (listCard) trackPane.appendChild(listCard);
-            const mainTrack = document.getElementById('applications-tracker-container');
-            if (mainTrack) {
-                const mc = mainTrack.closest('.card') || mainTrack;
-                trackPane.appendChild(mc);
+                '<div class="ak-track-page">' +
+                '<div class="ak-track-page-head">' +
+                '<h3><i class="fas fa-route" style="color:#2563eb;margin-right:8px;"></i> Track event registration</h3>' +
+                '<p>Follow pre-registration and main registration step by step. Updates automatically while this page is open.</p>' +
+                '</div>' +
+                '<section class="ak-track-section">' +
+                '<h4 class="ak-track-section-title"><i class="fas fa-clipboard-list"></i> Pre-registration</h4>' +
+                '<div id="prereg-list" class="ak-track-list"></div>' +
+                '</section>' +
+                '<section class="ak-track-section">' +
+                '<h4 class="ak-track-section-title"><i class="fas fa-file-signature"></i> Main registration</h4>' +
+                '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
+                '</section></div>';
+            if (listCard) {
+                listCard.querySelector('#prereg-list')?.remove();
+                listCard.remove();
             }
             preregPane.replaceWith(regPane, trackPane);
         }
@@ -87,9 +96,19 @@
             trackPane.id = 'tab-comp-track';
             trackPane.className = 'tab-pane hidden';
             trackPane.innerHTML =
-                '<h3 class="section-title">Track competition entries</h3>' +
-                '<p style="color:#64748b;margin-bottom:16px;">Status of your competition submissions.</p>';
-            if (listCard) trackPane.appendChild(listCard);
+                '<div class="ak-track-page">' +
+                '<div class="ak-track-page-head">' +
+                '<h3><i class="fas fa-photo-video" style="color:#7c3aed;margin-right:8px;"></i> Track competition entries</h3>' +
+                '<p>See when your files are received, reviewed, and approved.</p>' +
+                '</div>' +
+                '<section class="ak-track-section ak-track-section--comp">' +
+                '<h4 class="ak-track-section-title"><i class="fas fa-trophy"></i> Your entries</h4>' +
+                '<div id="comp-list" class="ak-track-list"></div>' +
+                '</section></div>';
+            if (listCard) {
+                listCard.querySelector('#comp-list')?.remove();
+                listCard.remove();
+            }
             compPane.replaceWith(regPane, trackPane);
         }
     }
@@ -414,54 +433,6 @@
         return map[st] || map.submitted;
     }
 
-    function renderFlipkartPrereg(r) {
-        const st = String(r.status || 'submitted').toLowerCase();
-        const regSt = String(r.registration_status || '').toLowerCase();
-        const hasReg = !!r.registration_id;
-        const steps = [
-            { title: 'Submitted', icon: 'fa-clipboard-check' },
-            { title: 'Review', icon: 'fa-magnifying-glass' },
-            { title: 'Approved', icon: 'fa-circle-check' },
-            { title: 'Registration', icon: 'fa-file-signature' },
-            { title: 'E-ticket', icon: 'fa-qrcode' }
-        ];
-        let cur = 0;
-        if (st === 'rejected' || st === 'revision_required') cur = 1;
-        else if (st === 'submitted') cur = 1;
-        else if (st === 'approved') cur = 2;
-        if (hasReg && st === 'approved') cur = 3;
-        if (hasReg && (regSt === 'completed' || regSt === 'checked_in' || regSt === 'e_ticket_issued')) cur = 4;
-        const fail = st === 'rejected';
-        const pct = fail ? 25 : Math.min(100, Math.round((cur / (steps.length - 1)) * 100));
-        const html = steps
-            .map((s, i) => {
-                let cls = 'ak-fk-step';
-                if (fail && i === 1) cls += ' is-fail';
-                else if (i < cur) cls += ' is-done';
-                else if (i === cur) cls += ' is-current';
-                const icon = i < cur ? 'fa-check' : s.icon;
-                return (
-                    '<div class="' +
-                    cls +
-                    '"><div class="ak-fk-dot"><i class="fas ' +
-                    icon +
-                    '"></i></div><strong>' +
-                    s.title +
-                    '</strong></div>'
-                );
-            })
-            .join('');
-        return (
-            '<div class="ak-fk-track"><div class="ak-fk-track-title">Pre-registration · ' +
-            (r.application_no || '') +
-            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
-            pct +
-            '%"></span>' +
-            html +
-            '</div></div>'
-        );
-    }
-
     function eventRegStatusMeta(status) {
         const st = String(status || 'submitted').toLowerCase();
         const map = {
@@ -479,46 +450,6 @@
         return map[st] || map.submitted;
     }
 
-    function renderFlipkartFromTimelineSteps(stepDefs, titlePrefix, code) {
-        let cur = 0;
-        stepDefs.forEach((s, i) => {
-            if (s.state === 'active') cur = i;
-            if (s.state === 'completed') cur = Math.max(cur, i + 1);
-        });
-        const lastIdx = Math.max(1, stepDefs.length - 1);
-        const pct = Math.min(100, Math.round((cur / lastIdx) * 100));
-        const html = stepDefs
-            .map((s, i) => {
-                let cls = 'ak-fk-step';
-                const done = s.state === 'completed' || i < cur;
-                const active = s.state === 'active' || (i === cur && !done);
-                if (done) cls += ' is-done';
-                else if (active) cls += ' is-current';
-                const iconClass = String(s.icon || 'fa-circle').startsWith('fa-') ? s.icon : 'fa-' + (s.icon || 'circle');
-                return (
-                    '<div class="' +
-                    cls +
-                    '"><div class="ak-fk-dot"><i class="fas ' +
-                    (done ? 'fa-check' : iconClass) +
-                    '"></i></div><strong>' +
-                    escapeAkHtml(String(s.title || '').slice(0, 32)) +
-                    '</strong></div>'
-                );
-            })
-            .join('');
-        return (
-            '<div class="ak-fk-track"><div class="ak-fk-track-title">' +
-            escapeAkHtml(titlePrefix) +
-            ' · ' +
-            escapeAkHtml(code) +
-            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
-            pct +
-            '%"></span>' +
-            html +
-            '</div></div>'
-        );
-    }
-
     function escapeAkHtml(s) {
         return String(s || '')
             .replace(/&/g, '&amp;')
@@ -527,73 +458,331 @@
             .replace(/"/g, '&quot;');
     }
 
-    function renderAutismEventRegistrationCard(a) {
-        const st = String(a.status || 'submitted').toLowerCase();
-        const meta = eventRegStatusMeta(st);
-        const tl = a.timeline || {};
-        let stepDefs = (tl.steps || []).filter(
-            (s) => s.key !== 'approved_pending_payment' && s.key !== 'completed'
-        );
-        if (!stepDefs.length) {
-            stepDefs = [
-                { title: 'Submitted', icon: 'fa-clipboard-check', state: 'completed' },
-                { title: 'Review', icon: 'fa-magnifying-glass', state: 'pending' },
-                { title: 'Approved', icon: 'fa-circle-check', state: 'pending' },
-                { title: 'E-ticket', icon: 'fa-qrcode', state: 'pending' }
-            ];
+    function formatAkTrackWhen(iso) {
+        if (!iso) return '';
+        if (window.PortalDateTime && window.PortalDateTime.formatLong) {
+            const s = window.PortalDateTime.formatLong(iso);
+            return s && !/\bIST\b/i.test(s) ? s + ' IST' : s;
         }
-        const fk = renderFlipkartFromTimelineSteps(stepDefs, 'Main registration', a.application_no || '');
-        const appIdx =
-            typeof userApplications !== 'undefined'
-                ? userApplications.findIndex((x) => Number(x.id) === Number(a.id))
-                : -1;
-        let revisionBlock = '';
-        if (st === 'revision_required' || st === 'documents_requested') {
-            revisionBlock =
-                '<div class="ak-revision-banner">' +
-                '<p style="margin:0 0 8px;font-weight:600;color:#9a3412;"><i class="fas fa-exclamation-triangle"></i> Documents need correction</p>' +
-                '<button type="button" class="btn-warning" style="padding:6px 12px;font-size:0.85rem;" onclick="openSeminarDocumentResubmitById(' +
-                Number(a.id) +
-                ')">Re-upload documents</button></div>';
-        }
-        const yearBadge = a.portal_year
-            ? '<span class="ak-prereg-pill" style="background:#e0f2fe;color:#0369a1;">' + escapeAkHtml(String(a.portal_year)) + '</span>'
-            : '';
+        return String(iso).slice(0, 16);
+    }
+
+    function renderAkTrackStepsV3(stepDefs, accentClass) {
+        const steps = stepDefs || [];
+        let doneCount = 0;
+        let currentIdx = -1;
+        steps.forEach((s, i) => {
+            if (s.state === 'completed') doneCount = i + 1;
+            if (s.state === 'active') currentIdx = i;
+        });
+        if (currentIdx < 0 && doneCount < steps.length && doneCount > 0) currentIdx = doneCount;
+        const progressPct =
+            steps.length <= 1 ? 0 : Math.min(100, Math.round((Math.max(doneCount, currentIdx + 1) / steps.length) * 100));
+
+        const html = steps
+            .map((s, i) => {
+                let cls = 'ak-track-v3-step';
+                if (s.state === 'completed') cls += ' is-done';
+                else if (s.state === 'active') cls += ' is-current';
+                else if (s.state === 'fail') cls += ' is-fail';
+                else cls += ' is-upcoming';
+                const icon =
+                    s.state === 'completed'
+                        ? 'fa-check'
+                        : String(s.icon || 'fa-circle').replace(/^fa-/, 'fa-');
+                const iconClass = icon.startsWith('fa-') ? icon : 'fa-' + icon;
+                const when =
+                    s.at && (s.state === 'completed' || s.state === 'active')
+                        ? '<p class="ak-track-v3-when">' + escapeAkHtml(formatAkTrackWhen(s.at)) + '</p>'
+                        : s.state === 'pending'
+                          ? '<p class="ak-track-v3-when" style="color:#94a3b8!important;">Upcoming</p>'
+                          : '';
+                return (
+                    '<div class="' +
+                    cls +
+                    '"><div class="ak-track-v3-icon"><i class="fas ' +
+                    iconClass +
+                    '"></i></div><div class="ak-track-v3-body"><strong>' +
+                    escapeAkHtml(s.title) +
+                    '</strong>' +
+                    (s.desc ? '<p>' + escapeAkHtml(s.desc) + '</p>' : '') +
+                    when +
+                    '</div></div>'
+                );
+            })
+            .join('');
+
         return (
-            '<div class="ak-prereg-card ak-event-reg-card">' +
-            fk +
-            '<div class="ak-prereg-card-head">' +
-            '<div><strong>' +
-            escapeAkHtml(a.seminar_title || 'Event registration') +
-            '</strong><br><code style="font-size:0.85rem;">' +
-            escapeAkHtml(a.application_no || '—') +
-            '</code></div>' +
-            '<span class="ak-prereg-pill" style="background:' +
+            '<div class="ak-track-card-v3__progress-wrap">' +
+            '<div class="ak-track-card-v3__progress-label"><span>Progress</span><span>' +
+            Math.min(doneCount + (currentIdx >= doneCount ? 1 : 0), steps.length) +
+            ' / ' +
+            steps.length +
+            ' steps</span></div>' +
+            '<div class="ak-track-card-v3__progress-bar"><div class="ak-track-card-v3__progress-fill" style="width:' +
+            progressPct +
+            '%"></div></div></div>' +
+            '<div class="ak-track-v3-stepper ' +
+            (accentClass || '') +
+            '">' +
+            html +
+            '</div>'
+        );
+    }
+
+    function renderAkTrackCardV3(opts) {
+        const o = opts || {};
+        const mod = o.modifier || 'event';
+        const stepsHtml = renderAkTrackStepsV3(o.steps || [], 'ak-track-card-v3--' + mod);
+        const meta = o.statusMeta || { label: '—', color: '#64748b', bg: '#f1f5f9' };
+        return (
+            '<article class="ak-track-card-v3 ak-track-card-v3--' +
+            mod +
+            '">' +
+            '<div class="ak-track-card-v3__bar"></div>' +
+            '<div class="ak-track-card-v3__head">' +
+            '<div><span class="ak-track-card-v3__type">' +
+            escapeAkHtml(o.typeLabel || 'Application') +
+            '</span>' +
+            '<div class="ak-track-card-v3__title">' +
+            escapeAkHtml(o.title || '') +
+            '</div>' +
+            (o.subtitle ? '<div class="ak-track-card-v3__code">' + escapeAkHtml(o.subtitle) + '</div>' : '') +
+            (o.code
+                ? '<div class="ak-track-card-v3__code" style="margin-top:6px;font-weight:700;color:#0f172a;">' +
+                  escapeAkHtml(o.code) +
+                  '</div>'
+                : '') +
+            '</div>' +
+            '<span class="ak-track-card-v3__pill" style="background:' +
             meta.bg +
             ';color:' +
             meta.color +
             '">' +
             escapeAkHtml(meta.label) +
-            '</span>' +
-            yearBadge +
-            '</div>' +
-            revisionBlock +
-            (a.application_no
-                ? '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
-                  encodeURIComponent(a.application_no) +
-                  '" alt="Registration barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Application barcode</strong><br><code>' +
-                  escapeAkHtml(a.application_no) +
-                  '</code></div></div>' +
-                  '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
-                  (appIdx >= 0
-                      ? '<button type="button" class="btn-primary" style="padding:6px 12px;font-size:0.85rem;background:#475569;" onclick="downloadApplicationByIndex(' +
-                        appIdx +
-                        ')">Download PDF</button>'
-                      : '') +
-                  '</div>'
+            '</span></div>' +
+            stepsHtml +
+            (o.footHtml
+                ? '<div class="ak-track-card-v3__foot">' + o.footHtml + '</div>'
                 : '') +
-            '</div>'
+            '</article>'
         );
+    }
+
+    function buildPreregStepDefs(r) {
+        const st = String(r.status || 'submitted').toLowerCase();
+        const regSt = String(r.registration_status || '').toLowerCase();
+        const hasReg = !!r.registration_id;
+        const fail = st === 'rejected';
+        const steps = [
+            {
+                title: 'Application submitted',
+                desc: 'Your pre-registration was received.',
+                icon: 'fa-clipboard-check',
+                state: 'completed'
+            },
+            {
+                title: 'Under review',
+                desc: fail
+                    ? 'Not approved at this stage.'
+                    : st === 'revision_required'
+                      ? 'Please update and resubmit.'
+                      : 'Our team is checking your details.',
+                icon: 'fa-magnifying-glass',
+                state:
+                    fail || st === 'revision_required'
+                        ? st === 'revision_required'
+                            ? 'active'
+                            : 'fail'
+                        : st === 'submitted'
+                          ? 'active'
+                          : 'completed'
+            },
+            {
+                title: 'Pre-registration approved',
+                desc: 'You can proceed to main registration when it opens.',
+                icon: 'fa-circle-check',
+                state: st === 'approved' ? 'completed' : st === 'submitted' || fail ? 'pending' : 'pending'
+            },
+            {
+                title: 'Main registration',
+                desc: hasReg ? 'Final registration started or completed.' : 'Opens after pre-registration approval.',
+                icon: 'fa-file-signature',
+                state:
+                    hasReg && st === 'approved'
+                        ? 'active'
+                        : hasReg
+                          ? 'completed'
+                          : 'pending'
+            },
+            {
+                title: 'E-ticket',
+                desc: 'Download your pass with QR code for event day.',
+                icon: 'fa-qrcode',
+                state:
+                    hasReg &&
+                    (regSt === 'completed' || regSt === 'checked_in' || regSt === 'e_ticket_issued')
+                        ? 'completed'
+                        : 'pending'
+            }
+        ];
+        if (st === 'approved') {
+            steps[2].state = 'completed';
+            if (hasReg) steps[3].state = regSt === 'e_ticket_issued' || regSt === 'checked_in' ? 'completed' : 'active';
+        }
+        if (fail) steps[2].state = 'pending';
+        return steps;
+    }
+
+    function buildCompStepDefs(r) {
+        const st = String(r.status || 'submitted').toLowerCase();
+        const fail = st === 'rejected';
+        return [
+            {
+                title: 'Entry submitted',
+                desc: 'Your files were uploaded successfully.',
+                icon: 'fa-cloud-upload-alt',
+                state: 'completed'
+            },
+            {
+                title: 'Under review',
+                desc: 'Judges or staff are reviewing your entry.',
+                icon: 'fa-magnifying-glass',
+                state:
+                    st === 'under_review' || st === 'submitted'
+                        ? 'active'
+                        : st === 'approved' || fail
+                          ? 'completed'
+                          : 'pending'
+            },
+            {
+                title: fail ? 'Not selected' : 'Decision',
+                desc: fail ? 'Thank you for participating.' : 'Final outcome for this entry.',
+                icon: fail ? 'fa-circle-xmark' : 'fa-trophy',
+                state: st === 'approved' ? 'completed' : fail ? 'fail' : 'pending'
+            }
+        ];
+    }
+
+    function timelineToStepDefs(tl) {
+        const raw = (tl && tl.steps) || [];
+        return raw
+            .filter((s) => s.key !== 'approved_pending_payment' && s.key !== 'completed')
+            .map((s) => ({
+                title: s.title || s.key,
+                desc: s.desc || '',
+                icon: s.icon || 'fa-circle',
+                state: s.state === 'completed' ? 'completed' : s.state === 'active' ? 'active' : 'pending',
+                at: s.at
+            }));
+    }
+
+    function akTrackEmptyHtml(icon, message) {
+        return (
+            '<div class="ak-track-empty"><i class="fas ' +
+            icon +
+            '"></i><p>' +
+            message +
+            '</p></div>'
+        );
+    }
+
+    function renderPreregTrackCard(r) {
+        const meta = preregStatusMeta(r.status);
+        const st = String(r.status || 'submitted').toLowerCase();
+        let foot =
+            '<p class="ak-track-card-v3__msg" style="color:#64748b;">Submitted ' +
+            escapeAkHtml(
+                window.PortalDateTime && window.PortalDateTime.format
+                    ? window.PortalDateTime.format(r.created_at) + ' IST'
+                    : (r.created_at || '').slice(0, 16)
+            ) +
+            '</p>';
+        if (meta.step >= 3) {
+            foot +=
+                '<p class="ak-track-card-v3__msg" style="color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Pre-registration approved — complete <strong>main registration</strong> when the form opens.</p>';
+        } else if (st === 'revision_required') {
+            foot +=
+                '<p class="ak-track-card-v3__msg" style="color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>' +
+                '<div class="ak-track-card-v3__actions">' +
+                '<button type="button" class="btn-warning" data-ak-prereg-edit="' +
+                r.id +
+                '">Edit &amp; resubmit</button>' +
+                '<button type="button" class="btn-primary" style="background:#475569;" data-ak-prereg-dl="' +
+                r.id +
+                '">Download PDF</button></div>';
+        } else if (st === 'rejected') {
+            foot += '<p class="ak-track-card-v3__msg" style="color:#b91c1c;">Contact us if you need help.</p>';
+        } else {
+            foot += '<p class="ak-track-card-v3__msg">We will notify you when pre-registration is approved.</p>';
+        }
+        if (r.application_no) {
+            foot +=
+                '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+                encodeURIComponent(r.application_no) +
+                '" alt="Pre-reg QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Pre-registration ID</strong><br><code>' +
+                escapeAkHtml(r.application_no) +
+                '</code></div></div>';
+        }
+        return renderAkTrackCardV3({
+            modifier: 'prereg',
+            typeLabel: 'Pre-registration',
+            title: r.seminar_title || 'Event ' + r.seminar_id,
+            code: r.application_no || '—',
+            statusMeta: meta,
+            steps: buildPreregStepDefs(r),
+            footHtml: foot
+        });
+    }
+
+    function renderAutismEventRegistrationCard(a) {
+        const st = String(a.status || 'submitted').toLowerCase();
+        const meta = eventRegStatusMeta(st);
+        let steps = timelineToStepDefs(a.timeline || {});
+        if (!steps.length) {
+            steps = [
+                { title: 'Application submitted', desc: 'Registration received.', icon: 'fa-clipboard-check', state: 'completed' },
+                { title: 'Under admin review', desc: 'Team is verifying your application.', icon: 'fa-user-shield', state: 'active' },
+                { title: 'Registration approved', desc: 'Approved for the programme.', icon: 'fa-circle-check', state: 'pending' },
+                { title: 'E-ticket', desc: 'QR pass for event day.', icon: 'fa-qrcode', state: 'pending' }
+            ];
+        }
+        const appIdx =
+            typeof userApplications !== 'undefined'
+                ? userApplications.findIndex((x) => Number(x.id) === Number(a.id))
+                : -1;
+        let foot = '';
+        if (st === 'revision_required' || st === 'documents_requested') {
+            foot +=
+                '<div class="ak-revision-banner"><p style="margin:0 0 8px;font-weight:600;color:#9a3412;"><i class="fas fa-exclamation-triangle"></i> Documents need correction</p>' +
+                '<button type="button" class="btn-warning" onclick="openSeminarDocumentResubmitById(' +
+                Number(a.id) +
+                ')">Re-upload documents</button></div>';
+        }
+        if (a.application_no) {
+            foot +=
+                '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+                encodeURIComponent(a.application_no) +
+                '" alt="Registration QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Application ID</strong><br><code>' +
+                escapeAkHtml(a.application_no) +
+                '</code></div></div><div class="ak-track-card-v3__actions">' +
+                (appIdx >= 0
+                    ? '<button type="button" class="btn-primary" style="background:#475569;" onclick="downloadApplicationByIndex(' +
+                      appIdx +
+                      ')">Download PDF</button>'
+                    : '') +
+                '</div>';
+        }
+        return renderAkTrackCardV3({
+            modifier: 'event',
+            typeLabel: 'Main registration',
+            title: a.seminar_title || 'Event registration',
+            subtitle: a.portal_year ? 'Year ' + a.portal_year : '',
+            code: a.application_no || '—',
+            statusMeta: meta,
+            steps: steps,
+            footHtml: foot
+        });
     }
 
     window.renderAutismEventRegistrationCard = renderAutismEventRegistrationCard;
@@ -606,64 +795,15 @@
             const rows = await fetchJson('/api/preregistrations/' + uid);
             if (!rows.length) {
                 const trackOnly = !!box.closest('#tab-event-track');
-                box.innerHTML =
-                    '<p style="color:#64748b;">' +
-                    (trackOnly
-                        ? 'No pre-registrations to track yet.'
-                        : 'No pre-registrations yet. Submit the form above to start.') +
-                    '</p>';
+                box.innerHTML = akTrackEmptyHtml(
+                    'fa-clipboard-list',
+                    trackOnly
+                        ? 'No pre-registrations to track yet. Use <strong>Register Event</strong> to apply.'
+                        : 'No pre-registrations yet. Submit the form above to start.'
+                );
                 return;
             }
-            box.innerHTML = rows
-                .map((r) => {
-                    const meta = preregStatusMeta(r.status);
-                    const canReg = meta.step >= 3;
-                    return (
-                        '<div class="ak-prereg-card">' +
-                        renderFlipkartPrereg(r) +
-                        '<div class="ak-prereg-card-head">' +
-                        '<div><strong>' +
-                        (r.seminar_title || 'Event ' + r.seminar_id) +
-                        '</strong><br><code style="font-size:0.85rem;">' +
-                        (r.application_no || '—') +
-                        '</code></div>' +
-                        '<span class="ak-prereg-pill" style="background:' +
-                        meta.bg +
-                        ';color:' +
-                        meta.color +
-                        '">' +
-                        meta.label +
-                        '</span></div>' +
-                        '<p style="font-size:0.88rem;color:#64748b;margin:8px 0 0;">Submitted ' +
-                        (window.PortalDateTime && window.PortalDateTime.format
-                            ? window.PortalDateTime.format(r.created_at) + ' IST'
-                            : (r.created_at || '').slice(0, 16)) +
-                        '</p>' +
-                        (canReg
-                            ? '<p style="margin-top:10px;font-size:0.9rem;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Pre-registration approved — complete <strong>main registration</strong> when the form opens.</p>'
-                            : r.status === 'revision_required'
-                              ? '<p style="margin-top:10px;font-size:0.9rem;color:#6d28d9;font-weight:600;">Please update and resubmit your pre-registration.</p>' +
-                                '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
-                                '<button type="button" class="btn-warning" style="padding:6px 12px;font-size:0.85rem;" data-ak-prereg-edit="' +
-                                r.id +
-                                '">Edit &amp; resubmit</button>' +
-                                '<button type="button" class="btn-primary" style="padding:6px 12px;font-size:0.85rem;background:#475569;" data-ak-prereg-dl="' +
-                                r.id +
-                                '">Download PDF</button></div>'
-                              : r.status === 'rejected'
-                                ? '<p style="margin-top:10px;font-size:0.9rem;color:#b91c1c;">Contact us if you need help.</p>'
-                                : '<p style="margin-top:10px;font-size:0.9rem;color:#64748b;">We will notify you when pre-registration is approved.</p>') +
-                        (r.application_no
-                            ? '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
-                              encodeURIComponent(r.application_no) +
-                              '" alt="Pre-reg barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Pre-reg barcode</strong><br><code>' +
-                              (r.application_no || '') +
-                              '</code></div></div>'
-                            : '') +
-                        '</div>'
-                    );
-                })
-                .join('');
+            box.innerHTML = rows.map((r) => renderPreregTrackCard(r)).join('');
             const rowsById = {};
             rows.forEach((r) => {
                 rowsById[r.id] = r;
@@ -691,47 +831,37 @@
         return map[st] || map.submitted;
     }
 
-    function renderFlipkartCompetition(r) {
-        const st = String(r.status || 'submitted').toLowerCase();
-        const steps = [
-            { title: 'Submitted', icon: 'fa-upload' },
-            { title: 'Review', icon: 'fa-magnifying-glass' },
-            { title: 'Decision', icon: 'fa-trophy' }
-        ];
-        let cur = 0;
-        if (st === 'submitted') cur = 1;
-        else if (st === 'under_review') cur = 1;
-        else if (st === 'approved' || st === 'rejected') cur = 2;
-        const fail = st === 'rejected';
-        const pct = fail ? 66 : Math.min(100, Math.round((cur / (steps.length - 1)) * 100));
-        const html = steps
-            .map((s, i) => {
-                let cls = 'ak-fk-step';
-                if (fail && i === 2) cls += ' is-fail';
-                else if (i < cur) cls += ' is-done';
-                else if (i === cur) cls += ' is-current';
-                const icon = i < cur ? 'fa-check' : s.icon;
-                return (
-                    '<div class="' +
-                    cls +
-                    '"><div class="ak-fk-dot"><i class="fas ' +
-                    icon +
-                    '"></i></div><strong>' +
-                    s.title +
-                    '</strong></div>'
-                );
-            })
-            .join('');
+    function renderCompTrackCard(r) {
+        const meta = compStatusMeta(r.status);
         const code = r.application_no || 'COMP-' + r.id;
-        return (
-            '<div class="ak-fk-track"><div class="ak-fk-track-title">Competition · ' +
-            code +
-            '</div><div class="ak-fk-steps"><span class="ak-fk-bar-fill" style="width:' +
-            pct +
-            '%"></span>' +
-            html +
-            '</div></div>'
-        );
+        let foot =
+            '<p class="ak-track-card-v3__msg" style="color:#64748b;">' +
+            (r.files || []).length +
+            ' file(s) · ' +
+            escapeAkHtml(r.category || 'general') +
+            '</p>';
+        if (r.admin_notes) {
+            foot +=
+                '<p class="ak-track-card-v3__msg"><strong>Office note:</strong> ' +
+                escapeAkHtml(String(r.admin_notes)) +
+                '</p>';
+        }
+        foot +=
+            '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+            encodeURIComponent(code) +
+            '" alt="Entry QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Entry ID</strong><br><code>' +
+            escapeAkHtml(code) +
+            '</code></div></div>';
+        return renderAkTrackCardV3({
+            modifier: 'comp',
+            typeLabel: 'Competition',
+            title: r.title || 'Entry',
+            subtitle: r.seminar_title || '',
+            code: code,
+            statusMeta: meta,
+            steps: buildCompStepDefs(r),
+            footHtml: foot
+        });
     }
 
     async function submitCompetition(ev) {
@@ -778,45 +908,13 @@
         try {
             const rows = await fetchJson('/api/competition-submissions/' + uid);
             if (!rows.length) {
-                box.innerHTML = '<p style="color:#64748b;">No competition entries yet.</p>';
+                box.innerHTML = akTrackEmptyHtml(
+                    'fa-photo-video',
+                    'No competition entries yet. Use <strong>Register Competition</strong> to upload your work.'
+                );
                 return;
             }
-            box.innerHTML = rows
-                .map((r) => {
-                    const meta = compStatusMeta(r.status);
-                    const code = r.application_no || 'COMP-' + r.id;
-                    return (
-                        '<div class="ak-prereg-card">' +
-                        renderFlipkartCompetition(r) +
-                        '<div class="ak-prereg-card-head"><div><strong>' +
-                        (r.title || 'Entry') +
-                        '</strong>' +
-                        (r.seminar_title ? '<br><small style="color:#64748b;">' + r.seminar_title + '</small>' : '') +
-                        '</div><span class="ak-prereg-pill" style="background:' +
-                        meta.bg +
-                        ';color:' +
-                        meta.color +
-                        '">' +
-                        meta.label +
-                        '</span></div>' +
-                        '<p style="font-size:0.88rem;color:#64748b;margin:8px 0 0;">' +
-                        (r.files || []).length +
-                        ' file(s) · ' +
-                        (r.category || 'general') +
-                        '</p>' +
-                        (r.admin_notes
-                            ? '<p style="margin-top:8px;font-size:0.88rem;color:#475569;"><strong>Office note:</strong> ' +
-                              String(r.admin_notes).replace(/</g, '&lt;') +
-                              '</p>'
-                            : '') +
-                        '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
-                        encodeURIComponent(code) +
-                        '" alt="Entry barcode" width="72" height="72"><div><strong style="font-size:0.82rem;color:#64748b;">Entry barcode</strong><br><code>' +
-                        code +
-                        '</code></div></div></div>'
-                    );
-                })
-                .join('');
+            box.innerHTML = rows.map((r) => renderCompTrackCard(r)).join('');
         } catch (e) {
             box.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
         }

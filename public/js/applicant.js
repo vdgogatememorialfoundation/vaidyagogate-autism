@@ -4603,7 +4603,7 @@ async function loadApplications(silentPoll) {
             if (list) list.innerHTML = '<tr><td colspan="3" style="text-align:center;">No seminar applications yet.</td></tr>';
             if (trackerContainer) {
                 trackerContainer.innerHTML = window.PORTAL_IS_AUTISM
-                    ? '<p style="color:#64748b;">No main registrations yet. Complete pre-registration first, then main registration when approved.</p>'
+                    ? '<div class="ak-track-empty"><i class="fas fa-file-signature"></i><p>No main registrations yet. Complete pre-registration first, then main registration when approved.</p></div>'
                     : '<p style="color:#64748b;">No seminar registrations yet. Apply from <strong>Available Seminars</strong>.</p>';
             }
         }
@@ -4641,7 +4641,12 @@ async function loadApplications(silentPoll) {
             `;
             }
 
-            if (trackerContainer) trackerContainer.innerHTML += renderSeminarApplicationTrackerCard(a);
+            if (trackerContainer) {
+                trackerContainer.innerHTML +=
+                    window.PORTAL_IS_AUTISM && typeof window.renderAutismEventRegistrationCard === 'function'
+                        ? window.renderAutismEventRegistrationCard(a)
+                        : renderSeminarApplicationTrackerCard(a);
+            }
         });
         if (
             (userApplications || []).some(

@@ -1,105 +1,296 @@
-/* Flipkart-style horizontal order tracker */
-.ak-fk-track {
-    margin: 16px 0 8px;
-    padding: 16px 12px 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
+/* Applicant portal — registration tracking (responsive v3) */
+
+.ak-track-page {
+    max-width: 920px;
 }
-.ak-fk-track-title {
-    font-size: 0.82rem;
-    font-weight: 700;
+.ak-track-page-head {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border: 1px solid #bfdbfe;
+}
+.ak-track-page-head h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+    color: #1e3a8a;
+    font-weight: 800;
+}
+.ak-track-page-head p {
+    margin: 0;
+    font-size: 0.9rem;
     color: #64748b;
-    margin-bottom: 14px;
+    line-height: 1.45;
+}
+.ak-track-section {
+    margin-bottom: 28px;
+}
+.ak-track-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #334155;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
-.ak-fk-steps {
+.ak-track-section-title i {
+    color: #2563eb;
+    font-size: 1rem;
+}
+.ak-track-section--comp .ak-track-section-title i {
+    color: #7c3aed;
+}
+.ak-track-list {
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Card */
+.ak-track-card-v3 {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+.ak-track-card-v3--event {
+    --ak-track-accent: #2563eb;
+    --ak-track-accent-soft: #dbeafe;
+}
+.ak-track-card-v3--comp {
+    --ak-track-accent: #7c3aed;
+    --ak-track-accent-soft: #ede9fe;
+}
+.ak-track-card-v3--prereg {
+    --ak-track-accent: #0d9488;
+    --ak-track-accent-soft: #ccfbf1;
+}
+.ak-track-card-v3__bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--ak-track-accent), #10b981);
+}
+.ak-track-card-v3__head {
+    padding: 16px 18px 12px;
+    display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
-    position: relative;
-    gap: 4px;
+    gap: 12px;
 }
-.ak-fk-steps::before {
+.ak-track-card-v3__type {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ak-track-accent);
+    background: var(--ak-track-accent-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+.ak-track-card-v3__title {
+    margin: 8px 0 4px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+}
+.ak-track-card-v3__code {
+    font-size: 0.88rem;
+    color: #64748b;
+    font-family: ui-monospace, monospace;
+}
+.ak-track-card-v3__pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.ak-track-card-v3__progress-wrap {
+    padding: 0 18px 14px;
+}
+.ak-track-card-v3__progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+.ak-track-card-v3__progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.ak-track-card-v3__progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--ak-track-accent), #10b981);
+    transition: width 0.45s ease;
+}
+
+/* Vertical stepper */
+.ak-track-v3-stepper {
+    padding: 4px 18px 8px;
+}
+.ak-track-v3-step {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px 14px;
+    position: relative;
+    padding-bottom: 18px;
+}
+.ak-track-v3-step:last-child {
+    padding-bottom: 4px;
+}
+.ak-track-v3-step:not(:last-child)::after {
     content: '';
     position: absolute;
-    top: 18px;
-    left: 8%;
-    right: 8%;
-    height: 4px;
+    left: 21px;
+    top: 44px;
+    bottom: 0;
+    width: 2px;
     background: #e2e8f0;
-    border-radius: 4px;
     z-index: 0;
 }
-.ak-fk-steps .ak-fk-bar-fill {
-    position: absolute;
-    top: 18px;
-    left: 8%;
-    height: 4px;
-    background: linear-gradient(90deg, #2563eb, #10b981);
-    border-radius: 4px;
-    z-index: 1;
-    transition: width 0.4s ease;
+.ak-track-v3-step.is-done:not(:last-child)::after {
+    background: linear-gradient(180deg, #10b981, #e2e8f0);
 }
-.ak-fk-step {
-    flex: 1;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-    min-width: 0;
+.ak-track-v3-step.is-current:not(:last-child)::after {
+    background: linear-gradient(180deg, var(--ak-track-accent), #e2e8f0);
 }
-.ak-fk-dot {
-    width: 36px;
-    height: 36px;
-    margin: 0 auto 8px;
+.ak-track-v3-icon {
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: #fff;
     border: 3px solid #cbd5e1;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: #94a3b8;
-    transition: all 0.25s ease;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
 }
-.ak-fk-step.is-done .ak-fk-dot {
+.ak-track-v3-step.is-done .ak-track-v3-icon {
     border-color: #10b981;
     background: #10b981;
     color: #fff;
 }
-.ak-fk-step.is-current .ak-fk-dot {
-    border-color: #2563eb;
-    background: #2563eb;
+.ak-track-v3-step.is-current .ak-track-v3-icon {
+    border-color: var(--ak-track-accent);
+    background: var(--ak-track-accent);
     color: #fff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 0 0 4px var(--ak-track-accent-soft);
 }
-.ak-fk-step.is-fail .ak-fk-dot {
+.ak-track-v3-step.is-fail .ak-track-v3-icon {
     border-color: #dc2626;
     background: #dc2626;
     color: #fff;
 }
-.ak-fk-step strong {
-    display: block;
-    font-size: 0.72rem;
-    line-height: 1.25;
-    color: #475569;
-    font-weight: 700;
+.ak-track-v3-step.is-upcoming .ak-track-v3-icon {
+    background: #f8fafc;
 }
-.ak-fk-step.is-current strong { color: #1d4ed8; }
-.ak-fk-step.is-done strong { color: #047857; }
-.ak-fk-step small {
+.ak-track-v3-body strong {
     display: block;
-    font-size: 0.65rem;
-    color: #94a3b8;
-    margin-top: 4px;
-    line-height: 1.2;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #334155;
+    line-height: 1.3;
 }
-@media (max-width: 600px) {
-    .ak-fk-step strong { font-size: 0.65rem; }
-    .ak-fk-dot { width: 30px; height: 30px; font-size: 0.75rem; }
+.ak-track-v3-step.is-done .ak-track-v3-body strong {
+    color: #047857;
+}
+.ak-track-v3-step.is-current .ak-track-v3-body strong {
+    color: var(--ak-track-accent);
+}
+.ak-track-v3-step.is-fail .ak-track-v3-body strong {
+    color: #b91c1c;
+}
+.ak-track-v3-body p {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+.ak-track-v3-when {
+    margin-top: 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #0f766e !important;
 }
 
+.ak-track-card-v3__foot {
+    padding: 14px 18px 16px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+.ak-track-card-v3__msg {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+.ak-track-card-v3__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ak-track-card-v3__actions .btn-primary,
+.ak-track-card-v3__actions .btn-warning {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    border-radius: 10px;
+}
+.ak-barcode-inline {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+}
+.ak-barcode-inline img {
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.ak-track-empty {
+    text-align: center;
+    padding: 32px 20px;
+    border-radius: 16px;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+}
+.ak-track-empty i {
+    font-size: 2rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+.ak-track-empty p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.ak-revision-banner {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 0 0 12px;
+}
+
+/* Hub tiles (dashboard) */
 .ak-hub-actions {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -117,6 +308,7 @@
     cursor: pointer;
     text-align: left;
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    font-family: inherit;
 }
 .ak-hub-tile:hover {
     border-color: #93c5fd;
@@ -137,13 +329,36 @@
     color: #64748b;
     line-height: 1.3;
 }
+
 .ak-event-reg-card {
-    border-left: 4px solid #2563eb;
+    border-left: none;
 }
-.ak-revision-banner {
-    background: #fff7ed;
-    border: 1px solid #fdba74;
-    border-radius: 10px;
-    padding: 12px;
-    margin: 12px 0 0;
+
+/* Legacy horizontal strip — hidden when v3 cards used */
+.ak-fk-track {
+    display: none;
+}
+
+/* Tablet+ optional: two-column step text */
+@media (min-width: 640px) {
+    .ak-track-list {
+        gap: 18px;
+    }
+    .ak-track-card-v3__head {
+        padding: 18px 22px 14px;
+    }
+    .ak-track-v3-stepper {
+        padding: 6px 22px 10px;
+    }
+}
+
+@media (min-width: 900px) {
+    .ak-track-page {
+        max-width: 960px;
+    }
+}
+
+/* Hub */
+.ak-hub-card {
+    margin-bottom: 16px;
 }
