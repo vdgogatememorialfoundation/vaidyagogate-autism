@@ -1,5 +1,5 @@
 /**
- * Autism portal: simpler labels and touch-friendly tweaks on the public site.
+ * Autism portal: simpler labels, touch-friendly tweaks, page-specific home chrome, no gallery nav.
  */
 (function () {
     'use strict';
@@ -11,6 +11,22 @@
         verify: 'Find my registration',
         contact: 'Get in touch'
     };
+
+    function stripGalleryNav() {
+        document
+            .querySelectorAll(
+                '#cg-nav-menu-links a[data-nav-section="gallery"], footer a[data-menu-key="gallery"], .ak-quick-link[data-ak-section="gallery"]'
+            )
+            .forEach((el) => el.remove());
+    }
+
+    function filterCmsMenu(cms) {
+        if (!cms || !Array.isArray(cms.siteMenu)) return cms;
+        return {
+            ...cms,
+            siteMenu: cms.siteMenu.filter((i) => String((i && i.section) || '').toLowerCase() !== 'gallery')
+        };
+    }
 
     document.querySelectorAll('[data-nav-section]').forEach((a) => {
         const key = a.getAttribute('data-nav-section');
@@ -27,4 +43,15 @@
             el.innerHTML = '<i class="fas fa-user-plus"></i> Sign up free';
         }
     });
+
+    if (typeof window.applySiteMenu === 'function' && !window.applySiteMenu.__akNoGallery) {
+        const origMenu = window.applySiteMenu;
+        window.applySiteMenu = function (cms) {
+            origMenu(filterCmsMenu(cms));
+            stripGalleryNav();
+        };
+        window.applySiteMenu.__akNoGallery = true;
+    }
+
+    stripGalleryNav();
 })();

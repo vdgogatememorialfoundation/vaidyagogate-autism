@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
     <link rel="stylesheet" href="/css/autism-kids.css?v=6">
     <link rel="stylesheet" href="/css/autism-theme.css?v=4">
-    <link rel="stylesheet" href="/css/autism-redesign.css?v=3">
+    <link rel="stylesheet" href="/css/autism-redesign.css?v=4">
     <link rel="stylesheet" href="/css/ak-header-ticker.css?v=4">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260522a"></script>
@@ -94,7 +94,7 @@
     <div class="cg-nav-backdrop" id="cg-nav-backdrop" aria-hidden="true"></div>
     </div>
 
-    <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" aria-label="Welcome">
+    <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" data-ak-home-only aria-label="Welcome">
         <div class="ak-hero-v2-grid">
             <div class="ak-hero-v2-copy">
                 <span class="ak-hero-v2-badge"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Autism Awareness Programme 2026</span>
@@ -120,7 +120,7 @@
         </div>
     </section>
 
-    <section class="ak-pillars ak-reveal-v2" aria-label="Our focus">
+    <section class="ak-pillars ak-reveal-v2" data-ak-home-only aria-label="Our focus">
         <div class="ak-pillars-grid">
             <article class="ak-pillar">
                 <div class="ak-pillar-icon blue"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
@@ -140,7 +140,7 @@
         </div>
     </section>
 
-    <section class="ak-journey ak-reveal-v2" aria-labelledby="ak-journey-title">
+    <section class="ak-journey ak-reveal-v2" data-ak-home-only aria-labelledby="ak-journey-title">
         <div class="ak-journey-head">
             <h2 id="ak-journey-title">How it works — easy peasy!</h2>
             <p>Four simple steps from hello to your e-ticket. Parents and teachers can help too.</p>
@@ -169,7 +169,7 @@
         </div>
     </section>
 
-    <section class="ak-bento ak-reveal-v2" aria-labelledby="ak-bento-title">
+    <section class="ak-bento ak-reveal-v2" data-ak-home-only aria-labelledby="ak-bento-title">
         <div class="ak-bento-head">
             <h2 id="ak-bento-title">Everything in one friendly place</h2>
             <p>Register online, track your progress, and stay updated — built for families and schools.</p>
@@ -203,7 +203,7 @@
         </div>
     </section>
 
-    <nav class="ak-quick-band ak-reveal-v2" aria-label="Quick links">
+    <nav class="ak-quick-band ak-reveal-v2" data-ak-home-only aria-label="Quick links">
         <div class="ak-quick-inner">
             <a href="#" class="ak-quick-link" data-ak-section="schedule"><i class="fas fa-calendar-days"></i> Programme</a>
             <a href="#" class="ak-quick-link" data-ak-section="about"><i class="fas fa-heart"></i> About us</a>
@@ -212,7 +212,7 @@
         </div>
     </nav>
 
-    <section id="congress-hero-root" class="congress-hero" aria-label="Featured">
+    <section id="congress-hero-root" class="congress-hero" data-ak-home-only aria-label="Featured">
         <div id="congress-hero-slides"></div>
         <div class="congress-hero-arrows">
             <button type="button" class="prev" id="congress-hero-prev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
@@ -223,7 +223,7 @@
         </div>
     </section>
 
-    <section class="vg-stats-strip" aria-label="Programme highlights">
+    <section class="vg-stats-strip" data-ak-home-only aria-label="Programme highlights">
         <div class="vg-stats-grid" id="vg-stats-grid">
             <div class="vg-stat"><strong>…</strong><span>Loading</span></div>
         </div>
@@ -231,8 +231,8 @@
 
     <a href="#" class="cg-fab-register" id="cg-fab-register" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-user-plus"></i> Register</a>
 
-    <div id="countdown-region"></div>
-    <div id="cert-verify-countdown-region" class="hidden" style="max-width:960px;margin:0 auto 16px;padding:0 16px;"></div>
+    <div id="countdown-region" data-ak-home-only></div>
+    <div id="cert-verify-countdown-region" class="hidden" data-ak-home-only style="max-width:960px;margin:0 auto 16px;padding:0 16px;"></div>
 
     <main class="main-content" id="main-content">
         <div id="homeSection">
@@ -559,7 +559,7 @@
     <script src="/js/portal-scrolling-announcements.js"></script>
     <script src="/js/vgmf-home.js"></script>
     <script src="/js/portal-theme.js"></script>
-    <script src="/js/vgmf-congress.js?v=20260524a"></script>
+    <script src="/js/vgmf-congress.js?v=20260525a"></script>
     <script src="/js/autism-home-enhance.js?v=1"></script>
     <script src="/js/autism-site-images.js?v=2"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
@@ -1131,8 +1131,21 @@
             }
         }
 
+        function setAkHomeChromeVisible(visible) {
+            document.querySelectorAll('[data-ak-home-only]').forEach((el) => {
+                el.classList.toggle('hidden', !visible);
+                if (visible) el.style.removeProperty('display');
+            });
+            document.body.classList.toggle('ak-page-home', visible);
+            document.body.classList.toggle('ak-page-inner', !visible);
+        }
+
         window.showSection = function showSection(section) {
             if (typeof window.closeMobileNav === 'function') window.closeMobileNav();
+            const sec = String(section || 'home').toLowerCase();
+            if (sec === 'gallery') {
+                section = 'home';
+            }
             if (typeof window.highlightCongressNav === 'function') window.highlightCongressNav(section);
             const map = {
                 home: 'homeSection',
@@ -1147,6 +1160,7 @@
             });
             const target = document.getElementById(map[section]);
             if (target) target.classList.remove('hidden');
+            setAkHomeChromeVisible(section === 'home');
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (section === 'verify') loadVerifySeminars();
             if (section === 'schedule' && typeof loadEventSchedulesPublic === 'function') {
@@ -1888,7 +1902,7 @@
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
     <script src="/js/autism-kids.js?v=3"></script>
-    <script src="/js/autism-public-ui.js?v=3"></script>
+    <script src="/js/autism-public-ui.js?v=4"></script>
     <script src="/js/autism-public-ticker.js?v=5"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>

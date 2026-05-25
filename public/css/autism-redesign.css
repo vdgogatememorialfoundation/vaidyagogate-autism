@@ -571,3 +571,14 @@
     border-radius: var(--ak2-radius-lg);
     border: 1px solid #e2e8f0;
 }
+
+/* Inner pages: only section content (no home hero, countdown, stats strip) */
+body.autism-kids.ak-v2.ak-page-inner .main-content {
+    padding-top: 8px;
+}
+body.autism-kids.ak-v2.ak-page-inner #aboutSection .section-head,
+body.autism-kids.ak-v2.ak-page-inner #scheduleSection .section-head,
+body.autism-kids.ak-v2.ak-page-inner #contactSection .section-head,
+body.autism-kids.ak-v2.ak-page-inner #verifySection .section-head {
+    margin-top: 0;
+}
