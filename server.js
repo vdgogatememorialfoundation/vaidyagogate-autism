@@ -481,6 +481,7 @@ app.get('/api/health', (req, res) => {
 function requestNeedsBootstrap(req) {
     const p = req.path || '/';
     if (p === '/api/health') return false;
+    if (p === '/certificate/view') return true;
     if (p.startsWith('/api/branding/logo')) return false;
     if (p === '/scan' || p === '/scan/') return false;
     if (p === '/scanner' || p === '/scanner/') return false;
@@ -506,10 +507,6 @@ app.get('/scanner', (req, res) => {
 app.get('/scanner/', (req, res) => {
     res.redirect(302, portalUrls.getPortalUrls().scanner);
 });
-app.get('/certificate/view', (req, res) => {
-    certRender.handleViewRequest(db, req, res);
-});
-
 app.use(
     express.static(path.join(__dirname, 'public'), {
         maxAge: process.env.VERCEL ? '86400000' : 0,
@@ -529,6 +526,20 @@ app.get(/\.html$/i, (req, res, next) => {
 app.use((req, res, next) => {
     if (!requestNeedsBootstrap(req)) return next();
     return ensureAppReady(req, res, next);
+});
+
+app.get('/certificate/view', (req, res) => {
+    try {
+        certRender.handleViewRequest(db, req, res);
+    } catch (e) {
+        console.error('[certificate/view]', e.message);
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'Certificate could not be rendered',
+                detail: process.env.VERCEL_ENV === 'production' ? undefined : e.message
+            });
+        }
+    }
 });
 
 app.get('/api/public/portal-urls', (req, res) => {
