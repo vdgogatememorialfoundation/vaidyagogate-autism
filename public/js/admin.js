@@ -5535,14 +5535,14 @@ function renderSeminarsTable() {
     const past = adminSearchFilter(pastAll, q, blobFn);
     const shown = filtered.length + past.length;
     const total = filteredAll.length + pastAll.length;
-    adminSearchSetCount('seminars-search-count', q, shown, total, 'seminars');
+    adminSearchSetCount('seminars-search-count', q, shown, total, 'events');
     tbody.innerHTML = '';
     if (!filtered.length && !past.length) {
         if (!total) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No seminars found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No events found.</td></tr>';
         } else {
             tbody.innerHTML =
-                '<tr><td colspan="7" style="text-align: center;">No seminars match your search.</td></tr>';
+                '<tr><td colspan="7" style="text-align: center;">No events match your search.</td></tr>';
         }
         return;
     }
