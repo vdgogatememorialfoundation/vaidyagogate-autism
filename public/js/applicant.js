@@ -3423,12 +3423,16 @@ async function loadDoctorCertificates() {
             wrap.innerHTML = '<p style="color:#b91c1c;">Please sign out and sign in again.</p>';
             return;
         }
-        const [res, vres] = await Promise.all([
-            fetch('/api/doctor/certificates/' + uid),
-            fetch('/api/doctor/volunteer-certificates/' + uid)
-        ]);
+        const certFetches = [fetch('/api/doctor/certificates/' + uid)];
+        if (!document.body.classList.contains('ak-portal-dash')) {
+            certFetches.push(fetch('/api/doctor/volunteer-certificates/' + uid));
+        }
+        const [res, vres] = await Promise.all(certFetches);
         const rows = await res.json().catch(() => []);
-        const vrows = await vres.json().catch(() => []);
+        const vrows =
+            vres && typeof vres.json === 'function'
+                ? await vres.json().catch(() => [])
+                : [];
         const all = [...(Array.isArray(rows) ? rows : []), ...(Array.isArray(vrows) ? vrows.map((v) => ({ ...v, _volunteer: true })) : [])];
         if (!all.length) {
             wrap.innerHTML = doctorCertificateLockedBlock();

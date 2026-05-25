@@ -2272,6 +2272,8 @@ function mountExtendedRoutes() {
     try {
         require('./lib/routes-ext')(app, {
             db,
+            pgDb,
+            withAuxiliaryTables,
             upload: caseUpload,
             generateId,
             fileStore,
