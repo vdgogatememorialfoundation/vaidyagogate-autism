@@ -3428,11 +3428,16 @@ async function loadDoctorCertificates() {
             certFetches.push(fetch('/api/doctor/volunteer-certificates/' + uid));
         }
         const [res, vres] = await Promise.all(certFetches);
-        const rows = await res.json().catch(() => []);
-        const vrows =
-            vres && typeof vres.json === 'function'
-                ? await vres.json().catch(() => [])
-                : [];
+        let rows = await res.json().catch(() => []);
+        if (!res.ok) {
+            const msg = (rows && rows.error) || 'Could not load certificates';
+            throw new Error(msg);
+        }
+        let vrows = [];
+        if (vres && typeof vres.json === 'function') {
+            vrows = await vres.json().catch(() => []);
+            if (!vres.ok && !Array.isArray(vrows)) vrows = [];
+        }
         const all = [...(Array.isArray(rows) ? rows : []), ...(Array.isArray(vrows) ? vrows.map((v) => ({ ...v, _volunteer: true })) : [])];
         if (!all.length) {
             wrap.innerHTML = doctorCertificateLockedBlock();
