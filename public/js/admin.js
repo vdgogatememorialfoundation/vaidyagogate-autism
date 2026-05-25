@@ -10078,6 +10078,16 @@ function cmsCollectFooterDoctorLinks() {
         .filter((l) => l.label.trim());
 }
 
+function cmsFieldValue(id) {
+    const els = document.querySelectorAll('[id="' + id.replace(/"/g, '') + '"]');
+    if (!els.length) return '';
+    for (let i = els.length - 1; i >= 0; i--) {
+        const v = String(els[i].value || '').trim();
+        if (v) return els[i].value || '';
+    }
+    return els[els.length - 1].value || '';
+}
+
 function cmsApplyHeroFieldsToForm(cms) {
     const hero = cms.hero || {};
     const top = cms.topBar || {};
@@ -10125,7 +10135,7 @@ function cmsApplyHeroFieldsToForm(cms) {
 }
 
 function cmsCollectHeroFieldsFromForm() {
-    const gv = (id) => (document.getElementById(id) || {}).value || '';
+    const gv = cmsFieldValue;
     return {
         topBar: {
             email: gv('cms-top-email'),
@@ -10816,7 +10826,11 @@ async function savePortalAuthAdminConfig() {
 }
 
 function setCmsSaveMessage(text, color) {
-    [document.getElementById('cms-save-msg'), document.getElementById('cms-header-footer-save-msg')].forEach((el) => {
+    [
+        document.getElementById('cms-save-msg'),
+        document.getElementById('cms-header-footer-save-msg'),
+        document.getElementById('cms-contact-save-msg')
+    ].forEach((el) => {
         if (!el) return;
         el.innerText = text || '';
         if (color) el.style.color = color;
