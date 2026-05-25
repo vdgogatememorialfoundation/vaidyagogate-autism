@@ -10815,17 +10815,21 @@ async function savePortalAuthAdminConfig() {
     }
 }
 
+function setCmsSaveMessage(text, color) {
+    [document.getElementById('cms-save-msg'), document.getElementById('cms-header-footer-save-msg')].forEach((el) => {
+        if (!el) return;
+        el.innerText = text || '';
+        if (color) el.style.color = color;
+    });
+}
+
 async function saveAdminSiteCms() {
-    const msg = document.getElementById('cms-save-msg');
-    if (msg) msg.innerText = '';
+    setCmsSaveMessage('');
     let slides;
     try {
         slides = cmsParseJsonArray((document.getElementById('cms-slides') || {}).value, 'Homepage slides');
     } catch (e) {
-        if (msg) {
-            msg.style.color = '#b91c1c';
-            msg.innerText = e.message || String(e);
-        }
+        setCmsSaveMessage(e.message || String(e), '#b91c1c');
         return;
     }
     const reviews = cmsCollectReviewsFromDom();
@@ -10864,20 +10868,13 @@ async function saveAdminSiteCms() {
         });
         const data = await res.json();
         if (data.success) {
-            if (msg) {
-                msg.style.color = '#15803d';
-                msg.innerText = 'Website and portal content saved.';
-            }
-        } else if (msg) {
-            msg.style.color = '#b91c1c';
-            msg.innerText = data.error || 'Save failed';
+            setCmsSaveMessage('Website and portal content saved.', '#15803d');
+        } else {
+            setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
         }
     } catch (e) {
         console.error(e);
-        if (msg) {
-            msg.style.color = '#b91c1c';
-            msg.innerText = 'Network error — check your connection and try again.';
-        }
+        setCmsSaveMessage('Network error — check your connection and try again.', '#b91c1c');
     }
 }
 

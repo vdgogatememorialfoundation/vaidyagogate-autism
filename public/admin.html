@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -956,7 +956,7 @@
                 </div>
 <div class="card" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Site header &amp; footer</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright. Click <strong>Save website &amp; portal content</strong> at the bottom of this page.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                         <div><label style="font-size:0.8rem;">Header ... foundation name</label><input type="text" id="cms-header-foundation" style="width:100%" placeholder="Vaidya Gogate Memorial Foundation"></div>
                         <div><label style="font-size:0.8rem;">Header ... programme line</label><input type="text" id="cms-header-programme" style="width:100%" placeholder="Autism Awareness Programme"></div>
@@ -975,6 +975,10 @@
                         <div style="grid-column:1/-1;"><label>Footer credit HTML</label><input type="text" id="cms-footer-credit" style="width:100%"></div>
                         <div style="grid-column:1/-1;"><label>Explore links</label><div id="cms-footer-explore-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterExploreRow()">+ Link</button></div>
                         <div style="grid-column:1/-1;"><label>Applicant access links</label><div id="cms-footer-doctor-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterDoctorRow()">+ Link</button></div>
+                    </div>
+                    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                        <button type="button" class="btn-primary" onclick="saveAdminSiteCms()"><i class="fas fa-save"></i> Save header &amp; footer</button>
+                        <p id="cms-header-footer-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                 </div>
 <div class="card">
@@ -2274,7 +2278,7 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=2"></script>
-    <script src="/js/admin.js?v=20260525b"></script>
+    <script src="/js/admin.js?v=20260525c"></script>
     <script src="/js/admin-prereg-tracking.js?v=7"></script>
     <script src="/js/admin-final-tracking.js?v=2"></script>
     <script src="/js/admin-competition.js?v=3"></script>
