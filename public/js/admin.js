@@ -6710,7 +6710,9 @@ async function loadMaintenanceSettings() {
                 if (cfg.go_live_at) {
                     lines.push(
                         'Scheduled go-live: ' +
-                            (data.go_live_due ? 'due now (will auto-open on next visit)' : cfg.go_live_at)
+                            (data.go_live_due
+                                ? 'IN THE PAST — site may auto-open until you save again (go-live was cleared on last save if you used Maintenance mode).'
+                                : cfg.go_live_at)
                     );
                 }
                 if (__maintenancePreviewSecret) {
@@ -6730,11 +6732,18 @@ async function loadMaintenanceSettings() {
 
 async function saveKillSwitchSettings() {
     const disabled = (document.getElementById('setting-disabled') || {}).value === '1';
+    let goLiveIso = datetimeLocalInputToIso((document.getElementById('maint-go-live') || {}).value);
+    if (disabled && goLiveIso && Date.parse(goLiveIso) <= Date.now()) {
+        const goLiveEl = document.getElementById('maint-go-live');
+        if (goLiveEl) goLiveEl.value = '';
+        goLiveIso = '';
+        console.warn('[maintenance] Cleared past go-live time so maintenance stays on.');
+    }
     const body = {
         disabled,
         headline: (document.getElementById('maint-headline') || {}).value.trim(),
         message: (document.getElementById('maint-message') || {}).value.trim(),
-        go_live_at: datetimeLocalInputToIso((document.getElementById('maint-go-live') || {}).value)
+        go_live_at: goLiveIso
     };
     try {
         const res = await fetch('/api/admin/maintenance-settings', {

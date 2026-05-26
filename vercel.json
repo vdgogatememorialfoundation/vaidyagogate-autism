@@ -9,7 +9,9 @@
     { "src": "/js/(.*)", "dest": "/public/js/$1" },
     { "src": "/images/(.*)", "dest": "/public/images/$1" },
     { "src": "/uploads/(.*)", "dest": "server.js" },
-    { "src": "/dashboard", "dest": "/public/applicant.html" },
+    { "src": "/", "dest": "server.js" },
+    { "src": "/index.html", "dest": "server.js" },
+    { "src": "/dashboard", "dest": "server.js" },
     { "src": "/admin", "dest": "/public/admin.html" },
     { "src": "/scan", "dest": "/public/scanner.html" },
     { "src": "/verify-certificate.html", "dest": "/public/verify-certificate.html" },
@@ -17,7 +19,6 @@
     { "src": "/admin-live-scanner.html", "dest": "/public/admin-live-scanner.html" },
     { "src": "/(.*\\.html)", "dest": "/public/$1" },
     { "src": "/(.*\\.(png|jpg|jpeg|gif|webp|avif|svg|ico|woff2?|webmanifest))", "dest": "/public/$1" },
-    { "src": "/", "dest": "/public/index.html" },
     { "src": "/(.*)", "dest": "server.js" }
   ],
   "crons": [

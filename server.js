@@ -10276,6 +10276,13 @@ app.post('/api/admin/maintenance-settings', (req, res) => {
         if (body.headline != null) cfg.headline = String(body.headline).trim();
         if (body.message != null) cfg.message = String(body.message).trim();
         if (body.go_live_at != null) cfg.go_live_at = String(body.go_live_at).trim();
+        const enablingMaintenance =
+            body.disabled != null
+                ? body.disabled === true || body.disabled === '1' || body.disabled === 1
+                : existing.disabled;
+        if (enablingMaintenance && cfg.go_live_at && maintenanceSettings.isGoLiveDue(cfg)) {
+            cfg.go_live_at = '';
+        }
         if (body.regenerate_preview_secret) {
             cfg.preview_secret = maintenanceSettings.randomPreviewSecret();
         } else if (!cfg.preview_secret) {
