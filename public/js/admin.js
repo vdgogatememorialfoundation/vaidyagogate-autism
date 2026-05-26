@@ -10081,10 +10081,6 @@ function cmsCollectFooterDoctorLinks() {
 function cmsFieldValue(id) {
     const els = document.querySelectorAll('[id="' + id.replace(/"/g, '') + '"]');
     if (!els.length) return '';
-    for (let i = els.length - 1; i >= 0; i--) {
-        const v = String(els[i].value || '').trim();
-        if (v) return els[i].value || '';
-    }
     return els[els.length - 1].value || '';
 }
 

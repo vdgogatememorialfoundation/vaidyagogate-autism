@@ -74,9 +74,36 @@
         return formData;
     }
 
+    function validatePreregPreview() {
+        const fields = window.__akPreregFields || [];
+        const byStep = {};
+        fields.forEach((f) => {
+            if (!f || f.enabled === false) return;
+            const step = Number(f.step) || 1;
+            if (!byStep[step]) byStep[step] = [];
+            byStep[step].push(f);
+        });
+        for (const step of Object.keys(byStep).sort((a, b) => a - b)) {
+            const missing = [];
+            byStep[step].forEach((f) => {
+                if (!f.required) return;
+                const el = document.getElementById('prereg-field-' + f.key);
+                if (!el) return;
+                const v = f.type === 'boolean' ? el.checked : String(el.value || '').trim();
+                if (f.type === 'boolean' ? !v : v === '') missing.push(f.label);
+            });
+            if (missing.length) {
+                alert('Please complete step ' + step + ': ' + missing.join(', '));
+                return false;
+            }
+        }
+        return true;
+    }
+
     window.previewPreregistration = function previewPreregistration() {
         const sid = parseInt(document.getElementById('prereg-seminar-select')?.value, 10);
         if (!sid) return alert('Select an event first.');
+        if (!validatePreregPreview()) return;
         const sel = document.getElementById('prereg-seminar-select');
         const semTitle = sel?.selectedOptions?.[0]?.textContent || 'Event';
         const rows = [['Event', semTitle], ...Object.entries(collectPreregFormData())];

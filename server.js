@@ -792,34 +792,34 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     slides: [],
     publicNotices: [],
     reviews: [
-        { name: 'Dr. A. Sharma', role: 'Practitioner, Mumbai', text: 'Outstanding academic content and hospitality.', rating: 5 },
-        { name: 'Dr. B. Patil', role: 'PG Scholar', text: 'Well organised — valuable for clinical practice.', rating: 5 },
-        { name: 'Dr. C. Joshi', role: 'Ayurvedic physician', text: 'Highly recommended for continuing medical education.', rating: 5 }
+        { name: 'Parent participant', role: 'Pune', text: 'A warm, informative programme for families.', rating: 5 },
+        { name: 'Caregiver', role: 'Maharashtra', text: 'Practical sessions and a supportive community.', rating: 5 },
+        { name: 'Volunteer', role: 'Autism awareness', text: 'Well organised — meaningful for inclusion.', rating: 5 }
     ],
     topBar: {
         email: 'info@vaidyagogate.org',
         phone: '+91 9876543210',
-        dateLine: 'National Seminar 2026'
+        dateLine: 'Autism Awareness Programme 2026'
     },
     hero: {
-        eyebrow: 'National CME Congress',
-        title: 'National Seminar 2026',
-        subtitle: 'Advancements in Ayurveda & Integrative Medicine',
-        venue: 'Convention Centre, Pune',
+        eyebrow: 'Autism Awareness Programme',
+        title: 'Together for understanding & inclusion',
+        subtitle: 'Expert sessions, family support, art & competition for the autism community',
+        venue: 'Pune, Maharashtra',
         image: '',
         ctaPrimary: 'Register now',
         ctaSecondary: 'View programme'
     },
     heroStats: [
-        { value: '50+', label: 'Expert Speakers' },
-        { value: '500+', label: 'Delegates' },
-        { value: '30+', label: 'Research Papers' }
+        { value: '20+', label: 'Expert sessions' },
+        { value: '100+', label: 'Families' },
+        { value: '5+', label: 'Competition categories' }
     ],
     featureCards: [
-        { icon: 'fa-microphone-alt', title: 'Expert Speakers', text: 'Renowned practitioners and researchers' },
-        { icon: 'fa-certificate', title: 'CME Credits', text: 'Professional development hours' },
-        { icon: 'fa-trophy', title: 'Case Presentations', text: 'Clinical excellence awards' },
-        { icon: 'fa-network-wired', title: 'Networking', text: 'Connect with leaders nationwide' }
+        { icon: 'fa-chalkboard-teacher', title: 'Expert Sessions', text: 'Talks and workshops for parents and caregivers' },
+        { icon: 'fa-hands-helping', title: 'Family Support', text: 'Guidance and resources for families' },
+        { icon: 'fa-palette', title: 'Art & Competition', text: 'Creative entries celebrating abilities' },
+        { icon: 'fa-users', title: 'Community Network', text: 'Connect with families and professionals' }
     ],
     contact: {
         address: 'Convention Centre, Pune, Maharashtra',
@@ -1045,7 +1045,9 @@ function ensurePortalSchema(next) {
                                                                 'preregistration_form_config',
                                                                 JSON.stringify(portalProduct.DEFAULT_PREREG_FORM_CONFIG),
                                                                 () => {
+                                                            migratePreregFormConfigV2(() => {
                                                             seedGlobalSettingIfMissing('public_site_cms', DEFAULT_PUBLIC_SITE_CMS_JSON, () => {
+                                                            migrateAutismPublicSiteCms(() => {
                                                                 seedGlobalSettingIfMissing(
                                                                     emailDeliveryPolicy.KEY,
                                                                     JSON.stringify(emailDeliveryPolicy.DEFAULT_CONFIG),
@@ -1141,6 +1143,8 @@ function ensurePortalSchema(next) {
                                                                         );
                                                                     });
                                                                 });
+                                                            });
+                                                            });
                                                             });
                                                             });
                                                             });
@@ -1272,6 +1276,53 @@ function migrateLegacyRegistrationFormConfig(done) {
             if (!hasLegacyOtp) return done && done();
             parsed.fields = sanitizeRegistrationFormFields(rawFields);
             upsertGlobalSetting('registration_form_config', parsed, () => done && done());
+        } catch (_) {
+            done && done();
+        }
+    });
+}
+
+function migratePreregFormConfigV2(done) {
+    db.get(`SELECT value FROM global_settings WHERE key = 'preregistration_form_config'`, [], (err, row) => {
+        if (err || !row || !row.value) return done && done();
+        try {
+            const parsed = JSON.parse(row.value);
+            const version = Number(parsed.version) || 0;
+            const fields = Array.isArray(parsed.fields) ? parsed.fields : [];
+            const hasLegacyKeys = fields.some(
+                (f) => f && ['fname', 'lname', 'email', 'phone'].includes(String(f.key || ''))
+            );
+            if (version >= 2 && !hasLegacyKeys) return done && done();
+            upsertGlobalSetting(
+                'preregistration_form_config',
+                JSON.stringify(portalProduct.DEFAULT_PREREG_FORM_CONFIG),
+                () => done && done()
+            );
+        } catch (_) {
+            done && done();
+        }
+    });
+}
+
+function migrateAutismPublicSiteCms(done) {
+    if (portalProduct.FEATURES.productId !== 'autism') return done && done();
+    db.get(`SELECT value FROM global_settings WHERE key = 'public_site_cms'`, [], (err, row) => {
+        if (err || !row || !row.value) return done && done();
+        try {
+            const parsed = JSON.parse(row.value);
+            const eyebrow = String((parsed.hero && parsed.hero.eyebrow) || '');
+            if (!/CME/i.test(eyebrow)) return done && done();
+            parsed.hero = { ...parsed.hero, ...DEFAULT_PUBLIC_SITE_CMS.hero };
+            parsed.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards.map((c) => ({ ...c }));
+            const reviews = Array.isArray(parsed.reviews) ? parsed.reviews : [];
+            const looksLegacyReviews = reviews.some((r) => r && /^Dr\./i.test(String(r.name || '')));
+            if (!reviews.length || looksLegacyReviews) {
+                parsed.reviews = DEFAULT_PUBLIC_SITE_CMS.reviews.map((r) => ({ ...r }));
+            }
+            if (parsed.topBar && /National Seminar/i.test(String(parsed.topBar.dateLine || ''))) {
+                parsed.topBar = { ...parsed.topBar, dateLine: DEFAULT_PUBLIC_SITE_CMS.topBar.dateLine };
+            }
+            upsertGlobalSetting('public_site_cms', JSON.stringify(parsed), () => done && done());
         } catch (_) {
             done && done();
         }

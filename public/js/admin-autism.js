@@ -546,6 +546,108 @@
         window.openAdminCreateUserModal.__autismHook = true;
     }
 
+    const PREREG_FORM_DEFAULT_V2 = {
+        version: 2,
+        fields: [
+            { key: 'parent_name', label: 'Full Name (Parents)', type: 'text', step: 1, enabled: true, required: true },
+            {
+                key: 'parent_gender',
+                label: 'Gender',
+                type: 'select',
+                step: 1,
+                enabled: true,
+                required: true,
+                options: [
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' }
+                ]
+            },
+            { key: 'parent_dob', label: 'Date of Birth', type: 'date', step: 1, enabled: true, required: true },
+            { key: 'child_name', label: "Child's Name", type: 'text', step: 2, enabled: true, required: true },
+            {
+                key: 'child_gender',
+                label: 'Gender',
+                type: 'select',
+                step: 2,
+                enabled: true,
+                required: true,
+                options: [
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' }
+                ]
+            },
+            { key: 'child_dob', label: 'Date of Birth', type: 'date', step: 2, enabled: true, required: true },
+            { key: 'address', label: 'Full Address', type: 'textarea', step: 3, enabled: true, required: true },
+            { key: 'pin', label: 'Pincode', type: 'text', step: 3, enabled: true, required: true },
+            { key: 'city', label: 'City', type: 'text', step: 3, enabled: true, required: true },
+            {
+                key: 'country',
+                label: 'Country',
+                type: 'text',
+                step: 3,
+                enabled: true,
+                required: true,
+                defaultValue: 'India'
+            },
+            {
+                key: 'attendees_count',
+                label: 'Number of People Attending',
+                type: 'number',
+                step: 4,
+                enabled: true,
+                required: true
+            },
+            { key: 'child_health', label: "Child's Health", type: 'textarea', step: 4, enabled: true, required: false },
+            { key: 'diet', label: 'Diet', type: 'textarea', step: 4, enabled: true, required: false },
+            {
+                key: 'financial_planning',
+                label: 'Financial Planning',
+                type: 'textarea',
+                step: 4,
+                enabled: true,
+                required: false
+            }
+        ]
+    };
+
+    function injectPreregFormResetCard() {
+        const cmsTab = document.getElementById('tab-site-cms');
+        if (!cmsTab || document.getElementById('ak-prereg-form-reset-card')) return;
+        const card = document.createElement('div');
+        card.id = 'ak-prereg-form-reset-card';
+        card.className = 'card';
+        card.style.cssText = 'margin-bottom:18px;border-left:4px solid #2563eb;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 8px;">Pre-registration form</h3>' +
+            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Pre-registration uses 4 steps (parent, child, address, questions).</p>' +
+            '<button type="button" class="btn-primary" id="ak-prereg-form-reset-btn">Reset pre-registration form to defaults</button>' +
+            '<p id="ak-prereg-form-reset-msg" style="margin:10px 0 0;font-size:0.85rem;"></p>';
+        cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
+        document.getElementById('ak-prereg-form-reset-btn')?.addEventListener('click', async () => {
+            const msg = document.getElementById('ak-prereg-form-reset-msg');
+            if (!confirm('Reset the global pre-registration form to the default 4-step layout?')) return;
+            try {
+                const r = await fetch('/api/admin/preregistration-form-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(PREREG_FORM_DEFAULT_V2)
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.error || r.statusText);
+                if (msg) {
+                    msg.textContent = 'Pre-registration form reset to defaults.';
+                    msg.style.color = '#047857';
+                }
+            } catch (e) {
+                if (msg) {
+                    msg.textContent = e.message || 'Reset failed';
+                    msg.style.color = '#b91c1c';
+                }
+            }
+        });
+    }
+
     function collapseDuplicateCmsFields() {
         const hideSecond = (id) => {
             const nodes = document.querySelectorAll('#' + id);
@@ -553,7 +655,14 @@
             const grid = nodes[1].closest('div[style*="grid-template-columns"]');
             if (grid && grid.querySelector('#' + id)) grid.style.display = 'none';
         };
-        ['cms-footer-tagline', 'cms-top-email'].forEach(hideSecond);
+        [
+            'cms-footer-tagline',
+            'cms-top-email',
+            'cms-top-phone',
+            'cms-top-date',
+            'cms-hero-eyebrow',
+            'cms-hero-title'
+        ].forEach(hideSecond);
     }
 
     function patchLoadAdminSiteCms() {
@@ -569,6 +678,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
+        injectPreregFormResetCard();
         patchSaveSeminar();
         patchSeminarPayload();
         patchCreateStaffUserRoles();

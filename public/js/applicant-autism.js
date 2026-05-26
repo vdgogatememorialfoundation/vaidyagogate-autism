@@ -222,9 +222,17 @@
 
     window.PORTAL_IS_AUTISM = true;
 
-  let preregFields = [];
-  let preregSeminars = [];
-  let preregResubmitId = null;
+    let preregFields = [];
+    let preregSeminars = [];
+    let preregResubmitId = null;
+    let preregWizardStep = 1;
+    const PREREG_WIZARD_STEPS = [
+        { n: 1, label: 'Parent' },
+        { n: 2, label: 'Child' },
+        { n: 3, label: 'Address' },
+        { n: 4, label: 'Questions' }
+    ];
+    let __preregPinLookupTimer = null;
 
     async function loadPreregFormConfig(seminarId) {
         const q = seminarId ? `?seminarId=${encodeURIComponent(seminarId)}` : '';
@@ -238,49 +246,289 @@
         return data;
     }
 
-    function renderPreregFields(container) {
-        if (!container) return;
-        container.innerHTML = '';
-        (preregFields || []).forEach((f) => {
-            if (!f || f.enabled === false) return;
+    function preregFieldsForStep(step) {
+        return (preregFields || []).filter((f) => {
+            if (!f || f.enabled === false) return false;
             if (
                 f.key === 'qual' ||
                 f.onlyWhenAdvancedQual ||
                 f.onlyWhenPgCollege ||
                 ['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate'].includes(String(f.key || ''))
             ) {
+                return false;
+            }
+            const s = Number(f.step) || 1;
+            return s === step;
+        });
+    }
+
+    function preregMaxWizardStep() {
+        const steps = (preregFields || [])
+            .map((f) => Number(f.step) || 1)
+            .filter((n) => n > 0);
+        return steps.length ? Math.max(...steps, 4) : 4;
+    }
+
+    function fillPreregSelectOptions(sel, options, placeholder) {
+        if (!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = '';
+        const opt0 = document.createElement('option');
+        opt0.value = '';
+        opt0.textContent = placeholder || 'Select';
+        sel.appendChild(opt0);
+        for (const v of options || []) {
+            const o = document.createElement('option');
+            o.value = v;
+            o.textContent = v;
+            sel.appendChild(o);
+        }
+        if (prev && (options || []).includes(prev)) sel.value = prev;
+        else if ((options || []).length === 1) sel.value = options[0];
+    }
+
+    function setPreregPinHint(msg, isError) {
+        const el = document.getElementById('prereg-pin-hint');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.classList.toggle('hidden', !msg);
+        el.style.color = isError ? '#b91c1c' : '#64748b';
+    }
+
+    function ensurePreregCityControl(cities) {
+        const existing = document.getElementById('prereg-field-city');
+        if (!existing) return;
+        const fg = existing.closest('.form-group');
+        if (!fg) return;
+        const label = fg.querySelector('label');
+        const labelText = label ? label.textContent : 'City *';
+        const prev = existing.value;
+        if ((cities || []).length > 1) {
+            const sel = document.createElement('select');
+            sel.id = 'prereg-field-city';
+            sel.dataset.fieldKey = 'city';
+            sel.required = true;
+            fillPreregSelectOptions(sel, cities, 'Select city');
+            if (prev) sel.value = prev;
+            existing.replaceWith(sel);
+        } else if (existing.tagName === 'SELECT') {
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.id = 'prereg-field-city';
+            inp.dataset.fieldKey = 'city';
+            inp.required = true;
+            inp.value = prev || (cities && cities[0]) || '';
+            existing.replaceWith(inp);
+        }
+        if (label) label.textContent = labelText;
+    }
+
+    async function autofillPreregAddress() {
+        const pinEl = document.getElementById('prereg-field-pin');
+        if (!pinEl) return;
+        const pin = String(pinEl.value || '').replace(/\D/g, '');
+        if (pin.length !== 6) {
+            if (pin.length) setPreregPinHint('Enter a valid 6-digit pincode', true);
+            return;
+        }
+        setPreregPinHint('Looking up pincode…');
+        try {
+            const r = await fetch('/api/public/pincode-lookup?pin=' + encodeURIComponent(pin));
+            const data = await r.json();
+            if (!data || !data.ok) {
+                setPreregPinHint((data && data.error) || 'Pincode not found', true);
                 return;
             }
-            const fg = document.createElement('div');
-            fg.className = 'form-group';
-            const label = document.createElement('label');
-            label.textContent = f.label + (f.required ? ' *' : '');
-            fg.appendChild(label);
-            let input;
-            if (f.type === 'textarea') {
-                input = document.createElement('textarea');
-                input.rows = 3;
-            } else if (f.type === 'select') {
-                input = document.createElement('select');
-                (f.options || []).forEach((o) => {
-                    const opt = document.createElement('option');
-                    opt.value = o.value;
-                    opt.textContent = o.label || o.value;
-                    input.appendChild(opt);
-                });
-            } else if (f.type === 'boolean') {
-                input = document.createElement('input');
-                input.type = 'checkbox';
-            } else {
-                input = document.createElement('input');
-                input.type = f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : f.type === 'date' ? 'date' : 'text';
+            const cities = data.cities || [];
+            ensurePreregCityControl(cities);
+            const cityEl = document.getElementById('prereg-field-city');
+            if (cityEl) {
+                if (cityEl.tagName === 'SELECT') fillPreregSelectOptions(cityEl, cities, 'Select city');
+                else if (cities.length === 1) cityEl.value = cities[0];
             }
-            input.id = 'prereg-field-' + f.key;
-            input.dataset.fieldKey = f.key;
-            if (f.required && f.type !== 'boolean') input.required = true;
-            fg.appendChild(input);
-            container.appendChild(fg);
+            const countryEl = document.getElementById('prereg-field-country');
+            if (countryEl) countryEl.value = data.country || 'India';
+            setPreregPinHint(
+                cities.length > 1 ? 'Multiple cities for this pincode — choose one' : 'City and country filled from pincode'
+            );
+        } catch (_) {
+            setPreregPinHint('Could not look up pincode. Check your connection and try again.', true);
+        }
+    }
+
+    function wirePreregPinLookup() {
+        const pinEl = document.getElementById('prereg-field-pin');
+        if (!pinEl || pinEl.dataset.bound === '1') return;
+        pinEl.dataset.bound = '1';
+        pinEl.setAttribute('inputmode', 'numeric');
+        pinEl.setAttribute('maxlength', '6');
+        pinEl.addEventListener('blur', autofillPreregAddress);
+        pinEl.addEventListener('input', () => {
+            clearTimeout(__preregPinLookupTimer);
+            __preregPinLookupTimer = setTimeout(autofillPreregAddress, 400);
         });
+    }
+
+    function renderPreregWizardNav() {
+        const nav = document.getElementById('prereg-wizard-nav');
+        if (!nav) return;
+        nav.innerHTML = '';
+        PREREG_WIZARD_STEPS.forEach((st) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.step = String(st.n);
+            btn.textContent = st.n + '. ' + st.label;
+            btn.addEventListener('click', () => {
+                if (st.n < preregWizardStep && validatePreregStep(preregWizardStep, false)) {
+                    showPreregWizardStep(st.n);
+                } else if (st.n === preregWizardStep) {
+                    return;
+                } else if (st.n > preregWizardStep) {
+                    if (!validatePreregStepsThrough(st.n - 1)) return;
+                    showPreregWizardStep(st.n);
+                }
+            });
+            nav.appendChild(btn);
+        });
+    }
+
+    function updatePreregWizardNav() {
+        const nav = document.getElementById('prereg-wizard-nav');
+        if (!nav) return;
+        nav.querySelectorAll('button[data-step]').forEach((btn) => {
+            const n = parseInt(btn.dataset.step, 10);
+            btn.classList.toggle('is-active', n === preregWizardStep);
+            btn.classList.toggle('is-done', n < preregWizardStep);
+        });
+    }
+
+    function updatePreregWizardActions() {
+        const maxStep = preregMaxWizardStep();
+        const back = document.getElementById('prereg-wizard-back');
+        const next = document.getElementById('prereg-wizard-next');
+        const submit = document.getElementById('prereg-submit-btn');
+        if (back) back.style.display = preregWizardStep > 1 ? '' : 'none';
+        if (next) next.style.display = preregWizardStep < maxStep ? '' : 'none';
+        if (submit) submit.style.display = preregWizardStep >= maxStep ? '' : 'none';
+    }
+
+    function showPreregWizardStep(step) {
+        preregWizardStep = Math.max(1, Math.min(step, preregMaxWizardStep()));
+        document.querySelectorAll('.ak-prereg-step-panel').forEach((panel) => {
+            panel.classList.toggle('hidden', parseInt(panel.dataset.step, 10) !== preregWizardStep);
+        });
+        updatePreregWizardNav();
+        updatePreregWizardActions();
+        if (preregWizardStep === 3) wirePreregPinLookup();
+    }
+
+    function resetPreregWizard() {
+        preregWizardStep = 1;
+        showPreregWizardStep(1);
+        setPreregPinHint('');
+    }
+
+    function createPreregFieldInput(f) {
+        let input;
+        if (f.type === 'textarea') {
+            input = document.createElement('textarea');
+            input.rows = 3;
+        } else if (f.type === 'select') {
+            input = document.createElement('select');
+            const opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = 'Select';
+            input.appendChild(opt0);
+            (f.options || []).forEach((o) => {
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.label || o.value;
+                input.appendChild(opt);
+            });
+        } else if (f.type === 'boolean') {
+            input = document.createElement('input');
+            input.type = 'checkbox';
+        } else {
+            input = document.createElement('input');
+            if (f.type === 'email') input.type = 'email';
+            else if (f.type === 'tel') input.type = 'tel';
+            else if (f.type === 'date') input.type = 'date';
+            else if (f.type === 'number') input.type = 'number';
+            else input.type = 'text';
+        }
+        input.id = 'prereg-field-' + f.key;
+        input.dataset.fieldKey = f.key;
+        if (f.required && f.type !== 'boolean') input.required = true;
+        if (f.defaultValue != null && f.type !== 'boolean') input.value = String(f.defaultValue);
+        return input;
+    }
+
+    function renderPreregFields(container) {
+        if (!container) return;
+        container.innerHTML = '';
+        const maxStep = preregMaxWizardStep();
+        for (let step = 1; step <= maxStep; step++) {
+            const panel = document.createElement('div');
+            panel.className = 'ak-prereg-step-panel' + (step === 1 ? '' : ' hidden');
+            panel.dataset.step = String(step);
+            preregFieldsForStep(step).forEach((f) => {
+                const fg = document.createElement('div');
+                fg.className = 'form-group';
+                const label = document.createElement('label');
+                label.textContent = f.label + (f.required ? ' *' : '');
+                fg.appendChild(label);
+                fg.appendChild(createPreregFieldInput(f));
+                panel.appendChild(fg);
+            });
+            container.appendChild(panel);
+        }
+        renderPreregWizardNav();
+        resetPreregWizard();
+        wirePreregPinLookup();
+    }
+
+    function preregFieldValue(f) {
+        const el = document.getElementById('prereg-field-' + f.key);
+        if (!el) return '';
+        if (f.type === 'boolean') return el.checked;
+        return String(el.value || '').trim();
+    }
+
+    function validatePreregStep(step, showAlert) {
+        const missing = [];
+        preregFieldsForStep(step).forEach((f) => {
+            if (!f.required) return;
+            const v = preregFieldValue(f);
+            if (f.type === 'boolean') {
+                if (!v) missing.push(f.label);
+            } else if (v === '') missing.push(f.label);
+        });
+        if (missing.length && showAlert !== false) {
+            alert('Please complete: ' + missing.join(', '));
+            return false;
+        }
+        return !missing.length;
+    }
+
+    function validatePreregStepsThrough(lastStep) {
+        for (let s = 1; s <= lastStep; s++) {
+            if (!validatePreregStep(s, true)) return false;
+        }
+        return true;
+    }
+
+    function validateAllPreregSteps() {
+        const maxStep = preregMaxWizardStep();
+        return validatePreregStepsThrough(maxStep);
+    }
+
+    function onPreregWizardNext() {
+        if (!validatePreregStep(preregWizardStep, true)) return;
+        showPreregWizardStep(preregWizardStep + 1);
+    }
+
+    function onPreregWizardBack() {
+        showPreregWizardStep(preregWizardStep - 1);
     }
 
     async function loadPreregSeminars() {
@@ -304,10 +552,18 @@
 
     async function submitPreregistration(ev) {
         ev.preventDefault();
+        const maxStep = preregMaxWizardStep();
+        if (!validateAllPreregSteps()) {
+            if (preregWizardStep < maxStep) {
+                if (validatePreregStep(preregWizardStep, true)) showPreregWizardStep(preregWizardStep + 1);
+            }
+            return;
+        }
+        if (preregWizardStep < maxStep) showPreregWizardStep(maxStep);
         const uid = currentUserId();
         const sid = parseInt(document.getElementById('prereg-seminar-select')?.value, 10);
         if (!uid) return alert('Please sign in again.');
-         if (!sid) return alert('Select an event.');
+        if (!sid) return alert('Select an event.');
         const formData = {};
         (preregFields || []).forEach((f) => {
             if (!f || f.enabled === false) return;
@@ -342,6 +598,10 @@
                 msg.textContent = 'Pre-registration submitted successfully.';
                 msg.style.color = '#047857';
             }
+            resetPreregWizard();
+            document.getElementById('prereg-form')?.reset();
+            const countryEl = document.getElementById('prereg-field-country');
+            if (countryEl) countryEl.value = 'India';
             loadPreregList();
         } catch (e) {
             if (msg) {
@@ -378,6 +638,7 @@
             fd = typeof row.form_data === 'string' ? JSON.parse(row.form_data || '{}') : row.form_data || {};
         } catch (_) {}
         fillPreregFormFromData(fd);
+        resetPreregWizard();
         const msg = document.getElementById('prereg-status-msg');
         if (msg) {
             msg.textContent = 'Update your pre-registration below, then submit again.';
@@ -969,6 +1230,8 @@
             });
         }
         document.getElementById('prereg-form')?.addEventListener('submit', submitPreregistration);
+        document.getElementById('prereg-wizard-next')?.addEventListener('click', onPreregWizardNext);
+        document.getElementById('prereg-wizard-back')?.addEventListener('click', onPreregWizardBack);
         document.getElementById('competition-form')?.addEventListener('submit', submitCompetition);
     }
 

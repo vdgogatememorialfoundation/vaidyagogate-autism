@@ -522,10 +522,14 @@
                     <div class="card">
                         <form id="prereg-form">
                             <div class="form-group"><label>Event</label><select id="prereg-seminar-select" required><option value="">Select event</option></select></div>
+                            <nav id="prereg-wizard-nav" class="ak-prereg-wizard-nav" aria-label="Pre-registration steps"></nav>
                             <div id="prereg-fields"></div>
-                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;">
+                            <p id="prereg-pin-hint" class="hidden" style="font-size:0.85rem;color:#64748b;margin-top:4px;"></p>
+                            <div id="prereg-wizard-actions" class="ak-prereg-wizard-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;">
+                                <button type="button" id="prereg-wizard-back" class="btn-primary" style="background:#64748b;display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+                                <button type="button" id="prereg-wizard-next" class="btn-primary">Next <i class="fas fa-arrow-right"></i></button>
+                                <button type="submit" id="prereg-submit-btn" class="btn-primary" style="display:none;"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
                                 <button type="button" class="btn-primary" style="background:#475569;" onclick="previewPreregistration()"><i class="fas fa-eye"></i> Preview form &amp; barcode</button>
-                                <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
                             </div>
                             <p id="prereg-status-msg" style="margin-top:12px;font-weight:600;"></p>
                         </form>
@@ -861,8 +865,8 @@
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism8"></script>
-    <script src="/js/autism-form-preview.js?v=1"></script>
-    <script src="/js/applicant-autism.js?v=autism13"></script>
+    <script src="/js/autism-form-preview.js?v=2"></script>
+    <script src="/js/applicant-autism.js?v=autism14"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
