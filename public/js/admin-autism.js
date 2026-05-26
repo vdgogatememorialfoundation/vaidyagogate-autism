@@ -648,6 +648,177 @@
         });
     }
 
+    const PREREG_ADMIN_FIELD_TYPES = ['text', 'textarea', 'email', 'tel', 'number', 'date', 'select', 'boolean'];
+
+    function preregFieldTypeOptions(selected) {
+        const sel = String(selected || 'text').toLowerCase();
+        return PREREG_ADMIN_FIELD_TYPES.map((t) => `<option value="${t}"${t === sel ? ' selected' : ''}>${t}</option>`).join('');
+    }
+
+    function ensurePreregFormEditorCard() {
+        const tab = document.getElementById('tab-reg-form');
+        if (!tab || document.getElementById('ak-prereg-form-editor-card')) return;
+        const card = document.createElement('div');
+        card.id = 'ak-prereg-form-editor-card';
+        card.className = 'card';
+        card.style.cssText = 'margin-top:16px;border-left:4px solid #2563eb;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 8px;">Pre-registration form fields (4-step)</h3>' +
+            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Customize pre-registration fields shown to applicants.</p>' +
+            '<table class="data-table"><thead><tr><th>Field key</th><th>Label</th><th>Type</th><th>Step</th><th>Enabled</th><th>Required</th><th>Options JSON (for select)</th><th></th></tr></thead><tbody id="ak-prereg-editor-tbody"><tr><td colspan="8">Open tab to load…</td></tr></tbody></table>' +
+            '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
+            '<button type="button" class="btn-primary" style="background:#0d9488;" id="ak-prereg-add-field-btn">+ Add field</button>' +
+            '<button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-load-fields-btn">Reload</button>' +
+            '<button type="button" class="btn-primary" id="ak-prereg-save-fields-btn">Save pre-registration form</button>' +
+            '</div>' +
+            '<p id="ak-prereg-editor-msg" style="margin-top:10px;font-weight:600;font-size:0.88rem;"></p>';
+        tab.appendChild(card);
+        document.getElementById('ak-prereg-add-field-btn')?.addEventListener('click', () => {
+            const rows = window.__akPreregAdminRows || [];
+            rows.push({
+                key: 'custom_' + Date.now(),
+                label: 'Custom field',
+                type: 'text',
+                step: 4,
+                enabled: true,
+                required: false
+            });
+            window.__akPreregAdminRows = rows;
+            renderPreregFieldEditorRows();
+        });
+        document.getElementById('ak-prereg-load-fields-btn')?.addEventListener('click', () => loadAdminPreregFormConfig());
+        document.getElementById('ak-prereg-save-fields-btn')?.addEventListener('click', () => saveAdminPreregFormConfig());
+    }
+
+    function renderPreregFieldEditorRows() {
+        const tbody = document.getElementById('ak-prereg-editor-tbody');
+        if (!tbody) return;
+        const rows = window.__akPreregAdminRows || [];
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;">No fields configured.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows
+            .map((f, idx) => {
+                const optionsJson = f.type === 'select' && Array.isArray(f.options) ? JSON.stringify(f.options) : '';
+                const safeOptions = String(optionsJson).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                const keySafe = String(f.key || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                const labelSafe = String(f.label || f.key || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                return (
+                    '<tr>' +
+                    `<td><input type="text" id="ak-prereg-key-${idx}" value="${keySafe}" style="margin:0;min-width:140px;"></td>` +
+                    `<td><input type="text" id="ak-prereg-label-${idx}" value="${labelSafe}" style="margin:0;min-width:180px;"></td>` +
+                    `<td><select id="ak-prereg-type-${idx}" style="margin:0;">${preregFieldTypeOptions(f.type)}</select></td>` +
+                    `<td><input type="number" id="ak-prereg-step-${idx}" min="1" max="9" value="${parseInt(f.step, 10) || 1}" style="margin:0;width:64px;"></td>` +
+                    `<td><input type="checkbox" id="ak-prereg-enabled-${idx}" ${f.enabled !== false ? 'checked' : ''}></td>` +
+                    `<td><input type="checkbox" id="ak-prereg-required-${idx}" ${f.required ? 'checked' : ''}></td>` +
+                    `<td><input type="text" id="ak-prereg-options-${idx}" value="${safeOptions}" placeholder='[{"value":"Male","label":"Male"}]' style="margin:0;min-width:200px;"></td>` +
+                    `<td><button type="button" class="btn-primary" style="padding:4px 8px;font-size:0.75rem;background:#64748b;" onclick="removeAdminPreregFieldRow(${idx})">Remove</button></td>` +
+                    '</tr>'
+                );
+            })
+            .join('');
+    }
+
+    window.removeAdminPreregFieldRow = function removeAdminPreregFieldRow(idx) {
+        const rows = window.__akPreregAdminRows || [];
+        if (idx < 0 || idx >= rows.length) return;
+        rows.splice(idx, 1);
+        window.__akPreregAdminRows = rows;
+        renderPreregFieldEditorRows();
+    };
+
+    async function loadAdminPreregFormConfig() {
+        ensurePreregFormEditorCard();
+        const tbody = document.getElementById('ak-prereg-editor-tbody');
+        const msg = document.getElementById('ak-prereg-editor-msg');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading…</td></tr>';
+        if (msg) msg.textContent = '';
+        try {
+            const r = await fetch('/api/admin/preregistration-form-config', { credentials: 'same-origin' });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || r.statusText);
+            const fields = Array.isArray(data.fields) ? data.fields : [];
+            window.__akPreregAdminRows = fields;
+            renderPreregFieldEditorRows();
+        } catch (e) {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#b91c1c;">Failed to load</td></tr>';
+            if (msg) {
+                msg.textContent = e.message || 'Load failed';
+                msg.style.color = '#b91c1c';
+            }
+        }
+    }
+
+    async function saveAdminPreregFormConfig() {
+        const rows = window.__akPreregAdminRows || [];
+        const msg = document.getElementById('ak-prereg-editor-msg');
+        const fields = [];
+        for (let idx = 0; idx < rows.length; idx++) {
+            const key = String((document.getElementById(`ak-prereg-key-${idx}`) || {}).value || '').trim();
+            if (!key) continue;
+            const type = String((document.getElementById(`ak-prereg-type-${idx}`) || {}).value || 'text').toLowerCase();
+            const row = {
+                key,
+                label: String((document.getElementById(`ak-prereg-label-${idx}`) || {}).value || key).trim(),
+                type,
+                step: parseInt((document.getElementById(`ak-prereg-step-${idx}`) || {}).value, 10) || 1,
+                enabled: !!(document.getElementById(`ak-prereg-enabled-${idx}`) || {}).checked,
+                required: !!(document.getElementById(`ak-prereg-required-${idx}`) || {}).checked
+            };
+            if (type === 'select') {
+                const raw = String((document.getElementById(`ak-prereg-options-${idx}`) || {}).value || '').trim();
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) row.options = parsed;
+                    } catch (_) {
+                        if (msg) {
+                            msg.textContent = `Invalid options JSON for field: ${key}`;
+                            msg.style.color = '#b91c1c';
+                        }
+                        return;
+                    }
+                }
+            }
+            fields.push(row);
+        }
+        try {
+            const payload = { version: 2, fields };
+            const r = await fetch('/api/admin/preregistration-form-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || r.statusText);
+            window.__akPreregAdminRows = fields;
+            renderPreregFieldEditorRows();
+            if (msg) {
+                msg.textContent = 'Pre-registration form saved.';
+                msg.style.color = '#047857';
+            }
+        } catch (e) {
+            if (msg) {
+                msg.textContent = e.message || 'Save failed';
+                msg.style.color = '#b91c1c';
+            }
+        }
+    }
+
+    function patchRegistrationFormTabLoader() {
+        if (typeof window.switchTab !== 'function' || window.switchTab.__akRegFormHook) return;
+        const orig = window.switchTab;
+        window.switchTab = function (tabId, menuEl) {
+            orig.call(this, tabId, menuEl);
+            if (tabId === 'tab-reg-form') {
+                loadAdminPreregFormConfig();
+            }
+        };
+        window.switchTab.__akRegFormHook = true;
+    }
+
     function collapseDuplicateCmsFields() {
         const hideSecond = (id) => {
             const nodes = document.querySelectorAll('#' + id);
@@ -679,8 +850,10 @@
         hideMenuItems();
         injectPreregFields();
         injectPreregFormResetCard();
+        ensurePreregFormEditorCard();
         patchSaveSeminar();
         patchSeminarPayload();
+        patchRegistrationFormTabLoader();
         patchCreateStaffUserRoles();
         patchLoadAdminSiteCms();
         collapseDuplicateCmsFields();

@@ -3850,6 +3850,53 @@ app.get('/api/registration-form-config', (req, res) => {
     });
 });
 
+app.get('/api/admin/registration-form-config', (req, res) => {
+    const raw = req.query && req.query.seminarId;
+    const sid = raw != null && String(raw).trim() !== '' ? parseInt(raw, 10) : null;
+    loadRegistrationFormConfig(Number.isNaN(sid) ? null : sid, (e, cfg) => {
+        if (e) return res.status(500).json({ error: e.message });
+        registrationOtpChannelFlags((eFlags, flags) => {
+            if (eFlags) return res.status(500).json({ error: eFlags.message });
+            const base = {
+                fields: registrationFormFieldsForPortal((cfg && cfg.fields) || []),
+                birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
+                birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
+                otpOnApplication: false,
+                submitOtpRequired: false,
+                ...flags
+            };
+            db.get(
+                `SELECT otp_on_submit, otp_channels_json FROM seminars WHERE id = ?`,
+                [Number.isInteger(sid) && sid > 0 ? sid : -1],
+                (es, srow) => {
+                    if (es || !srow) return res.json(base);
+                    let channels = null;
+                    try {
+                        channels = srow.otp_channels_json ? JSON.parse(srow.otp_channels_json) : null;
+                    } catch (_) {
+                        channels = null;
+                    }
+                    const both =
+                        !channels ||
+                        channels.both ||
+                        ((channels.email !== false) && (channels.phone !== false));
+                    const emailOnly = !!(channels && channels.email && channels.phone === false);
+                    const phoneOnly = !!(channels && channels.phone && channels.email === false);
+                    const submitOtpRequired = Number(srow.otp_on_submit || 0) === 1;
+                    const seminarFlags = {
+                        otpOnApplication: submitOtpRequired,
+                        submitOtpRequired,
+                        otpMode: both ? 'both' : emailOnly ? 'email' : phoneOnly ? 'phone' : 'both',
+                        otpRequiresEmail: emailOnly || both,
+                        otpRequiresPhone: phoneOnly || both
+                    };
+                    res.json({ ...base, ...seminarFlags });
+                }
+            );
+        });
+    });
+});
+
 app.get('/api/public/participant-directories', (req, res) => {
     db.all(
         `SELECT id, title, event_date, public_list_enabled FROM seminars

@@ -9240,7 +9240,7 @@ async function loadAdminRegistrationFormConfig(skipFetch) {
         if (skipFetch && window.__adminRegFieldRowsCache) {
             fields = window.__adminRegFieldRowsCache;
         } else {
-            const res = await fetch('/api/registration-form-config');
+            const res = await fetch('/api/admin/registration-form-config', { credentials: 'same-origin' });
             const data = await res.json();
             fields = data.fields || [];
             window.__adminRegFieldRowsCache = fields;
@@ -9289,7 +9289,7 @@ async function saveAdminRegistrationFormConfig() {
             onlyWhenPgCollege:
                 typeof r.onlyWhenPgCollege === 'boolean'
                     ? r.onlyWhenPgCollege
-                    : ['college', 'ccity', 'cstate', 'cpin'].indexOf(row.key) !== -1
+                    : ['college', 'ccity', 'cstate', 'cpin'].indexOf(r.key) !== -1
         };
         if (row.key === 'qual') {
             const qualOpts = collectQualOptionsFromContainer('admin-global-qual-options');
