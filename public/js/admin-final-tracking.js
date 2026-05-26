@@ -175,13 +175,19 @@
                     '</select></td>' +
                     '<td><button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.78rem;" data-ak-final-view="' +
                     r.id +
-                    '">Review</button></td>' +
+                    '">Review</button>' +
+                    '<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.78rem;margin-left:6px;background:#b91c1c;" data-ak-final-delete="' +
+                    r.id +
+                    '">Delete</button></td>' +
                     '</tr>'
                 );
             })
             .join('');
         tbody.querySelectorAll('[data-ak-final-view]').forEach((btn) => {
             btn.addEventListener('click', () => openDetail(parseInt(btn.dataset.akFinalView, 10)));
+        });
+        tbody.querySelectorAll('[data-ak-final-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => deleteFinalRegistration(parseInt(btn.dataset.akFinalDelete, 10)));
         });
         tbody.querySelectorAll('[data-ak-final-status]').forEach((sel) => {
             sel.addEventListener('change', () => setStatus(parseInt(sel.dataset.akFinalStatus, 10), sel.value));
@@ -222,6 +228,27 @@
             '</dl>';
         panel.dataset.rowId = String(id);
         renderTable();
+    }
+
+    async function deleteFinalRegistration(regId) {
+        const id = parseInt(regId, 10);
+        if (!Number.isInteger(id) || id < 1) return;
+        const row = finalRows.find((r) => r.id === id);
+        const appNo = row ? row.application_no : '';
+        if (!confirm('Permanently delete registration ' + (appNo ? appNo : String(id)) + '? This removes ticket data too.'))
+            return;
+        try {
+            await api('/api/admin/registrations/' + encodeURIComponent(String(id)), { method: 'DELETE' });
+            const panel = document.getElementById('ak-final-detail');
+            if (panel) {
+                panel.classList.remove('is-open');
+                panel.dataset.rowId = '';
+            }
+            selectedId = null;
+            await refresh();
+        } catch (e) {
+            alert(e.message || 'Delete failed');
+        }
     }
 
     async function setStatus(id, status) {
@@ -311,6 +338,10 @@
         document.getElementById('ak-final-reject')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
             if (id) setStatus(id, 'rejected');
+        });
+        document.getElementById('ak-final-delete')?.addEventListener('click', () => {
+            const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
+            if (id) deleteFinalRegistration(id);
         });
         document.getElementById('ak-final-open-queue')?.addEventListener('click', () => {
             if (typeof switchTab === 'function') switchTab('tab-applications');

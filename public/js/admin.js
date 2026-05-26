@@ -4653,6 +4653,40 @@ async function adminEticketGenerate() {
     }
 }
 
+async function adminEticketDelete() {
+    const adm = getStoredAdminUser();
+    if (!adm || !adm.id) return alert('Not logged in.');
+    const row = __adminEticketSelection;
+    if (!row || !row.ticketRowId) return alert('Look up a generated ticket first.');
+    if (!confirm('Delete this e-ticket now?\n\nTicket QR will be removed, but registration/payment records stay.')) return;
+    const actSt = document.getElementById('eticket-action-status');
+    if (actSt) {
+        actSt.style.color = '#64748b';
+        actSt.textContent = 'Deleting…';
+    }
+    try {
+        const res = await fetch(
+            '/api/admin/tickets/' + encodeURIComponent(String(row.ticketRowId)) + '?actingAdminId=' + encodeURIComponent(adm.id),
+            { method: 'DELETE', credentials: 'same-origin' }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        if (actSt) {
+            actSt.style.color = '#047857';
+            actSt.textContent = 'Ticket deleted.';
+        }
+        __adminEticketSelection = null;
+        document.getElementById('eticket-results-wrap')?.classList.add('hidden');
+    } catch (e) {
+        if (actSt) {
+            actSt.style.color = '#b91c1c';
+            actSt.textContent = e.message || 'Delete failed';
+        } else {
+            alert(e.message || 'Delete failed');
+        }
+    }
+}
+
 async function adminEticketSend(sendEmail, sendWhatsapp) {
     const adm = getStoredAdminUser();
     if (!adm || !adm.id) return alert('Not logged in.');

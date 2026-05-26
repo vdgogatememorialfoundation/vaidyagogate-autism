@@ -248,6 +248,7 @@
                                 <button type="button" class="btn-success" id="ak-prereg-approve"><i class="fas fa-check"></i> Approve</button>
                                 <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-prereg-revision"><i class="fas fa-edit"></i> Request revision</button>
                                 <button type="button" class="btn-danger" id="ak-prereg-reject"><i class="fas fa-times"></i> Reject</button>
+                                <button type="button" class="btn-primary" style="background:#b91c1c;" id="ak-prereg-delete"><i class="fas fa-trash"></i> Delete pre-reg</button>
                                 <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open final registration tracking</button>
                             </div>
                             <p id="ak-prereg-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
@@ -286,6 +287,7 @@
                                 <button type="button" class="btn-success" id="ak-final-approve"><i class="fas fa-check"></i> Issue e-ticket</button>
                                 <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-final-revision"><i class="fas fa-edit"></i> Request revision</button>
                                 <button type="button" class="btn-danger" id="ak-final-reject"><i class="fas fa-times"></i> Reject</button>
+                                <button type="button" class="btn-primary" style="background:#b91c1c;" id="ak-final-delete"><i class="fas fa-trash"></i> Delete registration</button>
                                 <button type="button" class="btn-primary" style="background:#475569;" id="ak-final-open-queue"><i class="fas fa-folder-open"></i> Open registration queue</button>
                             </div>
                             <p id="ak-final-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
@@ -1582,6 +1584,7 @@
                             <button type="button" class="btn-primary" style="background:#0d9488;" onclick="adminEticketSend(false, true)">Send WhatsApp</button>
                             <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="adminEticketSend(true, true)">Send both</button>
                             <a id="eticket-preview-link" class="btn-primary" style="background:#64748b;text-decoration:none;display:inline-flex;align-items:center;" href="#" target="_blank" rel="noopener">Preview ticket</a>
+                            <button type="button" class="btn-primary" style="background:#b91c1c;" onclick="adminEticketDelete()"><i class="fas fa-trash"></i> Delete ticket</button>
                         </div>
                         <p id="eticket-action-status" style="margin-top:12px;font-weight:600;font-size:0.88rem;"></p>
                     </div>
@@ -2278,9 +2281,9 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=2"></script>
-    <script src="/js/admin.js?v=20260525d"></script>
-    <script src="/js/admin-prereg-tracking.js?v=8"></script>
-    <script src="/js/admin-final-tracking.js?v=2"></script>
+    <script src="/js/admin.js?v=20260526d"></script>
+    <script src="/js/admin-prereg-tracking.js?v=9"></script>
+    <script src="/js/admin-final-tracking.js?v=3"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=3"></script>
     <script src="/js/admin-autism.js?v=autism12"></script>

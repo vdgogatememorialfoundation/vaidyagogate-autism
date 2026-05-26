@@ -183,6 +183,9 @@
                     '<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.78rem;" data-ak-view="' +
                     r.id +
                     '">Review</button>' +
+                    '<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.78rem;margin-left:6px;background:#b91c1c;" data-ak-delete="' +
+                    r.id +
+                    '">Delete</button>' +
                     '</td>' +
                     '</tr>'
                 );
@@ -190,6 +193,9 @@
             .join('');
         tbody.querySelectorAll('[data-ak-view]').forEach((btn) => {
             btn.addEventListener('click', () => openDetail(parseInt(btn.dataset.akView, 10)));
+        });
+        tbody.querySelectorAll('[data-ak-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => deletePrereg(parseInt(btn.dataset.akDelete, 10)));
         });
     }
 
@@ -232,6 +238,29 @@
             '</dl>';
         panel.dataset.rowId = String(id);
         renderTable();
+    }
+
+    async function deletePrereg(preregId) {
+        const id = parseInt(preregId, 10);
+        if (!Number.isInteger(id) || id < 1) return;
+        const row = preregRows.find((r) => r.id === id);
+        const appNo = row ? row.application_no : '';
+        if (!confirm('Permanently delete pre-registration ' + (appNo ? ' ' + appNo : String(id)) + '? This cannot be undone.'))
+            return;
+        try {
+            await api('/api/admin/preregistrations/' + encodeURIComponent(String(id)), {
+                method: 'DELETE'
+            });
+            const panel = document.getElementById('ak-prereg-detail');
+            if (panel) {
+                panel.classList.remove('is-open');
+                panel.dataset.rowId = '';
+            }
+            selectedId = null;
+            await refresh();
+        } catch (e) {
+            alert(e.message || 'Delete failed');
+        }
     }
 
     async function setStatus(status) {
@@ -305,6 +334,10 @@
         document.getElementById('ak-prereg-approve')?.addEventListener('click', () => setStatus('approved'));
         document.getElementById('ak-prereg-reject')?.addEventListener('click', () => setStatus('rejected'));
         document.getElementById('ak-prereg-revision')?.addEventListener('click', () => setStatus('revision_required'));
+        document.getElementById('ak-prereg-delete')?.addEventListener('click', () => {
+            const id = parseInt(document.getElementById('ak-prereg-detail')?.dataset.rowId, 10);
+            if (id) deletePrereg(id);
+        });
         document.getElementById('ak-prereg-goto-reg')?.addEventListener('click', () => {
             if (typeof switchTab === 'function') {
                 switchTab('tab-final-tracking');

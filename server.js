@@ -11606,6 +11606,34 @@ app.post('/api/admin/e-tickets/send', (req, res) => {
     });
 });
 
+// Admin: delete a generated ticket row (QR removed; registration/payment stays).
+app.delete('/api/admin/tickets/:id', (req, res) => {
+    requireAdminActor(req, res, () => {
+        const tid = parseInt(req.params.id, 10);
+        if (!Number.isInteger(tid) || tid < 1) return res.status(400).json({ error: 'Invalid ticket id.' });
+        db.get(`SELECT id FROM tickets WHERE id = ?`, [tid], (e0, row) => {
+            if (e0) return res.status(500).json({ error: e0.message });
+            if (!row) return res.status(404).json({ error: 'Ticket not found.' });
+            db.serialize(() => {
+                let deletedUc = 0;
+                db.run(`DELETE FROM user_certificates WHERE ticket_id = ?`, [tid], function (ucErr) {
+                    if (ucErr) return res.status(500).json({ error: ucErr.message });
+                    deletedUc = this && this.changes ? this.changes : 0;
+                    db.run(`DELETE FROM tickets WHERE id = ?`, [tid], function (tErr) {
+                        if (tErr) return res.status(500).json({ error: tErr.message });
+                        if (!this.changes) return res.status(404).json({ error: 'Ticket not found.' });
+                        res.json({
+                            success: true,
+                            deletedTicketId: tid,
+                            deletedUserCerts: deletedUc
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Admin: Get All Support Tickets
 app.get('/api/admin/support-tickets', (req, res) => {
     const { status, category, priority } = req.query;
