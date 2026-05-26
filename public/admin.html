@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/autism-admin.css?v=1">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=1">
+    <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1560,34 +1561,37 @@
                 </div>
             </div>
 
-            <!-- E-tickets: lookup, generate, send -->
-            <div id="tab-etickets" class="tab-pane hidden">
-                <h2 style="margin-bottom: 12px;">E-tickets</h2>
-                <p style="color:#64748b;margin-bottom:18px;max-width:900px;">Look up a doctor...s e-ticket by <strong>12-digit ticket ID</strong>, <strong>application ID</strong>, <strong>email</strong>, or <strong>phone</strong>. Generate if missing, preview the printable ticket, then send via email and/or WhatsApp.</p>
-                <div class="card" style="margin-bottom:16px;">
-                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-                        <div style="flex:1;min-width:220px;">
-                            <label>Search</label>
-                            <input type="text" id="eticket-search-q" placeholder="Ticket ID, application ID, email, or phone" style="width:100%;">
-                        </div>
-                        <button type="button" class="btn-primary" onclick="adminEticketLookup()"><i class="fas fa-search"></i> Look up</button>
+            <!-- E-tickets desk -->
+            <div id="tab-etickets" class="tab-pane hidden ak-eticket-wrap">
+                <h2 style="margin-bottom: 8px;">E-ticket desk</h2>
+                <p class="ak-eticket-lead">Find a participant pass by <strong>12-digit ticket ID</strong> (best), <strong>application ID</strong>, <strong>email</strong>, or <strong>phone</strong>. Filter by event when someone has more than one registration. Generate, preview, and send from one screen.</p>
+                <div class="ak-eticket-toolbar">
+                    <div>
+                        <label for="eticket-seminar-filter">Event</label>
+                        <select id="eticket-seminar-filter"><option value="">All events</option></select>
                     </div>
-                    <p id="eticket-lookup-status" style="margin-top:10px;font-size:0.88rem;color:#64748b;"></p>
+                    <div class="grow">
+                        <label for="eticket-search-q">Search</label>
+                        <input type="text" id="eticket-search-q" placeholder="Ticket ID, application ID, email, or phone" autocomplete="off">
+                    </div>
+                    <button type="button" class="btn-primary" onclick="adminEticketLookup()" style="align-self:flex-end;"><i class="fas fa-search"></i> Look up</button>
+                </div>
+                <p id="eticket-lookup-status" class="ak-eticket-status" role="status"></p>
+                <div id="eticket-match-list" class="ak-eticket-matches hidden">
+                    <h4>Multiple events — select the correct registration</h4>
+                    <div id="eticket-match-grid" class="ak-eticket-match-grid"></div>
                 </div>
                 <div id="eticket-results-wrap" class="hidden">
-                    <div class="card">
-                        <h3 style="margin:0 0 12px;color:#1a237e;">Ticket details</h3>
-                        <div id="eticket-detail-panel" style="font-size:0.9rem;line-height:1.6;"></div>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
-                            <button type="button" class="btn-primary" style="background:#15803d;" onclick="adminEticketGenerate()">Generate / refresh ticket</button>
-                            <button type="button" class="btn-primary" onclick="adminEticketSend(true, false)">Send email</button>
-                            <button type="button" class="btn-primary" style="background:#0d9488;" onclick="adminEticketSend(false, true)">Send WhatsApp</button>
-                            <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="adminEticketSend(true, true)">Send both</button>
-                            <a id="eticket-preview-link" class="btn-primary" style="background:#64748b;text-decoration:none;display:inline-flex;align-items:center;" href="#" target="_blank" rel="noopener">Preview ticket</a>
-                            <button type="button" class="btn-primary" style="background:#b91c1c;" onclick="adminEticketDelete()"><i class="fas fa-trash"></i> Delete ticket</button>
-                        </div>
-                        <p id="eticket-action-status" style="margin-top:12px;font-weight:600;font-size:0.88rem;"></p>
+                    <div id="eticket-detail-panel"></div>
+                    <div class="ak-eticket-actions">
+                        <button type="button" class="btn-primary" style="background:#15803d;" onclick="adminEticketGenerate()"><i class="fas fa-qrcode"></i> Generate / refresh</button>
+                        <button type="button" class="btn-primary" onclick="adminEticketSend(true, false)"><i class="fas fa-envelope"></i> Email</button>
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="adminEticketSend(false, true)"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                        <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="adminEticketSend(true, true)">Send both</button>
+                        <a id="eticket-preview-link" class="btn-primary" style="background:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:6px;" href="#" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> PDF preview</a>
+                        <button type="button" class="btn-primary" style="background:#b91c1c;" onclick="adminEticketDelete()"><i class="fas fa-trash"></i> Delete ticket</button>
                     </div>
+                    <p id="eticket-action-status" class="ak-eticket-action-msg"></p>
                 </div>
             </div>
 
@@ -2281,7 +2285,8 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=2"></script>
-    <script src="/js/admin.js?v=20260526d"></script>
+    <script src="/js/admin.js?v=20260526e"></script>
+    <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=9"></script>
     <script src="/js/admin-final-tracking.js?v=3"></script>
     <script src="/js/admin-competition.js?v=4"></script>

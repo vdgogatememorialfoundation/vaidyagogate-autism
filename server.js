@@ -11367,10 +11367,46 @@ const ADMIN_ETICKET_LOOKUP_SQL = `
         FROM registrations r
         JOIN users u ON u.id = r.user_id
         JOIN seminars s ON s.id = r.seminar_id
-        LEFT JOIN orders o ON o.registration_id = r.id AND LOWER(TRIM(o.status)) = 'success'
+        LEFT JOIN orders o ON o.id = (
+            SELECT o2.id FROM orders o2
+            WHERE o2.registration_id = r.id AND LOWER(TRIM(o2.status)) = 'success'
+            ORDER BY o2.id DESC LIMIT 1
+        )
         LEFT JOIN tickets t ON t.order_id = o.id`;
 
-function adminLookupEtickets(db, q, cb) {
+function adminEticketQrScanPayload(row) {
+    if (!row) return '';
+    const tid = row.ticket_id_string && String(row.ticket_id_string).trim();
+    if (tid) return tid;
+    const raw = row.qr_code_data && String(row.qr_code_data).trim();
+    if (!raw) return '';
+    if (raw.startsWith('{')) {
+        try {
+            const j = JSON.parse(raw);
+            if (j.ticketId) return String(j.ticketId).trim();
+        } catch (_) {}
+        return '';
+    }
+    return raw.length > 200 ? '' : raw;
+}
+
+function adminEticketMatchScore(row, raw) {
+    const q = String(raw || '').trim();
+    if (!q || !row) return 0;
+    const qLower = q.toLowerCase();
+    if (row.ticket_id_string && String(row.ticket_id_string).trim() === q) return 100;
+    if (row.application_no && String(row.application_no).trim() === q) return 90;
+    if (row.email && String(row.email).trim().toLowerCase() === qLower) return 70;
+    const digits = q.replace(/\D/g, '');
+    if (digits.length >= 10) {
+        const tail = digits.slice(-10);
+        const phone = String(row.phone || '').replace(/\D/g, '');
+        if (phone.endsWith(tail)) return 50;
+    }
+    return 10;
+}
+
+function adminLookupEtickets(db, q, seminarId, cb) {
     const raw = String(q || '').trim();
     if (!raw) return cb(null, []);
     const clauses = [
@@ -11390,47 +11426,83 @@ function adminLookupEtickets(db, q, cb) {
         );
         params.push('%' + tail + '%');
     }
-    db.all(
-        `${ADMIN_ETICKET_LOOKUP_SQL} WHERE (${clauses.join(' OR ')}) ORDER BY r.id DESC, t.id DESC LIMIT 25`,
-        params,
-        cb
-    );
+    let sql = `${ADMIN_ETICKET_LOOKUP_SQL} WHERE (${clauses.join(' OR ')})`;
+    const sid = parseInt(seminarId, 10);
+    if (Number.isInteger(sid) && sid > 0) {
+        sql += ' AND r.seminar_id = ?';
+        params.push(sid);
+    }
+    db.all(sql, params, (err, rows) => {
+        if (err) return cb(err);
+        const list = (rows || []).slice();
+        list.sort((a, b) => {
+            const ds = adminEticketMatchScore(b, raw) - adminEticketMatchScore(a, raw);
+            if (ds !== 0) return ds;
+            return (Number(b.registration_id) || 0) - (Number(a.registration_id) || 0);
+        });
+        const seen = new Set();
+        const deduped = [];
+        for (const row of list) {
+            const key = String(row.registration_id);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            deduped.push(row);
+        }
+        cb(null, deduped.slice(0, 25));
+    });
 }
 
 app.get('/api/admin/e-tickets/lookup', (req, res) => {
     const q = String(req.query.q || '').trim();
+    const seminarId = req.query.seminarId;
     const actingAdminId = parseInt(req.query.actingAdminId, 10);
     if (!q) return res.status(400).json({ error: 'q is required (ticket ID, application ID, email, or phone)' });
     assertAdminPortalActor(actingAdminId, (eAct) => {
         if (eAct) return res.status(eAct.message === 'FORBIDDEN' ? 403 : 500).json({ error: 'Admin access required' });
-        adminLookupEtickets(db, q, (err, rows) => {
+        adminLookupEtickets(db, q, seminarId, (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             const base = notifEngine.publicBaseUrl();
-            const list = (rows || []).map((row) => ({
-                registrationId: row.registration_id,
-                applicationNo: row.application_no,
-                registrationStatus: row.registration_status,
-                userId: row.user_id,
-                doctorName: [row.first_name, row.last_name].filter(Boolean).join(' ').trim(),
-                email: row.email,
-                phone: row.phone,
-                seminarId: row.seminar_id,
-                seminarTitle: row.seminar_title,
-                paymentStatus: row.payment_status,
-                orderIdString: row.order_id_string,
-                ticketIdString: row.ticket_id_string,
-                ticketRowId: row.ticket_row_id,
-                isScanned: !!Number(row.is_scanned),
-                scanCount: Number(row.scan_count) || 0,
-                scanTime: row.scan_time,
-                isValid: row.is_valid !== 0 && row.is_valid !== false,
-                hasTicket: !!row.ticket_id_string,
-                ticketPreviewUrl:
-                    row.ticket_id_string && row.user_id
-                        ? `${base}/api/doctor/ticket-document/${encodeURIComponent(row.ticket_id_string)}?userId=${encodeURIComponent(String(row.user_id))}`
-                        : null
-            }));
-            res.json({ success: true, results: list });
+            const list = (rows || []).map((row) => {
+                const score = adminEticketMatchScore(row, q);
+                let matchKind = 'other';
+                if (score >= 100) matchKind = 'ticket';
+                else if (score >= 90) matchKind = 'application';
+                else if (score >= 70) matchKind = 'email';
+                else if (score >= 50) matchKind = 'phone';
+                const qrPayload = adminEticketQrScanPayload(row);
+                return {
+                    registrationId: row.registration_id,
+                    applicationNo: row.application_no,
+                    registrationStatus: row.registration_status,
+                    userId: row.user_id,
+                    doctorName: [row.first_name, row.last_name].filter(Boolean).join(' ').trim(),
+                    email: row.email,
+                    phone: row.phone,
+                    seminarId: row.seminar_id,
+                    seminarTitle: row.seminar_title,
+                    paymentStatus: row.payment_status,
+                    orderIdString: row.order_id_string,
+                    ticketIdString: row.ticket_id_string,
+                    ticketRowId: row.ticket_row_id,
+                    isScanned: !!Number(row.is_scanned),
+                    scanCount: Number(row.scan_count) || 0,
+                    scanTime: row.scan_time,
+                    isValid: row.is_valid !== 0 && row.is_valid !== false,
+                    hasTicket: !!row.ticket_id_string,
+                    matchKind,
+                    matchScore: score,
+                    qrImageUrl: qrPayload ? `${base}/api/qrcode/${encodeURIComponent(qrPayload)}` : null,
+                    ticketPreviewUrl:
+                        row.ticket_id_string && row.user_id
+                            ? `${base}/api/doctor/ticket-document/${encodeURIComponent(row.ticket_id_string)}?userId=${encodeURIComponent(String(row.user_id))}`
+                            : null
+                };
+            });
+            const topScore = list.length ? list[0].matchScore : 0;
+            const autoSelect =
+                list.length === 1 ||
+                (list.length > 1 && topScore >= 90 && list.filter((r) => r.matchScore === topScore).length === 1);
+            res.json({ success: true, results: list, autoSelect });
         });
     });
 });
