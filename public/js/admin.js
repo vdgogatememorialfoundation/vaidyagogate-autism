@@ -2463,6 +2463,7 @@ function publicFileHref(stored) {
     if (p.startsWith('/')) return p;
     return '/uploads/' + p;
 }
+window.publicFileHref = publicFileHref;
 
 function escAdmin(s) {
     return String(s == null ? '' : s)

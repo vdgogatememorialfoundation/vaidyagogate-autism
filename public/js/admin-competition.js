@@ -27,13 +27,31 @@
         return data;
     }
 
+    function fileHref(stored) {
+        const p = String(stored || '').trim();
+        if (!p) return '';
+        if (/^https?:\/\//i.test(p)) return p;
+        if (typeof window.publicFileHref === 'function') return window.publicFileHref(p);
+        if (p.startsWith('/uploads/api/assets/')) return '/api/assets/' + p.slice('/uploads/api/assets/'.length);
+        if (p.startsWith('/')) return p;
+        return '/uploads/' + p;
+    }
+
     function fileLinks(files) {
         const list = Array.isArray(files) ? files : [];
         if (!list.length) return '<span style="color:#94a3b8;">No files</span>';
         return list
             .map((f) => {
-                const href = f.file_path || '';
-                const name = f.original_name || href.split('/').pop() || 'file';
+                const href = fileHref(f.file_path);
+                const name = f.original_name || (href && href.split('/').pop()) || 'file';
+                if (!href) {
+                    return (
+                        '<span style="display:block;font-size:0.82rem;margin-bottom:4px;color:#94a3b8;">' +
+                        '<i class="fas fa-paperclip"></i> ' +
+                        esc(name) +
+                        ' (no file path)</span>'
+                    );
+                }
                 return (
                     '<a href="' +
                     esc(href) +
@@ -90,7 +108,7 @@
                     '<tr>' +
                     '<td><img src="/api/qrcode/' +
                     encodeURIComponent(code) +
-                    '" alt="" width="48" height="48" style="display:block;margin-bottom:4px;"><code style="font-size:0.78rem;">' +
+                    '" alt="" width="48" height="48" style="display:block;margin-bottom:4px;background:#fff;border-radius:6px;padding:2px;"><code style="font-size:0.78rem;">' +
                     esc(code) +
                     '</code></td>' +
                     '<td><strong>' +

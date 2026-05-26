@@ -82,6 +82,44 @@
         }
     }
 
+    const PREREG_FIELD_LABELS = {
+        parent_name: 'Full Name (Parents)',
+        parent_gender: 'Gender (Parent)',
+        parent_dob: 'Date of Birth (Parent)',
+        child_name: "Child's Name",
+        child_gender: 'Gender (Child)',
+        child_dob: 'Date of Birth (Child)',
+        address: 'Full Address',
+        pin: 'Pincode',
+        city: 'City',
+        country: 'Country',
+        attendees_count: 'Number of People Attending',
+        child_health: "Child's Health",
+        diet: 'Diet',
+        financial_planning: 'Financial Planning'
+    };
+
+    function qrImgHtml(code, size) {
+        const c = String(code || '').trim();
+        const px = size || 44;
+        if (!c) {
+            return '<span style="color:#94a3b8;font-size:0.78rem;">No application no.</span>';
+        }
+        const src = '/api/qrcode/' + encodeURIComponent(c);
+        return (
+            '<img src="' +
+            src +
+            '" alt="Barcode ' +
+            esc(c) +
+            '" width="' +
+            px +
+            '" height="' +
+            px +
+            '" style="display:block;margin-bottom:4px;background:#fff;border-radius:6px;padding:2px;" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.style.display=\'block\');">' +
+            '<span style="display:none;color:#b91c1c;font-size:0.75rem;">Barcode failed to load</span>'
+        );
+    }
+
     function filteredRows() {
         const q = (document.getElementById('ak-prereg-search')?.value || '').trim().toLowerCase();
         return preregRows.filter((r) => {
@@ -119,9 +157,9 @@
                     '"' +
                     sel +
                     '>' +
-                    '<td><img src="/api/qrcode/' +
-                    encodeURIComponent(r.application_no || '') +
-                    '" alt="" width="44" height="44" style="display:block;margin-bottom:4px;"><code>' +
+                    '<td>' +
+                    qrImgHtml(r.application_no, 44) +
+                    '<code>' +
                     esc(r.application_no || '—') +
                     '</code></td>' +
                     '<td>' +
@@ -165,7 +203,10 @@
         const fd = parseFormData(row.form_data);
         const fieldsHtml = Object.keys(fd).length
             ? Object.entries(fd)
-                  .map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>')
+                  .map(([k, v]) => {
+                      const label = PREREG_FIELD_LABELS[k] || k.replace(/_/g, ' ');
+                      return '<dt>' + esc(label) + '</dt><dd>' + esc(v) + '</dd>';
+                  })
                   .join('')
             : '<dt>Form data</dt><dd style="color:#64748b;">No extra fields submitted.</dd>';
         document.getElementById('ak-prereg-detail-title').textContent = name + ' — ' + (row.seminar_title || 'Event');
@@ -173,9 +214,9 @@
             '<dl>' +
             '<dt>Application no.</dt><dd><code>' +
             esc(row.application_no) +
-            '</code><br><img src="/api/qrcode/' +
-            encodeURIComponent(row.application_no || '') +
-            '" alt="Barcode" width="96" height="96" style="margin-top:8px;"></dd>' +
+            '</code><br>' +
+            qrImgHtml(row.application_no, 96) +
+            '</dd>' +
             '<dt>Email / phone</dt><dd>' +
             esc(row.email) +
             ' · ' +
