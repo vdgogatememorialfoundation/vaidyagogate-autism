@@ -546,6 +546,20 @@ app.get('/api/public/portal-urls', (req, res) => {
     res.json(portalUrls.getPortalUrls());
 });
 
+app.get('/api/public/portal-product', (req, res) => {
+    res.json(portalProduct.publicConfig());
+});
+
+function assertAutismScannerApi(req, res, next) {
+    if (portalProduct.FEATURES.productId !== 'autism') {
+        return res.status(403).json({
+            success: false,
+            error: 'Scanner API is not enabled on this portal deployment.'
+        });
+    }
+    next();
+}
+
 app.get('/api/public/portal-auth', (req, res) => {
     portalAuthPolicy.loadPortalAuthConfig(db, (e) => {
         if (e) console.warn('[portal-auth-policy]', e.message);
@@ -6097,7 +6111,7 @@ function scannerVerifyJsonFromRow(row, extras) {
 }
 
 // Scanner: dry-run ticket lookup (same matching as /mark, no state change)
-app.get('/api/scanner/verify', (req, res) => {
+app.get('/api/scanner/verify', assertAutismScannerApi, (req, res) => {
     const ticketId = String(req.query.ticketId || req.query.qrData || '').trim();
     const seminarId = req.query.seminarId != null && req.query.seminarId !== '' ? parseInt(req.query.seminarId, 10) : null;
     if (!ticketId) {
@@ -6145,7 +6159,7 @@ app.get('/api/scanner/verify', (req, res) => {
 });
 
 // Scanner: seminars with check-in enabled (pick before scanning)
-app.get('/api/scanner/checkin-seminars', (req, res) => {
+app.get('/api/scanner/checkin-seminars', assertAutismScannerApi, (req, res) => {
     db.all(
         `SELECT id, title, checkin_date, event_date, checkin_enabled
          FROM seminars WHERE is_active = 1 AND IFNULL(checkin_enabled, 0) = 1
@@ -6172,7 +6186,7 @@ app.get('/api/scanner/checkin-seminars', (req, res) => {
 });
 
 // 8. Scanner: Mark Attendance (requires scanner or admin user id)
-app.post('/api/scanner/mark', (req, res) => {
+app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
     const { qrData, volunteerId, scannerUserId, seminarId } = req.body || {};
     const selectedSeminarId = parseInt(seminarId, 10);
     const staffId = parseInt(scannerUserId != null ? scannerUserId : volunteerId, 10);

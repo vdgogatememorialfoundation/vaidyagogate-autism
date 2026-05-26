@@ -1,11 +1,11 @@
 {
-  "name": "VGMF Seminar Scanner",
-  "short_name": "Scanner",
-  "description": "QR check-in for VGMF seminars",
+  "name": "Autism Check-in Scanner",
+  "short_name": "Check-in",
+  "description": "QR check-in for the Autism Awareness Programme only",
   "start_url": "/scanner.html",
   "scope": "/scanner.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1e3a8a",
+  "theme_color": "#0284c7",
   "orientation": "portrait"
 }

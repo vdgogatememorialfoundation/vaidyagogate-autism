@@ -1,15 +1,77 @@
 (function () {
+    const AUTISM_PRODUCT_ID = 'autism';
+    const ALLOWED_PORTAL_HOSTS = new Set([
+        'autism.vaidyagogate.org',
+        'autism-flax.vercel.app',
+        'localhost',
+        '127.0.0.1'
+    ]);
+
     const isNativeScannerShell =
         !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ||
-        /VGMF Scanner|Capacitor/i.test(navigator.userAgent || '');
+        /Autism Check-in|VGMF Scanner|Capacitor/i.test(navigator.userAgent || '');
+
+    function hostAllowed(hostname) {
+        const h = String(hostname || '').toLowerCase().split(':')[0];
+        if (ALLOWED_PORTAL_HOSTS.has(h)) return true;
+        return h.endsWith('.vercel.app') && h.includes('autism');
+    }
 
     function isScannerPageUrl(url) {
         try {
             const u = new URL(url, window.location.href);
+            if (!hostAllowed(u.hostname)) return false;
             if (u.origin !== window.location.origin) return false;
-            return /\/scanner\.html$/i.test(u.pathname) || u.pathname === '/scanner';
+            return /\/scanner\.html$/i.test(u.pathname) || u.pathname === '/scanner' || u.pathname === '/scan';
         } catch (_) {
             return false;
+        }
+    }
+
+    function blockForeignPortal() {
+        if (!hostAllowed(window.location.hostname)) {
+            document.body.innerHTML =
+                '<div style="padding:24px;font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;text-align:center;">' +
+                '<h2 style="color:#b91c1c;">Wrong portal</h2>' +
+                '<p>This scanner app only works with the <strong>Autism Awareness Programme</strong> at autism.vaidyagogate.org.</p></div>';
+            throw new Error('wrong_portal_host');
+        }
+    }
+
+    function installFetchPortalLock() {
+        if (!isNativeScannerShell) return;
+        const origFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+            let url = typeof input === 'string' ? input : input && input.url;
+            try {
+                const u = new URL(url, window.location.href);
+                if (!hostAllowed(u.hostname)) {
+                    console.warn('[scanner] Blocked API call to', u.href);
+                    return Promise.resolve(
+                        new Response(
+                            JSON.stringify({
+                                success: false,
+                                error: 'This scanner app cannot access other portals.'
+                            }),
+                            { status: 403, headers: { 'Content-Type': 'application/json' } }
+                        )
+                    );
+                }
+            } catch (_) {}
+            return origFetch(input, init);
+        };
+    }
+
+    async function verifyAutismPortalProduct() {
+        const res = await fetch('/api/public/portal-product', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        const pid = (data && data.productId) || (data.features && data.features.productId);
+        if (pid !== AUTISM_PRODUCT_ID) {
+            document.body.innerHTML =
+                '<div style="padding:24px;font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;text-align:center;">' +
+                '<h2 style="color:#b91c1c;">Wrong portal data</h2>' +
+                '<p>Server is not the Autism programme portal. Install the Autism Check-in APK and use staff accounts from this portal only.</p></div>';
+            throw new Error('wrong_portal_product');
         }
     }
 
@@ -62,8 +124,10 @@
         });
     }
 
+    blockForeignPortal();
+    installFetchPortalLock();
     if (isNativeScannerShell) lockScannerNavigation();
-    if (/scanner\.html$/i.test(window.location.pathname || '')) {
+    if (/scanner\.html$/i.test(window.location.pathname || '') || window.location.pathname === '/scan') {
         document.body.classList.add('scanner-standalone-page');
     }
 
@@ -469,6 +533,14 @@
         }
     });
 
-    if (user) showScan(user);
-    else showLogin();
+    verifyAutismPortalProduct()
+        .then(() => {
+            if (user) showScan(user);
+            else showLogin();
+        })
+        .catch((e) => {
+            if (e && e.message !== 'wrong_portal_product' && e.message !== 'wrong_portal_host') {
+                console.error('[scanner] portal verify', e);
+            }
+        });
 })();

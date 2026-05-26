@@ -1,5 +1,5 @@
-# Build VGMF Scanner debug APK (Capacitor Android)
-# Prefer: scripts\build-portal-apks.ps1 (builds Admin, Judge, Doctor, Scanner)
+# Build Autism Check-in scanner debug APK (Capacitor Android)
+# Prefer: scripts\build-autism-scanner-apk.ps1 (syncs autism-only config first)
 # Requires: Node.js, JDK 17+, Android SDK (via Android Studio)
 
 $ErrorActionPreference = "Stop"
@@ -57,6 +57,14 @@ $sdkEsc = ($sdk -replace '\\', '\\')
 Set-Content -Path $localProps -Value "sdk.dir=$sdkEsc" -Encoding ASCII
 Write-Host "Using ANDROID_HOME=$sdk" -ForegroundColor Cyan
 
+Push-Location $root
+try {
+    node (Join-Path $root "scripts\sync-mobile-capacitor.js") --scanner-only
+    if ($LASTEXITCODE -ne 0) { throw "sync-mobile-capacitor.js failed" }
+} finally {
+    Pop-Location
+}
+
 Push-Location $mobile
 try {
     if (-not (Test-Path "node_modules")) { npm install }
@@ -65,7 +73,7 @@ try {
     .\gradlew.bat assembleDebug --no-daemon
     $apk = "app\build\outputs\apk\debug\app-debug.apk"
     if (Test-Path $apk) {
-        $dest = Join-Path $root "VGMF-Scanner-debug.apk"
+        $dest = Join-Path $root "Autism-Scanner-debug.apk"
         Copy-Item $apk $dest -Force
         Write-Host ""
         Write-Host "APK ready:" -ForegroundColor Green

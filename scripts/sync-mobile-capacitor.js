@@ -9,45 +9,56 @@ const { execSync } = require('child_process');
 const root = path.join(__dirname, '..');
 const AUTISM = 'https://autism.vaidyagogate.org';
 const SEMINAR = 'https://seminar.vaidyagogate.org';
-const ALLOW = [
+const SEMINAR_ALLOW = [
     AUTISM,
     SEMINAR,
     'https://admin.vaidyagogate.org',
     'https://judge.vaidyagogate.org',
     'https://vaidyagogate-seminar.vercel.app'
 ];
+/** Autism scanner APK must not navigate to seminar or other portals. */
+const AUTISM_SCANNER_ALLOW = [AUTISM, 'https://autism-flax.vercel.app'];
 
 const APPS = [
-    { dir: 'admin-mobile', url: `${SEMINAR}/admin.html`, title: 'VGMF Admin' },
-    { dir: 'judge-mobile', url: `${SEMINAR}/judge.html`, title: 'VGMF Judge' },
-    { dir: 'doctor-mobile', url: `${SEMINAR}/doctor.html?app=1`, title: 'VGMF Doctor' },
-    { dir: 'scanner-mobile', url: `${AUTISM}/scanner.html`, title: 'VGMF Scanner' }
+    { dir: 'admin-mobile', url: `${SEMINAR}/admin.html`, title: 'VGMF Admin', hostname: 'seminar.vaidyagogate.org', allow: SEMINAR_ALLOW },
+    { dir: 'judge-mobile', url: `${SEMINAR}/judge.html`, title: 'VGMF Judge', hostname: 'seminar.vaidyagogate.org', allow: SEMINAR_ALLOW },
+    { dir: 'doctor-mobile', url: `${SEMINAR}/doctor.html?app=1`, title: 'VGMF Doctor', hostname: 'seminar.vaidyagogate.org', allow: SEMINAR_ALLOW },
+    {
+        dir: 'scanner-mobile',
+        url: `${AUTISM}/scanner.html`,
+        title: 'Autism Check-in',
+        hostname: 'autism.vaidyagogate.org',
+        allow: AUTISM_SCANNER_ALLOW,
+        appId: 'org.vaidyagogate.autism.scanner'
+    }
 ];
 
 function writeConfig(app) {
     const base = path.join(root, app.dir);
     const config = {
-        appId: require(path.join(base, 'package.json')).name.includes('admin')
-            ? 'org.vaidyagogate.admin'
-            : app.dir.includes('judge')
-              ? 'org.vaidyagogate.judge'
-              : app.dir.includes('doctor')
-                ? 'org.vaidyagogate.doctor'
-                : 'org.vaidyagogate.scanner',
+        appId:
+            app.appId ||
+            (app.dir.includes('admin')
+                ? 'org.vaidyagogate.admin'
+                : app.dir.includes('judge')
+                  ? 'org.vaidyagogate.judge'
+                  : app.dir.includes('doctor')
+                    ? 'org.vaidyagogate.doctor'
+                    : 'org.vaidyagogate.scanner'),
         appName: app.title,
         webDir: 'www',
         server: {
             url: app.url,
-            hostname: 'seminar.vaidyagogate.org',
+            hostname: app.hostname || 'autism.vaidyagogate.org',
             cleartext: false,
             androidScheme: 'https',
-            allowNavigation: ALLOW
+            allowNavigation: app.allow || AUTISM_SCANNER_ALLOW
         },
         android: { allowMixedContent: false }
     };
     const existing = JSON.parse(fs.readFileSync(path.join(base, 'capacitor.config.json'), 'utf8'));
-    config.appId = existing.appId;
-    config.appName = existing.appName;
+    if (!app.appId) config.appId = existing.appId;
+    if (app.dir !== 'scanner-mobile') config.appName = existing.appName;
     fs.writeFileSync(path.join(base, 'capacitor.config.json'), JSON.stringify(config, null, 2) + '\n');
 
     const wwwIndex = path.join(base, 'www', 'index.html');
@@ -70,7 +81,10 @@ function writeConfig(app) {
     console.log('[config]', app.dir, '→', app.url);
 }
 
-for (const app of APPS) {
+const scannerOnly = process.argv.includes('--scanner-only');
+const appsToSync = scannerOnly ? APPS.filter((a) => a.dir === 'scanner-mobile') : APPS;
+
+for (const app of appsToSync) {
     writeConfig(app);
     const cwd = path.join(root, app.dir);
     if (!fs.existsSync(path.join(cwd, 'node_modules'))) {
@@ -84,6 +98,7 @@ for (const app of APPS) {
     if (fs.existsSync(assetCfg)) {
         const j = JSON.parse(fs.readFileSync(assetCfg, 'utf8'));
         console.log('[verified]', app.dir, 'android asset url =', j.server && j.server.url);
+        console.log('[verified]', app.dir, 'allowNavigation =', (j.server && j.server.allowNavigation) || []);
     }
 }
 

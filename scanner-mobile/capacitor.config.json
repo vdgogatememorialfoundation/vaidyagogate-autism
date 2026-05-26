@@ -1,6 +1,6 @@
 {
-  "appId": "org.vaidyagogate.scanner",
-  "appName": "VGMF Scanner",
+  "appId": "org.vaidyagogate.autism.scanner",
+  "appName": "Autism Check-in",
   "webDir": "www",
   "server": {
     "url": "https://autism.vaidyagogate.org/scanner.html",
@@ -9,8 +9,7 @@
     "androidScheme": "https",
     "allowNavigation": [
       "https://autism.vaidyagogate.org",
-      "https://seminar.vaidyagogate.org",
-      "https://vaidyagogate-seminar.vercel.app"
+      "https://autism-flax.vercel.app"
     ]
   },
   "android": {

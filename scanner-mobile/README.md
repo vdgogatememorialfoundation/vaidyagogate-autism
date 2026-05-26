@@ -1,16 +1,31 @@
-# VGMF Scanner — Android APK
+# Autism Check-in Scanner — Android APK
 
-This wraps your **live** scanner page in a native Android shell (Capacitor). The app loads:
+Native Android wrapper (Capacitor) for **autism.vaidyagogate.org only**.
 
-`https://autism.vaidyagogate.org/scanner.html`
-
-so you can update the scanner UI on the server without republishing the APK.
+- Loads: `https://autism.vaidyagogate.org/scanner.html`
+- **Does not** allow navigation to seminar.vaidyagogate.org or other portals
+- App id: `org.vaidyagogate.autism.scanner` (separate from the VGMF seminar scanner APK)
 
 ## Prerequisites
 
 - Node.js 20+
 - [Android Studio](https://developer.android.com/studio) with Android SDK
 - JDK 17
+
+## Build (Windows)
+
+From repo root:
+
+```powershell
+.\scripts\build-autism-scanner-apk.ps1
+```
+
+Output:
+
+- `Autism-Scanner-debug.apk` (repo root)
+- `public\downloads\autism-scanner.apk` (for website download)
+
+Staff download page: **https://autism.vaidyagogate.org/scanner-download.html**
 
 ## Setup (once)
 
@@ -19,71 +34,24 @@ cd scanner-mobile
 npm install
 ```
 
-Edit `capacitor.config.json` and set `server.url` to your live URL, for example:
-
-```json
-"server": {
-  "url": "https://seminar.yourdomain.com/scanner.html",
-  "cleartext": false
-}
-```
-
-For local testing only:
-
-```json
-"url": "http://YOUR-PC-LAN-IP:3000/scanner.html",
-"cleartext": true
-```
-
-## Build debug APK (quick test)
-
-```bash
-npx cap sync android
-cd android
-./gradlew assembleDebug
-```
-
-APK output:
-
-`android/app/build/outputs/apk/debug/app-debug.apk`
-
-Copy to staff phones and install (enable “Install unknown apps”).
-
-## Public download (website)
-
-After building, copy the APK for deployment:
+## Manual build
 
 ```powershell
-Copy-Item VGMF-Scanner-debug.apk public\downloads\vgmf-scanner.apk
-```
-
-Staff can download from: **https://autism.vaidyagogate.org/scanner-download.html**
-
-## Build release APK (production)
-
-1. Create a keystore (once):
-
-```bash
-keytool -genkey -v -keystore vgmf-scanner.keystore -alias vgmf -keyalg RSA -keysize 2048 -validity 10000
-```
-
-2. Add signing config in `android/app/build.gradle` (see [Capacitor Android docs](https://capacitorjs.com/docs/android)).
-
-3. Build:
-
-```bash
+node scripts/sync-mobile-capacitor.js --scanner-only
+cd scanner-mobile
+npx cap sync android
 cd android
-./gradlew assembleRelease
+.\gradlew.bat assembleDebug
 ```
 
-Release APK: `android/app/build/outputs/apk/release/app-release.apk`
+APK: `scanner-mobile/android/app/build/outputs/apk/debug/app-debug.apk`
 
-## Permissions
+## Staff accounts
 
-The WebView needs **camera** for QR scanning. `AndroidManifest.xml` should include `CAMERA` (Capacitor adds this on sync).
+Create **Scanner (volunteer)** users in Admin → Staff users. Enable **check-in** on the event before scanning.
 
 ## Notes
 
-- Staff must use **scanner accounts** created in Admin → Staff users.
-- HTTPS is required on production (`cleartext: false`).
-- After changing `server.url`, run `npx cap sync android` and rebuild.
+- HTTPS required in production (`cleartext: false`).
+- After changing `capacitor.config.json`, run sync and rebuild.
+- The web app verifies `productId: autism` on load; wrong hosts are blocked in the native shell.
