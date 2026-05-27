@@ -1538,7 +1538,7 @@
         drawHeader();
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
-        doc.text('Pre-registration application form', marginX, y);
+        doc.text('Pre-registration submission form', marginX, y);
         y += 9;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
@@ -1549,28 +1549,75 @@
         doc.text('Status: ' + String(row.status || 'submitted').replace(/_/g, ' '), marginX, y);
         y += 8;
 
-        const entries = Object.keys(fd).map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])]);
+        const groupedEntries = [
+            {
+                title: 'Parent details',
+                items: Object.keys(fd)
+                    .filter((k) => k.startsWith('parent_'))
+                    .map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])])
+            },
+            {
+                title: 'Child details',
+                items: Object.keys(fd)
+                    .filter((k) => k.startsWith('child_'))
+                    .map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])])
+            },
+            {
+                title: 'Address',
+                items: ['address', 'pin', 'city', 'state', 'country']
+                    .filter((k) => Object.prototype.hasOwnProperty.call(fd, k))
+                    .map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])])
+            },
+            {
+                title: 'Programme information',
+                items: Object.keys(fd)
+                    .filter(
+                        (k) =>
+                            !k.startsWith('parent_') &&
+                            !k.startsWith('child_') &&
+                            !['address', 'pin', 'city', 'state', 'country'].includes(k)
+                    )
+                    .map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])])
+            }
+        ];
         doc.setDrawColor(226, 232, 240);
         doc.line(marginX, y, pageW - marginX, y);
         y += 6;
 
-        entries.forEach(([label, value]) => {
-            const valueLines = doc.splitTextToSize(value, lineMaxW);
-            const blockH = Math.max(6, valueLines.length * 5 + 1);
-            if (y + blockH > pageH - 18) {
+        groupedEntries.forEach((group) => {
+            if (!group.items.length) return;
+            if (y + 10 > pageH - 18) {
                 drawFooter(doc.getNumberOfPages());
                 doc.addPage();
                 drawHeader();
                 y = 30;
             }
             doc.setFont('helvetica', 'bold');
-            doc.text(label + ':', marginX, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(valueLines, valueX, y);
-            y += blockH;
+            doc.setFontSize(10.5);
+            doc.setTextColor(15, 118, 110);
+            doc.text(group.title, marginX, y);
+            doc.setTextColor(0, 0, 0);
+            y += 6;
+            group.items.forEach(([label, value]) => {
+                const valueLines = doc.splitTextToSize(value, lineMaxW);
+                const blockH = Math.max(6, valueLines.length * 5 + 1);
+                if (y + blockH > pageH - 18) {
+                    drawFooter(doc.getNumberOfPages());
+                    doc.addPage();
+                    drawHeader();
+                    y = 30;
+                }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text(label + ':', marginX, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(valueLines, valueX, y);
+                y += blockH;
+            });
+            y += 3;
         });
         drawFooter(doc.getNumberOfPages());
-        doc.save('prereg-' + (row.application_no || row.id) + '.pdf');
+        doc.save('Pre_Registration_' + (row.application_no || row.id) + '.pdf');
     }
     window.downloadPreregPdf = downloadPreregPdf;
 

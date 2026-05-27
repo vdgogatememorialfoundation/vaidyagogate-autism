@@ -3818,7 +3818,7 @@ async function generateAutismRegistrationPdfBlob(qrImgElement) {
     const seminarName = getSeminarTitleForRegistrationPdf();
     let y = pdfCongressHeader(doc, {
         seminarName,
-        footerLine: 'Autism programme — main registration preview'
+        footerLine: 'Main registration application form (draft)'
     });
     const drawSection = (title) => {
         y = pdfCongressSectionTitle(doc, y + 4, title, accent, ink);
@@ -3889,7 +3889,7 @@ function downloadPdf() {
         const a = document.createElement('a');
         a.href = currentPdfBlobUrl;
         const no = window.__draftApplicationNo || 'Draft';
-        a.download = `Application_${no}.pdf`;
+        a.download = `Main_Registration_Draft_${no}.pdf`;
         a.click();
     }
 }
@@ -4766,6 +4766,51 @@ async function doctorPollPaymentStatus() {
 
 let currentlyViewedApp = null;
 
+function formatSubmittedFieldLabel(key) {
+    const customLabels = {
+        fname: 'First name',
+        mname: 'Middle name',
+        lname: 'Last name',
+        email: 'Email',
+        phone: 'Phone',
+        dob: 'Date of birth',
+        address: 'Address',
+        city: 'City',
+        state: 'State',
+        pin: 'PIN code',
+        country: 'Country'
+    };
+    if (customLabels[key]) return customLabels[key];
+    if (key.startsWith('regfield_')) {
+        return key
+            .slice('regfield_'.length)
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return String(key || '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function buildSubmittedRowsHtml(formData) {
+    const keys = Object.keys(formData || {}).filter((k) => formData[k] != null && String(formData[k]).trim() !== '');
+    if (!keys.length) {
+        return '<p style="color:#64748b;">No submitted details were found for this application.</p>';
+    }
+    return keys
+        .map((k) => {
+            const value = String(formData[k]);
+            return (
+                '<div class="preview-row"><span class="lbl">' +
+                escapeHtml(formatSubmittedFieldLabel(k)) +
+                '</span><span class="val">' +
+                escapeHtml(value) +
+                '</span></div>'
+            );
+        })
+        .join('');
+}
+
 function refreshOpenApplicationTrackerFromList(apps) {
     if (!currentlyViewedApp || !isApplicationDetailModalOpen()) return;
     const fresh = (apps || []).find((a) => Number(a.id) === Number(currentlyViewedApp.id));
@@ -4809,28 +4854,21 @@ function viewApplication(index) {
     } catch(e){}
 
     const contentDiv = document.getElementById('view-app-content');
-    contentDiv.innerHTML = `
-        <p><strong>Application No:</strong> ${app.application_no}</p>
-        <p id="view-app-status"><strong>Status:</strong> <span style="color: #10b981; font-weight: bold;">${app.status.toUpperCase()}</span></p>
-        <hr style="margin: 10px 0; border: 0; border-top: 1px solid #cbd5e1;">
-        <h4 style="color: #475569; margin-bottom: 5px;">Step 1: Personal Details</h4>
-        <p><strong>Name:</strong> ${formData.fname || ''} ${formData.mname || ''} ${formData.lname || ''}</p>
-        <p><strong>Email:</strong> ${formData.email || ''}</p>
-        <p><strong>Phone:</strong> ${formData.phone || ''}</p>
-        <hr style="margin: 10px 0; border: 0; border-top: 1px solid #cbd5e1;">
-        <h4 style="color: #475569; margin-bottom: 5px;">Step 2: Address Details</h4>
-        <p><strong>Address:</strong> ${formData.address || ''}</p>
-        <p><strong>Location:</strong> ${formData.city || ''}, ${formData.state || ''} - ${formData.pin || ''}</p>
-        <hr style="margin: 10px 0; border: 0; border-top: 1px solid #cbd5e1;">
-        <h4 style="color: #475569; margin-bottom: 5px;">Step 3 & 4: Education & College</h4>
-        <p><strong>Qualification:</strong> ${formData.qual || ''}</p>
-        ${formData.qual === 'PG' ? `<p><strong>NCISM ID:</strong> ${formData.ncism}</p>` : ''}
-        <p><strong>College:</strong> ${formData.college || ''}</p>
-        <p><strong>Location:</strong> ${formData.ccity || ''}, ${formData.cstate || ''}</p>
-        <hr style="margin: 16px 0; border: 0; border-top: 1px solid #cbd5e1;">
-        <h4 style="color: #1a237e; margin-bottom: 12px;"><i class="fas fa-route"></i> Seminar registration tracking</h4>
-        <div id="view-app-tracking"></div>
-    `;
+    contentDiv.innerHTML =
+        '<p><strong>Application No:</strong> ' +
+        escapeHtml(app.application_no || '—') +
+        '</p>' +
+        '<p id="view-app-status"><strong>Status:</strong> <span style="color: #10b981; font-weight: bold;">' +
+        escapeHtml(String(app.status || '').toUpperCase()) +
+        '</span></p>' +
+        '<hr style="margin: 10px 0; border: 0; border-top: 1px solid #cbd5e1;">' +
+        '<h4 style="color:#475569;margin-bottom:8px;"><i class="fas fa-file-alt"></i> Main registration submission</h4>' +
+        '<div style="margin-bottom:16px;">' +
+        buildSubmittedRowsHtml(formData) +
+        '</div>' +
+        '<hr style="margin: 16px 0; border: 0; border-top: 1px solid #cbd5e1;">' +
+        '<h4 style="color: #1a237e; margin-bottom: 12px;"><i class="fas fa-route"></i> Main registration tracking</h4>' +
+        '<div id="view-app-tracking"></div>';
     const trackEl = document.getElementById('view-app-tracking');
     if (trackEl) {
         let extra = renderTrackerStepsHtml(app.timeline || {});
@@ -4884,7 +4922,7 @@ async function downloadViewedAppPdf() {
 
     let y = pdfCongressHeader(doc, {
         seminarName,
-        footerLine: 'Submitted main registration application'
+        footerLine: 'Main registration submission'
     });
 
     const drawSection = (title) => {
@@ -4996,7 +5034,7 @@ async function downloadViewedAppPdf() {
         doc.text(tLines, 14, y);
     }
     
-    doc.save(`Application_${app.application_no}.pdf`);
+    doc.save(`Main_Registration_${app.application_no || app.id}.pdf`);
 }
 
 function loadEasebuzzCheckoutScript() {
