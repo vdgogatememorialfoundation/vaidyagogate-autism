@@ -547,7 +547,7 @@
     }
 
     const PREREG_FORM_DEFAULT_V2 = {
-        version: 2,
+        version: 3,
         fields: [
             { key: 'parent_name', label: 'Full Name (Parents)', type: 'text', step: 1, enabled: true, required: true },
             {
@@ -580,6 +580,7 @@
             { key: 'address', label: 'Full Address', type: 'textarea', step: 3, enabled: true, required: true },
             { key: 'pin', label: 'Pincode', type: 'text', step: 3, enabled: true, required: true },
             { key: 'city', label: 'City', type: 'text', step: 3, enabled: true, required: true },
+            { key: 'state', label: 'State', type: 'text', step: 3, enabled: true, required: true },
             {
                 key: 'country',
                 label: 'Country',
@@ -690,6 +691,37 @@
         document.getElementById('ak-prereg-save-fields-btn')?.addEventListener('click', () => saveAdminPreregFormConfig());
     }
 
+    function injectEventManagementFormGuide() {
+        const tab = document.getElementById('tab-seminars');
+        if (!tab || document.getElementById('ak-event-form-guide-card')) return;
+        const firstCard = tab.querySelector('.card');
+        if (!firstCard) return;
+        const card = document.createElement('div');
+        card.id = 'ak-event-form-guide-card';
+        card.className = 'card';
+        card.style.cssText = 'margin-bottom:14px;border-left:4px solid #0d9488;background:#f0fdfa;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 8px;color:#0f766e;">Event forms: Pre-registration + Main registration</h3>' +
+            '<p style="font-size:0.88rem;color:#475569;margin:0 0 10px;">This event workflow uses two configurable forms: <strong>Pre-registration</strong> first, then <strong>Main registration</strong>. Set event dates here, and manage all fields in Registration Form Fields.</p>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+            '<button type="button" class="btn-primary" style="background:#0d9488;" id="ak-open-prereg-editor">Open pre-registration fields</button>' +
+            '<button type="button" class="btn-primary" style="background:#2563eb;" id="ak-open-mainreg-editor">Open main registration fields</button>' +
+            '</div>';
+        tab.insertBefore(card, firstCard);
+        document.getElementById('ak-open-prereg-editor')?.addEventListener('click', () => {
+            if (typeof window.switchTab === 'function') window.switchTab('tab-reg-form');
+            setTimeout(() => {
+                document.getElementById('ak-prereg-form-editor-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+        });
+        document.getElementById('ak-open-mainreg-editor')?.addEventListener('click', () => {
+            if (typeof window.switchTab === 'function') window.switchTab('tab-reg-form');
+            setTimeout(() => {
+                document.getElementById('admin-reg-fields-tbody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+        });
+    }
+
     function renderPreregFieldEditorRows() {
         const tbody = document.getElementById('ak-prereg-editor-tbody');
         if (!tbody) return;
@@ -784,7 +816,7 @@
             fields.push(row);
         }
         try {
-            const payload = { version: 2, fields };
+            const payload = { version: 3, fields };
             const r = await fetch('/api/admin/preregistration-form-config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -849,6 +881,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
+        injectEventManagementFormGuide();
         injectPreregFormResetCard();
         ensurePreregFormEditorCard();
         patchSaveSeminar();

@@ -346,10 +346,20 @@
                 if (cityEl.tagName === 'SELECT') fillPreregSelectOptions(cityEl, cities, 'Select city');
                 else if (cities.length === 1) cityEl.value = cities[0];
             }
+            const stateEl = document.getElementById('prereg-field-state');
+            if (stateEl && (data.states || []).length) {
+                if (stateEl.tagName === 'SELECT') {
+                    fillPreregSelectOptions(stateEl, data.states || [], 'Select state');
+                } else {
+                    stateEl.value = (data.states && data.states[0]) || '';
+                }
+            }
             const countryEl = document.getElementById('prereg-field-country');
             if (countryEl) countryEl.value = data.country || 'India';
             setPreregPinHint(
-                cities.length > 1 ? 'Multiple cities for this pincode — choose one' : 'City and country filled from pincode'
+                cities.length > 1
+                    ? 'Multiple cities for this pincode — choose one (state auto-filled)'
+                    : 'City, state and country filled from pincode'
             );
         } catch (_) {
             setPreregPinHint('Could not look up pincode. Check your connection and try again.', true);
@@ -647,6 +657,35 @@
         document.getElementById('prereg-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
+    function preregFieldLabel(key) {
+        const map = {
+            parent_name: 'Full Name (Parents)',
+            parent_gender: 'Gender (Parent)',
+            parent_dob: 'Date of Birth (Parent)',
+            child_name: "Child's Name",
+            child_gender: 'Gender (Child)',
+            child_dob: 'Date of Birth (Child)',
+            address: 'Full Address',
+            pin: 'Pincode',
+            city: 'City',
+            state: 'State',
+            country: 'Country',
+            attendees_count: 'Number of People Attending',
+            child_health: "Child's Health",
+            diet: 'Diet',
+            financial_planning: 'Financial Planning'
+        };
+        return map[key] || String(key || '').replace(/_/g, ' ');
+    }
+
+    function preregPdfGeneratedAt() {
+        if (window.PortalDateTime && window.PortalDateTime.nowIso) {
+            const iso = window.PortalDateTime.nowIso();
+            return window.PortalDateTime.formatLong(iso) || iso;
+        }
+        return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+    }
+
     async function downloadPreregPdf(row) {
         if (!row || !window.jspdf) {
             alert('PDF download is not available. Refresh the page and try again.');
@@ -658,27 +697,71 @@
         } catch (_) {}
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        let y = 18;
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const marginX = 14;
+        const valueX = 66;
+        const lineMaxW = pageW - valueX - marginX;
+
+        function drawHeader() {
+            doc.setFillColor(15, 118, 110);
+            doc.rect(0, 0, pageW, 24, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('Autism Awareness Programme', marginX, 10);
+            doc.setFontSize(10);
+            doc.text('Vaidya Gogate Memorial Foundation', marginX, 16);
+            doc.setTextColor(0, 0, 0);
+        }
+
+        function drawFooter(pageNo) {
+            doc.setDrawColor(203, 213, 225);
+            doc.line(marginX, pageH - 14, pageW - marginX, pageH - 14);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(71, 85, 105);
+            doc.text('Generated: ' + preregPdfGeneratedAt(), marginX, pageH - 9);
+            doc.text('Page ' + pageNo, pageW - marginX - 16, pageH - 9);
+            doc.setTextColor(0, 0, 0);
+        }
+
+        let y = 30;
+        drawHeader();
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
-        doc.text('Pre-registration application', 14, y);
-        y += 10;
+        doc.text('Pre-registration application', marginX, y);
+        y += 9;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.text('Application no.: ' + (row.application_no || '—'), 14, y);
+        doc.text('Application no.: ' + (row.application_no || '—'), marginX, y);
         y += 6;
-        doc.text('Event: ' + (row.seminar_title || row.seminar_id || '—'), 14, y);
+        doc.text('Event: ' + (row.seminar_title || row.seminar_id || '—'), marginX, y);
         y += 6;
-        doc.text('Status: ' + String(row.status || 'submitted').replace(/_/g, ' '), 14, y);
-        y += 10;
-        Object.keys(fd).forEach((k) => {
-            if (y > 270) {
+        doc.text('Status: ' + String(row.status || 'submitted').replace(/_/g, ' '), marginX, y);
+        y += 8;
+
+        const entries = Object.keys(fd).map((k) => [preregFieldLabel(k), fd[k] == null ? '' : String(fd[k])]);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(marginX, y, pageW - marginX, y);
+        y += 6;
+
+        entries.forEach(([label, value]) => {
+            const valueLines = doc.splitTextToSize(value, lineMaxW);
+            const blockH = Math.max(6, valueLines.length * 5 + 1);
+            if (y + blockH > pageH - 18) {
+                drawFooter(doc.getNumberOfPages());
                 doc.addPage();
-                y = 18;
+                drawHeader();
+                y = 30;
             }
-            doc.text(k + ': ' + String(fd[k] == null ? '' : fd[k]).slice(0, 120), 14, y);
-            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text(label + ':', marginX, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(valueLines, valueX, y);
+            y += blockH;
         });
+        drawFooter(doc.getNumberOfPages());
         doc.save('prereg-' + (row.application_no || row.id) + '.pdf');
     }
     window.downloadPreregPdf = downloadPreregPdf;

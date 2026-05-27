@@ -92,6 +92,7 @@
         address: 'Full Address',
         pin: 'Pincode',
         city: 'City',
+        state: 'State',
         country: 'Country',
         attendees_count: 'Number of People Attending',
         child_health: "Child's Health",
