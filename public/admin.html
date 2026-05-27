@@ -1786,6 +1786,16 @@
             <!-- 5. Global Settings & CMS -->
             <div id="tab-settings" class="tab-pane hidden">
                 <h2 style="margin-bottom: 20px;">CMS Global Settings</h2>
+                <div class="card" style="margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;">
+                    <h3 style="margin:0 0 8px;color:#0f766e;">Notices &amp; applicant updates</h3>
+                    <p style="color:#475569;font-size:0.9rem;margin:0 0 12px;">
+                        Add main site notices and applicant dashboard updates from here.
+                    </p>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <button type="button" class="btn-primary" onclick="switchTab('tab-announcements')">Open Announcements</button>
+                        <button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Open Website &amp; dashboard updates</button>
+                    </div>
+                </div>
                 <div class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
                         <h3>Site Configuration</h3>
