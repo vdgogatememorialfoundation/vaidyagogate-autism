@@ -930,9 +930,65 @@
         window.__autismAppsPatched = true;
     }
 
+    async function injectAnnouncementsNoticeCard() {
+        const tab = document.getElementById('tab-announcements');
+        if (!tab || document.getElementById('ak-ann-notice-card')) return;
+        if (!cachedSeminars.length) await loadMainSeminarMessaging();
+        const card = document.createElement('div');
+        card.id = 'ak-ann-notice-card';
+        card.className = 'card';
+        card.style.cssText = 'margin-bottom:20px;border-left:4px solid #0d9488;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 8px;">Programme notice (all participants)</h3>' +
+            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Posts to participant dashboards (and linked events). Optional PDF attachment.</p>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;margin-bottom:12px;">' +
+            '<div><label style="font-size:0.82rem;font-weight:700;">Event (optional)</label><select id="ak-ann-notice-seminar" style="width:100%;padding:8px;"><option value="">All participants</option></select></div>' +
+            '</div>' +
+            '<textarea id="ak-ann-notice-msg" rows="3" placeholder="Notice message" style="width:100%;max-width:720px;margin-bottom:10px;"></textarea>' +
+            '<input type="file" id="ak-ann-notice-pdf" accept="application/pdf" style="max-width:360px;margin-bottom:10px;display:block;">' +
+            '<button type="button" class="btn-primary" id="ak-ann-notice-post">Post programme notice</button>' +
+            '<p id="ak-ann-notice-msg-status" style="margin-top:10px;font-size:0.85rem;font-weight:600;"></p>';
+        const ref = document.getElementById('ak-main-seminar-messaging') || tab.querySelector('.card');
+        if (ref && ref.parentNode) ref.parentNode.insertBefore(card, ref.nextSibling);
+        else tab.appendChild(card);
+        const sel = document.getElementById('ak-ann-notice-seminar');
+        if (sel && cachedSeminars.length) {
+            cachedSeminars.forEach((s) => {
+                const o = document.createElement('option');
+                o.value = s.id;
+                o.textContent = s.title || 'Event ' + s.id;
+                sel.appendChild(o);
+            });
+        }
+        document.getElementById('ak-ann-notice-post')?.addEventListener('click', async () => {
+            const status = document.getElementById('ak-ann-notice-msg-status');
+            const sid = document.getElementById('ak-ann-notice-seminar')?.value;
+            if (typeof window.postAdminNoticeForm !== 'function') {
+                if (status) {
+                    status.textContent = 'Notice form not ready — refresh the page.';
+                    status.style.color = '#b91c1c';
+                }
+                return;
+            }
+            const ok = await window.postAdminNoticeForm({
+                seminarId: sid || null,
+                msgEl: document.getElementById('ak-ann-notice-msg'),
+                pdfEl: document.getElementById('ak-ann-notice-pdf')
+            });
+            if (status) {
+                status.textContent = ok ? 'Notice posted.' : '';
+                status.style.color = ok ? '#047857' : '#b91c1c';
+            }
+        });
+    }
+
     function injectMainSeminarMessaging() {
         const tab = document.getElementById('tab-announcements');
-        if (!tab || document.getElementById('ak-main-seminar-messaging')) return;
+        if (!tab) return;
+        if (document.getElementById('ak-main-seminar-messaging')) {
+            loadMainSeminarMessaging().then(() => injectAnnouncementsNoticeCard());
+            return;
+        }
         const card = document.createElement('div');
         card.id = 'ak-main-seminar-messaging';
         card.className = 'card';
@@ -951,7 +1007,7 @@
             '</div>' +
             '<p id="ak-main-seminar-msg" style="margin:10px 0 0;font-size:0.85rem;"></p>';
         tab.insertBefore(card, tab.querySelector('.card'));
-        loadMainSeminarMessaging();
+        loadMainSeminarMessaging().then(() => injectAnnouncementsNoticeCard());
         document.getElementById('ak-save-main-seminar-wa')?.addEventListener('click', saveMainSeminarWhatsapp);
         document.getElementById('ak-main-seminar-select')?.addEventListener('change', loadMainSeminarWhatsappField);
     }
@@ -1036,13 +1092,23 @@
                 status.style.color = '#64748b';
             }
             try {
-                const r = await fetch('/api/admin/autism-site-images/upload', {
-                    method: 'POST',
-                    body: fd,
-                    credentials: 'same-origin'
-                });
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(data.error || r.statusText);
+                const data =
+                    typeof window.autismAdminFetch === 'function'
+                        ? await window.autismAdminFetch('/api/admin/autism-site-images/upload', {
+                              method: 'POST',
+                              body: fd
+                          })
+                        : await (async () => {
+                              const r = await fetch(
+                                  typeof withActingAdminUrl === 'function'
+                                      ? withActingAdminUrl('/api/admin/autism-site-images/upload')
+                                      : '/api/admin/autism-site-images/upload',
+                                  { method: 'POST', body: fd, credentials: 'same-origin' }
+                              );
+                              const d = await r.json().catch(() => ({}));
+                              if (!r.ok) throw new Error(d.error || r.statusText);
+                              return d;
+                          })();
                 if (status) {
                     status.textContent =
                         'Uploaded ' + (data.added || files.length) + ' image(s). Live on homepage now (IST ' +

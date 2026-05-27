@@ -8065,39 +8065,61 @@ async function setCountdownActive() {
     } catch(err) { console.error(err); }
 }
 
-async function addSeminarNotice() {
-    if (!currentManageSeminarId) return;
-    const msg = document.getElementById('notice-msg').value;
-    const pdfFile = document.getElementById('notice-pdf').files[0];
+async function postAdminNoticeForm(opts) {
+    const seminarId = opts && opts.seminarId != null ? opts.seminarId : currentManageSeminarId;
+    const msgEl = (opts && opts.msgEl) || document.getElementById('notice-msg');
+    const pdfEl = (opts && opts.pdfEl) || document.getElementById('notice-pdf');
+    const msg = msgEl ? msgEl.value : '';
+    const pdfFile = pdfEl && pdfEl.files && pdfEl.files[0];
 
-    if (!msg) return alert('Message is required.');
+    if (!msg || !String(msg).trim()) {
+        alert('Message is required.');
+        return false;
+    }
 
     const payload = new FormData();
-    payload.append('seminar_id', currentManageSeminarId);
-    payload.append('message', msg);
+    if (seminarId != null && seminarId !== '') payload.append('seminar_id', seminarId);
+    payload.append('message', String(msg).trim());
     if (pdfFile) payload.append('pdf', pdfFile);
 
+    const post =
+        typeof window.autismAdminFetch === 'function'
+            ? () => window.autismAdminFetch('/api/admin/notices', { method: 'POST', body: payload })
+            : async () => {
+                  const res = await fetch(
+                      typeof withActingAdminUrl === 'function'
+                          ? withActingAdminUrl('/api/admin/notices')
+                          : '/api/admin/notices',
+                      { method: 'POST', body: payload, credentials: 'same-origin' }
+                  );
+                  const result = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(result.error || res.statusText);
+                  return result;
+              };
+
     try {
-        const res = await fetch('/api/admin/notices', {
-            method: 'POST',
-            body: payload
-        });
-        const result = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            alert(result.error || 'Could not post notification (HTTP ' + res.status + ').');
-            return;
+        const result = await post();
+        if (result && result.success) {
+            alert('Notification posted. Participants will see it on their dashboard.');
+            if (msgEl) msgEl.value = '';
+            if (pdfEl) pdfEl.value = '';
+            return true;
         }
-        if (result.success) {
-            alert('Notification posted. Applicants tracking this event will see it on their dashboard.');
-            document.getElementById('notice-msg').value = '';
-            document.getElementById('notice-pdf').value = '';
-        } else {
-            alert(result.error || 'Post failed.');
-        }
+        alert((result && result.error) || 'Post failed.');
+        return false;
     } catch (err) {
         console.error(err);
         alert(err.message || 'Network error posting notification.');
+        return false;
     }
+}
+
+async function addSeminarNotice() {
+    if (!currentManageSeminarId) {
+        alert('Open Event management → Manage an event first, or use Announcements → Programme notice.');
+        return;
+    }
+    await postAdminNoticeForm({ seminarId: currentManageSeminarId });
 }
 
 function downloadParticipantsExcel() {
@@ -10705,12 +10727,32 @@ async function saveAdminSiteCms() {
             seo: cmsCollectSeoFieldsFromForm(),
             ...cmsCollectHeroFieldsFromForm()
         };
-        const res = await fetch('/api/admin/site-cms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cms })
-        });
-        const data = await res.json();
+        const save =
+            typeof window.autismAdminFetch === 'function'
+                ? () =>
+                      window.autismAdminFetch('/api/admin/site-cms', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ cms })
+                      })
+                : async () => {
+                      const url =
+                          typeof withActingAdminUrl === 'function'
+                              ? withActingAdminUrl('/api/admin/site-cms')
+                              : '/api/admin/site-cms';
+                      const res = await fetch(url, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'same-origin',
+                          body: JSON.stringify(
+                              typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
+                          )
+                      });
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok) throw new Error(data.error || res.statusText);
+                      return data;
+                  };
+        const data = await save();
         if (data.success) {
             setCmsSaveMessage('Website and portal content saved.', '#15803d');
         } else {
@@ -10718,7 +10760,7 @@ async function saveAdminSiteCms() {
         }
     } catch (e) {
         console.error(e);
-        setCmsSaveMessage('Network error — check your connection and try again.', '#b91c1c');
+        setCmsSaveMessage(e.message || 'Network error — check your connection and try again.', '#b91c1c');
     }
 }
 

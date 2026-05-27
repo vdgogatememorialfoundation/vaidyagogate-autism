@@ -4253,7 +4253,7 @@ app.get('/api/public/site-cms', (req, res) => {
     });
 });
 
-app.post('/api/admin/site-cms', (req, res) => {
+app.post('/api/admin/site-cms', autismPortal.createAdminGuard(assertAdminPortalActor), (req, res) => {
     const incoming = req.body && req.body.cms;
     if (!incoming || typeof incoming !== 'object') {
         return res.status(400).json({ error: 'cms object required' });
@@ -7161,7 +7161,11 @@ app.get('/api/admin/seminars/:id/capacity', (req, res) => {
 });
 
 // Admin: Add Notice
-app.post('/api/admin/notices', withMemoryAwareUpload('pdf'), (req, res) => {
+app.post(
+    '/api/admin/notices',
+    withMemoryAwareUpload('pdf'),
+    autismPortal.createAdminGuard(assertAdminPortalActor),
+    (req, res) => {
     const { seminar_id, message } = req.body;
     const finish = (pdfPath) => {
         const runInsert = () => {
@@ -7196,7 +7200,8 @@ app.post('/api/admin/notices', withMemoryAwareUpload('pdf'), (req, res) => {
         if (pErr) return res.status(500).json({ error: pErr.message });
         finish(stored ? stored.replace(/^\/uploads\//, '') : null);
     });
-});
+    }
+);
 
 // Admin: Get Seminar Live Scans
 app.get('/api/admin/seminars/:id/scans', (req, res) => {

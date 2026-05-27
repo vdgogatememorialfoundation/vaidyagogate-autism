@@ -14,6 +14,15 @@
         } catch (_) {
             /* ignore */
         }
+        try {
+            const u2 = JSON.parse(sessionStorage.getItem('admin_user') || 'null');
+            if (u2 && u2.id != null) {
+                const n2 = Number(u2.id);
+                if (Number.isInteger(n2) && n2 > 0) return n2;
+            }
+        } catch (_) {
+            /* ignore */
+        }
         return null;
     }
 
@@ -55,7 +64,10 @@
             } catch (_) {
                 /* leave body as-is */
             }
-        } else if (o.body && typeof o.body === 'object' && !(o.body instanceof FormData)) {
+        } else if (o.body instanceof FormData) {
+            const id = getActingAdminId();
+            if (id && !o.body.has('actingAdminId')) o.body.append('actingAdminId', String(id));
+        } else if (o.body && typeof o.body === 'object') {
             o.body = withActingAdminBody(o.body);
             if (!o.headers) o.headers = {};
             if (!o.headers['Content-Type']) o.headers['Content-Type'] = 'application/json';
