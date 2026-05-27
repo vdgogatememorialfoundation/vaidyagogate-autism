@@ -9232,8 +9232,10 @@ function cmsCollectScrollingAnnouncementsFromDom() {
         .filter((x) => x.title || x.body);
 }
 
-function cmsCollectPublicNoticesFromDom() {
-    const root = document.getElementById('cms-public-notice-rows');
+function cmsCollectPublicNoticesFromDom(rootId) {
+    const root = rootId
+        ? document.getElementById(rootId)
+        : document.getElementById('cms-public-notice-rows') || document.getElementById('ak-website-notice-rows');
     if (!root) return [];
     return Array.from(root.querySelectorAll('.cms-notice-row'))
         .map((row) => {
@@ -9251,8 +9253,10 @@ function cmsCollectPublicNoticesFromDom() {
         .filter((x) => x.title || x.body);
 }
 
-function cmsCollectDoctorUpdatesFromDom() {
-    const root = document.getElementById('cms-doctor-update-rows');
+function cmsCollectDoctorUpdatesFromDom(rootId) {
+    const root = rootId
+        ? document.getElementById(rootId)
+        : document.getElementById('cms-doctor-update-rows') || document.getElementById('ak-dashboard-update-rows');
     if (!root) return [];
     return Array.from(root.querySelectorAll('.cms-doc-row'))
         .map((row) => ({
@@ -9270,18 +9274,20 @@ function cmsFillScrollingRows(items) {
     (items || []).forEach((it) => cmsAddScrollingRow(it));
 }
 
-function cmsFillPublicNoticeRows(items) {
-    const root = document.getElementById('cms-public-notice-rows');
+function cmsFillPublicNoticeRows(items, rootId) {
+    const rid = rootId || 'cms-public-notice-rows';
+    const root = document.getElementById(rid);
     if (!root) return;
     root.innerHTML = '';
-    (items || []).forEach((it) => cmsAddPublicNoticeRow(it));
+    (items || []).forEach((it) => cmsAddPublicNoticeRow(it, rid));
 }
 
-function cmsFillDoctorRows(items) {
-    const root = document.getElementById('cms-doctor-update-rows');
+function cmsFillDoctorRows(items, rootId) {
+    const rid = rootId || 'cms-doctor-update-rows';
+    const root = document.getElementById(rid);
     if (!root) return;
     root.innerHTML = '';
-    (items || []).forEach((it) => cmsAddDoctorUpdateRow(it));
+    (items || []).forEach((it) => cmsAddDoctorUpdateRow(it, rid));
 }
 
 function cmsGroupGalleryFlat(items) {
@@ -9526,8 +9532,9 @@ function cmsAddScrollingRow(prefill) {
     root.appendChild(wrap);
 }
 
-function cmsAddPublicNoticeRow(prefill) {
-    const root = document.getElementById('cms-public-notice-rows');
+function cmsAddPublicNoticeRow(prefill, rootId) {
+    const rid = rootId || 'cms-public-notice-rows';
+    const root = document.getElementById(rid);
     if (!root) return;
     const p = prefill || {};
     const wrap = document.createElement('div');
@@ -9558,8 +9565,9 @@ function cmsAddPublicNoticeRow(prefill) {
     root.appendChild(wrap);
 }
 
-function cmsAddDoctorUpdateRow(prefill) {
-    const root = document.getElementById('cms-doctor-update-rows');
+function cmsAddDoctorUpdateRow(prefill, rootId) {
+    const rid = rootId || 'cms-doctor-update-rows';
+    const root = document.getElementById(rid);
     if (!root) return;
     const p = prefill || {};
     const wrap = document.createElement('div');
@@ -10687,6 +10695,85 @@ function setCmsSaveMessage(text, color) {
         el.innerText = text || '';
         if (color) el.style.color = color;
     });
+}
+
+function setAkContentSaveMessage(which, text, color) {
+    const el = document.getElementById(which === 'website' ? 'ak-website-notices-msg' : 'ak-dashboard-updates-msg');
+    if (!el) return;
+    el.textContent = text || '';
+    if (color) el.style.color = color;
+}
+
+async function saveCmsContentPartial(patch, msgWhich) {
+    const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+    const current = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(current.error || 'Could not load current website content');
+    const cms = { ...(current || {}), ...(patch || {}) };
+    const save =
+        typeof window.autismAdminFetch === 'function'
+            ? () =>
+                  window.autismAdminFetch('/api/admin/site-cms', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ cms })
+                  })
+            : async () => {
+                  const url =
+                      typeof withActingAdminUrl === 'function'
+                          ? withActingAdminUrl('/api/admin/site-cms')
+                          : '/api/admin/site-cms';
+                  const r = await fetch(url, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'same-origin',
+                      body: JSON.stringify(
+                          typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
+                      )
+                  });
+                  const data = await r.json().catch(() => ({}));
+                  if (!r.ok) throw new Error(data.error || r.statusText);
+                  return data;
+              };
+    const data = await save();
+    if (!data.success) throw new Error(data.error || 'Save failed');
+    if (msgWhich) setAkContentSaveMessage(msgWhich, 'Saved successfully.', '#047857');
+    return data;
+}
+
+async function saveWebsitePortalNoticesOnly() {
+    setAkContentSaveMessage('website', '');
+    try {
+        const publicNotices = cmsCollectPublicNoticesFromDom('ak-website-notice-rows');
+        await saveCmsContentPartial({ publicNotices }, 'website');
+    } catch (e) {
+        setAkContentSaveMessage('website', e.message || 'Save failed', '#b91c1c');
+    }
+}
+
+async function saveApplicantDashboardUpdatesOnly() {
+    setAkContentSaveMessage('dashboard', '');
+    try {
+        const doctorUpdates = cmsCollectDoctorUpdatesFromDom('ak-dashboard-update-rows');
+        await saveCmsContentPartial({ doctorUpdates }, 'dashboard');
+    } catch (e) {
+        setAkContentSaveMessage('dashboard', e.message || 'Save failed', '#b91c1c');
+    }
+}
+
+async function loadAkContentUpdatesTab() {
+    const webRoot = document.getElementById('ak-website-notice-rows');
+    const dashRoot = document.getElementById('ak-dashboard-update-rows');
+    if (!webRoot && !dashRoot) return;
+    try {
+        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+        const cms = await res.json();
+        if (!res.ok) throw new Error(cms.error || 'Could not load');
+        if (webRoot) cmsFillPublicNoticeRows(cms.publicNotices || [], 'ak-website-notice-rows');
+        if (dashRoot) cmsFillDoctorRows(cms.doctorUpdates || [], 'ak-dashboard-update-rows');
+    } catch (e) {
+        if (webRoot) webRoot.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
+        if (dashRoot) dashRoot.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Load failed') + '</p>';
+    }
 }
 
 async function saveAdminSiteCms() {

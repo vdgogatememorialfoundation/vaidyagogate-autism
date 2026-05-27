@@ -88,15 +88,29 @@
             }
             if (global.length) {
                 html +=
-                    '<li style="list-style:none;margin:12px 0 8px;padding:0;"><span style="font-size:0.75rem;font-weight:800;color:#0369a1;text-transform:uppercase;">Updates</span></li>';
+                    '<li style="list-style:none;margin:12px 0 8px;padding:0;"><span style="font-size:0.75rem;font-weight:800;color:#0369a1;text-transform:uppercase;">Programme updates</span></li>';
                 global.forEach((u) => {
+                    const pdfHref = u.pdf_path
+                        ? u.pdf_path.startsWith('/')
+                            ? u.pdf_path
+                            : '/uploads/' + u.pdf_path
+                        : '';
                     html +=
-                        '<li style="margin-bottom:10px;list-style:none;">' +
+                        '<li style="margin-bottom:10px;list-style:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;">' +
                         '<strong>' +
                         esc(u.title) +
                         '</strong>' +
                         (u.body ? '<div style="margin-top:4px;color:#475569;">' + esc(u.body) + '</div>' : '') +
-                        (u.at ? '<div style="margin-top:4px;font-size:0.78rem;color:#94a3b8;">' + esc(formatAt(u.at)) + '</div>' : '') +
+                        (pdfHref
+                            ? '<div style="margin-top:6px;"><a href="' +
+                              esc(pdfHref) +
+                              '" target="_blank" rel="noopener" style="color:#0d9488;font-size:0.85rem;"><i class="fas fa-file-pdf"></i> View PDF</a></div>'
+                            : '') +
+                        (u.at || u.created_at
+                            ? '<div style="margin-top:4px;font-size:0.78rem;color:#94a3b8;">' +
+                              esc(formatAt(u.at || u.created_at)) +
+                              '</div>'
+                            : '') +
                         '</li>';
                 });
             }

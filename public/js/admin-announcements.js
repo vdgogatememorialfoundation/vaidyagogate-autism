@@ -1,5 +1,5 @@
 /**
- * Admin: per-participant announcements + shortcuts to site-wide CMS.
+ * Admin: website notices, applicant dashboard updates, targeted announcements.
  */
 (function () {
     'use strict';
@@ -21,45 +21,44 @@
     }
 
     async function loadList() {
-        const tbody = document.getElementById('ak-ann-admin-tbody');
-        if (!tbody) return;
+        const host = document.getElementById('ak-ann-admin-list');
+        if (!host) return;
         const userId = document.getElementById('ak-ann-filter-user')?.value?.trim();
         let url = '/api/admin/applicant-announcements';
         if (userId) url += '?userId=' + encodeURIComponent(userId);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading…</td></tr>';
+        host.innerHTML = '<p style="color:#64748b;">Loading…</p>';
         try {
             const rows = await api(url);
             if (!rows.length) {
-                tbody.innerHTML =
-                    '<tr><td colspan="5" style="text-align:center;color:#64748b;">No targeted announcements yet.</td></tr>';
+                host.innerHTML = '<p style="color:#64748b;">No targeted announcements yet.</p>';
                 return;
             }
-            tbody.innerHTML = rows
+            host.innerHTML = rows
                 .map((r) => {
                     const who = r.user_id
                         ? esc([r.first_name, r.last_name].filter(Boolean).join(' ') || 'User ' + r.user_id) +
-                          '<br><small>' +
-                          esc(r.email || '') +
-                          '</small>'
+                          (r.email ? '<br><small>' + esc(r.email) + '</small>' : '')
                         : '<em>All participants</em>';
                     return (
-                        '<tr><td>' +
+                        '<div class="ak-ann-card" style="margin-bottom:10px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#fafafa;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">' +
+                        '<div><div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">' +
                         who +
-                        '</td><td><strong>' +
+                        '</div><strong>' +
                         esc(r.title) +
-                        '</strong><br><small style="color:#64748b;">' +
-                        esc((r.body || '').slice(0, 120)) +
-                        '</small></td><td>' +
-                        (r.is_active ? 'Active' : 'Off') +
-                        '</td><td>' +
+                        '</strong><div style="color:#475569;margin-top:4px;font-size:0.88rem;">' +
+                        esc((r.body || '').slice(0, 200)) +
+                        '</div><div style="font-size:0.78rem;color:#94a3b8;margin-top:6px;">' +
                         esc((r.created_at || '').slice(0, 16)) +
-                        '</td><td><button type="button" class="btn-danger" style="padding:4px 10px;font-size:0.78rem;" data-del-ann="' +
+                        ' · ' +
+                        (r.is_active ? 'Active' : 'Off') +
+                        '</div></div>' +
+                        '<button type="button" class="btn-primary" style="background:#b91c1c;padding:4px 10px;font-size:0.78rem;" data-del-ann="' +
                         r.id +
-                        '">Delete</button></td></tr>'
+                        '">Delete</button></div>'
                     );
                 })
                 .join('');
-            tbody.querySelectorAll('[data-del-ann]').forEach((btn) => {
+            host.querySelectorAll('[data-del-ann]').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     if (!confirm('Delete this announcement?')) return;
                     await api('/api/admin/applicant-announcements/' + btn.dataset.delAnn, { method: 'DELETE' });
@@ -67,7 +66,7 @@
                 });
             });
         } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="5" style="color:#b91c1c;">' + esc(e.message) + '</td></tr>';
+            host.innerHTML = '<p style="color:#b91c1c;">' + esc(e.message) + '</p>';
         }
     }
 
@@ -94,7 +93,7 @@
                 })
             });
             if (msg) {
-                msg.textContent = 'Saved. Participant(s) will see it on their dashboard (IST).';
+                msg.textContent = 'Published. Participants will see it on their dashboard.';
                 msg.style.color = '#047857';
             }
             document.getElementById('ak-ann-title').value = '';
@@ -109,15 +108,15 @@
     }
 
     window.initAdminAnnouncements = function initAdminAnnouncements() {
-        if (window.__akAnnAdminInit) {
-            loadList();
-            return;
+        if (typeof window.loadAkContentUpdatesTab === 'function') {
+            window.loadAkContentUpdatesTab();
         }
+        loadList();
+        if (window.__akAnnAdminInit) return;
         window.__akAnnAdminInit = true;
         document.getElementById('ak-ann-refresh')?.addEventListener('click', loadList);
         document.getElementById('ak-ann-filter-btn')?.addEventListener('click', loadList);
         document.getElementById('ak-ann-save')?.addEventListener('click', submitAnn);
-        loadList();
     };
 
     const orig = window.switchTab;

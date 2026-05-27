@@ -930,122 +930,11 @@
         window.__autismAppsPatched = true;
     }
 
-    async function injectAnnouncementsNoticeCard() {
-        const tab = document.getElementById('tab-announcements');
-        if (!tab || document.getElementById('ak-ann-notice-card')) return;
-        if (!cachedSeminars.length) await loadMainSeminarMessaging();
-        const card = document.createElement('div');
-        card.id = 'ak-ann-notice-card';
-        card.className = 'card';
-        card.style.cssText = 'margin-bottom:20px;border-left:4px solid #0d9488;';
-        card.innerHTML =
-            '<h3 style="margin:0 0 8px;">Programme notice (all participants)</h3>' +
-            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Posts to participant dashboards (and linked events). Optional PDF attachment.</p>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;margin-bottom:12px;">' +
-            '<div><label style="font-size:0.82rem;font-weight:700;">Event (optional)</label><select id="ak-ann-notice-seminar" style="width:100%;padding:8px;"><option value="">All participants</option></select></div>' +
-            '</div>' +
-            '<textarea id="ak-ann-notice-msg" rows="3" placeholder="Notice message" style="width:100%;max-width:720px;margin-bottom:10px;"></textarea>' +
-            '<input type="file" id="ak-ann-notice-pdf" accept="application/pdf" style="max-width:360px;margin-bottom:10px;display:block;">' +
-            '<button type="button" class="btn-primary" id="ak-ann-notice-post">Post programme notice</button>' +
-            '<p id="ak-ann-notice-msg-status" style="margin-top:10px;font-size:0.85rem;font-weight:600;"></p>' +
-            '<div style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:10px;">' +
-            '<h4 style="margin:0 0 8px;font-size:0.95rem;color:#334155;">Recent notices</h4>' +
-            '<div id="ak-ann-notice-list" style="font-size:0.88rem;color:#64748b;">Loading…</div>' +
-            '</div>';
-        const ref = document.getElementById('ak-main-seminar-messaging') || tab.querySelector('.card');
-        if (ref && ref.parentNode) ref.parentNode.insertBefore(card, ref.nextSibling);
-        else tab.appendChild(card);
-        const sel = document.getElementById('ak-ann-notice-seminar');
-        if (sel && cachedSeminars.length) {
-            cachedSeminars.forEach((s) => {
-                const o = document.createElement('option');
-                o.value = s.id;
-                o.textContent = s.title || 'Event ' + s.id;
-                sel.appendChild(o);
-            });
-        }
-        document.getElementById('ak-ann-notice-post')?.addEventListener('click', async () => {
-            const status = document.getElementById('ak-ann-notice-msg-status');
-            const sid = document.getElementById('ak-ann-notice-seminar')?.value;
-            if (typeof window.postAdminNoticeForm !== 'function') {
-                if (status) {
-                    status.textContent = 'Notice form not ready — refresh the page.';
-                    status.style.color = '#b91c1c';
-                }
-                return;
-            }
-            const ok = await window.postAdminNoticeForm({
-                seminarId: sid || null,
-                msgEl: document.getElementById('ak-ann-notice-msg'),
-                pdfEl: document.getElementById('ak-ann-notice-pdf')
-            });
-            if (status) {
-                status.textContent = ok ? 'Notice posted.' : '';
-                status.style.color = ok ? '#047857' : '#b91c1c';
-            }
-            if (ok) loadAdminNoticeList();
-        });
-        loadAdminNoticeList();
-    }
-
-    async function loadAdminNoticeList() {
-        const host = document.getElementById('ak-ann-notice-list');
-        if (!host) return;
-        host.textContent = 'Loading…';
-        try {
-            const data =
-                typeof window.autismAdminFetch === 'function'
-                    ? await window.autismAdminFetch('/api/admin/notices')
-                    : await fetch('/api/admin/notices', { credentials: 'same-origin' }).then((r) => r.json());
-            const rows = Array.isArray(data) ? data : [];
-            if (!rows.length) {
-                host.innerHTML = '<p style="color:#64748b;">No notices posted yet.</p>';
-                return;
-            }
-            host.innerHTML = rows
-                .map(
-                    (n) =>
-                        '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
-                        '<div><strong>' +
-                        (n.seminar_title ? String(n.seminar_title) + ' — ' : '') +
-                        'Notice</strong><div style="color:#475569;">' +
-                        String(n.message || '') +
-                        '</div></div>' +
-                        '<button type="button" class="btn-primary" style="background:#b91c1c;padding:4px 10px;font-size:0.78rem;" data-ak-del-notice="' +
-                        String(n.id) +
-                        '">Delete</button></div>'
-                )
-                .join('');
-            host.querySelectorAll('[data-ak-del-notice]').forEach((btn) => {
-                btn.addEventListener('click', async () => {
-                    if (!confirm('Delete this notice?')) return;
-                    try {
-                        if (typeof window.autismAdminFetch === 'function') {
-                            await window.autismAdminFetch('/api/admin/notices/' + btn.dataset.akDelNotice, {
-                                method: 'DELETE'
-                            });
-                        } else {
-                            await fetch('/api/admin/notices/' + btn.dataset.akDelNotice, {
-                                method: 'DELETE',
-                                credentials: 'same-origin'
-                            });
-                        }
-                        loadAdminNoticeList();
-                    } catch (e) {
-                        alert(e.message || 'Could not delete notice.');
-                    }
-                });
-            });
-        } catch (e) {
-            host.innerHTML = '<p style="color:#b91c1c;">' + (e.message || 'Could not load notices.') + '</p>';
-        }
-    }
-
     function injectMainSeminarMessaging() {
         const tab = document.getElementById('tab-announcements');
         if (!tab) return;
         if (document.getElementById('ak-main-seminar-messaging')) {
-            loadMainSeminarMessaging().then(() => injectAnnouncementsNoticeCard());
+            loadMainSeminarMessaging();
             return;
         }
         const card = document.createElement('div');
@@ -1065,8 +954,8 @@
             '<button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab(\'tab-notifications\'); if(typeof initAdminNotificationsTab===\'function\') initAdminNotificationsTab();">Notification templates</button>' +
             '</div>' +
             '<p id="ak-main-seminar-msg" style="margin:10px 0 0;font-size:0.85rem;"></p>';
-        tab.insertBefore(card, tab.querySelector('.card'));
-        loadMainSeminarMessaging().then(() => injectAnnouncementsNoticeCard());
+        tab.appendChild(card);
+        loadMainSeminarMessaging();
         document.getElementById('ak-save-main-seminar-wa')?.addEventListener('click', saveMainSeminarWhatsapp);
         document.getElementById('ak-main-seminar-select')?.addEventListener('change', loadMainSeminarWhatsappField);
     }

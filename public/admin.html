@@ -766,37 +766,43 @@
                             </div>
 
             <div id="tab-announcements" class="tab-pane hidden">
-                <h2 style="margin-bottom:12px;">Announcements</h2>
-                <p style="color:#64748b;margin-bottom:20px;max-width:800px;">Manage public site announcements and participant dashboard messages. All times are <strong>IST</strong>.</p>
-                <div class="card" style="margin-bottom:18px;border-left:4px solid #0d9488;">
-                    <h3 style="margin:0 0 8px;">Public website</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Homepage ticker, sliding announcement cards, and official notices board.</p>
-                    <button type="button" class="btn-primary" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Open Website CMS</button>
+                <h2 style="margin-bottom:12px;">Notices &amp; updates</h2>
+                <p style="color:#64748b;margin-bottom:20px;max-width:860px;">Two separate areas: <strong>main website notices</strong> (homepage Official notices board) and <strong>applicant dashboard updates</strong> (logged-in participant portal). Times are <strong>IST</strong>.</p>
+
+                <div class="card" style="margin-bottom:20px;border-left:4px solid #0d9488;">
+                    <h3 style="margin:0 0 8px;color:#0f766e;">1. Website &amp; portal notices (main site)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Add title + text, optional PDF, or both. Shown on the public homepage <em>Official notices</em> section. Click <strong>Remove</strong> on a row, then <strong>Save website notices</strong> to delete it.</p>
+                    <div id="ak-website-notice-rows"></div>
+                    <button type="button" class="btn-primary" style="margin-top:8px;background:#0d9488;" onclick="cmsAddPublicNoticeRow(null,'ak-website-notice-rows')">+ Add website notice</button>
+                    <button type="button" class="btn-primary" style="margin-top:8px;margin-left:8px;" onclick="saveWebsitePortalNoticesOnly()">Save website notices</button>
+                    <p id="ak-website-notices-msg" style="margin-top:10px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card" style="margin-bottom:18px;border-left:4px solid #2563eb;">
-                    <h3 style="margin:0 0 8px;">All participants (dashboard)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown under <em>Programme updates</em> on every applicant dashboard. Edit in Website CMS ? Applicant portal updates, then Save website content.</p>
-                    <button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Edit programme updates</button>
+
+                <div class="card" style="margin-bottom:20px;border-left:4px solid #2563eb;">
+                    <h3 style="margin:0 0 8px;color:#1e40af;">2. Applicant dashboard updates (all participants)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Text updates shown on every participant dashboard under <em>Updates</em>. Title + message required. Click <strong>Remove</strong>, then <strong>Save dashboard updates</strong> to delete.</p>
+                    <div id="ak-dashboard-update-rows"></div>
+                    <button type="button" class="btn-primary" style="margin-top:8px;background:#2563eb;" onclick="cmsAddDoctorUpdateRow(null,'ak-dashboard-update-rows')">+ Add dashboard update</button>
+                    <button type="button" class="btn-primary" style="margin-top:8px;margin-left:8px;background:#1d4ed8;" onclick="saveApplicantDashboardUpdatesOnly()">Save dashboard updates</button>
+                    <p id="ak-dashboard-updates-msg" style="margin-top:10px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card">
-                    <h3 style="margin:0 0 12px;">Specific participant</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 14px;">Leave user ID empty to broadcast to everyone, or enter a participant numeric user ID.</p>
+
+                <div class="card" style="border-left:4px solid #7c3aed;">
+                    <h3 style="margin:0 0 8px;color:#5b21b6;">3. One participant only (optional)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 14px;">Leave user ID empty to broadcast to everyone on the dashboard, or enter one participant numeric user ID.</p>
                     <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;max-width:720px;">
-                        <div><label>User ID</label><input type="text" id="ak-ann-user-id" placeholder="e.g. 42 (blank = all)"></div>
+                        <div><label>User ID</label><input type="text" id="ak-ann-user-id" placeholder="blank = all participants"></div>
                         <div><label>Title *</label><input type="text" id="ak-ann-title" style="width:100%;"></div>
                         <div style="grid-column:1/-1;"><label>Message</label><textarea id="ak-ann-body" rows="3" style="width:100%;"></textarea></div>
                     </div>
                     <button type="button" class="btn-primary" style="margin-top:12px;" id="ak-ann-save">Publish to dashboard</button>
                     <p id="ak-ann-admin-msg" style="margin-top:10px;font-weight:600;"></p>
-                    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
                         <div><label>Filter by user ID</label><input type="text" id="ak-ann-filter-user" placeholder="Optional"></div>
                         <button type="button" class="btn-primary" id="ak-ann-filter-btn" style="background:#64748b;">Filter</button>
                         <button type="button" class="btn-primary" id="ak-ann-refresh" style="background:#475569;">Refresh list</button>
                     </div>
-                    <table class="data-table" style="margin-top:16px;">
-                        <thead><tr><th>Audience</th><th>Message</th><th>Status</th><th>Created (IST)</th><th></th></tr></thead>
-                        <tbody id="ak-ann-admin-tbody"><tr><td colspan="5" style="text-align:center;">Open this tab to load</td></tr></tbody>
-                    </table>
+                    <div id="ak-ann-admin-list" style="margin-top:14px;"></div>
                 </div>
             </div>
 
@@ -1787,14 +1793,11 @@
             <div id="tab-settings" class="tab-pane hidden">
                 <h2 style="margin-bottom: 20px;">CMS Global Settings</h2>
                 <div class="card" style="margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;">
-                    <h3 style="margin:0 0 8px;color:#0f766e;">Notices &amp; applicant updates</h3>
+                    <h3 style="margin:0 0 8px;color:#0f766e;">Notices &amp; updates</h3>
                     <p style="color:#475569;font-size:0.9rem;margin:0 0 12px;">
-                        Add main site notices and applicant dashboard updates from here.
+                        Manage website notices (text/PDF) and applicant dashboard updates in one place.
                     </p>
-                    <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                        <button type="button" class="btn-primary" onclick="switchTab('tab-announcements')">Open Announcements</button>
-                        <button type="button" class="btn-primary" style="background:#2563eb;" onclick="switchTab('tab-site-cms');loadAdminSiteCms();">Open Website &amp; dashboard updates</button>
-                    </div>
+                    <button type="button" class="btn-primary" onclick="switchTab('tab-announcements'); if(typeof loadAkContentUpdatesTab==='function') loadAkContentUpdatesTab();">Open Notices &amp; updates</button>
                 </div>
                 <div class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
@@ -2310,13 +2313,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260527b"></script>
+    <script src="/js/admin.js?v=20260527c"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
-    <script src="/js/admin-announcements.js?v=4"></script>
-    <script src="/js/admin-autism.js?v=autism18"></script>
+    <script src="/js/admin-announcements.js?v=5"></script>
+    <script src="/js/admin-autism.js?v=autism19"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>
