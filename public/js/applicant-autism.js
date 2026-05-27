@@ -121,14 +121,6 @@
                     mainGrid.style.marginBottom = '24px';
                     track.insertBefore(mainGrid, track.firstChild);
                 }
-                const appsTable = document.querySelector('#tab-applications .data-table');
-                if (appsTable && !track.querySelector('#applications-list')) {
-                    const wrap = document.createElement('div');
-                    wrap.style.marginTop = '16px';
-                    wrap.innerHTML = '<h5 style="margin-bottom:10px;">Application list</h5>';
-                    wrap.appendChild(appsTable.cloneNode(true));
-                    track.appendChild(wrap);
-                }
             }
             const preregList = document.getElementById('prereg-list');
             const preregHub = document.getElementById('tab-prereg-hub');
@@ -196,11 +188,7 @@
                 '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Track status and view everything submitted for main registration.</p>' +
                 '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;"></p>' +
                 '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
-                '<div style="margin-top:16px;">' +
-                '<h5 style="margin-bottom:10px;color:#334155;">Application list</h5>' +
-                '<table class="data-table"><thead><tr><th>Application #</th><th>Status</th><th>Actions</th></tr></thead>' +
-                '<tbody id="applications-list"><tr><td colspan="3" style="text-align:center;color:#64748b;">Loading…</td></tr></tbody></table>' +
-                '</div></div>';
+                '</div>';
 
             const legacyGrid = preregPane.querySelector('#ak-events-grid');
             if (legacyGrid) legacyGrid.id = 'ak-prereg-events-grid';

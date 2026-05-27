@@ -7202,6 +7202,31 @@ app.post(
     }
 );
 
+app.get('/api/admin/notices', (req, res) => {
+    db.all(
+        `SELECT n.id, n.seminar_id, n.message, n.pdf_path, n.created_at, s.title AS seminar_title
+         FROM notices n
+         LEFT JOIN seminars s ON s.id = n.seminar_id
+         ORDER BY n.created_at DESC
+         LIMIT 120`,
+        [],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows || []);
+        }
+    );
+});
+
+app.delete('/api/admin/notices/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid id' });
+    db.run(`DELETE FROM notices WHERE id = ?`, [id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!this.changes) return res.status(404).json({ error: 'Notice not found' });
+        res.json({ success: true });
+    });
+});
+
 // Admin: Get Seminar Live Scans
 app.get('/api/admin/seminars/:id/scans', (req, res) => {
     const query = `
