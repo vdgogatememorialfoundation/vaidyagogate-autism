@@ -23,6 +23,17 @@
         } catch (_) {
             /* ignore */
         }
+        try {
+            if (typeof window.getStoredAdminUser === 'function') {
+                const u3 = window.getStoredAdminUser();
+                if (u3 && u3.id != null) {
+                    const n3 = Number(u3.id);
+                    if (Number.isInteger(n3) && n3 > 0) return n3;
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
         return null;
     }
 
@@ -43,7 +54,7 @@
     function requireActingAdminId() {
         const id = getActingAdminId();
         if (!id) {
-            throw new Error('actingAdminId is required. Sign in to admin again.');
+            throw new Error('Admin session expired. Please sign in again in /admin.');
         }
         return id;
     }
@@ -79,13 +90,7 @@
         if (!r.ok) {
             const msg = data.error || r.statusText;
             if (/actingAdminId is required/i.test(String(msg))) {
-                try {
-                    localStorage.removeItem('admin_auth');
-                    localStorage.removeItem('admin_user');
-                } catch (_) {
-                    /* ignore */
-                }
-                throw new Error(msg + ' Open /admin and sign in again.');
+                throw new Error('Admin session expired. Please sign in again in /admin.');
             }
             throw new Error(msg);
         }
