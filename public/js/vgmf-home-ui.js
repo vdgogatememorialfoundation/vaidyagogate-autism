@@ -139,8 +139,8 @@
         let speakers = 0;
         try {
             const [sRes, cmsRes] = await Promise.all([
-                fetch('/api/seminars?bucket=current', { cache: 'no-store' }),
-                fetch('/api/public/site-cms', { cache: 'no-store' })
+                fetch('/api/seminars?bucket=current'),
+                fetch('/api/public/site-cms')
             ]);
             const seminarsData = await sRes.json().catch(() => []);
             const cms = await cmsRes.json().catch(() => ({}));

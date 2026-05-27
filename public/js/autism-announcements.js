@@ -60,9 +60,7 @@
             return;
         }
         try {
-            const r = await fetch('/api/applicant/announcements?userId=' + encodeURIComponent(uid), {
-                cache: 'no-store'
-            });
+            const r = await fetch('/api/applicant/announcements?userId=' + encodeURIComponent(uid));
             const data = await r.json();
             if (!r.ok) throw new Error(data.error || r.statusText);
             const personal = (data.targeted || []).filter(Boolean);
@@ -127,10 +125,10 @@
         const retryTimer = setInterval(() => {
             if (resolveApplicantUserId() || retries++ > 12) clearInterval(retryTimer);
             if (!document.hidden) loadApplicantAnnouncements();
-        }, 500);
+        }, 2000);
         setInterval(() => {
             if (!document.hidden) loadApplicantAnnouncements();
-        }, 30000);
+        }, 120000);
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) loadApplicantAnnouncements();
         });

@@ -5,7 +5,7 @@
     'use strict';
     if (!document.body.classList.contains('autism-kids')) return;
 
-    const POLL_MS = 60000;
+    const POLL_MS = 180000;
     let lastJson = '';
 
     function esc(s) {
@@ -55,7 +55,7 @@
 
     async function refresh() {
         try {
-            const r = await fetch('/api/public/autism-site-images', { cache: 'no-store' });
+            const r = await fetch('/api/public/autism-site-images');
             const data = await r.json();
             if (!r.ok) return;
             const json = JSON.stringify(data);

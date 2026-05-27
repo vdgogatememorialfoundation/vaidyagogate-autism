@@ -116,11 +116,41 @@ try {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const READ_API_CACHE = new Map();
 
 app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+function getReadApiCache(key) {
+    const hit = READ_API_CACHE.get(key);
+    if (!hit) return null;
+    if (hit.expiresAt <= Date.now()) {
+        READ_API_CACHE.delete(key);
+        return null;
+    }
+    return hit.payload;
+}
+
+function setReadApiCache(key, payload, ttlMs) {
+    READ_API_CACHE.set(key, {
+        payload,
+        expiresAt: Date.now() + Math.max(1000, Number(ttlMs) || 60000)
+    });
+}
+
+function setEdgeReadCacheHeaders(res, opts) {
+    const o = opts || {};
+    const visibility = o.visibility === 'private' ? 'private' : 'public';
+    const browserMaxAge = Number.isFinite(o.maxAge) ? Math.max(0, o.maxAge) : 0;
+    const sMaxage = Number.isFinite(o.sMaxage) ? Math.max(0, o.sMaxage) : 60;
+    const stale = Number.isFinite(o.staleWhileRevalidate) ? Math.max(0, o.staleWhileRevalidate) : 30;
+    res.setHeader(
+        'Cache-Control',
+        `${visibility}, max-age=${browserMaxAge}, s-maxage=${sMaxage}, stale-while-revalidate=${stale}`
+    );
+}
 
 let appReadyPromise = null;
 let appReadyFailed = null;
@@ -3945,6 +3975,13 @@ app.put('/api/admin/portal/year', (req, res) => {
 // 3. Seminars: current year vs past years
 app.get('/api/seminars', (req, res) => {
     const bucket = String((req.query && req.query.bucket) || 'current').toLowerCase();
+    const requestedYear = req.query && req.query.year != null ? parseInt(req.query.year, 10) : null;
+    const cacheKey = `api:seminars:${bucket}:${Number.isInteger(requestedYear) ? requestedYear : 'portal'}`;
+    const cached = getReadApiCache(cacheKey);
+    if (cached) {
+        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+        return res.json(cached);
+    }
     portalTracking.getPortalYear(db, (eY, portalYear) => {
         if (eY) return res.status(500).json({ error: eY.message });
         const yearQ = req.query && req.query.year != null ? parseInt(req.query.year, 10) : portalYear;
@@ -3963,7 +4000,10 @@ app.get('/api/seminars', (req, res) => {
         }
         db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-            res.json({ portalYear: activeYear, bucket, seminars: rows || [] });
+            const payload = { portalYear: activeYear, bucket, seminars: rows || [] };
+            setReadApiCache(cacheKey, payload, 60000);
+            setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+            res.json(payload);
         });
     });
 });
@@ -4220,6 +4260,12 @@ function mergeScrollingAnnouncementsWithOpenSeminars(cms, cb) {
 }
 
 app.get('/api/public/announcements', (req, res) => {
+    const cacheKey = 'api:public:announcements';
+    const cached = getReadApiCache(cacheKey);
+    if (cached) {
+        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+        return res.json(cached);
+    }
     loadPublicSiteCms((e, cms) => {
         if (e) return res.status(500).json({ error: e.message });
         mergeScrollingAnnouncementsWithOpenSeminars(cms, (e2, enriched) => {
@@ -4234,19 +4280,28 @@ app.get('/api/public/announcements', (req, res) => {
                     wix: portalUrls.getPortalUrls().wix
                 }
             };
-            res.setHeader('Cache-Control', 'public, max-age=120');
+            setReadApiCache(cacheKey, out, 60000);
+            setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
             res.json(out);
         });
     });
 });
 
 app.get('/api/public/site-cms', (req, res) => {
+    const cacheKey = 'api:public:site-cms';
+    const cached = getReadApiCache(cacheKey);
+    if (cached) {
+        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+        return res.json(cached);
+    }
     loadPublicSiteCms((e, cms) => {
         if (e) return res.status(500).json({ error: e.message });
         mergeScrollingAnnouncementsWithOpenSeminars(cms, (e2, enriched) => {
             if (e2) return res.status(500).json({ error: e2.message });
             enrichSiteCmsSpeakers(enriched, (e3, withSpeakers) => {
                 if (e3) return res.status(500).json({ error: e3.message });
+                setReadApiCache(cacheKey, withSpeakers, 60000);
+                setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
                 res.json(withSpeakers);
             });
         });
@@ -4337,6 +4392,8 @@ app.post('/api/admin/site-cms', (req, res) => {
         const payload = JSON.stringify(normalized);
         upsertGlobalSetting('public_site_cms', payload, (err) => {
             if (err) return res.status(500).json({ error: err.message });
+            READ_API_CACHE.delete('api:public:site-cms');
+            READ_API_CACHE.delete('api:public:announcements');
             res.json({ success: true });
         });
     });
@@ -5886,9 +5943,18 @@ app.post('/api/support/ticket/:trackingId/reply', (req, res) => {
 
 // Notices / Announcements
 app.get('/api/notices', (req, res) => {
+    const cacheKey = 'api:notices:public';
+    const cached = getReadApiCache(cacheKey);
+    if (cached) {
+        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+        return res.json(cached);
+    }
     db.all(`SELECT * FROM notices ORDER BY created_at DESC`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []);
+        const payload = rows || [];
+        setReadApiCache(cacheKey, payload, 60000);
+        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+        res.json(payload);
     });
 });
 
@@ -7188,6 +7254,7 @@ app.post(
                             .catch(() => res.status(500).json({ error: err.message }));
                     }
                     if (err) return res.status(500).json({ error: err.message });
+                    READ_API_CACHE.delete('api:notices:public');
                     res.json({ success: true, noticeId: this.lastID });
                 }
             );
@@ -7223,6 +7290,7 @@ app.delete('/api/admin/notices/:id', (req, res) => {
     db.run(`DELETE FROM notices WHERE id = ?`, [id], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (!this.changes) return res.status(404).json({ error: 'Notice not found' });
+        READ_API_CACHE.delete('api:notices:public');
         res.json({ success: true });
     });
 });

@@ -7,7 +7,7 @@
         if (!grid) return;
         let cms = {};
         try {
-            const cmsRes = await fetch('/api/public/site-cms', { cache: 'no-store' });
+            const cmsRes = await fetch('/api/public/site-cms');
             cms = await cmsRes.json().catch(() => ({}));
         } catch (_) {}
 
