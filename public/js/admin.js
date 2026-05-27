@@ -9910,6 +9910,7 @@ function cmsApplyHeroFieldsToForm(cms) {
     const sched = cms.schedulePage || {};
     const foot = cms.footer || {};
     const stats = Array.isArray(cms.heroStats) ? cms.heroStats : [];
+    const homeStats = Array.isArray(cms.homeStats) ? cms.homeStats : [];
     const set = (id, v) => {
         document.querySelectorAll('#' + id).forEach((el) => {
             el.value = v != null ? String(v) : '';
@@ -9931,6 +9932,14 @@ function cmsApplyHeroFieldsToForm(cms) {
     set('cms-stat2-lbl', stats[1] && stats[1].label);
     set('cms-stat3-val', stats[2] && stats[2].value);
     set('cms-stat3-lbl', stats[2] && stats[2].label);
+    set('cms-home-stat1-val', homeStats[0] && homeStats[0].value);
+    set('cms-home-stat1-lbl', homeStats[0] && homeStats[0].label);
+    set('cms-home-stat2-val', homeStats[1] && homeStats[1].value);
+    set('cms-home-stat2-lbl', homeStats[1] && homeStats[1].label);
+    set('cms-home-stat3-val', homeStats[2] && homeStats[2].value);
+    set('cms-home-stat3-lbl', homeStats[2] && homeStats[2].label);
+    set('cms-home-stat4-val', homeStats[3] && homeStats[3].value);
+    set('cms-home-stat4-lbl', homeStats[3] && homeStats[3].label);
     set('cms-schedule-title', sched.title);
     set('cms-schedule-subtitle', sched.subtitle);
     set('cms-contact-address', contact.address);
@@ -9970,6 +9979,12 @@ function cmsCollectHeroFieldsFromForm() {
             { value: gv('cms-stat1-val'), label: gv('cms-stat1-lbl') },
             { value: gv('cms-stat2-val'), label: gv('cms-stat2-lbl') },
             { value: gv('cms-stat3-val'), label: gv('cms-stat3-lbl') }
+        ].filter((s) => s.value || s.label),
+        homeStats: [
+            { value: gv('cms-home-stat1-val'), label: gv('cms-home-stat1-lbl') },
+            { value: gv('cms-home-stat2-val'), label: gv('cms-home-stat2-lbl') },
+            { value: gv('cms-home-stat3-val'), label: gv('cms-home-stat3-lbl') },
+            { value: gv('cms-home-stat4-val'), label: gv('cms-home-stat4-lbl') }
         ].filter((s) => s.value || s.label),
         schedulePage: {
             title: gv('cms-schedule-title'),

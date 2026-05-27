@@ -835,6 +835,12 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         { icon: 'fa-palette', title: 'Art & Competition', text: 'Creative entries celebrating abilities' },
         { icon: 'fa-users', title: 'Community Network', text: 'Connect with families and professionals' }
     ],
+    homeStats: [
+        { value: '1+', label: 'Active seminars' },
+        { value: '20+', label: 'Expert speakers' },
+        { value: '1972', label: 'Founded' },
+        { value: '24/7', label: 'Online portal' }
+    ],
     contact: {
         address: 'Convention Centre, Pune, Maharashtra',
         phone: '+91 9876543210',
@@ -1447,6 +1453,7 @@ function loadPublicSiteCms(callback) {
                     if (!base.hero || typeof base.hero !== 'object') base.hero = { ...DEFAULT_PUBLIC_SITE_CMS.hero };
                     if (!base.hero.eyebrow) base.hero.eyebrow = DEFAULT_PUBLIC_SITE_CMS.hero.eyebrow;
                     if (!Array.isArray(base.heroStats)) base.heroStats = DEFAULT_PUBLIC_SITE_CMS.heroStats;
+                    if (!Array.isArray(base.homeStats)) base.homeStats = DEFAULT_PUBLIC_SITE_CMS.homeStats;
                     if (!Array.isArray(base.featureCards)) base.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards;
                     if (!base.contact || typeof base.contact !== 'object') base.contact = { ...DEFAULT_PUBLIC_SITE_CMS.contact };
                     if (!base.schedulePage || typeof base.schedulePage !== 'object') {
@@ -4110,7 +4117,11 @@ app.post('/api/admin/site-cms', (req, res) => {
         'pastSeminarGallery',
         'seminarGalleryYears',
         'siteMenu',
-        'speakers'
+        'speakers',
+        'heroStats',
+        'homeStats',
+        'featureCards',
+        'faq'
     ];
     for (let i = 0; i < arrayKeys.length; i++) {
         const k = arrayKeys[i];
@@ -4136,7 +4147,11 @@ app.post('/api/admin/site-cms', (req, res) => {
             'pastSeminarGallery',
             'seminarGalleryYears',
             'siteMenu',
-            'speakers'
+            'speakers',
+            'heroStats',
+            'homeStats',
+            'featureCards',
+            'faq'
         ].forEach((k) => {
             if (incoming[k] !== undefined) merged[k] = incoming[k];
         });
@@ -4158,6 +4173,7 @@ app.post('/api/admin/site-cms', (req, res) => {
             }
         });
         if (Array.isArray(incoming.heroStats)) merged.heroStats = incoming.heroStats;
+        if (Array.isArray(incoming.homeStats)) merged.homeStats = incoming.homeStats;
         if (Array.isArray(incoming.featureCards)) merged.featureCards = incoming.featureCards;
         if (Array.isArray(incoming.faq)) merged.faq = incoming.faq;
         if (Array.isArray(incoming.speakers)) merged.speakers = incoming.speakers;

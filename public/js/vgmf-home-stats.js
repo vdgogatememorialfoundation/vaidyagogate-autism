@@ -5,25 +5,20 @@
     async function loadHomeStats() {
         const grid = document.getElementById('vg-stats-grid');
         if (!grid) return;
-        let seminars = 0;
-        let speakers = 0;
+        let cms = {};
         try {
-            const [sRes, cmsRes] = await Promise.all([
-                fetch('/api/seminars?bucket=current', { cache: 'no-store' }),
-                fetch('/api/public/site-cms', { cache: 'no-store' })
-            ]);
-            const seminarsData = await sRes.json().catch(() => []);
-            const cms = await cmsRes.json().catch(() => ({}));
-            seminars = Array.isArray(seminarsData) ? seminarsData.length : 0;
-            speakers = Array.isArray(cms.speakers) ? cms.speakers.length : 0;
+            const cmsRes = await fetch('/api/public/site-cms', { cache: 'no-store' });
+            cms = await cmsRes.json().catch(() => ({}));
         } catch (_) {}
 
-        const stats = [
-            { value: seminars || '1+', label: 'Active seminars' },
-            { value: speakers || '20+', label: 'Expert speakers' },
+        const fallback = [
+            { value: '1+', label: 'Active seminars' },
+            { value: '20+', label: 'Expert speakers' },
             { value: '1972', label: 'Founded' },
             { value: '24/7', label: 'Online portal' }
         ];
+        const fromCms = Array.isArray(cms.homeStats) ? cms.homeStats.filter((s) => s && (s.value || s.label)) : [];
+        const stats = fromCms.length ? fromCms : fallback;
         grid.innerHTML = stats
             .map(
                 (s) =>
