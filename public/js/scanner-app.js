@@ -147,6 +147,7 @@
     let lastScanAt = 0;
     const SCAN_DEBOUNCE_MS = 2200;
     const AUTO_NEXT_MS = 2600;
+    const AUTO_NEXT_CERT_MS = 18000;
 
     function haptic(kind) {
         try {
@@ -247,7 +248,7 @@
             ['Ticket ID', d.ticketId || d.ticket_id_string],
             ['Account', d.accountStatus || (d.account_status || '')],
             ['Registration', d.registrationType || d.registration_status || '—'],
-            ['Payment', d.paymentStatus || (d.payment_status === 'success' ? 'PAID' : 'UNPAID')],
+            ['Entry', 'FREE'],
             ['Application', d.applicationNo],
             ['Seminar', d.seminarTitle],
             [
@@ -314,14 +315,59 @@
         }
     }
 
-    function scheduleAutoResume() {
+    function scheduleAutoResume(delayMs) {
+        const wait = Number(delayMs) > 0 ? Number(delayMs) : AUTO_NEXT_MS;
         setTimeout(() => {
             resultBox.classList.add('hidden');
             if (!html5QrCode || !document.getElementById('reader')?.querySelector('video')) {
                 startCam().catch(console.error);
             }
             scanBusy = false;
-        }, AUTO_NEXT_MS);
+        }, wait);
+    }
+
+    function certificatePanelHtml(cert) {
+        const c = cert || {};
+        if (c.show && c.viewUrl) {
+            const url = String(c.viewUrl).replace(/"/g, '&quot;');
+            return (
+                '<div class="scan-cert-panel">' +
+                '<h4 class="scan-cert-title"><i class="fas fa-award"></i> Certificate</h4>' +
+                '<p class="scan-cert-hint">' +
+                String(c.message || 'Show this certificate to the participant.').replace(/</g, '&lt;') +
+                '</p>' +
+                '<iframe class="scan-cert-frame" src="' +
+                url +
+                '" title="Participant certificate"></iframe>' +
+                '<a class="tool-btn scan-cert-open" href="' +
+                url +
+                '" target="_blank" rel="noopener">Open full screen</a>' +
+                '</div>'
+            );
+        }
+        if (c.scheduled && c.openAtLabel) {
+            return (
+                '<div class="scan-cert-panel scan-cert-scheduled">' +
+                '<h4 class="scan-cert-title"><i class="fas fa-clock"></i> Certificate scheduled</h4>' +
+                '<p>' +
+                String(c.message || 'Certificate opens at the scheduled time.').replace(/</g, '&lt;') +
+                '</p>' +
+                '<p class="scan-cert-when"><strong>' +
+                String(c.openAtLabel).replace(/</g, '&lt;') +
+                '</strong></p>' +
+                '</div>'
+            );
+        }
+        if (c.message) {
+            return (
+                '<div class="scan-cert-panel scan-cert-pending">' +
+                '<p>' +
+                String(c.message).replace(/</g, '&lt;') +
+                '</p>' +
+                '</div>'
+            );
+        }
+        return '';
     }
 
     async function processScan(decodedText) {
@@ -388,6 +434,8 @@
                           result.scansRequired +
                           '</strong></p>'
                         : '';
+                const certHtml = certificatePanelHtml(result.certificate);
+                const resumeMs = result.certificate && result.certificate.show ? AUTO_NEXT_CERT_MS : AUTO_NEXT_MS;
                 renderResult(
                     true,
                     '<div class="scan-result-top">' +
@@ -398,16 +446,19 @@
                         metaHtml(d) +
                         '</div></div>' +
                         scanNote +
-                        '<p style="margin-top:10px;font-size:0.85rem;opacity:0.85;">Next scan in a moment…</p>',
+                        certHtml +
+                        '<p style="margin-top:10px;font-size:0.85rem;opacity:0.85;">' +
+                        (certHtml ? 'Review certificate, then next scan…' : 'Next scan in a moment…') +
+                        '</p>',
                     'ok'
                 );
                 pushHistory((d.name || 'Guest') + ' · ' + (d.ticketId || d.applicationNo || ''), true);
-                scheduleAutoResume();
+                scheduleAutoResume(resumeMs);
             } else {
                 const err =
                     result.error ||
                     (res.ok ? 'Entry denied' : 'Could not verify ticket — check network and try again');
-                const isDup = /already scanned/i.test(err);
+                const isDup = result.duplicate || /already scanned/i.test(err);
                 playTone(isDup ? 'duplicate' : result.sound === 'wrong_date' ? 'wrong_date' : 'error');
                 if (isDup) stats.dup++;
                 else stats.err++;
@@ -417,20 +468,25 @@
                           String(d.banReason).replace(/</g, '&lt;') +
                           '</p>'
                         : '';
+                const certHtml = certificatePanelHtml(result.certificate);
+                const resumeMs = result.certificate && result.certificate.show ? AUTO_NEXT_CERT_MS : AUTO_NEXT_MS;
                 renderResult(
                     false,
                     '<div class="scan-result-top">' +
                         profilePhotoHtml(d) +
-                        '<div class="scan-result-body"><strong><i class="fas fa-times-circle"></i> ' +
+                        '<div class="scan-result-body"><strong><i class="fas fa-' +
+                        (isDup ? 'info-circle' : 'times-circle') +
+                        '"></i> ' +
                         err.replace(/</g, '&lt;') +
                         '</strong>' +
                         banNote +
                         (d && (d.name || d.userIdString || d.applicationNo) ? metaHtml(d) : '') +
-                        '</div></div>',
+                        '</div></div>' +
+                        certHtml,
                     isDup ? 'warn' : 'bad'
                 );
                 pushHistory(err.slice(0, 60), false);
-                scheduleAutoResume();
+                scheduleAutoResume(resumeMs);
             }
             updateStats();
         } catch (e) {

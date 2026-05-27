@@ -29,3 +29,57 @@ body.autism-scanner {
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     color: #fff;
 }
+
+.autism-scanner .scan-cert-panel {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #c7d2fe;
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+}
+
+.autism-scanner .scan-cert-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: #4338ca;
+}
+
+.autism-scanner .scan-cert-hint {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.autism-scanner .scan-cert-frame {
+    width: 100%;
+    min-height: 320px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.autism-scanner .scan-cert-open {
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.autism-scanner .scan-cert-scheduled {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.autism-scanner .scan-cert-scheduled .scan-cert-when {
+    margin: 8px 0 0;
+    font-size: 0.95rem;
+    color: #1d4ed8;
+}
+
+.autism-scanner .scan-cert-pending {
+    background: #fffbeb;
+    border-color: #fcd34d;
+    font-size: 0.88rem;
+    color: #92400e;
+}

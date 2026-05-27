@@ -1,8 +1,21 @@
 /**
- * Admin: final (main) registration tracking queue.
+ * Admin: final (main) registration tracking queue (autism portal — no payment step).
  */
 (function () {
     'use strict';
+
+    const AK_FINAL_STATUSES = [
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'pending_approval', label: 'Approved (awaiting e-ticket)' },
+        { value: 'revision_required', label: 'Revision required' },
+        { value: 'documents_requested', label: 'Documents requested' },
+        { value: 'e_ticket_issued', label: 'E-ticket issued' },
+        { value: 'checked_in', label: 'Checked in' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'certificate_issued', label: 'Certificate issued' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
 
     let finalRows = [];
     let selectedId = null;
@@ -12,6 +25,73 @@
         const d = document.createElement('div');
         d.textContent = s == null ? '' : String(s);
         return d.innerHTML;
+    }
+
+    function fileHref(stored) {
+        if (typeof window.publicFileHref === 'function') return window.publicFileHref(stored);
+        const p = String(stored || '').trim();
+        if (!p) return '';
+        if (/^https?:\/\//i.test(p)) return p;
+        if (p.startsWith('/')) return p;
+        return '/uploads/' + p;
+    }
+
+    function looksLikeStoredFile(v) {
+        const s = String(v == null ? '' : v).trim();
+        if (!s) return false;
+        if (/^https?:\/\//i.test(s)) return true;
+        if (s.startsWith('/uploads/') || s.startsWith('/api/assets/')) return true;
+        if (/\.(pdf|jpe?g|png|gif|webp|bmp|pptx?|docx?)$/i.test(s)) return true;
+        return false;
+    }
+
+    function formatFormDataDetailHtml(fd) {
+        const data = fd || {};
+        const skip = new Set(['password', 'agree_terms']);
+        let html = '';
+        if (data.certificate_path && looksLikeStoredFile(data.certificate_path)) {
+            const href = fileHref(data.certificate_path);
+            html +=
+                '<dt>Certificate</dt><dd><a href="' +
+                esc(href) +
+                '" target="_blank" rel="noopener">View certificate</a></dd>';
+        }
+        Object.keys(data).forEach((k) => {
+            if (skip.has(k) || k === 'certificate_path' || k === 'ncism_certificate_check') return;
+            const v = data[k];
+            if (v == null || String(v).trim() === '') return;
+            if (k === 'additional_documents' && Array.isArray(v)) {
+                html += '<dt>Additional documents</dt><dd><ul>';
+                v.forEach((d) => {
+                    const href = d && d.path ? fileHref(d.path) : '';
+                    html +=
+                        '<li>' +
+                        esc((d && d.label) || 'Document') +
+                        (href
+                            ? ' — <a href="' +
+                              esc(href) +
+                              '" target="_blank" rel="noopener">View</a>'
+                            : '') +
+                        '</li>';
+                });
+                html += '</ul></dd>';
+                return;
+            }
+            if (looksLikeStoredFile(v)) {
+                const href = fileHref(v);
+                html +=
+                    '<dt>' +
+                    esc(k.replace(/_/g, ' ')) +
+                    '</dt><dd><a href="' +
+                    esc(href) +
+                    '" target="_blank" rel="noopener">View file</a> <span style="color:#64748b;font-size:0.82rem;">(' +
+                    esc(String(v).split('/').pop()) +
+                    ')</span></dd>';
+            } else {
+                html += '<dt>' + esc(k.replace(/_/g, ' ')) + '</dt><dd>' + esc(String(v)) + '</dd>';
+            }
+        });
+        return html || '<dt>Form data</dt><dd style="color:#64748b;">No fields submitted.</dd>';
     }
 
     function badge(status) {
@@ -101,33 +181,19 @@
 
     function statusOptionsHtml(current) {
         const cur = String(current || 'submitted').toLowerCase();
-        const opts =
-            typeof ADMIN_REGISTRATION_STATUSES !== 'undefined'
-                ? ADMIN_REGISTRATION_STATUSES
-                : [
-                      { value: 'submitted', label: 'Submitted' },
-                      { value: 'pending_approval', label: 'Pending approval' },
-                      { value: 'revision_required', label: 'Revision required' },
-                      { value: 'e_ticket_issued', label: 'E-ticket issued' },
-                      { value: 'completed', label: 'Completed' },
-                      { value: 'rejected', label: 'Rejected' },
-                      { value: 'cancelled', label: 'Cancelled' }
-                  ];
-        return opts
-            .map((s) => {
-                const v = s.value || s;
-                const label = s.label || String(v).replace(/_/g, ' ');
-                return (
-                    '<option value="' +
-                    esc(v) +
-                    '"' +
-                    (cur === String(v).toLowerCase() ? ' selected' : '') +
-                    '>' +
-                    esc(label) +
-                    '</option>'
-                );
-            })
-            .join('');
+        return AK_FINAL_STATUSES.map((s) => {
+            const v = s.value || s;
+            const label = s.label || String(v).replace(/_/g, ' ');
+            return (
+                '<option value="' +
+                esc(v) +
+                '"' +
+                (cur === String(v).toLowerCase() ? ' selected' : '') +
+                '>' +
+                esc(label) +
+                '</option>'
+            );
+        }).join('');
     }
 
     function renderTable() {
@@ -194,6 +260,22 @@
         });
     }
 
+    function updateDetailActionButtons(row) {
+        const st = String((row && row.status) || '').toLowerCase();
+        const approveBtn = document.getElementById('ak-final-approve');
+        const ticketBtn = document.getElementById('ak-final-issue-ticket');
+        if (approveBtn) {
+            approveBtn.disabled = !['submitted', 'revision_required', 'documents_requested'].includes(st);
+        }
+        if (ticketBtn) {
+            const canIssue = st === 'pending_approval';
+            ticketBtn.disabled = !canIssue;
+            ticketBtn.title = canIssue
+                ? 'Creates participant e-ticket (no payment on autism portal)'
+                : 'Approve the application first, then issue e-ticket';
+        }
+    }
+
     function openDetail(id) {
         selectedId = id;
         const row = finalRows.find((r) => r.id === id);
@@ -202,11 +284,6 @@
         panel.classList.add('is-open');
         const name = [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ');
         const fd = parseFormData(row.form_data);
-        const fieldsHtml = Object.keys(fd).length
-            ? Object.entries(fd)
-                  .map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>')
-                  .join('')
-            : '<dt>Form data</dt><dd style="color:#64748b;">No extra fields submitted.</dd>';
         document.getElementById('ak-final-detail-title').textContent = name + ' — ' + (row.seminar_title || 'Event');
         document.getElementById('ak-final-detail-body').innerHTML =
             '<dl>' +
@@ -224,9 +301,10 @@
             '<dt>Status</dt><dd>' +
             badge(row.status) +
             '</dd>' +
-            fieldsHtml +
+            formatFormDataDetailHtml(fd) +
             '</dl>';
         panel.dataset.rowId = String(id);
+        updateDetailActionButtons(row);
         renderTable();
     }
 
@@ -251,13 +329,17 @@
         }
     }
 
-    async function setStatus(id, status) {
+    async function setStatus(id, status, confirmTicket) {
         const msg = document.getElementById('ak-final-action-msg');
+        const st = String(status || '').toLowerCase();
+        if (st === 'e_ticket_issued' && confirmTicket !== false) {
+            if (!confirm('Issue e-ticket for this registration? No payment is required on the autism portal.')) return;
+        }
         try {
             const body =
                 typeof withActingAdminBody === 'function'
-                    ? withActingAdminBody({ applicationId: id, status })
-                    : { applicationId: id, status };
+                    ? withActingAdminBody({ applicationId: id, status: st })
+                    : { applicationId: id, status: st };
             const r = await fetch('/api/admin/applications/status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -267,7 +349,7 @@
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || r.statusText);
             if (msg) {
-                msg.textContent = 'Status updated.';
+                msg.textContent = data.message || 'Status updated.';
                 msg.style.color = '#047857';
             }
             await refresh();
@@ -329,15 +411,19 @@
         document.getElementById('ak-final-refresh')?.addEventListener('click', refresh);
         document.getElementById('ak-final-revision')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
-            if (id) setStatus(id, 'revision_required');
+            if (id) setStatus(id, 'revision_required', false);
         });
         document.getElementById('ak-final-approve')?.addEventListener('click', () => {
+            const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
+            if (id) setStatus(id, 'pending_approval', false);
+        });
+        document.getElementById('ak-final-issue-ticket')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
             if (id) setStatus(id, 'e_ticket_issued');
         });
         document.getElementById('ak-final-reject')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
-            if (id) setStatus(id, 'rejected');
+            if (id) setStatus(id, 'rejected', false);
         });
         document.getElementById('ak-final-delete')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);

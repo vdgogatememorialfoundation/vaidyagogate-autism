@@ -87,6 +87,7 @@ const authLoginOtp = require('./lib/auth-login-otp');
 const certRender = require('./lib/certificate-render');
 const certTemplateCfg = require('./lib/certificate-template-config');
 const certVerify = require('./lib/certificate-verify');
+const scannerCertDisplay = require('./lib/scanner-certificate-display');
 const docVerify = require('./lib/application-document-verify');
 const seminarPurge = require('./lib/seminar-purge');
 const supplementalPayments = require('./lib/supplemental-payments');
@@ -137,6 +138,25 @@ function paymentAmountForSeminar(row) {
     if (portalProduct.FEATURES.noFees) return 0;
     const p = row && row.price != null ? Number(row.price) : NaN;
     return Number.isFinite(p) && p > 0 ? p : 1500;
+}
+
+function seminarFlowFlagsFromJson(raw) {
+    try {
+        const parsed = raw ? JSON.parse(raw) : {};
+        const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+        const hasFlow =
+            Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+            Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+        if (!hasFlow) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true };
+        }
+        return {
+            preregistrationRequired: flow.preregistrationRequired === true,
+            mainRegistrationRequired: flow.mainRegistrationRequired === true
+        };
+    } catch (_) {
+        return { preregistrationRequired: true, mainRegistrationRequired: true };
+    }
 }
 
 function mountPaymentsRoutes() {
@@ -670,6 +690,48 @@ function withCertificateUpload(req, res, next) {
         }
         next();
     });
+}
+
+/** Certificate plus dynamic registration field files (regfield_*). */
+function withApplicationSubmitUpload(req, res, next) {
+    (process.env.VERCEL ? memoryUpload : upload).any()(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ error: uploadErrorMessage(err) });
+        }
+        if (Array.isArray(req.files)) {
+            const cert = req.files.find((f) => f && f.fieldname === 'certificate');
+            if (cert) req.file = cert;
+        }
+        next();
+    });
+}
+
+function registrationDynamicFilesFromReq(req) {
+    const out = [];
+    const list = Array.isArray(req.files) ? req.files : [];
+    list.forEach((f) => {
+        if (!f || !f.fieldname) return;
+        const m = /^regfield_(.+)$/.exec(String(f.fieldname));
+        if (m && m[1]) out.push({ key: m[1], file: f });
+    });
+    return out;
+}
+
+function persistRegistrationDynamicFiles(req, formData, cb) {
+    const items = registrationDynamicFilesFromReq(req);
+    if (!items.length) return cb(null, formData || {});
+    const fd = { ...(formData || {}) };
+    let i = 0;
+    function next() {
+        if (i >= items.length) return cb(null, fd);
+        const { key, file } = items[i++];
+        fileStore.persistToGlobalAsset(db, upsertGlobalSetting, file, 'regfld_', (err, assetPath) => {
+            if (err) return cb(err);
+            fd[key] = assetPath || (file.filename ? '/uploads/' + file.filename : fd[key]);
+            next();
+        });
+    }
+    next();
 }
 const fileStore = require('./lib/file-store');
 
@@ -1366,7 +1428,43 @@ function migratePreregFormConfigV2(done) {
             const hasLegacyKeys = fields.some(
                 (f) => f && ['fname', 'lname', 'email', 'phone'].includes(String(f.key || ''))
             );
-            if (version >= 2 && !hasLegacyKeys) return done && done();
+            const hasStateField = fields.some((f) => f && String(f.key || '').toLowerCase() === 'state');
+            if (version >= 3 && !hasLegacyKeys && hasStateField) return done && done();
+            if (!hasLegacyKeys && hasStateField) {
+                parsed.version = Math.max(version, 3);
+                return upsertGlobalSetting('preregistration_form_config', JSON.stringify(parsed), () => done && done());
+            }
+            if (!hasLegacyKeys && !hasStateField) {
+                const nextFields = [];
+                let inserted = false;
+                fields.forEach((f) => {
+                    nextFields.push(f);
+                    if (!inserted && f && String(f.key || '').toLowerCase() === 'city') {
+                        nextFields.push({
+                            key: 'state',
+                            label: 'State',
+                            type: 'text',
+                            step: Number(f.step) || 3,
+                            enabled: true,
+                            required: true
+                        });
+                        inserted = true;
+                    }
+                });
+                if (!inserted) {
+                    nextFields.push({
+                        key: 'state',
+                        label: 'State',
+                        type: 'text',
+                        step: 3,
+                        enabled: true,
+                        required: true
+                    });
+                }
+                parsed.version = Math.max(version, 3);
+                parsed.fields = nextFields;
+                return upsertGlobalSetting('preregistration_form_config', JSON.stringify(parsed), () => done && done());
+            }
             upsertGlobalSetting(
                 'preregistration_form_config',
                 JSON.stringify(portalProduct.DEFAULT_PREREG_FORM_CONFIG),
@@ -1899,7 +1997,7 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                 ticket_id: ticketId,
                 qr_code_url: base + '/doctor.html#tab-tickets',
                 ticket_pdf_url: pdfUrl,
-                payment_status: 'PAID'
+                payment_status: portalProduct.FEATURES.noFees ? 'FREE' : 'PAID'
             };
             if (sendTemplateNotify) {
                 notifEngine.notify(
@@ -4567,7 +4665,7 @@ function respondApplicationsList(uid, yearFilter, res) {
 }
 
 // 5. Seminars: Register (Application Submission)
-app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
+app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => {
     let {
         userId,
         seminarId,
@@ -4607,7 +4705,7 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
         }
 
         db.get(
-            `SELECT registration_start, registration_end, otp_on_application, otp_on_step1, otp_on_submit, title FROM seminars WHERE id = ? AND is_active = 1`,
+            `SELECT registration_start, registration_end, otp_on_application, otp_on_step1, otp_on_submit, title, registration_form_json FROM seminars WHERE id = ? AND is_active = 1`,
             [seminarId],
             (err2, sem) => {
             if (err2) return res.status(500).json({ error: err2.message });
@@ -4617,9 +4715,9 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
             const rs = seminarDt.parseSeminarMs(sem.registration_start);
             const re = seminarDt.parseRegistrationEndMs(sem.registration_end);
             if (rs != null && !Number.isNaN(rs) && now < rs) {
-                    return res.status(400).json({
-                        error: 'Registration for this seminar has not opened yet. Please wait until the scheduled registration date.'
-                    });
+                return res.status(400).json({
+                    error: 'Registration for this seminar has not opened yet. Please wait until the scheduled registration date.'
+                });
             }
             if (re != null && !Number.isNaN(re) && now > re) {
                     return extModules.userHasRegistrationOverride(db, userId, seminarId, (ovErr, hasOverride) => {
@@ -4634,7 +4732,15 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
             }
 
                 function checkPreregThenSubmit() {
-                    if (!portalProduct.FEATURES.hasPreregistration) return continueApplicationSubmit();
+                    const flow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
+                    if (!flow.mainRegistrationRequired) {
+                        return res.status(400).json({
+                            error: 'Main registration is not enabled for this event.'
+                        });
+                    }
+                    if (!portalProduct.FEATURES.hasPreregistration || !flow.preregistrationRequired) {
+                        return continueApplicationSubmit();
+                    }
                     db.get(
                         `SELECT status FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
                         [userId, seminarId],
@@ -4646,11 +4752,13 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
                                 });
                             }
                             const pst = String(preRow.status || '').toLowerCase();
-                            if (pst !== 'approved' && pst !== 'submitted') {
+                            if (pst !== 'approved') {
                                 return res.status(400).json({
                                     error:
                                         pst === 'rejected'
                                             ? 'Your pre-registration was not approved.'
+                                            : pst === 'submitted'
+                                            ? 'Your pre-registration is submitted and awaiting approval.'
                                             : 'Wait for pre-registration approval before main registration.'
                                 });
                             }
@@ -4666,6 +4774,9 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
                 formData = formData || {};
                     formData.certificate_path = certPath;
                 }
+                persistRegistrationDynamicFiles(req, formData, (dynErr, formWithFiles) => {
+                if (dynErr) return res.status(500).json({ error: dynErr.message });
+                formData = formWithFiles || formData;
 
                 loadRegistrationFormConfig(seminarId, (cfgErr, regCfg) => {
                     if (cfgErr) return res.status(500).json({ error: cfgErr.message });
@@ -4907,6 +5018,7 @@ app.post('/api/applications/submit', withCertificateUpload, (req, res) => {
                     runFieldOtpsThenInsert();
                 });
             });
+                });
                 }
             }
         );
@@ -6135,7 +6247,9 @@ function resolveScanRowFromApplicationId(qrData, selectedSeminarId, cb) {
     lookupRegistrationForScan(qrData, (eReg, regRow) => {
         if (eReg) return cb(eReg);
         if (!regRow) return cb(null, null);
-        const payOk = String(regRow.payment_status || '').toLowerCase() === 'success';
+        const payOk =
+            portalProduct.FEATURES.noFees ||
+            String(regRow.payment_status || '').toLowerCase() === 'success';
         if (!payOk) return cb(null, { error: 'unpaid', regRow });
         if (regRow.ticket_id) {
             return lookupTicketForScan(regRow.ticket_id_string || qrData, (e2, tRow) => {
@@ -6333,7 +6447,9 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                     });
                 }
 
-                const payOk = String(row.payment_status || '').toLowerCase() === 'success';
+                const payOk =
+                    portalProduct.FEATURES.noFees ||
+                    String(row.payment_status || '').toLowerCase() === 'success';
                 if (!payOk) {
                     logScanDashboard(selectedSeminarId, staffId, 'unpaid', 'Payment is not confirmed for this ticket', row);
                     return res.status(403).json({
@@ -6389,23 +6505,29 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         scansRequired === 2 ? 'Entry and exit scans already recorded' : 'Check-in already completed',
                         row
                     );
-                    return res.status(400).json({
+                    const dupPayload = {
                         success: false,
+                        duplicate: true,
                         error:
                             scansRequired === 2
                                 ? 'Both entry and exit scans are already recorded for this ticket.'
                                 : 'Check-in already completed for this ticket.',
                         scanCount: currentScanCount,
                         scansRequired,
-                        doctor: {
-                            userId: row.doctor_user_id,
-                            userIdString: row.doctor_user_id_string,
+                        doctor: doctorPayloadFromScanRow(row, {
                             name: buildDisplayNameFromFormData(row.form_data, row),
-                            email: row.doctor_email,
-                            phone: row.doctor_phone,
-                            applicationNo: row.application_no
+                            ticketId: row.ticket_id_string
+                        })
+                    };
+                    return scannerCertDisplay.resolveScannerCertificateDisplay(
+                        db,
+                        row.doctor_user_id,
+                        row.seminar_id,
+                        (eCert, certInfo) => {
+                            if (!eCert && certInfo) dupPayload.certificate = certInfo;
+                            res.status(400).json(dupPayload);
                         }
-                    });
+                    );
                 }
 
                 const ticketSeminarId = Number(row.seminar_id);
@@ -6500,7 +6622,8 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                 );
 
                                 const certEligibleNow =
-                                    String(row.payment_status || '').toLowerCase() === 'success' &&
+                                    (portalProduct.FEATURES.noFees ||
+                                        String(row.payment_status || '').toLowerCase() === 'success') &&
                                     newScanCount >= scansRequired;
                                 let scanMsg =
                                     'Attendance marked. Doctor tracking updated.';
@@ -6537,7 +6660,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                     outcome: 'success',
                                     message: scanMsg
                                 });
-                                res.json({
+                                const basePayload = {
                                     success: true,
                                     sound: 'success',
                                     message: scanMsg,
@@ -6548,11 +6671,33 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                         name: doctorName,
                                         ticketId: row.ticket_id_string,
                                         registrationType: 'checked_in',
-                                        paymentStatus: row.payment_status === 'success' ? 'PAID' : 'UNPAID',
+                                        paymentStatus: portalProduct.FEATURES.noFees
+                                            ? 'FREE'
+                                            : row.payment_status === 'success'
+                                              ? 'PAID'
+                                              : 'UNPAID',
                                         checkedInAt: atIso
                                     }),
                                     scannedByStaffId: staffId
-                                });
+                                };
+                                if (newScanCount < scansRequired) {
+                                    basePayload.certificate = {
+                                        show: false,
+                                        reason: 'scans_pending',
+                                        scanCount: newScanCount,
+                                        scansRequired
+                                    };
+                                    return res.json(basePayload);
+                                }
+                                scannerCertDisplay.resolveScannerCertificateDisplay(
+                                    db,
+                                    row.doctor_user_id,
+                                    row.seminar_id,
+                                    (eCert, certInfo) => {
+                                        if (!eCert && certInfo) basePayload.certificate = certInfo;
+                                        res.json(basePayload);
+                                    }
+                                );
                                 }
                             });
                         };
@@ -6642,6 +6787,7 @@ app.post('/api/admin/seminars', (req, res) => {
         flyer_path,
         gallery_paths,
         registration_form_json,
+        preregistration_form_json,
         cancellation_policy_json,
         whatsapp_group_url,
         otp_on_application,
@@ -6654,6 +6800,10 @@ app.post('/api/admin/seminars', (req, res) => {
     } = req.body;
     const certScansReq = certVerify.normalizeCertScansRequired(cert_scans_required);
     const rfj = registration_form_json != null && String(registration_form_json).trim() !== '' ? String(registration_form_json) : null;
+    const prfj =
+        preregistration_form_json != null && String(preregistration_form_json).trim() !== ''
+            ? String(preregistration_form_json)
+            : null;
     const cpj = cancellation_policy_json != null && String(cancellation_policy_json).trim() !== '' ? String(cancellation_policy_json) : null;
     const wu = whatsapp_group_url != null && String(whatsapp_group_url).trim() !== '' ? String(whatsapp_group_url).trim() : null;
     const otpApp =
@@ -6677,8 +6827,8 @@ app.post('/api/admin/seminars', (req, res) => {
         const portalYear =
             Number.isInteger(bodyYear) && bodyYear > 2000 ? bodyYear : defaultYear;
         db.run(
-            `INSERT INTO seminars (title, description, registration_start, registration_end, preregistration_start, preregistration_end, event_date, capacity, price, checkin_enabled, checkin_date, location_url, terms_conditions, hero_image_path, flyer_path, gallery_paths, registration_form_json, cancellation_policy_json, whatsapp_group_url, otp_on_application, otp_on_step1, otp_on_submit, public_list_enabled, cert_scans_required, portal_year, is_active, show_seats_public) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO seminars (title, description, registration_start, registration_end, preregistration_start, preregistration_end, event_date, capacity, price, checkin_enabled, checkin_date, location_url, terms_conditions, hero_image_path, flyer_path, gallery_paths, registration_form_json, preregistration_form_json, cancellation_policy_json, whatsapp_group_url, otp_on_application, otp_on_step1, otp_on_submit, public_list_enabled, cert_scans_required, portal_year, is_active, show_seats_public) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 title,
                 description,
@@ -6697,6 +6847,7 @@ app.post('/api/admin/seminars', (req, res) => {
                 flyer_path || null,
                 gallery_paths || null,
                 rfj,
+                prfj,
                 cpj,
                 wu,
                 otpApp,
@@ -6739,6 +6890,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
         flyer_path,
         gallery_paths,
         registration_form_json,
+        preregistration_form_json,
         cancellation_policy_json,
         whatsapp_group_url,
         otp_on_application,
@@ -6751,6 +6903,10 @@ app.put('/api/admin/seminars/:id', (req, res) => {
     } = req.body;
     const certScansReq = certVerify.normalizeCertScansRequired(cert_scans_required);
     const rfj = registration_form_json != null && String(registration_form_json).trim() !== '' ? String(registration_form_json) : null;
+    const prfj =
+        preregistration_form_json != null && String(preregistration_form_json).trim() !== ''
+            ? String(preregistration_form_json)
+            : null;
     const cpj = cancellation_policy_json != null && String(cancellation_policy_json).trim() !== '' ? String(cancellation_policy_json) : null;
     const wu = whatsapp_group_url != null && String(whatsapp_group_url).trim() !== '' ? String(whatsapp_group_url).trim() : null;
     const otpApp =
@@ -6773,7 +6929,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
         if (ePy) return res.status(500).json({ error: ePy.message });
         const finalPortalYear = Number.isInteger(py) && py > 2000 ? py : defaultYear;
         db.run(
-            `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=? WHERE id=?`,
+            `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, preregistration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=? WHERE id=?`,
             [
                 title,
                 description,
@@ -6793,6 +6949,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
                 flyer_path != null ? flyer_path : null,
                 gallery_paths != null ? gallery_paths : null,
                 rfj,
+                prfj,
                 cpj,
                 wu,
                 otpApp,
@@ -7401,7 +7558,7 @@ app.post('/api/admin/applications/status', (req, res) => {
     let { applicationId, status } = req.body;
     let newSt = String(status || '').toLowerCase();
     if (portalProduct.FEATURES.noFees && newSt === 'approved_pending_payment') {
-        newSt = 'e_ticket_issued';
+        newSt = 'pending_approval';
     }
     if (!ALLOWED_REGISTRATION_STATUSES.has(newSt)) {
         return res.status(400).json({ error: 'Invalid application status.' });

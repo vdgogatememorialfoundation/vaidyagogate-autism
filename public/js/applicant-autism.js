@@ -16,6 +16,7 @@
     function separatePreregAndMainRegistration() {
         document.querySelectorAll('[data-tab="tab-seminars"]').forEach((el) => el.remove());
         setupAutismHubNavigation();
+        mountMainRegFormOnEventTab();
         const tabApps = document.getElementById('tab-applications');
         if (tabApps) {
             document.getElementById('ak-main-reg-start')?.remove();
@@ -23,13 +24,52 @@
         }
     }
 
+    function mainRegFormPanelEl() {
+        return document.getElementById('multi-step-form');
+    }
+
+    function mountMainRegFormOnEventTab() {
+        const regPane = document.getElementById('tab-main-reg-hub') || document.getElementById('tab-event-register');
+        const form = document.getElementById('multi-step-form');
+        if (!regPane || !form || form.dataset.akMountedOnEvent === '1') return;
+        if (!document.getElementById('ak-main-reg-form-heading')) {
+            const h = document.createElement('h4');
+            h.id = 'ak-main-reg-form-heading';
+            h.className = 'hidden';
+            h.style.cssText = 'margin-bottom:12px;color:#0f766e;';
+            h.textContent = 'Main registration form';
+            form.insertBefore(h, form.firstChild);
+        }
+        regPane.appendChild(form);
+        form.dataset.akMountedOnEvent = '1';
+    }
+
+    function showMainRegFormPanel(eventTitle) {
+        const panel = mainRegFormPanelEl();
+        if (!panel) return;
+        const heading = document.getElementById('ak-main-reg-form-heading');
+        if (heading) {
+            heading.textContent = eventTitle ? 'Main registration — ' + eventTitle : 'Main registration form';
+            heading.classList.remove('hidden');
+        }
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function hideMainRegFormPanel() {
+        const panel = mainRegFormPanelEl();
+        if (panel) panel.classList.add('hidden');
+        const heading = document.getElementById('ak-main-reg-form-heading');
+        if (heading) heading.classList.add('hidden');
+    }
+
     function setupAutismHubNavigation() {
         const menu = document.querySelector('.menu-items');
         if (!menu) return;
         menu.querySelectorAll('[data-tab="tab-prereg"], [data-tab="tab-applications"], [data-tab="tab-competition"]').forEach((el) => el.remove());
         const hubItems = [
-            { tab: 'tab-event-register', icon: 'fa-calendar-plus', label: 'Register Event' },
-            { tab: 'tab-event-track', icon: 'fa-route', label: 'Track Event' },
+            { tab: 'tab-prereg-hub', icon: 'fa-clipboard-list', label: 'Pre-registration' },
+            { tab: 'tab-main-reg-hub', icon: 'fa-file-signature', label: 'Main registration' },
             { tab: 'tab-comp-register', icon: 'fa-cloud-upload-alt', label: 'Register Competition' },
             { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' }
         ];
@@ -47,39 +87,125 @@
     }
 
     function wrapAutismRegisterTrackSections() {
+        const legacyRegister = document.getElementById('tab-event-register');
+        if (legacyRegister && !document.getElementById('tab-prereg-hub')) {
+            legacyRegister.id = 'tab-prereg-hub';
+            const title = legacyRegister.querySelector('.section-title');
+            if (title) title.textContent = 'Pre-registration';
+            const lead = legacyRegister.querySelector('.ak-prereg-lead');
+            if (lead) {
+                lead.textContent =
+                    'Apply for events that require pre-registration. Your submitted details appear below.';
+            }
+            const grid = legacyRegister.querySelector('#ak-events-grid');
+            if (grid) grid.id = 'ak-prereg-events-grid';
+            const track = document.getElementById('tab-event-track');
+            if (track && !document.getElementById('tab-main-reg-hub')) {
+                track.id = 'tab-main-reg-hub';
+                const head = track.querySelector('.ak-track-page-head h3');
+                if (head) {
+                    head.innerHTML =
+                        '<i class="fas fa-file-signature" style="color:#1a237e;margin-right:8px;"></i> Main registration';
+                }
+                const headP = track.querySelector('.ak-track-page-head p');
+                if (headP) {
+                    headP.textContent =
+                        'Complete main registration and view everything you submitted.';
+                }
+                const preregSection = track.querySelector('.ak-track-section');
+                if (preregSection) preregSection.remove();
+                if (!track.querySelector('#ak-main-events-grid')) {
+                    const mainGrid = document.createElement('div');
+                    mainGrid.id = 'ak-main-events-grid';
+                    mainGrid.className = 'seminars-grid';
+                    mainGrid.style.marginBottom = '24px';
+                    track.insertBefore(mainGrid, track.firstChild);
+                }
+                const appsTable = document.querySelector('#tab-applications .data-table');
+                if (appsTable && !track.querySelector('#applications-list')) {
+                    const wrap = document.createElement('div');
+                    wrap.style.marginTop = '16px';
+                    wrap.innerHTML = '<h5 style="margin-bottom:10px;">Application list</h5>';
+                    wrap.appendChild(appsTable.cloneNode(true));
+                    track.appendChild(wrap);
+                }
+            }
+            const preregList = document.getElementById('prereg-list');
+            const preregHub = document.getElementById('tab-prereg-hub');
+            if (preregList && preregHub && preregList.closest('#tab-main-reg-hub')) {
+                let subs = preregHub.querySelector('.ak-prereg-submissions');
+                if (!subs) {
+                    subs = document.createElement('div');
+                    subs.className = 'card ak-prereg-submissions';
+                    subs.style.marginTop = '20px';
+                    subs.innerHTML =
+                        '<h4 style="margin-bottom:12px;color:#0f766e;"><i class="fas fa-folder-open"></i> Your pre-registration submissions</h4>' +
+                        '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">All information you sent, status, and application IDs.</p>';
+                    preregHub.appendChild(subs);
+                }
+                subs.appendChild(preregList);
+            }
+            mountMainRegFormOnEventTab();
+        }
         const preregPane = document.getElementById('tab-prereg');
-        if (preregPane && !document.getElementById('tab-event-register')) {
+        if (preregPane && !document.getElementById('tab-prereg-hub')) {
             const formCard = preregPane.querySelector('#prereg-form')?.closest('.card');
             const listCard = preregPane.querySelector('#prereg-list')?.closest('.card');
-            const regPane = document.createElement('div');
-            regPane.id = 'tab-event-register';
-            regPane.className = 'tab-pane hidden';
-            regPane.innerHTML =
-                '<h3 class="section-title">Register for event</h3>' +
-                '<p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Submit pre-registration (step 1). After approval, complete main registration from the registration form.</p>';
-            if (formCard) regPane.appendChild(formCard);
-            const trackPane = document.createElement('div');
-            trackPane.id = 'tab-event-track';
-            trackPane.className = 'tab-pane hidden';
-            trackPane.innerHTML =
-                '<div class="ak-track-page">' +
-                '<div class="ak-track-page-head">' +
-                '<h3><i class="fas fa-route" style="color:#2563eb;margin-right:8px;"></i> Track event registration</h3>' +
-                '<p>Follow pre-registration and main registration step by step. Updates automatically while this page is open.</p>' +
-                '</div>' +
-                '<section class="ak-track-section">' +
-                '<h4 class="ak-track-section-title"><i class="fas fa-clipboard-list"></i> Pre-registration</h4>' +
-                '<div id="prereg-list" class="ak-track-list"></div>' +
-                '</section>' +
-                '<section class="ak-track-section">' +
-                '<h4 class="ak-track-section-title"><i class="fas fa-file-signature"></i> Main registration</h4>' +
-                '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
-                '</section></div>';
-            if (listCard) {
-                listCard.querySelector('#prereg-list')?.remove();
-                listCard.remove();
+            const preregHub = document.createElement('div');
+            preregHub.id = 'tab-prereg-hub';
+            preregHub.className = 'tab-pane hidden';
+            preregHub.innerHTML =
+                '<h3 class="section-title">Pre-registration</h3>' +
+                '<p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Apply for events that require pre-registration. Your submitted details appear below.</p>' +
+                '<h2 class="section-title" style="font-size:1.15rem;margin-bottom:12px;">Available events</h2>' +
+                '<div id="ak-prereg-events-grid" class="seminars-grid" style="margin-bottom:24px;"></div>';
+            if (formCard) {
+                const fg = formCard.querySelector('.form-group');
+                if (fg && formCard.querySelector('#prereg-seminar-grid')) fg.remove();
+                if (!formCard.id) formCard.id = 'ak-prereg-form-panel';
+                formCard.classList.add('hidden');
+                if (!formCard.querySelector('#ak-prereg-form-heading')) {
+                    const h = document.createElement('h4');
+                    h.id = 'ak-prereg-form-heading';
+                    h.style.cssText = 'margin-bottom:12px;color:#0f766e;';
+                    h.textContent = 'Pre-registration form';
+                    formCard.insertBefore(h, formCard.firstChild);
+                }
+                preregHub.appendChild(formCard);
             }
-            preregPane.replaceWith(regPane, trackPane);
+            const submissions = document.createElement('div');
+            submissions.className = 'card';
+            submissions.style.marginTop = '20px';
+            submissions.innerHTML =
+                '<h4 style="margin-bottom:12px;color:#0f766e;"><i class="fas fa-folder-open"></i> Your pre-registration submissions</h4>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">All information you sent, status, and application IDs.</p>' +
+                '<div id="prereg-list" class="ak-track-list"></div>';
+            preregHub.appendChild(submissions);
+            if (listCard) listCard.remove();
+
+            const mainHub = document.createElement('div');
+            mainHub.id = 'tab-main-reg-hub';
+            mainHub.className = 'tab-pane hidden';
+            mainHub.innerHTML =
+                '<h3 class="section-title">Main registration</h3>' +
+                '<p style="color:#64748b;margin-bottom:16px;">After pre-registration is approved (if required), complete main registration here.</p>' +
+                '<h2 class="section-title" style="font-size:1.15rem;margin-bottom:12px;">Available events</h2>' +
+                '<div id="ak-main-events-grid" class="seminars-grid" style="margin-bottom:24px;"></div>' +
+                '<div class="card" id="ak-main-reg-submissions" style="margin-top:20px;">' +
+                '<h4 style="margin-bottom:12px;color:#1a237e;"><i class="fas fa-folder-open"></i> Your main registrations</h4>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Track status and view everything submitted for main registration.</p>' +
+                '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;"></p>' +
+                '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
+                '<div style="margin-top:16px;">' +
+                '<h5 style="margin-bottom:10px;color:#334155;">Application list</h5>' +
+                '<table class="data-table"><thead><tr><th>Application #</th><th>Status</th><th>Actions</th></tr></thead>' +
+                '<tbody id="applications-list"><tr><td colspan="3" style="text-align:center;color:#64748b;">Loading…</td></tr></tbody></table>' +
+                '</div></div>';
+
+            const legacyGrid = preregPane.querySelector('#ak-events-grid');
+            if (legacyGrid) legacyGrid.id = 'ak-prereg-events-grid';
+
+            preregPane.replaceWith(preregHub, mainHub);
         }
         const compPane = document.getElementById('tab-competition');
         if (compPane && !document.getElementById('tab-comp-register')) {
@@ -121,17 +247,22 @@
         return document.getElementById('comp-list');
     }
 
-    function showEventRegisterView() {
-        if (typeof switchTab === 'function') switchTab('tab-event-register');
+    function showPreregHubView() {
+        if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+        hideEventRegisterForms();
         loadPreregSeminars();
-        loadPreregFormConfig(null).then(() => renderPreregFields(document.getElementById('prereg-fields')));
+        loadPreregList();
     }
 
-    function showEventTrackView() {
-        if (typeof switchTab === 'function') switchTab('tab-event-track');
-        loadPreregList();
+    function showMainRegHubView() {
+        if (typeof switchTab === 'function') switchTab('tab-main-reg-hub');
+        hideEventRegisterForms();
+        loadMainRegEvents();
         if (typeof loadApplications === 'function') loadApplications(true);
     }
+
+    window.showEventRegisterView = showPreregHubView;
+    window.showEventTrackView = showMainRegHubView;
 
     function showCompRegisterView() {
         if (typeof switchTab === 'function') switchTab('tab-comp-register');
@@ -147,8 +278,6 @@
         loadCompetitionList();
     }
 
-    window.showEventRegisterView = showEventRegisterView;
-    window.showEventTrackView = showEventTrackView;
     window.showCompRegisterView = showCompRegisterView;
     window.showCompTrackView = showCompTrackView;
 
@@ -225,6 +354,7 @@
     let preregFields = [];
     let preregSeminars = [];
     let preregResubmitId = null;
+    let preregGridCountdownTimer = null;
     let preregWizardStep = 1;
     const PREREG_WIZARD_STEPS = [
         { n: 1, label: 'Parent' },
@@ -237,13 +367,67 @@
     async function loadPreregFormConfig(seminarId) {
         const q = seminarId ? `?seminarId=${encodeURIComponent(seminarId)}` : '';
         const data = await fetchJson('/api/preregistration-form-config' + q);
-        preregFields = data.fields || [];
+        window.__preregOtpOnApplication = !!data.otpOnApplication;
+        window.__preregOtpOnStep1 = !!data.otpOnStep1;
+        window.__preregOtpOnSubmit = !!data.otpOnSubmit;
+        window.__preregEmailConfigured = !!data.emailConfigured;
+        window.__preregWhatsappConfigured = !!data.whatsappConfigured;
+        const otpOn = window.__preregOtpOnApplication;
+        preregFields = (data.fields || []).map((f) => {
+            if (!f || !otpOn) return { ...f, verifyOtp: false };
+            if (f.key === 'email' && f.verifyOtp && !data.emailConfigured) return { ...f, verifyOtp: false };
+            if (f.key === 'phone' && f.verifyOtp && !data.whatsappConfigured) return { ...f, verifyOtp: false };
+            return f;
+        });
         if (typeof window.__akExposePreregFields === 'function') {
             window.__akExposePreregFields(preregFields);
         } else {
             window.__akPreregFields = preregFields;
         }
+        syncPreregOtpUi();
         return data;
+    }
+
+    function preregFieldNeedsEmailOtp() {
+        if (!window.__preregOtpOnApplication || !window.__preregEmailConfigured) return false;
+        return !!(
+            window.__preregOtpOnStep1 ||
+            (preregFields || []).some((f) => f && f.key === 'email' && f.verifyOtp && f.enabled !== false)
+        );
+    }
+
+    function preregFieldNeedsPhoneOtp() {
+        if (!window.__preregOtpOnApplication || !window.__preregWhatsappConfigured) return false;
+        return !!(
+            window.__preregOtpOnStep1 ||
+            (preregFields || []).some((f) => f && f.key === 'phone' && f.verifyOtp && f.enabled !== false)
+        );
+    }
+
+    function syncPreregOtpUi() {
+        const panel = document.getElementById('prereg-seminar-otp-panel');
+        const hint = document.getElementById('prereg-otp-panel-hint');
+        const needs = preregFieldNeedsEmailOtp() || preregFieldNeedsPhoneOtp();
+        if (panel) {
+            if (window.__preregOtpOnApplication && needs) panel.classList.remove('hidden');
+            else panel.classList.add('hidden');
+        }
+        if (hint) {
+            const parts = [];
+            if (window.__preregOtpOnStep1) parts.push('email / WhatsApp on this form');
+            if (window.__preregOtpOnSubmit) parts.push('preview before submit');
+            hint.textContent = parts.length
+                ? 'Verify on: ' + parts.join(' and ') + '.'
+                : needs
+                  ? 'Use Send code on email or phone fields before submitting.'
+                  : 'OTP is disabled for this event.';
+        }
+        document.querySelectorAll('.prereg-field-otp-row').forEach((row) => {
+            const key = row.getAttribute('data-field-key');
+            const show =
+                (key === 'email' && preregFieldNeedsEmailOtp()) || (key === 'phone' && preregFieldNeedsPhoneOtp());
+            row.style.display = show ? '' : 'none';
+        });
     }
 
     function preregFieldsForStep(step) {
@@ -458,6 +642,9 @@
         } else if (f.type === 'boolean') {
             input = document.createElement('input');
             input.type = 'checkbox';
+        } else if (f.type === 'file') {
+            input = document.createElement('input');
+            input.type = 'file';
         } else {
             input = document.createElement('input');
             if (f.type === 'email') input.type = 'email';
@@ -488,6 +675,30 @@
                 label.textContent = f.label + (f.required ? ' *' : '');
                 fg.appendChild(label);
                 fg.appendChild(createPreregFieldInput(f));
+                if (
+                    (f.key === 'email' && preregFieldNeedsEmailOtp()) ||
+                    (f.key === 'phone' && preregFieldNeedsPhoneOtp())
+                ) {
+                    const otpRow = document.createElement('div');
+                    otpRow.className = 'prereg-field-otp-row';
+                    otpRow.dataset.fieldKey = f.key;
+                    otpRow.style.cssText = 'margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+                    const ch = f.key === 'email' ? 'email' : 'phone';
+                    otpRow.innerHTML =
+                        '<button type="button" class="btn-primary" onclick="akSendPreregOtp(\'' +
+                        ch +
+                        '\')">Send code</button>' +
+                        '<input type="text" id="prereg-otp-code-' +
+                        ch +
+                        '" placeholder="Code" style="max-width:100px;padding:8px;">' +
+                        '<button type="button" class="btn-primary" onclick="akVerifyPreregOtp(\'' +
+                        ch +
+                        '\')">Verify</button>' +
+                        '<span id="prereg-otp-status-' +
+                        ch +
+                        '" style="font-size:0.85rem;color:#64748b;"></span>';
+                    fg.appendChild(otpRow);
+                }
                 panel.appendChild(fg);
             });
             container.appendChild(panel);
@@ -495,13 +706,460 @@
         renderPreregWizardNav();
         resetPreregWizard();
         wirePreregPinLookup();
+        syncPreregOtpUi();
     }
+
+    function akPreregSeminarId() {
+        return parseInt(document.getElementById('prereg-seminar-select')?.value, 10) || 0;
+    }
+
+    window.akSendPreregOtp = function (channel) {
+        const sid = akPreregSeminarId();
+        if (!sid) return alert('Select an event first.');
+        if (typeof sendRegistrationOtpForField !== 'function') return;
+        const saved = typeof activeSeminarIdForReg !== 'undefined' ? activeSeminarIdForReg : null;
+        activeSeminarIdForReg = sid;
+        sendRegistrationOtpForField(channel);
+        activeSeminarIdForReg = saved;
+    };
+
+    window.akVerifyPreregOtp = function (channel) {
+        const sid = akPreregSeminarId();
+        if (!sid) return alert('Select an event first.');
+        if (typeof verifyRegistrationOtpForField !== 'function') return;
+        const saved = typeof activeSeminarIdForReg !== 'undefined' ? activeSeminarIdForReg : null;
+        activeSeminarIdForReg = sid;
+        verifyRegistrationOtpForField(channel);
+        activeSeminarIdForReg = saved;
+    };
 
     function preregFieldValue(f) {
         const el = document.getElementById('prereg-field-' + f.key);
         if (!el) return '';
         if (f.type === 'boolean') return el.checked;
+        if (f.type === 'file') return el.files && el.files[0] ? el.files[0].name : '';
         return String(el.value || '').trim();
+    }
+
+    function seminarFlowFlags(seminarRow) {
+        try {
+            const parsed = seminarRow && seminarRow.registration_form_json ? JSON.parse(seminarRow.registration_form_json) : {};
+            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            const hasFlow =
+                Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+                Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+            if (!hasFlow) {
+                return { preregistrationRequired: true, mainRegistrationRequired: true };
+            }
+            return {
+                preregistrationRequired: flow.preregistrationRequired === true,
+                mainRegistrationRequired: flow.mainRegistrationRequired === true
+            };
+        } catch (_) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true };
+        }
+    }
+
+    function preregFormPanelEl() {
+        return document.getElementById('ak-prereg-form-panel');
+    }
+
+    function showPreregFormPanel(eventTitle) {
+        hideMainRegFormPanel();
+        const panel = preregFormPanelEl();
+        if (!panel) return;
+        const heading = document.getElementById('ak-prereg-form-heading');
+        if (heading) {
+            heading.textContent = eventTitle
+                ? 'Pre-registration form — ' + eventTitle
+                : 'Pre-registration form';
+        }
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function hidePreregFormPanel() {
+        const panel = preregFormPanelEl();
+        if (panel) panel.classList.add('hidden');
+        const msg = document.getElementById('prereg-status-msg');
+        if (msg) msg.textContent = '';
+    }
+
+    function hideEventRegisterForms() {
+        hidePreregFormPanel();
+        hideMainRegFormPanel();
+    }
+
+    function preregStatusForSeminar(seminarId) {
+        const row = window.__akPreregBySeminar && window.__akPreregBySeminar[Number(seminarId)];
+        return row ? String(row.status || '').toLowerCase() : '';
+    }
+
+    function isPreregApprovedForSeminar(seminarId) {
+        return preregStatusForSeminar(seminarId) === 'approved';
+    }
+
+    function openMainRegistrationForSeminar(seminarId) {
+        const sid = Number(seminarId);
+        if (!Number.isFinite(sid) || sid < 1) return;
+        const seminar =
+            (window.__akAllSeminars || []).find((x) => Number(x.id) === sid) ||
+            (window.activeSeminars || []).find((x) => Number(x.id) === sid);
+        if (seminar) {
+            const flags = seminarFlowFlags(seminar);
+            const mainWin = mainRegistrationWindowStateClient(seminar);
+            if (mainWin.state === 'upcoming') {
+                alert(
+                    'Registration has not opened yet for this seminar. Please wait until the countdown reaches zero.'
+                );
+                return;
+            }
+            if (mainWin.state === 'closed') {
+                alert('Registration for this seminar has closed.');
+                return;
+            }
+            if (flags.preregistrationRequired && !isPreregApprovedForSeminar(sid)) {
+                alert('Complete pre-registration and wait for approval before main registration.');
+                return;
+            }
+        }
+        if (typeof window.startRegistration === 'function') {
+            const list = (window.__akAllSeminars || []).filter((s) => seminarFlowFlags(s).mainRegistrationRequired);
+            window.activeSeminars = list.length ? list.slice() : window.activeSeminars || [];
+            if (!window.activeSeminars.some((x) => Number(x.id) === sid)) {
+                const fromAll = (window.__akAllSeminars || []).find((x) => Number(x.id) === sid);
+                if (fromAll) window.activeSeminars.push(fromAll);
+            }
+            if (typeof window.switchTab === 'function') window.switchTab('tab-main-reg-hub');
+            hidePreregFormPanel();
+            window.startRegistration(sid);
+            return;
+        }
+        if (typeof window.switchTab === 'function') window.switchTab('tab-main-reg-hub');
+    }
+
+    function akEscapeHtml(v) {
+        if (typeof escapeHtml === 'function') return escapeHtml(v);
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function akFormatTrackDateTime(iso) {
+        if (typeof formatTrackDateTime === 'function') return formatTrackDateTime(iso);
+        if (window.PortalDateTime && window.PortalDateTime.formatLong) return window.PortalDateTime.formatLong(iso);
+        return iso ? String(iso) : '—';
+    }
+
+    function akFormatEventDate(iso) {
+        if (typeof formatEventDate === 'function') return formatEventDate(iso);
+        return akFormatTrackDateTime(iso);
+    }
+
+    function preregWindowStateClient(seminar) {
+        const now = Date.now();
+        const parseMs =
+            window.PortalDateTime && window.PortalDateTime.parseMs
+                ? (v) => window.PortalDateTime.parseMs(v)
+                : (v) => (v ? new Date(v).getTime() : null);
+        const parseEnd =
+            window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
+                ? (v) => window.PortalDateTime.parseRegistrationEndMs(v)
+                : parseMs;
+        const ps = parseMs(seminar.preregistration_start);
+        const pe = parseEnd(seminar.preregistration_end);
+        if (ps != null && !Number.isNaN(ps) && now < ps) return { state: 'upcoming', opensAt: ps };
+        if (pe != null && !Number.isNaN(pe) && now > pe) return { state: 'closed' };
+        return { state: 'open' };
+    }
+
+    function mainRegistrationWindowStateClient(seminar) {
+        const now = Date.now();
+        const parseMs =
+            window.PortalDateTime && window.PortalDateTime.parseMs
+                ? (v) => window.PortalDateTime.parseMs(v)
+                : (v) => (v ? new Date(v).getTime() : null);
+        const parseEnd =
+            window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
+                ? (v) => window.PortalDateTime.parseRegistrationEndMs(v)
+                : parseMs;
+        const rs = parseMs(seminar.registration_start);
+        const re = parseEnd(seminar.registration_end);
+        if (rs != null && !Number.isNaN(rs) && now < rs) return { state: 'upcoming', opensAt: rs };
+        if (re != null && !Number.isNaN(re) && now > re) return { state: 'closed' };
+        return { state: 'open' };
+    }
+
+    function buildAutismEventGridCard(s, preregBySeminar, gridMode) {
+        gridMode = gridMode || 'prereg';
+        const flags = seminarFlowFlags(s);
+        const mainOnly = !flags.preregistrationRequired && flags.mainRegistrationRequired;
+        if (gridMode === 'prereg' && !flags.preregistrationRequired) {
+            return '';
+        }
+        if (gridMode === 'main' && !flags.mainRegistrationRequired) {
+            return '';
+        }
+        const prereg = preregBySeminar[Number(s.id)] || null;
+        const st = String((prereg && prereg.status) || '').toLowerCase();
+        const preWin = flags.preregistrationRequired ? preregWindowStateClient(s) : { state: 'open' };
+        const mainWin = flags.mainRegistrationRequired ? mainRegistrationWindowStateClient(s) : { state: 'open' };
+        const eventLabel = akFormatEventDate(s.event_date);
+        const preEndLabel = s.preregistration_end ? akFormatTrackDateTime(s.preregistration_end) : '';
+        const regEndLabel = s.registration_end ? akFormatTrackDateTime(s.registration_end) : '';
+        let statusBlock = '';
+        let actionBlock = '';
+
+        if (mainOnly) {
+            if (mainWin.state === 'upcoming') {
+                statusBlock +=
+                    '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
+                    '<p style="font-size:0.8rem;color:#4338ca;font-weight:600;"><i class="fas fa-hourglass-half"></i> Registration opens</p>' +
+                    '<p style="font-size:0.9rem;color:#312e81;">' +
+                    akEscapeHtml(akFormatTrackDateTime(s.registration_start)) +
+                    '</p>' +
+                    '<p id="ak-main-countdown-' +
+                    s.id +
+                    '" data-main-opens-at="' +
+                    mainWin.opensAt +
+                    '" style="font-size:1.1rem;font-weight:700;color:#0f766e;">' +
+                    formatCountdownTo(mainWin.opensAt) +
+                    '</p></div>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
+            } else if (mainWin.state === 'closed') {
+                statusBlock += '<p style="font-size:0.85rem;color:#b45309;margin-bottom:10px;">Registration closed</p>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration closed</button>';
+            } else {
+                if (regEndLabel) {
+                    statusBlock +=
+                        '<p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">Closes ' + akEscapeHtml(regEndLabel) + '</p>';
+                }
+                actionBlock =
+                    '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="main" data-sid="' +
+                    s.id +
+                    '" style="width:100%;">Register now</button>';
+            }
+        } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'prereg') {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>' +
+                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Open the <strong>Main registration</strong> tab when final registration opens.</p>';
+            if (mainWin.state === 'upcoming') {
+                statusBlock +=
+                    '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
+                    '<p style="font-size:0.8rem;color:#047857;font-weight:600;">Final registration opens</p>' +
+                    '<p style="font-size:0.9rem;color:#065f46;">' +
+                    akEscapeHtml(akFormatTrackDateTime(s.registration_start)) +
+                    '</p>' +
+                    '<p id="ak-main-countdown-' +
+                    s.id +
+                    '" data-main-opens-at="' +
+                    mainWin.opensAt +
+                    '" style="font-size:1.1rem;font-weight:700;color:#0f766e;">' +
+                    formatCountdownTo(mainWin.opensAt) +
+                    '</p></div>';
+            }
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Use Main registration tab</button>';
+        } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'main') {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>';
+            if (mainWin.state === 'upcoming') {
+                statusBlock +=
+                    '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
+                    '<p style="font-size:0.8rem;color:#047857;font-weight:600;">Final registration opens</p>' +
+                    '<p style="font-size:0.9rem;color:#065f46;">' +
+                    akEscapeHtml(akFormatTrackDateTime(s.registration_start)) +
+                    '</p>' +
+                    '<p id="ak-main-countdown-' +
+                    s.id +
+                    '" data-main-opens-at="' +
+                    mainWin.opensAt +
+                    '" style="font-size:1.1rem;font-weight:700;color:#0f766e;">' +
+                    formatCountdownTo(mainWin.opensAt) +
+                    '</p></div>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
+            } else if (mainWin.state === 'closed') {
+                statusBlock += '<p style="font-size:0.85rem;color:#b45309;margin-bottom:10px;">Registration closed</p>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration closed</button>';
+            } else {
+                if (regEndLabel) {
+                    statusBlock +=
+                        '<p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">Closes ' + akEscapeHtml(regEndLabel) + '</p>';
+                }
+                actionBlock =
+                    '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="main" data-sid="' +
+                    s.id +
+                    '" style="width:100%;">Register now</button>';
+            }
+        } else if (flags.preregistrationRequired && st === 'submitted') {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>' +
+                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Application under review</p>';
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Under review</button>';
+        } else if (flags.preregistrationRequired && st === 'revision_required') {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>' +
+                '<p style="font-size:0.85rem;color:#7c3aed;margin-bottom:10px;">Update required</p>';
+            actionBlock =
+                '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="revise" data-sid="' +
+                s.id +
+                '" style="width:100%;background:#7c3aed;">Update application</button>';
+        } else if (flags.preregistrationRequired && preWin.state === 'upcoming') {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>';
+            statusBlock +=
+                '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
+                '<p style="font-size:0.8rem;color:#4338ca;font-weight:600;"><i class="fas fa-hourglass-half"></i> Opens</p>' +
+                '<p style="font-size:0.9rem;color:#312e81;">' +
+                akEscapeHtml(akFormatTrackDateTime(s.preregistration_start)) +
+                '</p>' +
+                '<p id="ak-prereg-countdown-' +
+                s.id +
+                '" data-prereg-opens-at="' +
+                preWin.opensAt +
+                '" style="font-size:1.1rem;font-weight:700;color:#0f766e;">' +
+                formatCountdownTo(preWin.opensAt) +
+                '</p></div>';
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Preregister</button>';
+        } else if (flags.preregistrationRequired && preWin.state === 'closed' && !st) {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>' +
+                '<p style="font-size:0.85rem;color:#b45309;margin-bottom:10px;"><i class="fas fa-lock"></i> Pre-registration closed.</p>';
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Preregister</button>';
+        } else if (flags.preregistrationRequired && !st) {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>';
+            if (preEndLabel) {
+                statusBlock +=
+                    '<p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">Closes ' + akEscapeHtml(preEndLabel) + '</p>';
+            }
+            actionBlock =
+                '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="pick" data-sid="' +
+                s.id +
+                '" style="width:100%;">Preregister</button>';
+        } else if (!flags.preregistrationRequired && flags.mainRegistrationRequired) {
+            if (mainWin.state === 'upcoming') {
+                statusBlock +=
+                    '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
+                    '<p style="font-size:0.8rem;color:#4338ca;font-weight:600;">Registration opens</p>' +
+                    '<p id="ak-main-countdown-' +
+                    s.id +
+                    '" data-main-opens-at="' +
+                    mainWin.opensAt +
+                    '" style="font-size:1.1rem;font-weight:700;color:#0f766e;">' +
+                    formatCountdownTo(mainWin.opensAt) +
+                    '</p></div>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
+            } else {
+                if (regEndLabel) {
+                    statusBlock +=
+                        '<p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">Closes ' + akEscapeHtml(regEndLabel) + '</p>';
+                }
+                actionBlock =
+                    '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="main" data-sid="' +
+                    s.id +
+                    '" style="width:100%;">Register now</button>';
+            }
+        } else {
+            statusBlock += '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Registration not available</p>';
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Unavailable</button>';
+        }
+
+        return (
+            '<div class="ak-prereg-event-card" data-sid="' +
+            s.id +
+            '" style="background:white;border-radius:12px;padding:25px;box-shadow:0 4px 15px rgba(0,0,0,0.03);border-top:4px solid #0f766e;display:flex;flex-direction:column;justify-content:space-between;">' +
+            '<div><h3 style="color:#0f766e;margin-bottom:10px;">' +
+            akEscapeHtml(s.title || 'Event') +
+            '</h3>' +
+            '<p style="color:#64748b;font-size:0.9rem;margin-bottom:12px;">' +
+            akEscapeHtml(s.description || '') +
+            '</p>' +
+            '<p style="font-size:0.85rem;"><strong>Event:</strong> ' +
+            akEscapeHtml(eventLabel) +
+            '</p>' +
+            (s.portal_year
+                ? '<p style="font-size:0.8rem;color:#64748b;">Year ' + akEscapeHtml(String(s.portal_year)) + '</p>'
+                : '') +
+            '<p style="font-size:0.85rem;margin-top:8px;"><strong>Fee:</strong> ₹' +
+            (s.price || 0) +
+            '</p></div>' +
+            '<div>' +
+            statusBlock +
+            actionBlock +
+            '</div></div>'
+        );
+    }
+
+    function wireAutismEventGridActions(grid, preregBySeminar, rawSeminars) {
+        if (!grid) return;
+        const sel = document.getElementById('prereg-seminar-select');
+        const byId = {};
+        (rawSeminars || []).forEach((s) => {
+            byId[Number(s.id)] = s;
+        });
+        grid.querySelectorAll('.ak-prereg-grid-action').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = String(btn.getAttribute('data-mode') || '');
+                const sid = String(btn.getAttribute('data-sid') || '');
+                if (mode === 'main') {
+                    openMainRegistrationForSeminar(sid);
+                    return;
+                }
+                if (mode === 'revise') {
+                    const row = preregBySeminar[Number(sid)];
+                    if (row) window.beginPreregRevision(row);
+                    return;
+                }
+                if (sel) sel.value = sid;
+                grid.querySelectorAll('.ak-prereg-event-card').forEach((card) => {
+                    card.style.outline = '';
+                    card.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
+                });
+                const card = btn.closest('.ak-prereg-event-card');
+                if (card) {
+                    card.style.outline = '2px solid #0f766e';
+                    card.style.boxShadow = '0 8px 24px rgba(15,118,110,0.15)';
+                }
+                const seminar = byId[Number(sid)];
+                showPreregFormPanel(seminar && seminar.title ? seminar.title : '');
+                loadPreregFormConfig(Number(sid) || null).then(() => {
+                    renderPreregFields(document.getElementById('prereg-fields'));
+                    resetPreregWizard();
+                    preregFormPanelEl()?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+        });
+    }
+
+    function paintAutismEventsGrid(gridId, rawSeminars, preregBySeminar, gridMode) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        clearPreregGridCountdownTimer();
+        const rows = (Array.isArray(rawSeminars) ? rawSeminars : [])
+            .map((s) => buildAutismEventGridCard(s, preregBySeminar || {}, gridMode))
+            .filter(Boolean);
+        grid.innerHTML = rows.length
+            ? rows.join('')
+            : '<p style="grid-column:1/-1;text-align:center;width:100%;color:#64748b;">No events available for registration at this time.</p>';
+        const rawFiltered = (Array.isArray(rawSeminars) ? rawSeminars : []).filter((s) => {
+            const f = seminarFlowFlags(s);
+            return gridMode === 'main' ? f.mainRegistrationRequired : f.preregistrationRequired;
+        });
+        wireAutismEventGridActions(grid, preregBySeminar || {}, rawFiltered);
+        startPreregGridCountdownTimer();
     }
 
     function validatePreregStep(step, showAlert) {
@@ -541,25 +1199,128 @@
         showPreregWizardStep(preregWizardStep - 1);
     }
 
+    function clearPreregGridCountdownTimer() {
+        if (preregGridCountdownTimer) {
+            clearInterval(preregGridCountdownTimer);
+            preregGridCountdownTimer = null;
+        }
+    }
+
+    function formatCountdownTo(targetMs) {
+        const diff = Math.max(0, targetMs - Date.now());
+        if (diff <= 0) return 'Opening now';
+        const sec = Math.floor(diff / 1000) % 60;
+        const min = Math.floor(diff / 60000) % 60;
+        const hr = Math.floor(diff / 3600000) % 24;
+        const day = Math.floor(diff / 86400000);
+        const parts = [];
+        if (day) parts.push(`${day}d`);
+        if (day || hr) parts.push(`${hr}h`);
+        parts.push(`${min}m`);
+        parts.push(`${sec}s`);
+        return parts.join(' ');
+    }
+
+    function startPreregGridCountdownTimer() {
+        clearPreregGridCountdownTimer();
+        const tick = () => {
+            let hasUpcoming = false;
+            let needReload = false;
+            document.querySelectorAll('[data-prereg-opens-at]').forEach((el) => {
+                const opensAt = Number(el.getAttribute('data-prereg-opens-at'));
+                if (!Number.isFinite(opensAt) || opensAt <= 0) return;
+                if (Date.now() < opensAt) {
+                    hasUpcoming = true;
+                    el.textContent = 'Opens in ' + formatCountdownTo(opensAt);
+                } else {
+                    el.textContent = 'Open';
+                    if (!el.dataset.akReloaded) {
+                        el.dataset.akReloaded = '1';
+                        needReload = true;
+                    }
+                }
+            });
+            document.querySelectorAll('[data-main-opens-at]').forEach((el) => {
+                const opensAt = Number(el.getAttribute('data-main-opens-at'));
+                if (!Number.isFinite(opensAt) || opensAt <= 0) return;
+                if (Date.now() < opensAt) {
+                    hasUpcoming = true;
+                    el.textContent = 'Opens in ' + formatCountdownTo(opensAt);
+                } else {
+                    el.textContent = 'Open now';
+                    if (!el.dataset.akReloaded) {
+                        el.dataset.akReloaded = '1';
+                        needReload = true;
+                    }
+                }
+            });
+            if (needReload) {
+                loadPreregSeminars();
+                loadMainRegEvents();
+            }
+            if (!hasUpcoming) clearPreregGridCountdownTimer();
+        };
+        tick();
+        preregGridCountdownTimer = setInterval(tick, 1000);
+    }
+
     async function loadPreregSeminars() {
         const sel = document.getElementById('prereg-seminar-select');
         if (!sel) return;
-        function seminarFlowFlags(seminarRow) {
-            try {
-                const parsed = seminarRow && seminarRow.registration_form_json ? JSON.parse(seminarRow.registration_form_json) : {};
-                const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
-                return {
-                    preregistrationRequired: flow.preregistrationRequired !== false,
-                    mainRegistrationRequired: flow.mainRegistrationRequired !== false
+        function renderMainOnlyHint(mainOnlySeminars) {
+            const formGroup = sel.closest('.form-group');
+            if (!formGroup) return;
+            let hint = document.getElementById('prereg-main-only-hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'prereg-main-only-hint';
+                hint.style.cssText =
+                    'margin-top:10px;padding:10px;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;font-size:0.88rem;';
+                formGroup.appendChild(hint);
+            }
+            if (!mainOnlySeminars.length) {
+                hint.style.display = 'none';
+                return;
+            }
+            const safe = (v) =>
+                String(v == null ? '' : v)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            hint.style.display = 'block';
+            hint.innerHTML =
+                'Direct registration events: ' +
+                mainOnlySeminars.map((s) => `<strong>${safe(s.title || 'Event ' + s.id)}</strong>`).join(', ') +
+                '. <button type="button" id="open-main-reg-from-prereg" class="btn-primary" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;">Open main registration</button>';
+            const btn = document.getElementById('open-main-reg-from-prereg');
+            if (btn) {
+                btn.onclick = function () {
+                    if (typeof window.switchTab === 'function') window.switchTab('tab-seminars');
+                    if (typeof window.loadSeminars === 'function') window.loadSeminars();
+                    else if (typeof window.loadSeminarsGrid === 'function') window.loadSeminarsGrid();
                 };
-            } catch (_) {
-                return { preregistrationRequired: true, mainRegistrationRequired: true };
             }
         }
         try {
             const list = await fetchJson('/api/seminars');
             const raw = Array.isArray(list) ? list : list.seminars || [];
+            window.__akAllSeminars = raw;
             preregSeminars = raw.filter((s) => seminarFlowFlags(s).preregistrationRequired);
+            const mainOnlySeminars = raw.filter((s) => {
+                const flags = seminarFlowFlags(s);
+                return !flags.preregistrationRequired && flags.mainRegistrationRequired;
+            });
+            const uid = currentUserId();
+            const preregRows = uid ? await fetchJson('/api/preregistrations/' + encodeURIComponent(uid)).catch(() => []) : [];
+            const preregBySeminar = {};
+            (Array.isArray(preregRows) ? preregRows : []).forEach((r) => {
+                const sid = Number(r && r.seminar_id);
+                if (!sid || preregBySeminar[sid]) return;
+                preregBySeminar[sid] = r;
+            });
+            window.__akPreregBySeminar = preregBySeminar;
             window.__akPreregSeminars = preregSeminars;
             sel.innerHTML = '<option value="">Select event</option>';
             preregSeminars.forEach((s) => {
@@ -568,11 +1329,39 @@
                 opt.textContent = s.title || 'Event ' + s.id;
                 sel.appendChild(opt);
             });
+            paintAutismEventsGrid('ak-prereg-events-grid', raw, preregBySeminar, 'prereg');
+            loadPreregList();
             if (!preregSeminars.length) {
                 sel.innerHTML = '<option value="">No pre-registration events available</option>';
             }
         } catch (e) {
+            clearPreregGridCountdownTimer();
             sel.innerHTML = '<option value="">Could not load events</option>';
+        }
+    }
+
+    async function loadMainRegEvents() {
+        try {
+            const list = await fetchJson('/api/seminars');
+            const raw = Array.isArray(list) ? list : list.seminars || [];
+            window.__akAllSeminars = raw;
+            const uid = currentUserId();
+            const preregRows = uid ? await fetchJson('/api/preregistrations/' + encodeURIComponent(uid)).catch(() => []) : [];
+            const preregBySeminar = {};
+            (Array.isArray(preregRows) ? preregRows : []).forEach((r) => {
+                const sid = Number(r && r.seminar_id);
+                if (!sid || preregBySeminar[sid]) return;
+                preregBySeminar[sid] = r;
+            });
+            window.__akPreregBySeminar = preregBySeminar;
+            paintAutismEventsGrid('ak-main-events-grid', raw, preregBySeminar, 'main');
+            if (typeof loadApplications === 'function') loadApplications(true);
+        } catch (e) {
+            const grid = document.getElementById('ak-main-events-grid');
+            if (grid) {
+                grid.innerHTML =
+                    '<p style="grid-column:1/-1;text-align:center;color:#b91c1c;">Could not load events.</p>';
+            }
         }
     }
 
@@ -621,14 +1410,16 @@
                 body: JSON.stringify({ userId: uid, seminarId: sid, formData })
             });
             if (msg) {
-                msg.textContent = 'Pre-registration submitted successfully.';
+                msg.textContent = 'Application submitted successfully.';
                 msg.style.color = '#047857';
             }
             resetPreregWizard();
             document.getElementById('prereg-form')?.reset();
             const countryEl = document.getElementById('prereg-field-country');
             if (countryEl) countryEl.value = 'India';
+            hidePreregFormPanel();
             loadPreregList();
+            loadPreregSeminars();
         } catch (e) {
             if (msg) {
                 msg.textContent = e.message || 'Submit failed';
@@ -650,13 +1441,14 @@
     window.beginPreregRevision = async function beginPreregRevision(row) {
         if (!row || !row.id) return;
         preregResubmitId = row.id;
-        showEventRegisterView();
+        if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
         await loadPreregSeminars();
         const sel = document.getElementById('prereg-seminar-select');
         if (sel) {
             sel.value = String(row.seminar_id || '');
             sel.disabled = true;
         }
+        showPreregFormPanel(row.seminar_title || '');
         await loadPreregFormConfig(row.seminar_id || null);
         renderPreregFields(document.getElementById('prereg-fields'));
         let fd = {};
@@ -746,7 +1538,7 @@
         drawHeader();
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
-        doc.text('Pre-registration application', marginX, y);
+        doc.text('Pre-registration application form', marginX, y);
         y += 9;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
@@ -1047,6 +1839,35 @@
         );
     }
 
+    function preregSubmittedDetailsHtml(r) {
+        let fd = {};
+        try {
+            fd = typeof r.form_data === 'string' ? JSON.parse(r.form_data || '{}') : r.form_data || {};
+        } catch (_) {
+            fd = {};
+        }
+        const keys = Object.keys(fd).filter((k) => fd[k] != null && String(fd[k]).trim() !== '');
+        if (!keys.length) return '';
+        const rows = keys
+            .map((k) => {
+                const lab = typeof preregFieldLabel === 'function' ? preregFieldLabel(k) : k;
+                return (
+                    '<div class="preview-row"><span class="lbl">' +
+                    escapeAkHtml(lab) +
+                    '</span><span class="val">' +
+                    escapeAkHtml(String(fd[k])) +
+                    '</span></div>'
+                );
+            })
+            .join('');
+        return (
+            '<div class="ak-submitted-details" style="margin-top:12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">' +
+            '<p style="font-size:0.78rem;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">Information submitted</p>' +
+            rows +
+            '</div>'
+        );
+    }
+
     function renderPreregTrackCard(r) {
         const meta = preregStatusMeta(r.status);
         const st = String(r.status || 'submitted').toLowerCase();
@@ -1076,6 +1897,7 @@
         } else {
             foot += '<p class="ak-track-card-v3__msg">We will notify you when pre-registration is approved.</p>';
         }
+        foot += preregSubmittedDetailsHtml(r);
         if (r.application_no) {
             foot +=
                 '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
@@ -1154,12 +1976,9 @@
         try {
             const rows = await fetchJson('/api/preregistrations/' + uid);
             if (!rows.length) {
-                const trackOnly = !!box.closest('#tab-event-track');
                 box.innerHTML = akTrackEmptyHtml(
                     'fa-clipboard-list',
-                    trackOnly
-                        ? 'No pre-registrations to track yet. Use <strong>Register Event</strong> to apply.'
-                        : 'No pre-registrations yet. Submit the form above to start.'
+                    'No pre-registrations yet. Choose an event above and submit the pre-registration form.'
                 );
                 return;
             }
@@ -1290,8 +2109,8 @@
         hub.innerHTML =
             '<h3 style="color:#0f766e;margin-bottom:14px;"><i class="fas fa-compass"></i> Registration hub</h3>' +
             '<div class="ak-hub-actions">' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="event-register"><i class="fas fa-calendar-plus"></i><span>Register Event</span><small>Pre-registration form</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="event-track"><i class="fas fa-route"></i><span>Track Event</span><small>Pre-reg &amp; main status</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="prereg-hub"><i class="fas fa-clipboard-list"></i><span>Pre-registration</span><small>Apply &amp; submissions</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-hub"><i class="fas fa-file-signature"></i><span>Main registration</span><small>Form &amp; applications</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload entry files</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry review status</small></button>' +
             '</div>';
@@ -1300,8 +2119,8 @@
         hub.querySelectorAll('[data-ak-hub]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const k = btn.dataset.akHub;
-                if (k === 'event-register') showEventRegisterView();
-                else if (k === 'event-track') showEventTrackView();
+                if (k === 'prereg-hub' || k === 'event-register') showPreregHubView();
+                else if (k === 'main-reg-hub' || k === 'event-main-register' || k === 'event-track') showMainRegHubView();
                 else if (k === 'comp-register') showCompRegisterView();
                 else if (k === 'comp-track') showCompTrackView();
             });
@@ -1418,19 +2237,47 @@
         window.nextStep.__autismSkipQualHook = true;
     }
 
+    function patchMainRegistrationOnEventTab() {
+        if (typeof window.startRegistration !== 'function' || window.startRegistration.__akEventTabHook) return;
+        const origStart = window.startRegistration;
+        window.startRegistration = async function (seminarId, opts) {
+            const onMainHub = !!document.getElementById('tab-main-reg-hub');
+            if (onMainHub) {
+                hidePreregFormPanel();
+                if (typeof window.switchTab === 'function') window.switchTab('tab-main-reg-hub');
+            }
+            await origStart.call(this, seminarId, opts);
+            if (onMainHub) {
+                const title =
+                    window.__activeSeminarTitle ||
+                    (window.activeSeminars || []).find((x) => Number(x.id) === Number(seminarId))?.title ||
+                    'Event';
+                showMainRegFormPanel(title);
+            }
+        };
+        window.startRegistration.__akEventTabHook = true;
+
+        if (typeof window.cancelRegistration !== 'function' || window.cancelRegistration.__akEventTabHook) return;
+        const origCancel = window.cancelRegistration;
+        window.cancelRegistration = function () {
+            origCancel.call(this);
+            hideMainRegFormPanel();
+        };
+        window.cancelRegistration.__akEventTabHook = true;
+    }
+
     function patchSwitchTabForHub() {
         if (typeof switchTab !== 'function' || switchTab.__akHubHook) return;
         const orig = switchTab;
         window.switchTab = function (tabId, menuEl) {
             orig.call(this, tabId, menuEl);
-            if (tabId === 'tab-event-register') {
+            if (tabId === 'tab-prereg-hub') {
+                hideEventRegisterForms();
                 loadPreregSeminars();
-                loadPreregFormConfig(null).then(() =>
-                    renderPreregFields(document.getElementById('prereg-fields'))
-                );
-            } else if (tabId === 'tab-event-track') {
                 loadPreregList();
-                if (typeof loadApplications === 'function') loadApplications(true);
+            } else if (tabId === 'tab-main-reg-hub') {
+                hideEventRegisterForms();
+                loadMainRegEvents();
             } else if (tabId === 'tab-comp-register') {
                 loadPreregSeminars().then(() => {
                     const compSel = document.getElementById('comp-seminar-select');
@@ -1463,6 +2310,7 @@
         setupDashboardHub();
         patchSwitchTabForHub();
         patchAutismRegistrationFlow();
+        patchMainRegistrationOnEventTab();
         patchLoadRegistrationFormConfig();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');

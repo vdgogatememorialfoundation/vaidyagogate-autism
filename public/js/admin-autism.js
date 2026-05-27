@@ -9,7 +9,8 @@
     const HIDE_MODULES = [
         'tab-case-mgmt',
         'tab-admin-payments',
-        'tab-pos'
+        'tab-pos',
+        'tab-behalf-reg'
     ];
 
     const HIDE_TEXT = [
@@ -63,6 +64,352 @@
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-prereg-required" checked> Pre-registration required</label>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-main-required" checked> Main registration required</label>';
         block.insertAdjacentElement('afterend', flow);
+    }
+
+    function ensureSeminarPreregOverrideEditor() {
+        const host = document.getElementById('seminar-reg-form-json');
+        const mainTbody = document.getElementById('seminar-reg-override-tbody');
+        const mainPreview = document.getElementById('seminar-form-preview');
+        if (!host || !mainTbody) return;
+        const mainCard = mainTbody.closest('div[style*="border:1px solid #e2e8f0"]');
+        if (mainCard) {
+            mainCard.id = 'seminar-main-form-card';
+            const heading = mainCard.querySelector('label[style*="font-weight:600"]');
+            if (heading) heading.textContent = 'Main registration form (this seminar)';
+            if (!document.getElementById('seminar-main-custom-only')) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = 'seminar-main-custom-only';
+                btn.className = 'btn-primary';
+                btn.style.cssText = 'margin-top:8px;padding:4px 12px;font-size:0.82rem;background:#475569;';
+                btn.textContent = 'Use custom-only main form';
+                btn.addEventListener('click', () => makeMainFormCustomOnly());
+                mainCard.appendChild(btn);
+            }
+        }
+        if (mainPreview) mainPreview.id = 'seminar-main-form-preview';
+        if (document.getElementById('seminar-prereg-override-tbody')) return;
+        const card = document.createElement('div');
+        card.id = 'seminar-prereg-form-card';
+        card.style.cssText = 'margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;';
+        card.innerHTML =
+            '<label style="font-weight:600;">Pre-registration form (this seminar)</label>' +
+            '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only.</p>' +
+            '<table class="data-table" style="font-size:0.88rem;">' +
+            '<thead><tr><th>Field</th><th>Label</th><th>On</th><th>Required</th><th>Options</th></tr></thead>' +
+            '<tbody id="seminar-prereg-override-tbody"></tbody>' +
+            '</table>' +
+            '<div style="margin-top:12px;">' +
+            '<label style="font-weight:600;">Pre-registration custom fields (this seminar)</label>' +
+            '<table class="data-table" style="font-size:0.88rem;margin-top:8px;">' +
+            '<thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Step</th><th>On</th><th>Req</th><th>Options</th><th></th></tr></thead>' +
+            '<tbody id="seminar-prereg-extra-fields-tbody"></tbody>' +
+            '</table>' +
+            '<button type="button" class="btn-primary" id="seminar-prereg-add-extra" style="margin-top:8px;padding:4px 12px;font-size:0.82rem;background:#0d9488;">+ Add pre-registration field</button>' +
+            '<button type="button" class="btn-primary" id="seminar-prereg-custom-only" style="margin-top:8px;margin-left:8px;padding:4px 12px;font-size:0.82rem;background:#475569;">Use custom-only pre-registration form</button>' +
+            '</div>' +
+            '<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;">' +
+            '<div><label style="font-size:0.8rem;">Earliest birth year (override)</label><input type="number" id="seminar-prereg-birth-year-min" min="1900" max="2100" placeholder="Global default" style="width:100%;padding:6px;"></div>' +
+            '<div><label style="font-size:0.8rem;">Latest birth year (override)</label><input type="number" id="seminar-prereg-birth-year-max" min="1900" max="2100" placeholder="Global default" style="width:100%;padding:6px;"></div>' +
+            '</div>' +
+            '<p id="seminar-prereg-form-preview" style="margin-top:10px;font-size:0.88rem;color:#334155;background:#f8fafc;padding:10px;border-radius:6px;"></p>' +
+            '<div id="seminar-prereg-otp-wrap" style="margin-top:12px;padding:10px 12px;border:1px solid #dbeafe;border-radius:8px;background:#eff6ff;">' +
+            '<label style="font-weight:600;font-size:0.88rem;">Pre-registration OTP</label>' +
+            '<p style="font-size:0.8rem;color:#64748b;margin:6px 0 8px;">Independent from main registration OTP below.</p>' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;"><input type="checkbox" id="seminar-prereg-otp-app" onchange="syncSeminarPreregOtpUi()"> Enable OTP on pre-registration</label>' +
+            '<div id="seminar-prereg-otp-subopts" style="margin-top:8px;padding-left:12px;display:none;">' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;margin-bottom:6px;"><input type="checkbox" id="seminar-prereg-otp-step1" checked> Verify email / WhatsApp on form (step 1)</label>' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;"><input type="checkbox" id="seminar-prereg-otp-submit"> Require OTP again before submit</label>' +
+            '</div></div>';
+        host.insertAdjacentElement('beforebegin', card);
+        const addBtn = document.getElementById('seminar-prereg-add-extra');
+        if (addBtn) addBtn.addEventListener('click', () => addSeminarPreregExtraFieldRow());
+        const customOnly = document.getElementById('seminar-prereg-custom-only');
+        if (customOnly) customOnly.addEventListener('click', () => makePreregFormCustomOnly());
+    }
+
+    function makePreregFormCustomOnly() {
+        document.querySelectorAll('#seminar-prereg-override-tbody .sem-pr-ov-en').forEach((el) => {
+            el.checked = false;
+        });
+        updatePreregFormPreview();
+        alert('Pre-registration base fields turned off. Add your own fields below.');
+    }
+
+    function makeMainFormCustomOnly() {
+        document.querySelectorAll('#seminar-reg-override-tbody .sem-ov-en').forEach((el) => {
+            el.checked = false;
+        });
+        if (typeof window.updateSeminarPolicyPreviews === 'function') window.updateSeminarPolicyPreviews();
+        alert('Main registration base fields turned off. Add your own fields in Additional fields.');
+    }
+
+    function addSeminarPreregExtraFieldRow(field) {
+        const tbody = document.getElementById('seminar-prereg-extra-fields-tbody');
+        if (!tbody) return;
+        const idx = tbody.querySelectorAll('tr').length;
+        const types = ['text', 'textarea', 'select', 'number', 'date', 'email', 'tel', 'boolean', 'file']
+            .map((t) => `<option value="${t}"${(field && field.type === t) || (!field && t === 'text') ? ' selected' : ''}>${t}</option>`)
+            .join('');
+        const opts =
+            field && Array.isArray(field.options)
+                ? field.options.map((o) => (o && o.value != null ? o.value : o)).filter(Boolean).join(', ')
+                : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            `<td><input type="text" class="sem-pr-ex-key" value="${escapeHtml((field && field.key) || '')}" placeholder="field_key"></td>` +
+            `<td><input type="text" class="sem-pr-ex-label" value="${escapeHtml((field && field.label) || '')}" placeholder="Field label"></td>` +
+            `<td><select class="sem-pr-ex-type">${types}</select></td>` +
+            `<td><input type="number" class="sem-pr-ex-step" min="1" max="10" value="${(field && Number(field.step)) || 1}"></td>` +
+            `<td><input type="checkbox" class="sem-pr-ex-en" ${(field ? field.enabled !== false : true) ? 'checked' : ''}></td>` +
+            `<td><input type="checkbox" class="sem-pr-ex-req" ${(field && field.required) ? 'checked' : ''}></td>` +
+            `<td><input type="text" class="sem-pr-ex-options" value="${escapeHtml(opts)}" placeholder="a,b,c for select"></td>` +
+            `<td><button type="button" class="btn-primary sem-pr-ex-del" style="padding:3px 8px;background:#b91c1c;">X</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('input,select').forEach((el) => {
+            el.addEventListener('input', updatePreregFormPreview);
+            el.addEventListener('change', updatePreregFormPreview);
+        });
+        tr.querySelector('.sem-pr-ex-del')?.addEventListener('click', () => {
+            tr.remove();
+            updatePreregFormPreview();
+        });
+    }
+
+    function syncSeminarFlowFormSections() {
+        const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
+        const mainOn = (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
+        const preCard = document.getElementById('seminar-prereg-form-card');
+        const mainCard = document.getElementById('seminar-main-form-card');
+        if (preCard) preCard.style.display = preOn ? '' : 'none';
+        if (mainCard) mainCard.style.display = mainOn ? '' : 'none';
+    }
+
+    function escapeHtml(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function withAdminQuery(url) {
+        try {
+            if (typeof window.withActingAdminUrl === 'function') return window.withActingAdminUrl(url);
+        } catch (_) {}
+        return url;
+    }
+
+    async function loadSeminarPreregFormOverrideUi(overrideJson) {
+        const tbody = document.getElementById('seminar-prereg-override-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+        let globalFields = [];
+        let globalBirthMin = null;
+        let globalBirthMax = null;
+        try {
+            const res = await fetch(withAdminQuery('/api/admin/preregistration-form-config'), {
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+            const data = await res.json().catch(() => ({}));
+            globalFields = Array.isArray(data.fields) ? data.fields : [];
+            globalBirthMin = data.birthYearMin == null ? null : Number(data.birthYearMin);
+            globalBirthMax = data.birthYearMax == null ? null : Number(data.birthYearMax);
+        } catch (_) {}
+        let overrideFields = [];
+        let seminarBirthMin = null;
+        let seminarBirthMax = null;
+        try {
+            const parsed = overrideJson && String(overrideJson).trim() ? JSON.parse(overrideJson) : {};
+            overrideFields = Array.isArray(parsed.fields) ? parsed.fields : [];
+            seminarBirthMin = parsed.birthYearMin == null ? null : Number(parsed.birthYearMin);
+            seminarBirthMax = parsed.birthYearMax == null ? null : Number(parsed.birthYearMax);
+        } catch (_) {}
+        const byKey = {};
+        overrideFields.forEach((f) => {
+            if (f && f.key) byKey[f.key] = f;
+        });
+        const globalKeys = new Set(globalFields.map((f) => String(f.key || '')));
+        const extras = overrideFields.filter((f) => f && f.key && !globalKeys.has(String(f.key)));
+        window.__seminarPreregGlobalFields = globalFields;
+        window.__seminarPreregGlobalBirthMin = globalBirthMin;
+        window.__seminarPreregGlobalBirthMax = globalBirthMax;
+        window.__seminarPreregOverrideFieldKeys = [];
+        tbody.innerHTML = '';
+        globalFields.forEach((f, idx) => {
+            const ov = byKey[f.key] || {};
+            const enabled = ov.enabled != null ? ov.enabled !== false : f.enabled !== false;
+            const required = ov.required != null ? !!ov.required : !!f.required;
+            const label = ov.label != null && String(ov.label).trim() ? ov.label : f.label || f.key;
+            window.__seminarPreregOverrideFieldKeys.push(f.key);
+            tbody.innerHTML += `<tr>
+                <td><code>${escapeHtml(f.key)}</code></td>
+                <td><input type="text" class="sem-pr-ov-label" data-idx="${idx}" value="${escapeHtml(label)}"></td>
+                <td><input type="checkbox" class="sem-pr-ov-en" data-idx="${idx}" ${enabled ? 'checked' : ''}></td>
+                <td><input type="checkbox" class="sem-pr-ov-req" data-idx="${idx}" ${required ? 'checked' : ''}></td>
+                <td>—</td>
+            </tr>`;
+        });
+        const minEl = document.getElementById('seminar-prereg-birth-year-min');
+        const maxEl = document.getElementById('seminar-prereg-birth-year-max');
+        const exTbody = document.getElementById('seminar-prereg-extra-fields-tbody');
+        if (exTbody) exTbody.innerHTML = '';
+        extras.forEach((f) => addSeminarPreregExtraFieldRow(f));
+        if (minEl) minEl.value = seminarBirthMin != null ? String(seminarBirthMin) : '';
+        if (maxEl) maxEl.value = seminarBirthMax != null ? String(seminarBirthMax) : '';
+        ['.sem-pr-ov-label', '.sem-pr-ov-en', '.sem-pr-ov-req'].forEach((sel) => {
+            tbody.querySelectorAll(sel).forEach((el) => {
+                el.addEventListener('input', updatePreregFormPreview);
+                el.addEventListener('change', updatePreregFormPreview);
+            });
+        });
+        if (minEl) minEl.oninput = updatePreregFormPreview;
+        if (maxEl) maxEl.oninput = updatePreregFormPreview;
+        updatePreregFormPreview();
+    }
+
+    function readPreregOtpFromUi() {
+        const master = document.getElementById('seminar-prereg-otp-app');
+        const onApp = !!(master && master.checked);
+        return {
+            onApplication: onApp,
+            onStep1: onApp && (document.getElementById('seminar-prereg-otp-step1') || {}).checked !== false,
+            onSubmit: onApp && !!(document.getElementById('seminar-prereg-otp-submit') || {}).checked
+        };
+    }
+
+    window.syncSeminarPreregOtpUi = function syncSeminarPreregOtpUi() {
+        const master = document.getElementById('seminar-prereg-otp-app');
+        const wrap = document.getElementById('seminar-prereg-otp-subopts');
+        const on = !!(master && master.checked);
+        if (wrap) wrap.style.display = on ? 'block' : 'none';
+    };
+
+    function applyPreregOtpToUi(otp) {
+        const o = otp && typeof otp === 'object' ? otp : {};
+        const app = document.getElementById('seminar-prereg-otp-app');
+        const s1 = document.getElementById('seminar-prereg-otp-step1');
+        const sub = document.getElementById('seminar-prereg-otp-submit');
+        if (app) app.checked = o.onApplication === true;
+        if (s1) s1.checked = o.onApplication === true && o.onStep1 !== false;
+        if (sub) sub.checked = o.onApplication === true && o.onSubmit === true;
+        syncSeminarPreregOtpUi();
+    }
+
+    function labelMainRegistrationOtpSection() {
+        const otp = document.getElementById('seminar-otp-app');
+        if (!otp || otp.dataset.akMainOtpLabeled === '1') return;
+        const wrap = otp.closest('div');
+        if (wrap) {
+            const title = document.createElement('p');
+            title.style.cssText = 'font-weight:600;font-size:0.88rem;margin:0 0 6px;color:#1e3a8a;';
+            title.textContent = 'Main registration OTP';
+            wrap.insertBefore(title, wrap.firstChild);
+            const hint = document.createElement('p');
+            hint.style.cssText = 'font-size:0.8rem;color:#64748b;margin:0 0 8px;';
+            hint.textContent = 'Applies only to the main registration form (not pre-registration).';
+            wrap.insertBefore(hint, title.nextSibling);
+        }
+        otp.dataset.akMainOtpLabeled = '1';
+    }
+
+    function buildSeminarPreregFormOverrideJsonFromUi() {
+        const tbody = document.getElementById('seminar-prereg-override-tbody');
+        const keys = window.__seminarPreregOverrideFieldKeys || [];
+        const globals = window.__seminarPreregGlobalFields || [];
+        if (!tbody || !keys.length) return null;
+        const fields = keys.map((key, idx) => ({
+            key,
+            label: (tbody.querySelector(`.sem-pr-ov-label[data-idx="${idx}"]`) || {}).value || key,
+            enabled: !!(tbody.querySelector(`.sem-pr-ov-en[data-idx="${idx}"]`) || {}).checked,
+            required: !!(tbody.querySelector(`.sem-pr-ov-req[data-idx="${idx}"]`) || {}).checked
+        }));
+        const extras = [];
+        document.querySelectorAll('#seminar-prereg-extra-fields-tbody tr').forEach((tr) => {
+            const key = String((tr.querySelector('.sem-pr-ex-key') || {}).value || '').trim();
+            if (!key) return;
+            const type = String((tr.querySelector('.sem-pr-ex-type') || {}).value || 'text').trim();
+            const row = {
+                key,
+                label: String((tr.querySelector('.sem-pr-ex-label') || {}).value || key).trim(),
+                type,
+                step: parseInt((tr.querySelector('.sem-pr-ex-step') || {}).value, 10) || 1,
+                enabled: !!(tr.querySelector('.sem-pr-ex-en') || {}).checked,
+                required: !!(tr.querySelector('.sem-pr-ex-req') || {}).checked
+            };
+            if (type === 'select') {
+                const optsCsv = String((tr.querySelector('.sem-pr-ex-options') || {}).value || '').trim();
+                row.options = optsCsv
+                    ? optsCsv.split(',').map((x) => String(x || '').trim()).filter(Boolean).map((v) => ({ value: v, label: v }))
+                    : [];
+            }
+            extras.push(row);
+        });
+        const anyChanged = fields.some((f) => {
+            const g = globals.find((x) => x.key === f.key) || {};
+            return (
+                String(f.label || '') !== String(g.label || f.key) ||
+                !!f.enabled !== (g.enabled !== false) ||
+                !!f.required !== !!g.required
+            );
+        });
+        const minEl = document.getElementById('seminar-prereg-birth-year-min');
+        const maxEl = document.getElementById('seminar-prereg-birth-year-max');
+        const birthYearMin =
+            minEl && minEl.value !== '' && !Number.isNaN(parseInt(minEl.value, 10))
+                ? parseInt(minEl.value, 10)
+                : null;
+        const birthYearMax =
+            maxEl && maxEl.value !== '' && !Number.isNaN(parseInt(maxEl.value, 10))
+                ? parseInt(maxEl.value, 10)
+                : null;
+        const birthChanged =
+            birthYearMin !== window.__seminarPreregGlobalBirthMin ||
+            birthYearMax !== window.__seminarPreregGlobalBirthMax;
+        if (!anyChanged && !birthChanged && !extras.length && birthYearMin == null && birthYearMax == null) return null;
+        const payload = { version: 3, fields: fields.concat(extras), otp: readPreregOtpFromUi() };
+        if (birthYearMin != null) payload.birthYearMin = birthYearMin;
+        if (birthYearMax != null) payload.birthYearMax = birthYearMax;
+        return JSON.stringify(payload);
+    }
+
+    function mergePreregFormJsonForSave(existingJson) {
+        let cfg = {};
+        try {
+            cfg = existingJson ? JSON.parse(existingJson) : {};
+        } catch (_) {
+            cfg = {};
+        }
+        cfg.otp = readPreregOtpFromUi();
+        const built = buildSeminarPreregFormOverrideJsonFromUi();
+        if (built) {
+            try {
+                const p = JSON.parse(built);
+                cfg = { ...cfg, ...p, otp: cfg.otp };
+            } catch (_) {}
+        }
+        return JSON.stringify(cfg);
+    }
+
+    function updatePreregFormPreview() {
+        const prev = document.getElementById('seminar-prereg-form-preview');
+        if (!prev) return;
+        const built = buildSeminarPreregFormOverrideJsonFromUi();
+        if (!built) {
+            prev.textContent = 'Pre-registration will use global form fields.';
+            return;
+        }
+        try {
+            const parsed = JSON.parse(built);
+            const enabled = (parsed.fields || []).filter((f) => f.enabled !== false);
+            prev.textContent =
+                'Pre-registration fields: ' +
+                (enabled.length ? enabled.map((f) => f.label || f.key).join(', ') : 'none enabled');
+        } catch (_) {
+            prev.textContent = 'Invalid pre-registration form override.';
+        }
     }
 
     function parseSeminarFlowFlags(registrationFormJson) {
@@ -134,6 +481,7 @@
                     }
                     regCfg.flow = { ...(regCfg.flow || {}), ...flowFlags };
                     data.registration_form_json = JSON.stringify(regCfg);
+                    data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
                     opts = { ...opts, body: JSON.stringify(data) };
                 } catch (_) {}
             }
@@ -153,8 +501,33 @@
             const main = document.getElementById('seminar-flow-main-required');
             if (pre) pre.checked = flags.preregistrationRequired;
             if (main) main.checked = flags.mainRegistrationRequired;
+            syncSeminarFlowFormSections();
+            loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
+            try {
+                const p = s && s.preregistration_form_json ? JSON.parse(s.preregistration_form_json) : {};
+                applyPreregOtpToUi(p.otp);
+            } catch (_) {
+                applyPreregOtpToUi({});
+            }
         };
         window.editSeminar.__akFlowHook = true;
+    }
+
+    function patchOpenCreateSeminarModal() {
+        if (typeof window.openCreateSeminarModal !== 'function' || window.openCreateSeminarModal.__akPreregHook)
+            return;
+        const orig = window.openCreateSeminarModal;
+        window.openCreateSeminarModal = function () {
+            orig.apply(this, arguments);
+            const pre = document.getElementById('seminar-flow-prereg-required');
+            const main = document.getElementById('seminar-flow-main-required');
+            if (pre) pre.checked = true;
+            if (main) main.checked = true;
+            syncSeminarFlowFormSections();
+            loadSeminarPreregFormOverrideUi('');
+            applyPreregOtpToUi({});
+        };
+        window.openCreateSeminarModal.__akPreregHook = true;
     }
 
     function patchApplicationsMenu() {
@@ -236,6 +609,113 @@
             (s) =>
                 `<option value="${s}"${cur === s ? ' selected' : ''}>${s.replace(/_/g, ' ')}</option>`
         ).join('');
+    }
+
+    const AK_ADMIN_REG_STATUSES = [
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'pending_approval', label: 'Approved (awaiting e-ticket)' },
+        { value: 'revision_required', label: 'Revision required' },
+        { value: 'documents_requested', label: 'Documents requested' },
+        { value: 'e_ticket_issued', label: 'E-ticket issued' },
+        { value: 'checked_in', label: 'Checked in' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'certificate_issued', label: 'Certificate issued' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
+
+    function autismAdminRegistrationStatusOptionsHtml(current) {
+        const cur = String(current || '').toLowerCase();
+        const legacy = cur === 'approved_pending_payment' ? 'pending_approval' : cur;
+        return AK_ADMIN_REG_STATUSES.map((s) => {
+            const sel = legacy === s.value ? ' selected' : '';
+            return '<option value="' + s.value + '"' + sel + '>' + s.label + '</option>';
+        }).join('');
+    }
+
+    function autismLooksLikeStoredFile(v) {
+        const s = String(v == null ? '' : v).trim();
+        if (!s) return false;
+        if (/^https?:\/\//i.test(s)) return true;
+        if (s.startsWith('/uploads/') || s.startsWith('/api/assets/')) return true;
+        if (/\.(pdf|jpe?g|png|gif|webp|bmp|pptx?|docx?)$/i.test(s)) return true;
+        return false;
+    }
+
+    function autismAdminExtraFormFieldsHtml(formData) {
+        const fd = formData || {};
+        const known = new Set([
+            'fname',
+            'mname',
+            'lname',
+            'email',
+            'phone',
+            'dob',
+            'address',
+            'pin',
+            'city',
+            'state',
+            'country',
+            'qual',
+            'ncism',
+            'cpin',
+            'college',
+            'ccity',
+            'cstate',
+            'certificate_path',
+            'ncism_certificate_check',
+            'additional_documents',
+            'agree_terms',
+            'password'
+        ]);
+        let html = '';
+        Object.keys(fd).forEach((k) => {
+            if (known.has(k)) return;
+            const v = fd[k];
+            if (v == null || String(v).trim() === '') return;
+            const label = k.replace(/_/g, ' ');
+            if (autismLooksLikeStoredFile(v)) {
+                const href =
+                    typeof window.publicFileHref === 'function'
+                        ? window.publicFileHref(v)
+                        : String(v).startsWith('/')
+                          ? v
+                          : '/uploads/' + v;
+                html +=
+                    '<p><strong>' +
+                    escapeHtml(label) +
+                    ':</strong> <a href="' +
+                    escapeHtml(href) +
+                    '" target="_blank" rel="noopener">View file</a></p>';
+            } else {
+                html += '<p><strong>' + escapeHtml(label) + ':</strong> ' + escapeHtml(String(v)) + '</p>';
+            }
+        });
+        return html;
+    }
+
+    function patchAutismAdminRegistrationUi() {
+        window.adminRegistrationStatusOptionsHtml = autismAdminRegistrationStatusOptionsHtml;
+        if (typeof formatAdminApplicationDetailsHtml === 'function' && !formatAdminApplicationDetailsHtml.__akHook) {
+            const orig = formatAdminApplicationDetailsHtml;
+            window.formatAdminApplicationDetailsHtml = function (formData, certLink) {
+                return orig(formData, certLink) + autismAdminExtraFormFieldsHtml(formData);
+            };
+            window.formatAdminApplicationDetailsHtml.__akHook = true;
+        }
+        if (typeof updateAppStatus === 'function' && !updateAppStatus.__akHook) {
+            const origUpdate = updateAppStatus;
+            window.updateAppStatus = async function (appId, status) {
+                const st = String(status || '').toLowerCase();
+                if (st === 'approved_pending_payment' || st === 'completed') {
+                    return alert(
+                        'Payment is not used on the autism portal. Approve the application, then issue the e-ticket from Final registration tracking.'
+                    );
+                }
+                return origUpdate(appId, status);
+            };
+            window.updateAppStatus.__akHook = true;
+        }
     }
 
     function injectApplicationsStatusFilter() {
@@ -942,12 +1422,18 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideMenuItems();
         injectPreregFields();
+        ensureSeminarPreregOverrideEditor();
+        labelMainRegistrationOtpSection();
+        patchOpenCreateSeminarModal();
         injectEventManagementFormGuide();
         injectPreregFormResetCard();
         ensurePreregFormEditorCard();
         patchSaveSeminar();
         patchSeminarPayload();
         patchEditSeminarFlowFlags();
+        document.getElementById('seminar-flow-prereg-required')?.addEventListener('change', syncSeminarFlowFormSections);
+        document.getElementById('seminar-flow-main-required')?.addEventListener('change', syncSeminarFlowFormSections);
+        syncSeminarFlowFormSections();
         patchRegistrationFormTabLoader();
         patchCreateStaffUserRoles();
         patchLoadAdminSiteCms();
@@ -957,6 +1443,7 @@
         hideGalleryCmsBlocks();
         hideMedicalQualOptions();
         injectApplicationsStatusFilter();
+        patchAutismAdminRegistrationUi();
         patchAdminApplicationsQueue();
         injectMainSeminarMessaging();
         if (window.AutismTerminology) window.AutismTerminology.applyAll();

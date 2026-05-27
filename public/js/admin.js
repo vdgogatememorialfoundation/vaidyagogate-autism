@@ -7597,7 +7597,7 @@ function updateSeminarPolicyPreviews() {
     if (formPrev) {
         const built = buildSeminarFormOverrideJsonFromUi();
         if (!built) {
-            formPrev.textContent = 'Doctors will see the global registration form (no per-seminar override).';
+            formPrev.textContent = 'Main registration will use global form fields.';
             return;
         }
         try {

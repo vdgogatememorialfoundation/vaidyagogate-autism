@@ -877,6 +877,7 @@ function renderSeminarApplicationTrackerCard(a) {
             '</button></div>';
     }
     const payBtn =
+        !window.PORTAL_IS_AUTISM &&
         st === 'approved_pending_payment' && !isPaid
             ? paymentGatewaySelectHtml(a.id) +
               '<button class="btn-success" style="margin-top:10px;" onclick="processPayment(' +
@@ -1868,11 +1869,14 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
         window.__otpRequiresPhone = !!data.otpRequiresPhone;
         window.__emailConfigured = !!data.emailConfigured;
         window.__whatsappConfigured = !!data.whatsappConfigured;
+        const otpEnabled = !!data.otpOnApplication;
         window.__registrationFormFields = (window.__registrationFormFields || []).map((f) => {
             if (!f) return f;
-            if (f.key === 'email' && f.verifyOtp && !data.emailConfigured) return { ...f, verifyOtp: false };
-            if (f.key === 'phone' && f.verifyOtp && !data.whatsappConfigured) return { ...f, verifyOtp: false };
-            return f;
+            let next = { ...f };
+            if (!otpEnabled) next.verifyOtp = false;
+            else if (f.key === 'email' && f.verifyOtp && !data.emailConfigured) next = { ...next, verifyOtp: false };
+            else if (f.key === 'phone' && f.verifyOtp && !data.whatsappConfigured) next = { ...next, verifyOtp: false };
+            return next;
         });
         syncRegistrationOtpUi();
         if (document.body.classList.contains('ak-portal-dash')) {
@@ -2082,6 +2086,25 @@ async function loadDoctorPortalUpdatesFromCms() {
 let activeSeminars = [];
 let seminarGridCountdownTimer = null;
 
+function seminarFlowFlags(seminar) {
+    try {
+        const parsed = seminar && seminar.registration_form_json ? JSON.parse(seminar.registration_form_json) : {};
+        const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+        const hasFlow =
+            Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+            Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+        if (!hasFlow) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true };
+        }
+        return {
+            preregistrationRequired: flow.preregistrationRequired === true,
+            mainRegistrationRequired: flow.mainRegistrationRequired === true
+        };
+    } catch (_) {
+        return { preregistrationRequired: true, mainRegistrationRequired: true };
+    }
+}
+
 function registrationWindowState(seminar) {
     const now = Date.now();
     const parseMs =
@@ -2177,6 +2200,7 @@ function startSeminarGridCountdownTimer() {
 }
 
 function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
+    const flow = seminarFlowFlags(s);
     const win = effectiveRegistrationWindowState(s);
     const regStartLabel = s.registration_start
         ? formatTrackDateTime(s.registration_start)
@@ -2192,6 +2216,12 @@ function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
         actionBlock =
             '<p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;"><i class="fas fa-archive"></i> Past seminar — registration closed. Track your application under <strong>Track seminar applications</strong>.</p>' +
             '<button type="button" class="btn-primary" style="width:100%;opacity:0.7;" onclick="switchTab(\'tab-applications\')">View my registration</button>';
+    } else if (!flow.mainRegistrationRequired) {
+        actionBlock =
+            '<p style="font-size:0.85rem;color:#334155;margin-bottom:12px;"><i class="fas fa-info-circle"></i> Main registration is not enabled for this event right now.</p>' +
+            (flow.preregistrationRequired
+                ? '<button type="button" class="btn-primary" style="width:100%;" onclick="switchTab(\'tab-prereg-hub\')">Open pre-registration</button>'
+                : '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration unavailable</button>');
     } else if (win.state === 'upcoming') {
         actionBlock =
             '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
@@ -2261,7 +2291,7 @@ async function loadSeminarsGrid() {
             const lbl = document.getElementById('doctor-portal-year-label');
             if (lbl) lbl.textContent = String(doctorPortalYear);
         }
-        activeSeminars = payload.seminars || [];
+        activeSeminars = (payload.seminars || []).filter((s) => seminarFlowFlags(s).mainRegistrationRequired);
         const registeredSeminarIds = new Set();
         const uid = doctorNumericUserId();
         if (uid) {
@@ -2298,7 +2328,7 @@ async function loadSeminarsGrid() {
         
         if (!activeSeminars.length) {
             container.innerHTML =
-                '<p style="grid-column:1/-1;text-align:center;width:100%;color:#64748b;">No active seminars available for registration at this time.</p>';
+                '<p style="grid-column:1/-1;text-align:center;width:100%;color:#64748b;">No events are currently open for main registration. If pre-registration is enabled for an event, use the Pre-registration tab.</p>';
             return;
         }
 
@@ -4231,6 +4261,17 @@ async function submitApplication() {
         if (!certReady) return;
         payload.append('certificate', certReady);
     }
+    if (document.body.classList.contains('ak-portal-dash') && typeof getAutismMainRegExtraFields === 'function') {
+        for (const f of getAutismMainRegExtraFields()) {
+            if (!f || f.type !== 'file') continue;
+            const el = document.getElementById('reg-field-' + f.key);
+            const file = el && el.files && el.files[0];
+            if (!file) continue;
+            const ready = await prepareUploadFileOrAlert(file);
+            if (!ready) return;
+            payload.append('regfield_' + f.key, ready);
+        }
+    }
 
     try {
         const res = await fetch('/api/applications/submit', {
@@ -4577,7 +4618,10 @@ async function loadApplications(silentPoll) {
         const list = document.getElementById('applications-list');
         const trackerContainer =
             document.getElementById('applications-tracker-container') ||
-            (window.PORTAL_IS_AUTISM ? document.querySelector('#tab-event-track #applications-tracker-container') : null);
+            (window.PORTAL_IS_AUTISM
+                ? document.querySelector('#tab-main-reg-hub #applications-tracker-container') ||
+                  document.querySelector('#tab-event-track #applications-tracker-container')
+                : null);
         if (list) list.innerHTML = '<tr><td colspan="3">Please sign in again.</td></tr>';
         if (trackerContainer) trackerContainer.innerHTML = '<p style="color:#64748b;">Sign in to track applications.</p>';
             return;
@@ -4585,7 +4629,10 @@ async function loadApplications(silentPoll) {
     const list = document.getElementById('applications-list');
     const trackerContainer =
         document.getElementById('applications-tracker-container') ||
-        (window.PORTAL_IS_AUTISM ? document.querySelector('#tab-event-track #applications-tracker-container') : null);
+        (window.PORTAL_IS_AUTISM
+            ? document.querySelector('#tab-main-reg-hub #applications-tracker-container') ||
+              document.querySelector('#tab-event-track #applications-tracker-container')
+            : null);
     try {
         const res = await fetch(`/api/applications/${uid}`, { cache: 'no-store' });
         const payload = await res.json().catch(() => ({}));
@@ -4658,6 +4705,7 @@ async function loadApplications(silentPoll) {
             }
         });
         if (
+            !window.PORTAL_IS_AUTISM &&
             (userApplications || []).some(
                 (a) => String(a.status || '').toLowerCase() === 'approved_pending_payment'
             )
@@ -4836,7 +4884,7 @@ async function downloadViewedAppPdf() {
 
     let y = pdfCongressHeader(doc, {
         seminarName,
-        footerLine: 'Submitted registration application'
+        footerLine: 'Submitted main registration application'
     });
 
     const drawSection = (title) => {
@@ -4849,7 +4897,7 @@ async function downloadViewedAppPdf() {
         y += 14;
     };
 
-    drawSection('Application');
+    drawSection('Main registration');
     const rowEarly = (label, val) => {
         doc.setDrawColor(226, 232, 240);
         doc.line(14, y + 8, 196, y + 8);
@@ -5614,7 +5662,9 @@ async function loadDoctorEventTickets() {
         const res = await fetch('/api/doctor/event-tickets/' + uid);
         const rows = await res.json();
         if (!rows || rows.length === 0) {
-            box.innerHTML = '<p style="color:#64748b;">No participant tickets yet. After payment is confirmed (or admin issues your e-ticket), your QR entry ticket appears here.</p>';
+            box.innerHTML = window.PORTAL_IS_AUTISM
+                ? '<p style="color:#64748b;">No e-tickets yet. After admin approves your registration and issues your pass, your QR ticket appears here.</p>'
+                : '<p style="color:#64748b;">No participant tickets yet. After payment is confirmed (or admin issues your e-ticket), your QR entry ticket appears here.</p>';
             return;
         }
         let html = '<div style="display:flex;flex-direction:column;gap:20px;">';
@@ -5636,7 +5686,11 @@ async function loadDoctorEventTickets() {
                     <h4 style="margin:0 0 8px;color:#1a237e;">${escapeHtml(t.seminar_title || 'Seminar')}</h4>
                     <p style="margin:0 0 6px;font-size:0.9rem;"><strong>E‑ticket ID:</strong> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">${escapeHtml(t.ticket_id_string || '—')}</code></p>
                     <p style="margin:4px 0;font-size:0.9rem;"><strong>Order:</strong> ${escapeHtml(String(t.order_id_string || '—'))} · <strong>Application:</strong> ${escapeHtml(String(t.application_no || '—'))}</p>
-                    <p style="margin:4px 0;font-size:0.9rem;"><strong>Registration:</strong> ${escapeHtml(t.registration_status || '—')} · <strong>Payment:</strong> ${escapeHtml(t.order_status || '—')}</p>
+                    <p style="margin:4px 0;font-size:0.9rem;"><strong>Registration:</strong> ${escapeHtml(t.registration_status || '—')}${
+                        window.PORTAL_IS_AUTISM
+                            ? ' · <strong>Entry:</strong> <span style="color:#047857;font-weight:700;">FREE</span>'
+                            : ' · <strong>Payment:</strong> ' + escapeHtml(t.order_status || '—')
+                    }</p>
                     ${statusLine}
                     ${
                         !invalid && t.ticket_id_string

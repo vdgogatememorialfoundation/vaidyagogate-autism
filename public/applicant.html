@@ -516,19 +516,26 @@
                 </div>
 
                 <div id="tab-prereg" class="tab-pane hidden">
-                    <h3 class="section-title">Pre-registration</h3>
-                    <p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Complete pre-registration first. After admin approval, continue to final registration and your e-ticket.</p>
+                    <h3 class="section-title">Register for event</h3>
+                    <p class="ak-prereg-lead" style="color:#64748b;margin-bottom:16px;">Choose an event below, then complete the registration form.</p>
                     <p id="prereg-track-live" class="hidden" style="margin-bottom:12px;font-size:0.88rem;font-weight:600;color:#1e40af;"></p>
-                    <div class="card">
+                    <h2 class="section-title" style="font-size:1.15rem;margin-bottom:12px;">Available events</h2>
+                    <div id="ak-events-grid" class="seminars-grid" style="margin-bottom:24px;"></div>
+                    <div id="ak-prereg-form-panel" class="card hidden">
+                        <h4 id="ak-prereg-form-heading" style="margin-bottom:12px;color:#0f766e;">Registration form</h4>
                         <form id="prereg-form">
-                            <div class="form-group"><label>Event</label><select id="prereg-seminar-select" required><option value="">Select event</option></select></div>
+                            <select id="prereg-seminar-select" required style="display:none;" aria-hidden="true"><option value="">Select event</option></select>
                             <nav id="prereg-wizard-nav" class="ak-prereg-wizard-nav" aria-label="Pre-registration steps"></nav>
+                            <div id="prereg-seminar-otp-panel" class="hidden" style="background:#eff6ff;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #bfdbfe;">
+                                <strong style="color:#1e40af;">Verification required</strong>
+                                <p id="prereg-otp-panel-hint" style="font-size:0.85rem;color:#475569;margin:6px 0 0;">Verify email and/or WhatsApp on this form when shown below.</p>
+                            </div>
                             <div id="prereg-fields"></div>
                             <p id="prereg-pin-hint" class="hidden" style="font-size:0.85rem;color:#64748b;margin-top:4px;"></p>
                             <div id="prereg-wizard-actions" class="ak-prereg-wizard-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;">
                                 <button type="button" id="prereg-wizard-back" class="btn-primary" style="background:#64748b;display:none;"><i class="fas fa-arrow-left"></i> Back</button>
                                 <button type="button" id="prereg-wizard-next" class="btn-primary">Next <i class="fas fa-arrow-right"></i></button>
-                                <button type="submit" id="prereg-submit-btn" class="btn-primary" style="display:none;"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
+                                <button type="submit" id="prereg-submit-btn" class="btn-primary" style="display:none;"><i class="fas fa-paper-plane"></i> Submit registration</button>
                                 <button type="button" class="btn-primary" style="background:#475569;" onclick="previewPreregistration()"><i class="fas fa-eye"></i> Preview form &amp; barcode</button>
                             </div>
                             <p id="prereg-status-msg" style="margin-top:12px;font-weight:600;"></p>
@@ -864,9 +871,9 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism8"></script>
+    <script src="/js/applicant.js?v=autism10"></script>
     <script src="/js/autism-form-preview.js?v=2"></script>
-    <script src="/js/applicant-autism.js?v=autism16"></script>
+    <script src="/js/applicant-autism.js?v=autism22"></script>
     <script src="/js/autism-announcements.js?v=1"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
