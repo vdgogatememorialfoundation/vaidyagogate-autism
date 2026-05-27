@@ -544,9 +544,22 @@
     async function loadPreregSeminars() {
         const sel = document.getElementById('prereg-seminar-select');
         if (!sel) return;
+        function seminarFlowFlags(seminarRow) {
+            try {
+                const parsed = seminarRow && seminarRow.registration_form_json ? JSON.parse(seminarRow.registration_form_json) : {};
+                const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+                return {
+                    preregistrationRequired: flow.preregistrationRequired !== false,
+                    mainRegistrationRequired: flow.mainRegistrationRequired !== false
+                };
+            } catch (_) {
+                return { preregistrationRequired: true, mainRegistrationRequired: true };
+            }
+        }
         try {
             const list = await fetchJson('/api/seminars');
-            preregSeminars = Array.isArray(list) ? list : list.seminars || [];
+            const raw = Array.isArray(list) ? list : list.seminars || [];
+            preregSeminars = raw.filter((s) => seminarFlowFlags(s).preregistrationRequired);
             window.__akPreregSeminars = preregSeminars;
             sel.innerHTML = '<option value="">Select event</option>';
             preregSeminars.forEach((s) => {
@@ -555,6 +568,9 @@
                 opt.textContent = s.title || 'Event ' + s.id;
                 sel.appendChild(opt);
             });
+            if (!preregSeminars.length) {
+                sel.innerHTML = '<option value="">No pre-registration events available</option>';
+            }
         } catch (e) {
             sel.innerHTML = '<option value="">Could not load events</option>';
         }

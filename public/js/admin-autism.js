@@ -56,6 +56,26 @@
             '<div><label>Pre-registration End <span style="font-weight:normal;color:#64748b;">(IST)</span></label>' +
             '<input type="datetime-local" id="seminar-prereg-end"></div>';
         grid.parentNode.insertBefore(block, grid.nextSibling);
+        const flow = document.createElement('div');
+        flow.style.cssText =
+            'display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding:10px 12px;border:1px solid #d1fae5;border-radius:8px;background:#f0fdfa;';
+        flow.innerHTML =
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-prereg-required" checked> Pre-registration required</label>' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-main-required" checked> Main registration required</label>';
+        block.insertAdjacentElement('afterend', flow);
+    }
+
+    function parseSeminarFlowFlags(registrationFormJson) {
+        try {
+            const parsed = registrationFormJson ? JSON.parse(registrationFormJson) : {};
+            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            return {
+                preregistrationRequired: flow.preregistrationRequired !== false,
+                mainRegistrationRequired: flow.mainRegistrationRequired !== false
+            };
+        } catch (_) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true };
+        }
     }
 
     function patchSaveSeminar() {
@@ -100,12 +120,41 @@
                             ? window.PortalDateTime.fromRegistrationEndLocal(window.__autismPreregEnd)
                             : window.__autismPreregEnd;
                     }
+                    const flowFlags = {
+                        preregistrationRequired:
+                            (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false,
+                        mainRegistrationRequired:
+                            (document.getElementById('seminar-flow-main-required') || {}).checked !== false
+                    };
+                    let regCfg = {};
+                    try {
+                        regCfg = data.registration_form_json ? JSON.parse(data.registration_form_json) : {};
+                    } catch (_) {
+                        regCfg = {};
+                    }
+                    regCfg.flow = { ...(regCfg.flow || {}), ...flowFlags };
+                    data.registration_form_json = JSON.stringify(regCfg);
                     opts = { ...opts, body: JSON.stringify(data) };
                 } catch (_) {}
             }
             return origFetch.call(this, url, opts);
         };
         window.__autismFetchPatched = true;
+    }
+
+    function patchEditSeminarFlowFlags() {
+        if (typeof window.editSeminar !== 'function' || window.editSeminar.__akFlowHook) return;
+        const orig = window.editSeminar;
+        window.editSeminar = function (index) {
+            orig.call(this, index);
+            const s = Array.isArray(window.globalSeminars) ? window.globalSeminars[index] : null;
+            const flags = parseSeminarFlowFlags(s && s.registration_form_json);
+            const pre = document.getElementById('seminar-flow-prereg-required');
+            const main = document.getElementById('seminar-flow-main-required');
+            if (pre) pre.checked = flags.preregistrationRequired;
+            if (main) main.checked = flags.mainRegistrationRequired;
+        };
+        window.editSeminar.__akFlowHook = true;
     }
 
     function patchApplicationsMenu() {
@@ -628,11 +677,14 @@
             const msg = document.getElementById('ak-prereg-form-reset-msg');
             if (!confirm('Reset the global pre-registration form to the default 4-step layout?')) return;
             try {
+                const adm = typeof getStoredAdminUser === 'function' ? getStoredAdminUser() : null;
+                const aid = adm && adm.id ? Number(adm.id) : null;
+                if (!aid) throw new Error('actingAdminId is required. Sign in to admin again.');
                 const r = await fetch('/api/admin/preregistration-form-config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify(PREREG_FORM_DEFAULT_V2)
+                    body: JSON.stringify({ ...PREREG_FORM_DEFAULT_V2, actingAdminId: aid })
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) throw new Error(data.error || r.statusText);
@@ -767,7 +819,13 @@
         if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading…</td></tr>';
         if (msg) msg.textContent = '';
         try {
-            const r = await fetch('/api/admin/preregistration-form-config', { credentials: 'same-origin' });
+            const adm = typeof getStoredAdminUser === 'function' ? getStoredAdminUser() : null;
+            const aid = adm && adm.id ? Number(adm.id) : null;
+            if (!aid) throw new Error('actingAdminId is required. Sign in to admin again.');
+            const r = await fetch(
+                '/api/admin/preregistration-form-config?actingAdminId=' + encodeURIComponent(String(aid)),
+                { credentials: 'same-origin' }
+            );
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || r.statusText);
             const fields = Array.isArray(data.fields) ? data.fields : [];
@@ -816,12 +874,15 @@
             fields.push(row);
         }
         try {
+            const adm = typeof getStoredAdminUser === 'function' ? getStoredAdminUser() : null;
+            const aid = adm && adm.id ? Number(adm.id) : null;
+            if (!aid) throw new Error('actingAdminId is required. Sign in to admin again.');
             const payload = { version: 3, fields };
             const r = await fetch('/api/admin/preregistration-form-config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ ...payload, actingAdminId: aid })
             });
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || r.statusText);
@@ -886,6 +947,7 @@
         ensurePreregFormEditorCard();
         patchSaveSeminar();
         patchSeminarPayload();
+        patchEditSeminarFlowFlags();
         patchRegistrationFormTabLoader();
         patchCreateStaffUserRoles();
         patchLoadAdminSiteCms();
