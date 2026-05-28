@@ -1663,6 +1663,9 @@ function loadPublicSiteCms(callback) {
                     if (!Array.isArray(base.heroStats) || !base.heroStats.length) {
                         base.heroStats = DEFAULT_PUBLIC_SITE_CMS.heroStats;
                     }
+                    if (!Array.isArray(base.homePillars) || !base.homePillars.length) {
+                        base.homePillars = DEFAULT_PUBLIC_SITE_CMS.homePillars;
+                    }
                     if (!Array.isArray(base.homeStats) || !base.homeStats.length) {
                         base.homeStats = DEFAULT_PUBLIC_SITE_CMS.homeStats;
                     }

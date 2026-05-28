@@ -159,6 +159,31 @@
         { icon: 'fa-hands-helping', title: 'Helpful team', text: 'Our volunteers guide you at every step — just ask!' }
     ];
 
+    function cmsResolveHomePillarsForSite(pillars) {
+        const list = Array.isArray(pillars) ? pillars.filter((p) => p && (p.title || p.text)) : [];
+        if (list.length) return list;
+        return [
+            {
+                icon: 'fa-lightbulb',
+                iconTone: 'blue',
+                title: 'Awareness',
+                text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
+            },
+            {
+                icon: 'fa-hands-holding-heart',
+                iconTone: 'violet',
+                title: 'Inclusion',
+                text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+            },
+            {
+                icon: 'fa-star',
+                iconTone: 'mint',
+                title: 'Celebration',
+                text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+            }
+        ];
+    }
+
     function renderHomePillars(pillars) {
         const grid = document.querySelector('.ak-pillars-grid');
         if (!grid || !Array.isArray(pillars) || !pillars.length) return;
@@ -214,6 +239,34 @@
             .join('');
     }
 
+    function applyAutismHeroFromCms(cms) {
+        const hero = (cms && cms.hero) || {};
+        if (!document.querySelector('.ak-hero-v2-copy')) return;
+        const badge = document.querySelector('.ak-hero-v2-badge');
+        if (badge && hero.eyebrow) {
+            badge.innerHTML =
+                '<i class="fas fa-puzzle-piece" aria-hidden="true"></i> ' + escHtml(hero.eyebrow);
+        }
+        const h1 = document.querySelector('.ak-hero-v2-copy h1');
+        if (h1 && hero.title) h1.textContent = sanitizeDisplayText(hero.title);
+        const lead = document.querySelector('.ak-hero-v2-lead');
+        if (lead && hero.subtitle) lead.textContent = sanitizeDisplayText(hero.subtitle);
+        const primaryBtn = document.querySelector('.ak-hero-v2-cta .ak-btn-v2-primary');
+        if (primaryBtn && hero.ctaPrimary) {
+            const icon = primaryBtn.querySelector('i');
+            primaryBtn.innerHTML =
+                (icon ? icon.outerHTML + ' ' : '<i class="fas fa-rocket" aria-hidden="true"></i> ') +
+                escHtml(hero.ctaPrimary);
+        }
+        const ghostBtn = document.querySelector('.ak-hero-v2-cta .ak-btn-v2-ghost');
+        if (ghostBtn && hero.ctaSecondary) {
+            const icon = ghostBtn.querySelector('i');
+            ghostBtn.innerHTML =
+                (icon ? icon.outerHTML + ' ' : '<i class="fas fa-door-open" aria-hidden="true"></i> ') +
+                escHtml(hero.ctaSecondary);
+        }
+    }
+
     window.applySiteCms = function applySiteCms(cms) {
         if (!cms) return;
         window.__homeCms = cms;
@@ -229,6 +282,7 @@
         }
         setText('hero-cta-primary', cms.hero && cms.hero.ctaPrimary);
         setText('hero-cta-secondary', cms.hero && cms.hero.ctaSecondary);
+        applyAutismHeroFromCms(cms);
         setText('schedule-page-title', cms.schedulePage && cms.schedulePage.title);
         setText('schedule-page-subtitle', cms.schedulePage && cms.schedulePage.subtitle);
         setText('footer-tagline', cms.footer && cms.footer.tagline);
@@ -341,7 +395,7 @@
         const featSub = fs.subtitle || cms.featuresSubtitle;
         if (featTitle) setText('section-features-title', featTitle);
         if (featSub) setText('section-features-subtitle', featSub);
-        renderHomePillars(cms.homePillars);
+        renderHomePillars(cmsResolveHomePillarsForSite(cms.homePillars));
         renderFeatureCards(cms.featureCards);
         renderSpeakers(cms.speakers);
 

@@ -549,12 +549,18 @@
         card.style.cssText = 'margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;';
         card.innerHTML =
             '<h3 style="margin:0 0 8px;color:#0f766e;">Edit homepage text</h3>' +
-            '<p style="color:#475569;font-size:0.88rem;margin:0;">' +
-            '<strong>Awareness / Inclusion / Celebration</strong> → <em>Homepage pillars</em> below.<br>' +
-            '<strong>Why join us</strong> → section title + <em>Feature cards</em>.<br>' +
-            '<strong>1+ seminars / counts strip</strong> → <em>Homepage stats strip</em> (below hero). Hero box stats use <em>Stat 1–3</em> above.<br>' +
-            'Then click <strong>Save website &amp; portal content</strong> at the bottom of this tab.' +
-            '</p>';
+            '<p style="color:#475569;font-size:0.88rem;margin:0 0 12px;">' +
+            'Scroll to each section below, edit the fields, then click <strong>Save homepage text</strong>. ' +
+            'Use the full <strong>Save website &amp; portal content</strong> button at the bottom for everything else.' +
+            '</p>' +
+            '<ul style="color:#475569;font-size:0.86rem;margin:0 0 14px 18px;line-height:1.55;">' +
+            '<li><strong>Awareness / Inclusion / Celebration</strong> → <a href="#ak-homepage-pillars-section">Homepage pillars</a></li>' +
+            '<li><strong>Why join us</strong> → <a href="#ak-homepage-features-section">Section title + feature cards</a></li>' +
+            '<li><strong>1+ events strip</strong> → <em>Homepage stats strip</em> under hero settings</li>' +
+            '<li><strong>Hero headline</strong> → <em>Homepage hero &amp; top bar</em> fields</li>' +
+            '</ul>' +
+            '<button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage text</button>' +
+            '<p id="ak-homepage-cms-guide-msg" style="margin:10px 0 0;font-size:0.88rem;font-weight:600;"></p>';
         cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
     }
 

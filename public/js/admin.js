@@ -9990,7 +9990,12 @@ function cmsCollectFooterDoctorLinks() {
 function cmsFieldValue(id) {
     const els = document.querySelectorAll('[id="' + id.replace(/"/g, '') + '"]');
     if (!els.length) return '';
-    return els[els.length - 1].value || '';
+    for (let i = 0; i < els.length; i++) {
+        const el = els[i];
+        if (el.type === 'hidden') continue;
+        if (el.offsetParent !== null || el === document.activeElement) return el.value || '';
+    }
+    return els[0].value || '';
 }
 
 function cmsPadStatRows(list, count) {
@@ -10009,11 +10014,53 @@ function cmsDefaultHeroStats() {
 
 function cmsDefaultHomeStats() {
     return [
-        { value: '1+', label: 'Active seminars' },
+        { value: '1+', label: 'Active events' },
         { value: '20+', label: 'Expert speakers' },
         { value: '1972', label: 'Founded' },
         { value: '24/7', label: 'Online portal' }
     ];
+}
+
+function cmsDefaultHomePillars() {
+    return [
+        {
+            icon: 'fa-lightbulb',
+            iconTone: 'blue',
+            title: 'Awareness',
+            text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
+        },
+        {
+            icon: 'fa-hands-holding-heart',
+            iconTone: 'violet',
+            title: 'Inclusion',
+            text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+        },
+        {
+            icon: 'fa-star',
+            iconTone: 'mint',
+            title: 'Celebration',
+            text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+        }
+    ];
+}
+
+function cmsDefaultFeatureCards() {
+    return [
+        { icon: 'fa-chalkboard-teacher', title: 'Expert Sessions', text: 'Talks and workshops for parents and caregivers' },
+        { icon: 'fa-hands-helping', title: 'Family Support', text: 'Guidance and resources for families' },
+        { icon: 'fa-palette', title: 'Art & Competition', text: 'Creative entries celebrating abilities' },
+        { icon: 'fa-users', title: 'Community Network', text: 'Connect with families and professionals' }
+    ];
+}
+
+function cmsResolveHomePillars(cms) {
+    const list = cms && Array.isArray(cms.homePillars) ? cms.homePillars.filter((p) => p && (p.title || p.text)) : [];
+    return list.length ? list : cmsDefaultHomePillars();
+}
+
+function cmsResolveFeatureCards(cms) {
+    const list = cms && Array.isArray(cms.featureCards) ? cms.featureCards.filter((c) => c && (c.title || c.text)) : [];
+    return list.length ? list : cmsDefaultFeatureCards();
 }
 
 function cmsApplyHeroFieldsToForm(cms) {
@@ -10078,7 +10125,7 @@ function cmsApplyHeroFieldsToForm(cms) {
     const fs = cms.featuresSection || {};
     set('cms-features-title', fs.title || cms.featuresSectionTitle || 'Why join us');
     set('cms-features-subtitle', fs.subtitle || cms.featuresSubtitle || '');
-    cmsFillHomePillarRows(cms.homePillars || []);
+    cmsFillHomePillarRows(cmsResolveHomePillars(cms));
 }
 
 function cmsCollectHeroFieldsFromForm() {
@@ -10147,7 +10194,10 @@ function cmsCollectHeroFieldsFromForm() {
         },
         featuresSectionTitle: gv('cms-features-title') || 'Why join us',
         featuresSubtitle: gv('cms-features-subtitle') || '',
-        homePillars: cmsCollectHomePillarsFromDom()
+        homePillars: (() => {
+            const p = cmsCollectHomePillarsFromDom();
+            return p.length ? p : cmsDefaultHomePillars();
+        })()
     };
 }
 
@@ -10643,7 +10693,7 @@ async function loadAdminSiteCms() {
         cmsApplyHeroFieldsToForm(cms);
         cmsApplySeoFieldsToForm(cms.seo || {});
         cmsFillSpeakerRows(cms.speakers || []);
-        cmsFillFeatureRows(cms.featureCards || []);
+        cmsFillFeatureRows(cmsResolveFeatureCards(cms));
         cmsFillFaqRows(cms.faq || []);
         await loadAdminMarketing();
         await loadPortalAuthAdminForm();
@@ -10795,7 +10845,8 @@ function setCmsSaveMessage(text, color) {
     [
         document.getElementById('cms-save-msg'),
         document.getElementById('cms-header-footer-save-msg'),
-        document.getElementById('cms-contact-save-msg')
+        document.getElementById('cms-contact-save-msg'),
+        document.getElementById('ak-homepage-cms-guide-msg')
     ].forEach((el) => {
         if (!el) return;
         el.innerText = text || '';
@@ -10882,14 +10933,71 @@ async function loadAkContentUpdatesTab() {
     }
 }
 
+async function saveHomepageCmsOnly() {
+    setCmsSaveMessage('');
+    try {
+        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+        const current = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(current.error || 'Could not load current content');
+        const heroFields = cmsCollectHeroFieldsFromForm();
+        const featureCards = cmsCollectFeatureCardsFromDom();
+        const cms = {
+            ...current,
+            ...heroFields,
+            hero: { ...(current.hero || {}), ...(heroFields.hero || {}) },
+            topBar: { ...(current.topBar || {}), ...(heroFields.topBar || {}) },
+            featuresSection: heroFields.featuresSection,
+            featuresSectionTitle: heroFields.featuresSectionTitle,
+            featuresSubtitle: heroFields.featuresSubtitle,
+            featureCards: featureCards.length ? featureCards : cmsDefaultFeatureCards(),
+            homePillars: heroFields.homePillars
+        };
+        const save =
+            typeof window.autismAdminFetch === 'function'
+                ? () =>
+                      window.autismAdminFetch('/api/admin/site-cms', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ cms })
+                      })
+                : async () => {
+                      const url =
+                          typeof withActingAdminUrl === 'function'
+                              ? withActingAdminUrl('/api/admin/site-cms')
+                              : '/api/admin/site-cms';
+                      const postRes = await fetch(url, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'same-origin',
+                          body: JSON.stringify(
+                              typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
+                          )
+                      });
+                      const data = await postRes.json().catch(() => ({}));
+                      if (!postRes.ok) throw new Error(data.error || postRes.statusText);
+                      return data;
+                  };
+        const data = await save();
+        if (data.success) {
+            __siteCmsEditing = cms;
+            setCmsSaveMessage('Homepage text saved. Hard-refresh the public site to see changes.', '#15803d');
+        } else {
+            setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
+        }
+    } catch (e) {
+        setCmsSaveMessage(e.message || 'Network error — check connection and try again.', '#b91c1c');
+    }
+}
+
 async function saveAdminSiteCms() {
     setCmsSaveMessage('');
     let slides;
+    let slidesWarn = '';
     try {
         slides = cmsParseJsonArray((document.getElementById('cms-slides') || {}).value, 'Homepage slides');
     } catch (e) {
-        setCmsSaveMessage(e.message || String(e), '#b91c1c');
-        return;
+        slides = (__siteCmsEditing && __siteCmsEditing.slides) || [];
+        slidesWarn = 'Slides JSON was invalid — previous slides were kept. ';
     }
     const reviews = cmsCollectReviewsFromDom();
     const aboutSections = cmsCollectAboutFromDom();
@@ -10921,7 +11029,11 @@ async function saveAdminSiteCms() {
             ...cmsCollectHeroFieldsFromForm()
         };
         if (!cms.featureCards || !cms.featureCards.length) {
-            cms.featureCards = cmsCollectFeatureCardsFromDom();
+            const fc = cmsCollectFeatureCardsFromDom();
+            cms.featureCards = fc.length ? fc : cmsDefaultFeatureCards();
+        }
+        if (!cms.homePillars || !cms.homePillars.length) {
+            cms.homePillars = cmsDefaultHomePillars();
         }
         if (!cms.faq || !cms.faq.length) {
             cms.faq = cmsCollectFaqFromDom();
@@ -10953,7 +11065,11 @@ async function saveAdminSiteCms() {
                   };
         const data = await save();
         if (data.success) {
-            setCmsSaveMessage('Website and portal content saved.', '#15803d');
+            __siteCmsEditing = cms;
+            setCmsSaveMessage(
+                (slidesWarn ? slidesWarn : '') + 'Website and portal content saved.',
+                slidesWarn ? '#b45309' : '#15803d'
+            );
         } else {
             setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
         }
