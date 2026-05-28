@@ -1813,6 +1813,7 @@ function validateRegistrationAgainstConfigForSteps(upToStepInclusive) {
             if (Number.isNaN(fStep) || fStep !== sn) continue;
             if (f.type !== 'email' && f.type !== 'tel') continue;
             if (f.key === 'email' || f.key === 'phone') {
+                if (!window.__otpOnApplication) continue;
                 if (f.key === 'email' && window.__otpOnApplication && !window.__otpRequiresEmail && !window.__emailConfigured) {
                     continue;
                 }

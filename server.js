@@ -4855,7 +4855,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                     const otpApp = !!(sem && Number(sem.otp_on_application) === 1);
                     const otpStep1 = otpApp && sem && Number(sem.otp_on_step1) !== 0;
                     const otpSubmit = otpApp && sem && Number(sem.otp_on_submit) !== 0;
-                    const skipFieldKeys = otpStep1 ? ['email', 'phone'] : [];
+                    const skipFieldKeys = ['email', 'phone'];
 
                     function runFieldOtpsThenInsert() {
                         integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
@@ -5151,7 +5151,7 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
 
                 const sidNum = parseInt(row.seminar_id, 10);
                 const otpApp = !!Number(row.otp_on_application);
-                const skipFieldKeys = otpApp ? ['email', 'phone'] : [];
+                const skipFieldKeys = ['email', 'phone'];
 
                 function persistUpdate() {
                     const mergedStored = sanitizeFormDataForStorage(merged);
