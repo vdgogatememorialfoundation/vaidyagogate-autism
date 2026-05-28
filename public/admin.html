@@ -819,7 +819,7 @@
                 </div>
                 <h2 style="margin-bottom: 12px; color:#0c4a6e;">Public website &amp; doctor portal content</h2>
                 <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons ... paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Event management (after payments are complete).</p>
-                <div class="card" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Public portal sign-in &amp; security</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving doctor applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> still override signup/login OTP when set to 0 or 1.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
@@ -835,19 +835,19 @@
                     <button type="button" class="btn-primary" style="background:#0369a1;" onclick="savePortalAuthAdminConfig()">Save portal auth policy</button>
                     <p id="pa-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                         </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #a7f3d0;background:#ecfdf5;" id="website-menu-policy-card">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #a7f3d0;background:#ecfdf5;" id="website-menu-policy-card">
                     <h3 style="margin:0 0 10px;color:#047857;font-size:1.05rem;">Website menu pages</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Choose which items appear in the public website navigation (header menu). Uncheck to hide a page. Save with <strong>Save portal auth policy</strong> below.</p>
                     <div id="website-menu-pages-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:200px;overflow-y:auto;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></div>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;" id="admin-pages-policy-card">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;" id="admin-pages-policy-card">
                     <h3 style="margin:0 0 10px;color:#4338ca;font-size:1.05rem;">Admin menu pages (global)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Super administrator only: choose which admin sidebar sections are visible for <strong>all</strong> staff (including co-admins). Co-admin users can still have further limits per user under Staff users ? Modules.</p>
                     <div id="admin-global-pages-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;max-height:320px;overflow-y:auto;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"></div>
                     <p style="font-size:0.82rem;color:#64748b;margin:10px 0 0;">Leave all checked to show every page. Uncheck to hide a section from the admin sidebar.</p>
                 </div>
                 
-                <div class="card" style="margin-bottom:18px;border:1px solid #fde68a;background:#fffbeb;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #fde68a;background:#fffbeb;">
                     <h3 style="margin:0 0 10px;color:#92400e;font-size:1.05rem;">Account alerts (designated staff)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When someone creates a portal account (public signup or admin CRM), full user details are emailed and sent on WhatsApp to these contacts (one per line).</p>
                     <label style="font-size:0.82rem;font-weight:700;">Notification emails</label>
@@ -857,7 +857,7 @@
                     <button type="button" class="btn-primary" style="background:#b45309;" onclick="saveDesignatedNotifyConfig()">Save designated contacts</button>
                     <p id="dn-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                         </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #fed7aa;background:#fff7ed;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #fed7aa;background:#fff7ed;">
                     <h3 style="margin:0 0 10px;color:#c2410c;font-size:1.05rem;">Email delivery (venue / bulk)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Protects free Zoho SMTP from <code>550 unusual sending activity</code> during on-spot registration (500+ delegates). POS registrations succeed even when mail is deferred.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
@@ -874,7 +874,7 @@
                     <button type="button" class="btn-primary" style="margin-top:10px;background:#c2410c;" onclick="saveNotificationDeliveryConfig()">Save email delivery policy</button>
                     <p id="ed-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #bbf7d0;background:#f0fdf4;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #bbf7d0;background:#f0fdf4;">
                     <h3 style="margin:0 0 10px;color:#15803d;font-size:1.05rem;">SEO &amp; Google visibility</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Page title, description, Open Graph, robots, sitemap (<a href="/sitemap.xml" target="_blank" rel="noopener">/sitemap.xml</a>), and favicon. Saved with <strong>Save website &amp; portal content</strong>.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:900px;">
@@ -889,7 +889,7 @@
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-top:24px;"><input type="checkbox" id="seo-robots-index" checked> Allow search engines (index)</label>
                     </div>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Support ticket response time (SLA)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When a doctor logs a support ticket, they see the expected response time. Default applies to all categories unless overridden below.</p>
                     <label style="font-size:0.82rem;font-weight:700;">Default response time (hours)</label>
@@ -904,7 +904,7 @@
                     <button type="button" class="btn-primary" style="background:#0284c7;" onclick="saveSupportTicketSlaConfig()">Save support SLA</button>
                     <p id="sts-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #ddd6fe;background:#f5f3ff;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #ddd6fe;background:#f5f3ff;">
                     <h3 style="margin:0 0 10px;color:#5b21b6;font-size:1.05rem;">Portal themes (main site, doctor, judge)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Primary colours and accents for each portal. Doctors and judges see changes after refresh.</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
@@ -924,7 +924,7 @@
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#5b21b6;" onclick="savePortalThemesAdmin()">Save portal themes</button>
                     <p id="pt-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #fecaca;background:#fef2f2;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #fecaca;background:#fef2f2;">
                     <h3 style="margin:0 0 10px;color:#b91c1c;font-size:1.05rem;">Pending registration reminders</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Email/WhatsApp nudges for doctors who have not completed documents (uses notification template <code>REGISTRATION_PENDING_REMINDER</code>). Runs daily on server cron (10:00 UTC on Vercel).</p>
                     <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-bottom:8px;"><input type="checkbox" id="pr-enabled"> Enable automatic reminders</label>
@@ -942,7 +942,7 @@
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#b91c1c;" onclick="savePendingReminderAdminConfig()">Save reminder settings</button>
                     <p id="pr-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #c7d2fe;background:#eef2ff;">
                     <h3 style="margin:0 0 10px;color:#4338ca;font-size:1.05rem;">Judge ? participant emails (monitoring)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When judges contact participants, emails are sent from the organisation address with sender name <em>Judge Name | Vaidya Gogate Memorial Foundation</em>. A copy goes to the admin contact email if configured.</p>
                     <button type="button" class="btn-primary" style="background:#4338ca;padding:8px 14px;font-size:0.9rem;" onclick="loadJudgeCommunicationsAdmin()">Refresh log</button>
@@ -953,7 +953,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #bbf7d0;background:#f0fdf4;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #bbf7d0;background:#f0fdf4;">
                     <h3 style="margin:0 0 10px;color:#166534;font-size:1.05rem;">Venue change broadcast</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">After updating <em>Venue line</em> below, send email and WhatsApp to all <strong>paid</strong> registrants. Seminar dates in notifications use India Standard Time (IST).</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;">
@@ -967,7 +967,7 @@
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#15803d;" onclick="sendVenueBroadcast()">Send venue update to paid registrants</button>
                     <p id="venue-broadcast-status" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-<div class="card" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;">
+<div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Site header &amp; footer</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
@@ -994,7 +994,7 @@
                         <p id="cms-header-footer-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                 </div>
-                <div class="card" style="margin-bottom:18px;border:1px solid #99f6e4;background:#f0fdfa;">
+                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #99f6e4;background:#f0fdfa;">
                     <h3 style="margin:0 0 10px;color:#047857;font-size:1.05rem;">Contact information</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown on the public <strong>Contact us</strong> page and in the site footer. (Top bar email/phone above are for the header strip only.)</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1008,7 +1008,7 @@
                         <p id="cms-contact-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                 </div>
-<div class="card">
+<div class="card" id="ak-main-cms-card" style="margin-bottom:18px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                         <div><label>Homepage ticker text</label><input type="text" id="cms-ticker" placeholder="Short announcement line (single line)"></div>
                         <div><label>Banner image URL</label><input type="text" id="cms-banner" placeholder="/uploads/banner.jpg"></div>
@@ -1051,8 +1051,7 @@
                             <div><label style="font-size:0.8rem;">Strip stat 4 label</label><input type="text" id="cms-home-stat4-lbl" style="width:100%"></div>
                         </div>
                     </div>
-                </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage speakers (faculty)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on the main website. Upload photo, name, designation, and seminar title.</p>
                         <div id="cms-speaker-rows"></div>
@@ -1075,17 +1074,17 @@
                         <div id="cms-feature-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddFeatureRow()">+ Add feature card</button>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">FAQ (homepage)</label>
                         <div id="cms-faq-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddFaqRow()">+ Add FAQ</button>
                     </div>
-                    <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="ak-cms-extra" style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Schedule page title</label><input type="text" id="cms-schedule-title" style="width:100%"></div>
                         <div><label>Schedule page subtitle</label><input type="text" id="cms-schedule-subtitle" style="width:100%"></div>
                     </div>
-                    <p style="color:#64748b;font-size:0.85rem;margin:12px 0 8px;">Homepage images: max <strong>4 MB</strong> per file on this server. iPhone photos are auto-compressed.</p>
-                    <div style="margin-top:8px;display:grid;gap:10px;max-width:520px;">
+                    <p class="ak-cms-extra" style="color:#64748b;font-size:0.85rem;margin:12px 0 8px;">Homepage images: max <strong>4 MB</strong> per file on this server. iPhone photos are auto-compressed.</p>
+                    <div class="ak-cms-extra" style="margin-top:8px;display:grid;gap:10px;max-width:520px;">
                         <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
                             <label style="font-size:0.8rem;font-weight:700;">Banner image</label>
                             <input type="file" id="cms-banner-file" accept="image/*" style="margin-top:6px;max-width:100%;">
@@ -1098,28 +1097,28 @@
                         </div>
                     </div>
 
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage sliding announcements</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Cards that scroll horizontally on the public homepage. A short auto card is added when you <strong>create</strong> a seminar and registration is already open.</p>
                         <div id="cms-scrolling-announce-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddScrollingRow()">+ Add announcement card</button>
                     </div>
 
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Extra public notices (Official Notices board)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Title, description, optional date and PDF. Shown together with seminar notices from the database.</p>
                         <div id="cms-public-notice-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddPublicNoticeRow()">+ Add notice</button>
                     </div>
 
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Applicant portal updates (all participants)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on every applicant dashboard under Programme updates. Times display in IST.</p>
                         <div id="cms-doctor-update-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddDoctorUpdateRow()">+ Add update</button>
                     </div>
 
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Hero banner carousel (database)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Upload slides with title, subtitle, optional CTA. Auto-carousel on the public homepage when enabled.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px;">
@@ -1130,7 +1129,7 @@
                         <div id="mkt-banner-rows"></div>
                         <p id="mkt-banner-msg" style="margin-top:8px;font-weight:600;"></p>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage popup / lightbox</label>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
                             <div><label style="font-size:0.8rem;">Enabled</label><select id="mkt-popup-enabled" style="width:100%;"><option value="0">Off</option><option value="1">On</option></select></div>
@@ -1144,32 +1143,32 @@
                         </div>
                         <div style="margin-top:10px;"><input type="file" id="mkt-popup-file"><button type="button" class="btn-primary" style="margin-left:8px;background:#64748b;" onclick="marketingUploadPopupImage()">Upload popup image</button></div>
                     </div>
-                    <div style="margin-top:18px;"><label>Legacy slides JSON (fallback if no DB banners)</label><textarea id="cms-slides" rows="4" placeholder='[{"src":"/uploads/a.jpg","caption":"","link":""}]'></textarea></div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:18px;"><label>Legacy slides JSON (fallback if no DB banners)</label><textarea id="cms-slides" rows="4" placeholder='[{"src":"/uploads/a.jpg","caption":"","link":""}]'></textarea></div>
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Main site menu</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Edit navigation labels and pages shown on the public website header. Use <strong>Section</strong> for in-page tabs, or leave section empty and set a <strong>URL</strong> (e.g. Certificate page).</p>
                         <div id="cms-menu-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddMenuRow()">+ Add menu item</button>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Past seminar gallery (by year)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Group photos by year (e.g. 2025 ... 10 images, 2024 ... 20 images). Use <strong>Upload multiple images</strong> ... each photo uploads separately (large phone photos are auto-compressed). Then click <strong>Save website &amp; portal content</strong>. Keep each image under ~4 MB.</p>
                         <div id="cms-gallery-years"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddGalleryYear()">+ Add year album</button>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">About us</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Sections on the public homepage About area (heading + body).</p>
                         <div id="cms-about-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddAboutRow()">+ Add section</button>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Social links</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">YouTube, Facebook, Instagram, etc.</p>
                         <div id="cms-social-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddSocialRow()">+ Add link</button>
                     </div>
-                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage reviews / testimonials</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Name, role, quote, and star rating (1-5).</p>
                         <div id="cms-review-rows"></div>
@@ -2324,13 +2323,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260529c"></script>
+    <script src="/js/admin.js?v=20260529d"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism21"></script>
+    <script src="/js/admin-autism.js?v=autism22"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>

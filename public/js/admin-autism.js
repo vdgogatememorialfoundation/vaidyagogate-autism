@@ -540,6 +540,18 @@
         });
     }
 
+    function tightenAutismCmsTab() {
+        const tab = document.getElementById('tab-site-cms');
+        if (!tab) return;
+        tab.querySelectorAll('.ak-cms-advanced, .ak-cms-extra').forEach((el) => {
+            el.style.display = 'none';
+        });
+        const intro = tab.querySelector(':scope > p');
+        if (intro) intro.style.display = 'none';
+        const h2 = tab.querySelector(':scope > h2');
+        if (h2) h2.textContent = 'Homepage & website content';
+    }
+
     function injectHomepageCmsGuide() {
         const cmsTab = document.getElementById('tab-site-cms');
         if (!cmsTab || document.getElementById('ak-homepage-cms-guide')) return;
@@ -549,19 +561,12 @@
         card.style.cssText = 'margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;';
         card.innerHTML =
             '<h3 style="margin:0 0 8px;color:#0f766e;">Edit homepage text</h3>' +
-            '<p style="color:#475569;font-size:0.88rem;margin:0 0 12px;">' +
-            'Scroll to each section below, edit the fields, then click <strong>Save homepage text</strong>. ' +
-            'Use the full <strong>Save website &amp; portal content</strong> button at the bottom for everything else.' +
-            '</p>' +
-            '<ul style="color:#475569;font-size:0.86rem;margin:0 0 14px 18px;line-height:1.55;">' +
-            '<li><strong>Awareness / Inclusion / Celebration</strong> → <a href="#ak-homepage-pillars-section">Homepage pillars</a></li>' +
-            '<li><strong>Why join us</strong> → <a href="#ak-homepage-features-section">Section title + feature cards</a></li>' +
-            '<li><strong>1+ events strip</strong> → <em>Homepage stats strip</em> under hero settings</li>' +
-            '<li><strong>Hero headline</strong> → <em>Homepage hero &amp; top bar</em> fields</li>' +
-            '</ul>' +
+            '<p style="color:#475569;font-size:0.88rem;margin:0 0 12px;">Update hero, pillars (Awareness / Inclusion / Celebration), Why join us, and the counts strip in the card below. Then click <strong>Save homepage text</strong>.</p>' +
             '<button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage text</button>' +
             '<p id="ak-homepage-cms-guide-msg" style="margin:10px 0 0;font-size:0.88rem;font-weight:600;"></p>';
-        cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
+        const main = document.getElementById('ak-main-cms-card');
+        if (main) cmsTab.insertBefore(card, main);
+        else cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
     }
 
     function hideGalleryCmsBlocks() {
@@ -1179,8 +1184,8 @@
     };
 
     function injectPreregFormResetCard() {
-        const cmsTab = document.getElementById('tab-site-cms');
-        if (!cmsTab || document.getElementById('ak-prereg-form-reset-card')) return;
+        const regTab = document.getElementById('tab-reg-form');
+        if (!regTab || document.getElementById('ak-prereg-form-reset-card')) return;
         const card = document.createElement('div');
         card.id = 'ak-prereg-form-reset-card';
         card.className = 'card';
@@ -1190,7 +1195,7 @@
             '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Pre-registration uses 4 steps (parent, child, address, questions).</p>' +
             '<button type="button" class="btn-primary" id="ak-prereg-form-reset-btn">Reset pre-registration form to defaults</button>' +
             '<p id="ak-prereg-form-reset-msg" style="margin:10px 0 0;font-size:0.85rem;"></p>';
-        cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
+        regTab.insertBefore(card, regTab.querySelector('.card') || regTab.firstChild);
         document.getElementById('ak-prereg-form-reset-btn')?.addEventListener('click', async () => {
             const msg = document.getElementById('ak-prereg-form-reset-msg');
             if (!confirm('Reset the global pre-registration form to the default 4-step layout?')) return;
@@ -1479,6 +1484,7 @@
         applyAdminBranding();
         wireSiteImageUpload();
         injectHomepageCmsGuide();
+        tightenAutismCmsTab();
         hideGalleryCmsBlocks();
         hideMedicalQualOptions();
         injectApplicationsStatusFilter();
