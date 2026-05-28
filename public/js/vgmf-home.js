@@ -159,6 +159,33 @@
         { icon: 'fa-hands-helping', title: 'Helpful team', text: 'Our volunteers guide you at every step — just ask!' }
     ];
 
+    function renderHomePillars(pillars) {
+        const grid = document.querySelector('.ak-pillars-grid');
+        if (!grid || !Array.isArray(pillars) || !pillars.length) return;
+        grid.innerHTML = pillars
+            .map((p) => {
+                const tone = ['blue', 'violet', 'mint'].includes(String(p.iconTone || '').toLowerCase())
+                    ? String(p.iconTone).toLowerCase()
+                    : 'blue';
+                const icon = escHtml(p.icon || 'fa-star');
+                return (
+                    '<article class="ak-pillar">' +
+                    '<div class="ak-pillar-icon ' +
+                    tone +
+                    '"><i class="fas ' +
+                    icon +
+                    '" aria-hidden="true"></i></div>' +
+                    '<h3>' +
+                    escHtml(p.title) +
+                    '</h3>' +
+                    '<p>' +
+                    escHtml(p.text) +
+                    '</p></article>'
+                );
+            })
+            .join('');
+    }
+
     function renderFeatureCards(cards) {
         const featGrid = document.getElementById('feature-cards-grid');
         if (!featGrid) return;
@@ -294,6 +321,12 @@
                 .join('');
         }
 
+        const fs = cms.featuresSection || {};
+        const featTitle = fs.title || cms.featuresSectionTitle;
+        const featSub = fs.subtitle || cms.featuresSubtitle;
+        if (featTitle) setText('section-features-title', featTitle);
+        if (featSub) setText('section-features-subtitle', featSub);
+        renderHomePillars(cms.homePillars);
         renderFeatureCards(cms.featureCards);
         renderSpeakers(cms.speakers);
 

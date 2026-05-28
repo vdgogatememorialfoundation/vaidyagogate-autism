@@ -975,6 +975,32 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         { value: '100+', label: 'Families' },
         { value: '5+', label: 'Competition categories' }
     ],
+    homePillars: [
+        {
+            icon: 'fa-lightbulb',
+            iconTone: 'blue',
+            title: 'Awareness',
+            text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
+        },
+        {
+            icon: 'fa-hands-holding-heart',
+            iconTone: 'violet',
+            title: 'Inclusion',
+            text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+        },
+        {
+            icon: 'fa-star',
+            iconTone: 'mint',
+            title: 'Celebration',
+            text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+        }
+    ],
+    featuresSection: {
+        title: 'Why join us',
+        subtitle: 'Inclusive events, creative competitions, and a supportive community'
+    },
+    featuresSectionTitle: 'Why join us',
+    featuresSubtitle: 'Inclusive events, creative competitions, and a supportive community',
     featureCards: [
         { icon: 'fa-chalkboard-teacher', title: 'Expert Sessions', text: 'Talks and workshops for parents and caregivers' },
         { icon: 'fa-hands-helping', title: 'Family Support', text: 'Guidance and resources for families' },
@@ -1856,9 +1882,13 @@ function enqueueApplicationSubmitted(db, meta, cb) {
             userId,
             seminarId,
             registrationId,
-            vars: { approval_status: 'submitted' }
+            vars: { approval_status: 'submitted' },
+            immediate: true
         },
-        () => cb && cb(null)
+        () => {
+            flushNotificationQueue();
+            if (cb) cb(null);
+        }
     );
 }
 
@@ -4328,7 +4358,8 @@ app.post('/api/admin/site-cms', (req, res) => {
         'heroStats',
         'homeStats',
         'featureCards',
-        'faq'
+        'faq',
+        'homePillars'
     ];
     for (let i = 0; i < arrayKeys.length; i++) {
         const k = arrayKeys[i];
@@ -4358,10 +4389,26 @@ app.post('/api/admin/site-cms', (req, res) => {
             'heroStats',
             'homeStats',
             'featureCards',
-            'faq'
+            'faq',
+            'homePillars'
         ].forEach((k) => {
             if (incoming[k] !== undefined) merged[k] = incoming[k];
         });
+        if (incoming.featuresSection && typeof incoming.featuresSection === 'object') {
+            merged.featuresSection = { ...(merged.featuresSection || {}), ...incoming.featuresSection };
+            if (incoming.featuresSection.title) merged.featuresSectionTitle = incoming.featuresSection.title;
+            if (incoming.featuresSection.subtitle) merged.featuresSubtitle = incoming.featuresSection.subtitle;
+        }
+        if (incoming.featuresSectionTitle) {
+            merged.featuresSectionTitle = incoming.featuresSectionTitle;
+            merged.featuresSection = merged.featuresSection || {};
+            merged.featuresSection.title = incoming.featuresSectionTitle;
+        }
+        if (incoming.featuresSubtitle) {
+            merged.featuresSubtitle = incoming.featuresSubtitle;
+            merged.featuresSection = merged.featuresSection || {};
+            merged.featuresSection.subtitle = incoming.featuresSubtitle;
+        }
         if (incoming.seminarGalleryYears !== undefined) {
             merged.seminarGalleryYears = incoming.seminarGalleryYears;
             merged.pastSeminarGallery = siteCmsHelpers.flattenGalleryYears(incoming.seminarGalleryYears);
@@ -10285,8 +10332,10 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData) {
                         notifEngine.notify(
                             db,
                             'SEMINAR_REGISTRATION_SUCCESS',
-                            { userId: tid, seminarId: sid, registrationId: newRegId },
-                            () => {}
+                            { userId: tid, seminarId: sid, registrationId: newRegId, immediate: true },
+                            () => {
+                                flushNotificationQueue();
+                            }
                         );
                         respondAdminRegUpsertWithVolunteerTicket(
                             res,

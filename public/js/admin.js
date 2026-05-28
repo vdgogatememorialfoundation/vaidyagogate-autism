@@ -1199,7 +1199,7 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-contact-inquiries', 'Website contact'],
     ['tab-email-compose', 'Send email'],
     ['tab-transfer', 'Transfer applications'],
-    ['tab-behalf-reg', 'Doctor applications (admin workspace)'],
+    ['tab-behalf-reg', 'Doctor applications'],
     ['tab-reg-form', 'Registration form fields'],
     ['tab-site-cms', 'Website & doctor updates'],
     ['tab-admin-payments', 'Payments'],
@@ -9838,6 +9838,52 @@ function cmsAddFeatureRow(prefill) {
     root.appendChild(wrap);
 }
 
+function cmsCollectHomePillarsFromDom() {
+    const root = document.getElementById('cms-pillar-rows');
+    if (!root) return [];
+    return Array.from(root.querySelectorAll('.cms-pillar-row'))
+        .map((row) => ({
+            icon: (row.querySelector('.cp-icon') || {}).value || 'fa-star',
+            iconTone: (row.querySelector('.cp-tone') || {}).value || 'blue',
+            title: (row.querySelector('.cp-title') || {}).value || '',
+            text: (row.querySelector('.cp-text') || {}).value || ''
+        }))
+        .filter((x) => x.title || x.text);
+}
+
+function cmsFillHomePillarRows(items) {
+    const root = document.getElementById('cms-pillar-rows');
+    if (!root) return;
+    root.innerHTML = '';
+    (items || []).forEach((it) => cmsAddHomePillarRow(it));
+}
+
+function cmsAddHomePillarRow(prefill) {
+    const root = document.getElementById('cms-pillar-rows');
+    if (!root) return;
+    const p = prefill || {};
+    const wrap = document.createElement('div');
+    wrap.className = 'cms-pillar-row';
+    wrap.style.cssText =
+        'margin-bottom:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#fafafa;display:grid;grid-template-columns:1fr 2fr;gap:8px;';
+    const tone = String(p.iconTone || 'blue').toLowerCase();
+    wrap.innerHTML =
+        '<div><label style="font-size:0.8rem;">Icon (e.g. fa-lightbulb)</label><input class="cp-icon" type="text" style="width:100%"></div>' +
+        '<div><label style="font-size:0.8rem;">Colour</label><select class="cp-tone" style="width:100%;padding:8px;"><option value="blue">Blue</option><option value="violet">Violet</option><option value="mint">Mint</option></select></div>' +
+        '<div style="grid-column:1/-1;"><label style="font-size:0.8rem;">Title (e.g. Awareness)</label><input class="cp-title" type="text" style="width:100%"></div>' +
+        '<div style="grid-column:1/-1;"><label style="font-size:0.8rem;">Description</label><input class="cp-text" type="text" style="width:100%"></div>' +
+        '<div style="grid-column:1/-1;"><button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.8rem;background:#64748b;" onclick="this.closest(\'.cms-pillar-row\').remove()">Remove</button></div>';
+    const ic = wrap.querySelector('.cp-icon');
+    const tn = wrap.querySelector('.cp-tone');
+    const t = wrap.querySelector('.cp-title');
+    const tx = wrap.querySelector('.cp-text');
+    if (ic) ic.value = p.icon || 'fa-star';
+    if (tn) tn.value = tone;
+    if (t) t.value = p.title || '';
+    if (tx) tx.value = p.text || '';
+    root.appendChild(wrap);
+}
+
 function cmsCollectFaqFromDom() {
     const root = document.getElementById('cms-faq-rows');
     if (!root) return [];
@@ -10000,6 +10046,10 @@ function cmsApplyHeroFieldsToForm(cms) {
     set('cms-footer-contact-title', foot.contactTitle);
     set('cms-footer-credit', foot.creditHtml);
     cmsFillFooterLinkRows(foot);
+    const fs = cms.featuresSection || {};
+    set('cms-features-title', fs.title || cms.featuresSectionTitle || 'Why join us');
+    set('cms-features-subtitle', fs.subtitle || cms.featuresSubtitle || '');
+    cmsFillHomePillarRows(cms.homePillars || []);
 }
 
 function cmsCollectHeroFieldsFromForm() {
@@ -10055,7 +10105,14 @@ function cmsCollectHeroFieldsFromForm() {
             programmeName: gv('cms-header-programme')
         },
         featureCards: cmsCollectFeatureCardsFromDom(),
-        faq: cmsCollectFaqFromDom()
+        faq: cmsCollectFaqFromDom(),
+        featuresSection: {
+            title: gv('cms-features-title') || 'Why join us',
+            subtitle: gv('cms-features-subtitle') || ''
+        },
+        featuresSectionTitle: gv('cms-features-title') || 'Why join us',
+        featuresSubtitle: gv('cms-features-subtitle') || '',
+        homePillars: cmsCollectHomePillarsFromDom()
     };
 }
 
@@ -10828,6 +10885,12 @@ async function saveAdminSiteCms() {
             seo: cmsCollectSeoFieldsFromForm(),
             ...cmsCollectHeroFieldsFromForm()
         };
+        if (!cms.featureCards || !cms.featureCards.length) {
+            cms.featureCards = cmsCollectFeatureCardsFromDom();
+        }
+        if (!cms.faq || !cms.faq.length) {
+            cms.faq = cmsCollectFaqFromDom();
+        }
         const save =
             typeof window.autismAdminFetch === 'function'
                 ? () =>

@@ -122,7 +122,7 @@
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
                 <a class="menu-item" data-admin-module="tab-email-compose" onclick="switchTab('tab-email-compose'); initAdminEmailComposeTab();"><i class="fas fa-paper-plane"></i> Send email</a>
                 <a class="menu-item" data-admin-module="tab-transfer" onclick="switchTab('tab-transfer')"><i class="fas fa-exchange-alt"></i> Transfer Applications</a>
-                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-user-plus"></i> Create application (event form)</a>
+                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-file-medical"></i> Doctor applications</a>
                 <a class="menu-item" data-admin-module="tab-reg-form" onclick="switchTab('tab-reg-form'); loadAdminRegistrationFormConfig();"><i class="fas fa-list-alt"></i> Registration Form Fields</a>
                 <a class="menu-item" data-admin-module="tab-site-cms" onclick="switchTab('tab-site-cms'); loadAdminSiteCms();"><i class="fas fa-globe"></i> Website &amp; dashboard updates</a>
                 <a class="menu-item" data-admin-module="tab-admin-payments" onclick="switchTab('tab-admin-payments'); loadAdminPaymentsModule();"><i class="fas fa-file-invoice-dollar"></i> Payments</a>
@@ -1063,7 +1063,19 @@
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddSpeakerRow()">+ Add speaker</button>
                     </div>
                     <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
-                        <label style="font-weight:700;">Homepage feature cards</label>
+                        <label style="font-weight:700;">Homepage pillars (Awareness, Inclusion, …)</label>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Three cards under the hero on the main site.</p>
+                        <div id="cms-pillar-rows"></div>
+                        <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddHomePillarRow()">+ Add pillar</button>
+                    </div>
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <label style="font-weight:700;">“Why join us” section</label>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Heading and subtitle above the feature cards grid.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="cms-features-title" style="width:100%;" placeholder="Why join us"></div>
+                            <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="cms-features-subtitle" style="width:100%;" placeholder="Inclusive events, creative competitions…"></div>
+                        </div>
+                        <label style="font-weight:700;">Feature cards (under “Why join us”)</label>
                         <div id="cms-feature-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddFeatureRow()">+ Add feature card</button>
                     </div>
@@ -2316,13 +2328,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260527c"></script>
+    <script src="/js/admin.js?v=20260529a"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism19"></script>
+    <script src="/js/admin-autism.js?v=autism20"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>

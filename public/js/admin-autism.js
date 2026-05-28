@@ -6,12 +6,7 @@
 
     window.PORTAL_IS_AUTISM = true;
 
-    const HIDE_MODULES = [
-        'tab-case-mgmt',
-        'tab-admin-payments',
-        'tab-pos',
-        'tab-behalf-reg'
-    ];
+    const HIDE_MODULES = ['tab-case-mgmt', 'tab-admin-payments', 'tab-pos'];
 
     const HIDE_TEXT = [
         'judge',
@@ -545,6 +540,23 @@
         });
     }
 
+    function injectHomepageCmsGuide() {
+        const cmsTab = document.getElementById('tab-site-cms');
+        if (!cmsTab || document.getElementById('ak-homepage-cms-guide')) return;
+        const card = document.createElement('div');
+        card.id = 'ak-homepage-cms-guide';
+        card.className = 'card';
+        card.style.cssText = 'margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 8px;color:#0f766e;">Edit homepage text</h3>' +
+            '<p style="color:#475569;font-size:0.88rem;margin:0;">' +
+            '<strong>Awareness / Inclusion / Celebration</strong> → <em>Homepage pillars</em> below.<br>' +
+            '<strong>Why join us</strong> → section title + <em>Feature cards</em>.<br>' +
+            'Then click <strong>Save website &amp; portal content</strong> at the bottom of this tab.' +
+            '</p>';
+        cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
+    }
+
     function hideGalleryCmsBlocks() {
         document.querySelectorAll('#cms-gallery-years').forEach((el) => {
             const card = el.closest('.card') || el.parentElement;
@@ -564,6 +576,11 @@
         const sub = document.querySelector('.sidebar-header p');
         if (sub) sub.textContent = 'Programme management';
         patchApplicationsMenu();
+        document.querySelectorAll('[data-admin-module="tab-behalf-reg"]').forEach((el) => {
+            if (el.querySelector('i')) {
+                el.innerHTML = '<i class="fas fa-file-medical"></i> Doctor applications';
+            }
+        });
         const staffNote = document.querySelector('#tab-staff-users p');
         if (staffNote) {
             staffNote.innerHTML =
@@ -1454,6 +1471,7 @@
         collapseDuplicateCmsFields();
         applyAdminBranding();
         wireSiteImageUpload();
+        injectHomepageCmsGuide();
         hideGalleryCmsBlocks();
         hideMedicalQualOptions();
         injectApplicationsStatusFilter();
