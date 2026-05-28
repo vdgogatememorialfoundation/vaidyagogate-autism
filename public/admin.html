@@ -122,7 +122,7 @@
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
                 <a class="menu-item" data-admin-module="tab-email-compose" onclick="switchTab('tab-email-compose'); initAdminEmailComposeTab();"><i class="fas fa-paper-plane"></i> Send email</a>
                 <a class="menu-item" data-admin-module="tab-transfer" onclick="switchTab('tab-transfer')"><i class="fas fa-exchange-alt"></i> Transfer Applications</a>
-                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-user-plus"></i> Register participant (admin)</a>
+                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-user-plus"></i> Create application (event form)</a>
                 <a class="menu-item" data-admin-module="tab-reg-form" onclick="switchTab('tab-reg-form'); loadAdminRegistrationFormConfig();"><i class="fas fa-list-alt"></i> Registration Form Fields</a>
                 <a class="menu-item" data-admin-module="tab-site-cms" onclick="switchTab('tab-site-cms'); loadAdminSiteCms();"><i class="fas fa-globe"></i> Website &amp; dashboard updates</a>
                 <a class="menu-item" data-admin-module="tab-admin-payments" onclick="switchTab('tab-admin-payments'); loadAdminPaymentsModule();"><i class="fas fa-file-invoice-dollar"></i> Payments</a>
@@ -390,9 +390,12 @@
                 </div>
 
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
                         <h3>Applications for this Seminar</h3>
-                        <button class="btn-primary" onclick="openProxyApplicationModal()">Register New Applicant (Proxy)</button>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn-primary" style="background:#0f766e;" onclick="openBehalfRegistrationForCurrentSeminar()">Create using this event form</button>
+                            <button class="btn-primary" onclick="openProxyApplicationModal()">Register New Applicant (Proxy)</button>
+                        </div>
                     </div>
                     <table class="data-table">
                         <thead><tr><th>App ID (Barcode)</th><th>Name</th><th>Status</th><th>Action</th></tr></thead>
@@ -673,8 +676,8 @@
 
             <!-- Admin: seminar application on behalf of doctor (live save) -->
             <div id="tab-behalf-reg" class="tab-pane hidden">
-                <h2 style="margin-bottom: 12px;">Doctor seminar applications (admin workspace)</h2>
-                <p style="color:#64748b;margin-bottom:18px;max-width:920px;">Register a doctor using the <strong>same fields as the doctor portal</strong> (from <em>Seminar registration form</em> settings). Data is stored in <code>registrations.form_data</code> as JSON ... that is what the old JSON box was for. After saving, use <strong>Process application</strong> below for verify ? payment ? e-ticket QR.</p>
+                <h2 style="margin-bottom: 12px;">Create doctor application (admin workspace)</h2>
+                <p style="color:#64748b;margin-bottom:18px;max-width:920px;">Create or update an application using the <strong>same form configured for that event</strong> (from <em>Seminar registration form</em>). Data is stored in <code>registrations.form_data</code>. After saving, use <strong>Process application</strong> below for review, payment, and e-ticket.</p>
                 <div id="behalf-applicant-otp-wrap" class="card" style="margin-bottom:16px;padding:14px;border:1px solid #bfdbfe;background:#eff6ff;">
                     <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the doctor (phone &amp; email on the form below)</strong>
                     <p style="font-size:0.85rem;color:#475569;margin:0 0 10px;">Send codes to the applicant ... not your admin login. Verify both before saving.</p>

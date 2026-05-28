@@ -2021,6 +2021,20 @@ async function openAdminBehalfForVolunteer(userId, seminarId) {
 }
 window.openAdminBehalfForVolunteer = openAdminBehalfForVolunteer;
 
+function openBehalfRegistrationForCurrentSeminar() {
+    const sid = parseInt(currentManageSeminarId, 10);
+    if (!Number.isInteger(sid) || sid < 1) {
+        alert('Open an event dashboard first.');
+        return;
+    }
+    switchTab('tab-behalf-reg');
+    initAdminBehalfRegTab();
+    const ss = document.getElementById('behalf-seminar-select');
+    if (ss) ss.value = String(sid);
+    onAdminBehalfDoctorOrSeminarChange();
+}
+window.openBehalfRegistrationForCurrentSeminar = openBehalfRegistrationForCurrentSeminar;
+
 async function editVolunteerDuties(assignId, currentDuties) {
     const duties = prompt('Volunteer duties (e.g. Registration desk, Scanner hall)', currentDuties || '');
     if (duties === null) return;
