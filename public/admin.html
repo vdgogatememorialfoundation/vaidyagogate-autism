@@ -1057,22 +1057,71 @@
                         <div id="cms-speaker-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddSpeakerRow()">+ Add speaker</button>
                     </div>
-                    <div id="ak-homepage-pillars-section" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
-                        <label style="font-weight:700;">Homepage pillars (Awareness, Inclusion, …)</label>
-                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Three cards under the hero on the main site.</p>
-                        <div id="cms-pillar-rows"></div>
-                        <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddHomePillarRow()">+ Add pillar</button>
+                    <div id="ak-homepage-pillars-section" style="margin-top:16px;padding-top:16px;border-top:1px solid #0d9488;">
+                        <label style="font-weight:700;color:#0f766e;">Homepage pillars (Awareness / Inclusion / Celebration)</label>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 12px;">Edit the three cards shown under the hero on the public site.</p>
+                        <div style="display:grid;gap:12px;">
+                            <div style="padding:12px;border:1px solid #99f6e4;border-radius:10px;background:#f0fdfa;">
+                                <label style="font-size:0.8rem;font-weight:600;">Pillar 1 — title</label>
+                                <input type="text" id="ak-pillar-1-title" style="width:100%;padding:8px;margin:4px 0 8px;" placeholder="Awareness">
+                                <label style="font-size:0.8rem;font-weight:600;">Description</label>
+                                <textarea id="ak-pillar-1-text" rows="2" style="width:100%;padding:8px;" placeholder="Short description for the first card"></textarea>
+                                <input type="hidden" id="ak-pillar-1-icon" value="fa-lightbulb">
+                                <input type="hidden" id="ak-pillar-1-tone" value="blue">
+                            </div>
+                            <div style="padding:12px;border:1px solid #ddd6fe;border-radius:10px;background:#f5f3ff;">
+                                <label style="font-size:0.8rem;font-weight:600;">Pillar 2 — title</label>
+                                <input type="text" id="ak-pillar-2-title" style="width:100%;padding:8px;margin:4px 0 8px;" placeholder="Inclusion">
+                                <label style="font-size:0.8rem;font-weight:600;">Description</label>
+                                <textarea id="ak-pillar-2-text" rows="2" style="width:100%;padding:8px;" placeholder="Short description for the second card"></textarea>
+                                <input type="hidden" id="ak-pillar-2-icon" value="fa-hands-holding-heart">
+                                <input type="hidden" id="ak-pillar-2-tone" value="violet">
+                            </div>
+                            <div style="padding:12px;border:1px solid #bbf7d0;border-radius:10px;background:#f0fdf4;">
+                                <label style="font-size:0.8rem;font-weight:600;">Pillar 3 — title</label>
+                                <input type="text" id="ak-pillar-3-title" style="width:100%;padding:8px;margin:4px 0 8px;" placeholder="Celebration">
+                                <label style="font-size:0.8rem;font-weight:600;">Description</label>
+                                <textarea id="ak-pillar-3-text" rows="2" style="width:100%;padding:8px;" placeholder="Short description for the third card"></textarea>
+                                <input type="hidden" id="ak-pillar-3-icon" value="fa-star">
+                                <input type="hidden" id="ak-pillar-3-tone" value="mint">
+                            </div>
+                        </div>
+                        <div id="cms-pillar-rows" class="hidden" aria-hidden="true"></div>
                     </div>
                     <div id="ak-homepage-features-section" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">“Why join us” section</label>
-                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Heading and subtitle above the feature cards grid.</p>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Heading and four feature cards on the homepage.</p>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                            <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="cms-features-title" style="width:100%;" placeholder="Why join us"></div>
-                            <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="cms-features-subtitle" style="width:100%;" placeholder="Inclusive events, creative competitions…"></div>
+                            <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="cms-features-title" style="width:100%;padding:8px;" placeholder="Why join us"></div>
+                            <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="cms-features-subtitle" style="width:100%;padding:8px;" placeholder="Inclusive events, creative competitions…"></div>
                         </div>
-                        <label style="font-weight:700;">Feature cards (under “Why join us”)</label>
-                        <div id="cms-feature-rows"></div>
-                        <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddFeatureRow()">+ Add feature card</button>
+                        <div style="display:grid;gap:10px;">
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Feature 1 title</label><input type="text" id="ak-feature-1-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Feature 1 text</label><input type="text" id="ak-feature-1-text" style="width:100%;padding:8px;">
+                                <input type="hidden" id="ak-feature-1-icon" value="fa-chalkboard-teacher">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Feature 2 title</label><input type="text" id="ak-feature-2-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Feature 2 text</label><input type="text" id="ak-feature-2-text" style="width:100%;padding:8px;">
+                                <input type="hidden" id="ak-feature-2-icon" value="fa-hands-helping">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Feature 3 title</label><input type="text" id="ak-feature-3-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Feature 3 text</label><input type="text" id="ak-feature-3-text" style="width:100%;padding:8px;">
+                                <input type="hidden" id="ak-feature-3-icon" value="fa-palette">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Feature 4 title</label><input type="text" id="ak-feature-4-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Feature 4 text</label><input type="text" id="ak-feature-4-text" style="width:100%;padding:8px;">
+                                <input type="hidden" id="ak-feature-4-icon" value="fa-users">
+                            </div>
+                        </div>
+                        <div id="cms-feature-rows" class="hidden" aria-hidden="true"></div>
+                    </div>
+                    <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage text</button>
+                        <p id="ak-homepage-inline-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                     <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">FAQ (homepage)</label>
@@ -2323,13 +2372,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260529d"></script>
+    <script src="/js/admin.js?v=20260529e"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism22"></script>
+    <script src="/js/admin-autism.js?v=autism23"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>

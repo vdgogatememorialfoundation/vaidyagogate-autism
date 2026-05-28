@@ -597,6 +597,9 @@ function switchTab(tabId) {
     if (tabId === 'tab-behalf-reg' || tabId === 'tab-site-cms') {
         refreshAdminSensitiveOtpRequirement();
     }
+    if (tabId === 'tab-site-cms') {
+        loadAdminSiteCms().catch(console.error);
+    }
     if (tabId === 'tab-staff-users' || tabId === 'tab-doctors') {
         loadUsers();
     }
@@ -9798,6 +9801,18 @@ async function cmsUploadSpeakerImage(btn) {
 }
 
 function cmsCollectFeatureCardsFromDom() {
+    if (document.getElementById('ak-feature-1-title')) {
+        return [1, 2, 3, 4]
+            .map((i) => ({
+                icon:
+                    (document.getElementById('ak-feature-' + i + '-icon') || {}).value ||
+                    (cmsDefaultFeatureCards()[i - 1] && cmsDefaultFeatureCards()[i - 1].icon) ||
+                    'fa-star',
+                title: (document.getElementById('ak-feature-' + i + '-title') || {}).value || '',
+                text: (document.getElementById('ak-feature-' + i + '-text') || {}).value || ''
+            }))
+            .filter((x) => x.title || x.text);
+    }
     const root = document.getElementById('cms-feature-rows');
     if (!root) return [];
     return Array.from(root.querySelectorAll('.cms-feature-row'))
@@ -9839,6 +9854,22 @@ function cmsAddFeatureRow(prefill) {
 }
 
 function cmsCollectHomePillarsFromDom() {
+    if (document.getElementById('ak-pillar-1-title')) {
+        return [1, 2, 3]
+            .map((i) => ({
+                icon:
+                    (document.getElementById('ak-pillar-' + i + '-icon') || {}).value ||
+                    (cmsDefaultHomePillars()[i - 1] && cmsDefaultHomePillars()[i - 1].icon) ||
+                    'fa-star',
+                iconTone:
+                    (document.getElementById('ak-pillar-' + i + '-tone') || {}).value ||
+                    (cmsDefaultHomePillars()[i - 1] && cmsDefaultHomePillars()[i - 1].iconTone) ||
+                    'blue',
+                title: (document.getElementById('ak-pillar-' + i + '-title') || {}).value || '',
+                text: (document.getElementById('ak-pillar-' + i + '-text') || {}).value || ''
+            }))
+            .filter((x) => x.title || x.text);
+    }
     const root = document.getElementById('cms-pillar-rows');
     if (!root) return [];
     return Array.from(root.querySelectorAll('.cms-pillar-row'))
@@ -10063,6 +10094,28 @@ function cmsResolveFeatureCards(cms) {
     return list.length ? list : cmsDefaultFeatureCards();
 }
 
+function cmsApplyAkSimpleHomeFields(cms) {
+    const pillars = cmsResolveHomePillars(cms);
+    const features = cmsResolveFeatureCards(cms);
+    const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v != null ? String(v) : '';
+    };
+    pillars.slice(0, 3).forEach((p, idx) => {
+        const i = idx + 1;
+        set('ak-pillar-' + i + '-title', p.title);
+        set('ak-pillar-' + i + '-text', p.text);
+        set('ak-pillar-' + i + '-icon', p.icon);
+        set('ak-pillar-' + i + '-tone', p.iconTone);
+    });
+    features.slice(0, 4).forEach((c, idx) => {
+        const i = idx + 1;
+        set('ak-feature-' + i + '-title', c.title);
+        set('ak-feature-' + i + '-text', c.text);
+        set('ak-feature-' + i + '-icon', c.icon);
+    });
+}
+
 function cmsApplyHeroFieldsToForm(cms) {
     const hero = cms.hero || {};
     const top = cms.topBar || {};
@@ -10125,6 +10178,7 @@ function cmsApplyHeroFieldsToForm(cms) {
     const fs = cms.featuresSection || {};
     set('cms-features-title', fs.title || cms.featuresSectionTitle || 'Why join us');
     set('cms-features-subtitle', fs.subtitle || cms.featuresSubtitle || '');
+    cmsApplyAkSimpleHomeFields(cms);
     cmsFillHomePillarRows(cmsResolveHomePillars(cms));
 }
 
@@ -10846,7 +10900,8 @@ function setCmsSaveMessage(text, color) {
         document.getElementById('cms-save-msg'),
         document.getElementById('cms-header-footer-save-msg'),
         document.getElementById('cms-contact-save-msg'),
-        document.getElementById('ak-homepage-cms-guide-msg')
+        document.getElementById('ak-homepage-cms-guide-msg'),
+        document.getElementById('ak-homepage-inline-save-msg')
     ].forEach((el) => {
         if (!el) return;
         el.innerText = text || '';
@@ -10933,6 +10988,18 @@ async function loadAkContentUpdatesTab() {
     }
 }
 
+async function postSiteCmsPayload(cms) {
+    const res = await fetch('/api/admin/site-cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ cms })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText || 'Save failed');
+    return data;
+}
+
 async function saveHomepageCmsOnly() {
     setCmsSaveMessage('');
     try {
@@ -10941,6 +11008,7 @@ async function saveHomepageCmsOnly() {
         if (!res.ok) throw new Error(current.error || 'Could not load current content');
         const heroFields = cmsCollectHeroFieldsFromForm();
         const featureCards = cmsCollectFeatureCardsFromDom();
+        const homePillars = cmsCollectHomePillarsFromDom();
         const cms = {
             ...current,
             ...heroFields,
@@ -10950,36 +11018,12 @@ async function saveHomepageCmsOnly() {
             featuresSectionTitle: heroFields.featuresSectionTitle,
             featuresSubtitle: heroFields.featuresSubtitle,
             featureCards: featureCards.length ? featureCards : cmsDefaultFeatureCards(),
-            homePillars: heroFields.homePillars
+            homePillars: homePillars.length ? homePillars : cmsDefaultHomePillars()
         };
-        const save =
-            typeof window.autismAdminFetch === 'function'
-                ? () =>
-                      window.autismAdminFetch('/api/admin/site-cms', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ cms })
-                      })
-                : async () => {
-                      const url =
-                          typeof withActingAdminUrl === 'function'
-                              ? withActingAdminUrl('/api/admin/site-cms')
-                              : '/api/admin/site-cms';
-                      const postRes = await fetch(url, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'same-origin',
-                          body: JSON.stringify(
-                              typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
-                          )
-                      });
-                      const data = await postRes.json().catch(() => ({}));
-                      if (!postRes.ok) throw new Error(data.error || postRes.statusText);
-                      return data;
-                  };
-        const data = await save();
+        const data = await postSiteCmsPayload(cms);
         if (data.success) {
             __siteCmsEditing = cms;
+            cmsApplyAkSimpleHomeFields(cms);
             setCmsSaveMessage('Homepage text saved. Hard-refresh the public site to see changes.', '#15803d');
         } else {
             setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');

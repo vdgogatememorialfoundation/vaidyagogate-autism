@@ -540,6 +540,33 @@
         });
     }
 
+    function moveHomepageEditorToTop() {
+        const card = document.getElementById('ak-main-cms-card');
+        const pillars = document.getElementById('ak-homepage-pillars-section');
+        const features = document.getElementById('ak-homepage-features-section');
+        const saveBtn = document.querySelector('#ak-main-cms-card button[onclick="saveHomepageCmsOnly()"]');
+        const saveRow = saveBtn && saveBtn.parentElement;
+        if (!card || !pillars) return;
+        const firstBlock = card.firstElementChild;
+        if (firstBlock) card.insertBefore(pillars, firstBlock);
+        if (features) card.insertBefore(features, pillars.nextSibling);
+        if (saveRow) card.insertBefore(saveRow, features ? features.nextSibling : pillars.nextSibling);
+    }
+
+    function ensureAkHomepageDefaults() {
+        if (typeof cmsApplyAkSimpleHomeFields !== 'function') return;
+        const empty =
+            !(document.getElementById('ak-pillar-1-title') || {}).value &&
+            !(document.getElementById('ak-pillar-2-title') || {}).value;
+        if (empty) {
+            cmsApplyAkSimpleHomeFields({
+                homePillars: typeof cmsDefaultHomePillars === 'function' ? cmsDefaultHomePillars() : [],
+                featureCards: typeof cmsDefaultFeatureCards === 'function' ? cmsDefaultFeatureCards() : [],
+                featuresSection: { title: 'Why join us', subtitle: '' }
+            });
+        }
+    }
+
     function tightenAutismCmsTab() {
         const tab = document.getElementById('tab-site-cms');
         if (!tab) return;
@@ -561,9 +588,7 @@
         card.style.cssText = 'margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;';
         card.innerHTML =
             '<h3 style="margin:0 0 8px;color:#0f766e;">Edit homepage text</h3>' +
-            '<p style="color:#475569;font-size:0.88rem;margin:0 0 12px;">Update hero, pillars (Awareness / Inclusion / Celebration), Why join us, and the counts strip in the card below. Then click <strong>Save homepage text</strong>.</p>' +
-            '<button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage text</button>' +
-            '<p id="ak-homepage-cms-guide-msg" style="margin:10px 0 0;font-size:0.88rem;font-weight:600;"></p>';
+            '<p style="color:#475569;font-size:0.88rem;margin:0;">Edit the pillar and feature fields at the top of the card below, then click <strong>Save homepage text</strong>.</p>';
         const main = document.getElementById('ak-main-cms-card');
         if (main) cmsTab.insertBefore(card, main);
         else cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
@@ -1458,6 +1483,8 @@
         window.loadAdminSiteCms = async function () {
             await orig.apply(this, arguments);
             collapseDuplicateCmsFields();
+            moveHomepageEditorToTop();
+            ensureAkHomepageDefaults();
         };
         window.loadAdminSiteCms.__akCmsHook = true;
     }
@@ -1484,6 +1511,8 @@
         applyAdminBranding();
         wireSiteImageUpload();
         injectHomepageCmsGuide();
+        moveHomepageEditorToTop();
+        ensureAkHomepageDefaults();
         tightenAutismCmsTab();
         hideGalleryCmsBlocks();
         hideMedicalQualOptions();
