@@ -6632,15 +6632,18 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                             ticketId: row.ticket_id_string
                         })
                     };
-                    return scannerCertDisplay.resolveScannerCertificateDisplay(
-                        db,
-                        row.doctor_user_id,
-                        row.seminar_id,
-                        (eCert, certInfo) => {
-                            if (!eCert && certInfo) dupPayload.certificate = certInfo;
-                            res.status(400).json(dupPayload);
-                        }
-                    );
+                    if (!portalProduct.FEATURES.noFees) {
+                        return scannerCertDisplay.resolveScannerCertificateDisplay(
+                            db,
+                            row.doctor_user_id,
+                            row.seminar_id,
+                            (eCert, certInfo) => {
+                                if (!eCert && certInfo) dupPayload.certificate = certInfo;
+                                res.status(400).json(dupPayload);
+                            }
+                        );
+                    }
+                    return res.status(400).json(dupPayload);
                 }
 
                 const ticketSeminarId = Number(row.seminar_id);
@@ -6738,31 +6741,38 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                     (portalProduct.FEATURES.noFees ||
                                         String(row.payment_status || '').toLowerCase() === 'success') &&
                                     newScanCount >= scansRequired;
-                                let scanMsg =
-                                    'Attendance marked. Doctor tracking updated.';
+                                let scanMsg = portalProduct.FEATURES.noFees
+                                    ? 'Check-in recorded.'
+                                    : 'Attendance marked. Doctor tracking updated.';
                                 if (scansRequired === 2) {
                                     if (newScanCount === 1) {
-                                        scanMsg =
-                                            'Entry scan recorded (1 of 2). Exit scan still required for certificate eligibility.';
+                                        scanMsg = portalProduct.FEATURES.noFees
+                                            ? 'Entry scan recorded (1 of 2).'
+                                            : 'Entry scan recorded (1 of 2). Exit scan still required for certificate eligibility.';
                                     } else {
-                                        scanMsg =
-                                            'Exit scan recorded (2 of 2). Certificate eligibility updated pending admin approval.';
+                                        scanMsg = portalProduct.FEATURES.noFees
+                                            ? 'Exit scan recorded (2 of 2). Check-in complete.'
+                                            : 'Exit scan recorded (2 of 2). Certificate eligibility updated pending admin approval.';
                                     }
-                                } else if (certEligibleNow) {
+                                } else if (certEligibleNow && !portalProduct.FEATURES.noFees) {
                                     scanMsg +=
                                         ' Participation & Volunteer certificate attendance recorded (if assigned as seminar volunteer).';
                                 }
-                                db.get(
-                                    `SELECT 1 AS ok FROM seminar_volunteers WHERE user_id = ? AND seminar_id = ? AND status = 'approved' LIMIT 1`,
-                                    [row.doctor_user_id, row.seminar_id],
-                                    (_eSv, svRow) => {
-                                        if (svRow && svRow.ok) {
-                                            scanMsg +=
-                                                ' Dual certificates (Participation + Volunteer) updated from this QR scan.';
+                                if (portalProduct.FEATURES.noFees) {
+                                    sendScanSuccess();
+                                } else {
+                                    db.get(
+                                        `SELECT 1 AS ok FROM seminar_volunteers WHERE user_id = ? AND seminar_id = ? AND status = 'approved' LIMIT 1`,
+                                        [row.doctor_user_id, row.seminar_id],
+                                        (_eSv, svRow) => {
+                                            if (svRow && svRow.ok) {
+                                                scanMsg +=
+                                                    ' Dual certificates (Participation + Volunteer) updated from this QR scan.';
+                                            }
+                                            sendScanSuccess();
                                         }
-                                        sendScanSuccess();
-                                    }
-                                );
+                                    );
+                                }
                                 function sendScanSuccess() {
                                 recordScanEventForDashboard(selectedSeminarId, staffId, {
                                     ticket_db_id: row.ticket_id,
@@ -6793,6 +6803,9 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                     }),
                                     scannedByStaffId: staffId
                                 };
+                                if (portalProduct.FEATURES.noFees) {
+                                    return res.json(basePayload);
+                                }
                                 if (newScanCount < scansRequired) {
                                     basePayload.certificate = {
                                         show: false,

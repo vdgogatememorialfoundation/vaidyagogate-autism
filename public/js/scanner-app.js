@@ -1,5 +1,7 @@
 (function () {
     const AUTISM_PRODUCT_ID = 'autism';
+    /** Autism check-in: no certificate panel on scanner (certificates are online only). */
+    const SCANNER_SHOW_CERTIFICATE = false;
     const ALLOWED_PORTAL_HOSTS = new Set([
         'autism.vaidyagogate.org',
         'autism-flax.vercel.app',
@@ -147,7 +149,6 @@
     let lastScanAt = 0;
     const SCAN_DEBOUNCE_MS = 2200;
     const AUTO_NEXT_MS = 2600;
-    const AUTO_NEXT_CERT_MS = 18000;
 
     function haptic(kind) {
         try {
@@ -327,6 +328,7 @@
     }
 
     function certificatePanelHtml(cert) {
+        if (!SCANNER_SHOW_CERTIFICATE) return '';
         const c = cert || {};
         if (c.show && c.viewUrl) {
             const url = String(c.viewUrl).replace(/"/g, '&quot;');
@@ -434,8 +436,6 @@
                           result.scansRequired +
                           '</strong></p>'
                         : '';
-                const certHtml = certificatePanelHtml(result.certificate);
-                const resumeMs = result.certificate && result.certificate.show ? AUTO_NEXT_CERT_MS : AUTO_NEXT_MS;
                 renderResult(
                     true,
                     '<div class="scan-result-top">' +
@@ -445,15 +445,11 @@
                         '</strong>' +
                         metaHtml(d) +
                         '</div></div>' +
-                        scanNote +
-                        certHtml +
-                        '<p style="margin-top:10px;font-size:0.85rem;opacity:0.85;">' +
-                        (certHtml ? 'Review certificate, then next scan…' : 'Next scan in a moment…') +
-                        '</p>',
+                        scanNote,
                     'ok'
                 );
                 pushHistory((d.name || 'Guest') + ' · ' + (d.ticketId || d.applicationNo || ''), true);
-                scheduleAutoResume(resumeMs);
+                scheduleAutoResume();
             } else {
                 const err =
                     result.error ||
@@ -468,8 +464,6 @@
                           String(d.banReason).replace(/</g, '&lt;') +
                           '</p>'
                         : '';
-                const certHtml = certificatePanelHtml(result.certificate);
-                const resumeMs = result.certificate && result.certificate.show ? AUTO_NEXT_CERT_MS : AUTO_NEXT_MS;
                 renderResult(
                     false,
                     '<div class="scan-result-top">' +
@@ -481,12 +475,11 @@
                         '</strong>' +
                         banNote +
                         (d && (d.name || d.userIdString || d.applicationNo) ? metaHtml(d) : '') +
-                        '</div></div>' +
-                        certHtml,
+                        '</div></div>',
                     isDup ? 'warn' : 'bad'
                 );
                 pushHistory(err.slice(0, 60), false);
-                scheduleAutoResume(resumeMs);
+                scheduleAutoResume();
             }
             updateStats();
         } catch (e) {
