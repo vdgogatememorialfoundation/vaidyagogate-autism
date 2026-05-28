@@ -9993,14 +9993,43 @@ function cmsFieldValue(id) {
     return els[els.length - 1].value || '';
 }
 
+function cmsPadStatRows(list, count) {
+    const out = Array.isArray(list) ? list.slice() : [];
+    while (out.length < count) out.push({ value: '', label: '' });
+    return out.slice(0, count);
+}
+
+function cmsDefaultHeroStats() {
+    return [
+        { value: '20+', label: 'Expert sessions' },
+        { value: '100+', label: 'Families' },
+        { value: '5+', label: 'Competition categories' }
+    ];
+}
+
+function cmsDefaultHomeStats() {
+    return [
+        { value: '1+', label: 'Active seminars' },
+        { value: '20+', label: 'Expert speakers' },
+        { value: '1972', label: 'Founded' },
+        { value: '24/7', label: 'Online portal' }
+    ];
+}
+
 function cmsApplyHeroFieldsToForm(cms) {
     const hero = cms.hero || {};
     const top = cms.topBar || {};
     const contact = cms.contact || {};
     const sched = cms.schedulePage || {};
     const foot = cms.footer || {};
-    const stats = Array.isArray(cms.heroStats) ? cms.heroStats : [];
-    const homeStats = Array.isArray(cms.homeStats) ? cms.homeStats : [];
+    const stats = cmsPadStatRows(
+        Array.isArray(cms.heroStats) && cms.heroStats.length ? cms.heroStats : cmsDefaultHeroStats(),
+        3
+    );
+    const homeStats = cmsPadStatRows(
+        Array.isArray(cms.homeStats) && cms.homeStats.length ? cms.homeStats : cmsDefaultHomeStats(),
+        4
+    );
     const set = (id, v) => {
         document.querySelectorAll('#' + id).forEach((el) => {
             el.value = v != null ? String(v) : '';
@@ -10069,17 +10098,23 @@ function cmsCollectHeroFieldsFromForm() {
             ctaPrimary: gv('cms-hero-cta1'),
             ctaSecondary: gv('cms-hero-cta2')
         },
-        heroStats: [
-            { value: gv('cms-stat1-val'), label: gv('cms-stat1-lbl') },
-            { value: gv('cms-stat2-val'), label: gv('cms-stat2-lbl') },
-            { value: gv('cms-stat3-val'), label: gv('cms-stat3-lbl') }
-        ].filter((s) => s.value || s.label),
-        homeStats: [
-            { value: gv('cms-home-stat1-val'), label: gv('cms-home-stat1-lbl') },
-            { value: gv('cms-home-stat2-val'), label: gv('cms-home-stat2-lbl') },
-            { value: gv('cms-home-stat3-val'), label: gv('cms-home-stat3-lbl') },
-            { value: gv('cms-home-stat4-val'), label: gv('cms-home-stat4-lbl') }
-        ].filter((s) => s.value || s.label),
+        heroStats: cmsPadStatRows(
+            [
+                { value: gv('cms-stat1-val'), label: gv('cms-stat1-lbl') },
+                { value: gv('cms-stat2-val'), label: gv('cms-stat2-lbl') },
+                { value: gv('cms-stat3-val'), label: gv('cms-stat3-lbl') }
+            ],
+            3
+        ),
+        homeStats: cmsPadStatRows(
+            [
+                { value: gv('cms-home-stat1-val'), label: gv('cms-home-stat1-lbl') },
+                { value: gv('cms-home-stat2-val'), label: gv('cms-home-stat2-lbl') },
+                { value: gv('cms-home-stat3-val'), label: gv('cms-home-stat3-lbl') },
+                { value: gv('cms-home-stat4-val'), label: gv('cms-home-stat4-lbl') }
+            ],
+            4
+        ),
         schedulePage: {
             title: gv('cms-schedule-title'),
             subtitle: gv('cms-schedule-subtitle')
@@ -10585,7 +10620,7 @@ async function loadAdminSiteCms() {
     loadJudgeCommunicationsAdmin().catch(console.error);
     populateVenueBroadcastSeminars().catch(console.error);
     try {
-        const res = await fetch('/api/public/site-cms');
+        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
         const cms = await res.json();
         __siteCmsEditing = cms;
         tickerEl.value = cms.tickerText || '';

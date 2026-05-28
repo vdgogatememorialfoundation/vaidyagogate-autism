@@ -1566,7 +1566,7 @@ function autismApplicantFormFields(fields) {
             f.key !== 'qual' &&
             !f.onlyWhenAdvancedQual &&
             !f.onlyWhenPgCollege &&
-            !['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate'].includes(String(f.key || ''))
+            !['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate', 'photo'].includes(String(f.key || ''))
     );
 }
 
@@ -1660,8 +1660,12 @@ function loadPublicSiteCms(callback) {
                     if (!base.topBar || typeof base.topBar !== 'object') base.topBar = { ...DEFAULT_PUBLIC_SITE_CMS.topBar };
                     if (!base.hero || typeof base.hero !== 'object') base.hero = { ...DEFAULT_PUBLIC_SITE_CMS.hero };
                     if (!base.hero.eyebrow) base.hero.eyebrow = DEFAULT_PUBLIC_SITE_CMS.hero.eyebrow;
-                    if (!Array.isArray(base.heroStats)) base.heroStats = DEFAULT_PUBLIC_SITE_CMS.heroStats;
-                    if (!Array.isArray(base.homeStats)) base.homeStats = DEFAULT_PUBLIC_SITE_CMS.homeStats;
+                    if (!Array.isArray(base.heroStats) || !base.heroStats.length) {
+                        base.heroStats = DEFAULT_PUBLIC_SITE_CMS.heroStats;
+                    }
+                    if (!Array.isArray(base.homeStats) || !base.homeStats.length) {
+                        base.homeStats = DEFAULT_PUBLIC_SITE_CMS.homeStats;
+                    }
                     if (!Array.isArray(base.featureCards)) base.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards;
                     if (!base.contact || typeof base.contact !== 'object') base.contact = { ...DEFAULT_PUBLIC_SITE_CMS.contact };
                     if (!base.schedulePage || typeof base.schedulePage !== 'object') {

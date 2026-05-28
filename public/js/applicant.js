@@ -6414,7 +6414,8 @@ async function saveProfile(event) {
     formData.append('contact_number', document.getElementById('profile-contact').value);
     formData.append('bio', document.getElementById('profile-bio').value);
     
-    let profilePhoto = document.getElementById('profile-photo').files[0];
+    const profilePhotoEl = document.getElementById('profile-photo');
+    let profilePhoto = profilePhotoEl && profilePhotoEl.files ? profilePhotoEl.files[0] : null;
     if (profilePhoto) {
         try {
             if (window.PortalUpload && typeof window.PortalUpload.compressImageFile === 'function') {

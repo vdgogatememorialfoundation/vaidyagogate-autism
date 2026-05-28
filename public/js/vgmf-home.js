@@ -321,6 +321,21 @@
                 .join('');
         }
 
+        const homeStats = Array.isArray(cms.homeStats) ? cms.homeStats.filter((s) => s && (s.value || s.label)) : [];
+        const statsGrid = document.getElementById('vg-stats-grid');
+        if (statsGrid && homeStats.length) {
+            statsGrid.innerHTML = homeStats
+                .map(
+                    (s) =>
+                        '<div class="vg-stat"><strong>' +
+                        escHtml(s.value) +
+                        '</strong><span>' +
+                        escHtml(s.label) +
+                        '</span></div>'
+                )
+                .join('');
+        }
+
         const fs = cms.featuresSection || {};
         const featTitle = fs.title || cms.featuresSectionTitle;
         const featSub = fs.subtitle || cms.featuresSubtitle;

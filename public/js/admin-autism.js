@@ -552,6 +552,7 @@
             '<p style="color:#475569;font-size:0.88rem;margin:0;">' +
             '<strong>Awareness / Inclusion / Celebration</strong> → <em>Homepage pillars</em> below.<br>' +
             '<strong>Why join us</strong> → section title + <em>Feature cards</em>.<br>' +
+            '<strong>1+ seminars / counts strip</strong> → <em>Homepage stats strip</em> (below hero). Hero box stats use <em>Stat 1–3</em> above.<br>' +
             'Then click <strong>Save website &amp; portal content</strong> at the bottom of this tab.' +
             '</p>';
         cmsTab.insertBefore(card, cmsTab.querySelector('.card'));

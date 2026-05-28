@@ -439,7 +439,6 @@
                 renderResult(
                     true,
                     '<div class="scan-result-top">' +
-                        profilePhotoHtml(d) +
                         '<div class="scan-result-body"><strong><i class="fas fa-check-circle"></i> ' +
                         (result.message || 'Checked in').replace(/</g, '&lt;') +
                         '</strong>' +
@@ -467,7 +466,6 @@
                 renderResult(
                     false,
                     '<div class="scan-result-top">' +
-                        profilePhotoHtml(d) +
                         '<div class="scan-result-body"><strong><i class="fas fa-' +
                         (isDup ? 'info-circle' : 'times-circle') +
                         '"></i> ' +
