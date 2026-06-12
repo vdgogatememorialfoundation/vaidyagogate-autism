@@ -13,13 +13,30 @@
 
 ## 2. Environment variables
 
-Copy every key from [`.env.render.example`](../.env.render.example) into **Render → autism-portal → Environment**.
+Copy keys from [`.env.render.example`](../.env.render.example) into **Render → autism-portal → Environment**.
+
+### DATABASE_URL (required — most common deploy failure)
+
+**Do not** use `postgresql://user:pass@host:5432/...` — that is a placeholder and causes `getaddrinfo ENOTFOUND host`.
+
+**Option A — same Neon DB as Vercel (recommended)**
+
+1. [console.neon.tech](https://console.neon.tech) → your project → **Connect**
+2. Copy **Pooled connection** string (host like `ep-xxxx-pooler.us-east-2.aws.neon.tech`)
+3. Render → **Environment** → `DATABASE_URL` = paste full string (must include `?sslmode=require`)
+4. **Save** → **Manual Deploy**
+
+**Option B — Render Postgres**
+
+1. Render → **New** → **PostgreSQL** → create database
+2. Copy **Internal Database URL** (or External if web service is in another region)
+3. Set as `DATABASE_URL` on the web service
 
 Minimum for production:
 
 | Variable | Example |
 |----------|---------|
-| `DATABASE_URL` | Neon/Render Postgres connection string |
+| `DATABASE_URL` | Real Neon/Render URL — **not** `@host` placeholder |
 | `PUBLIC_BASE_URL` | `https://autism.vaidyagogate.org` |
 | `APPLICANT_HOST` | `autism.vaidyagogate.org` |
 | `ZEPTOMAIL_API_KEY` | From ZeptoMail console |

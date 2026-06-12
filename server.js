@@ -436,6 +436,7 @@ app.get('/api/health', (req, res) => {
         time: new Date().toISOString(),
         runtime: {
             vercel: !!process.env.VERCEL,
+            render: !!process.env.RENDER,
             node: process.version
         },
         database: {
@@ -962,13 +963,86 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         dateLine: 'Autism Awareness Programme 2026'
     },
     hero: {
-        eyebrow: 'Autism Awareness Programme',
-        title: 'Together for understanding & inclusion',
-        subtitle: 'Expert sessions, family support, art & competition for the autism community',
+        eyebrow: 'Autism Awareness Programme 2026',
+        title: 'Every child shines in their own beautiful way',
+        subtitle:
+            'A warm, free programme for families and schools — sign up, pre-register, join creative competitions, and get your e-ticket. No fees, just community and care.',
         venue: 'Pune, Maharashtra',
         image: '',
-        ctaPrimary: 'Register now',
-        ctaSecondary: 'View programme'
+        ctaPrimary: 'Start your journey',
+        ctaSecondary: 'My dashboard'
+    },
+    helpBanner:
+        '<strong>New here?</strong> Tap <em>Join us</em> to create an account, then open <strong>My dashboard</strong> to pre-register and get your e-ticket.',
+    homeJourney: {
+        title: 'How it works — easy peasy!',
+        subtitle: 'Four simple steps from hello to your e-ticket. Parents and teachers can help too.',
+        steps: [
+            {
+                icon: 'fa-user-plus',
+                title: '1. Sign up',
+                text: 'Create your free account on this website in a few minutes.'
+            },
+            {
+                icon: 'fa-clipboard-list',
+                title: '2. Pre-register',
+                text: 'Tell us you are coming — open your dashboard after login.'
+            },
+            {
+                icon: 'fa-palette',
+                title: '3. Register & compete',
+                text: 'Complete registration and upload competition entries if you like.'
+            },
+            {
+                icon: 'fa-ticket-alt',
+                title: '4. E-ticket',
+                text: 'Download your e-ticket and bring it on event day. That is it!'
+            }
+        ]
+    },
+    homeBento: {
+        title: 'Everything in one friendly place',
+        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        cards: [
+            {
+                icon: 'fa-clipboard-check',
+                iconStyle: 'background:#dbeafe;color:#2563eb',
+                title: 'Pre-register & register',
+                text: 'After you create an account, open your dashboard to pre-register, complete full registration, and upload competition entries when you are ready.',
+                wide: true
+            },
+            {
+                icon: 'fa-qrcode',
+                iconStyle: 'background:#ede9fe;color:#7c3aed',
+                title: 'E-ticket',
+                text: 'Download your pass with a QR code — show it at check-in on event day.'
+            },
+            {
+                icon: 'fa-award',
+                iconStyle: 'background:#d1fae5;color:#059669',
+                title: 'Certificates',
+                text: 'Verify participation certificates online anytime from the Certificate page.'
+            },
+            {
+                icon: 'fa-bullhorn',
+                iconStyle: 'background:#fef3c7;color:#d97706',
+                title: 'Live updates',
+                text: 'Watch the announcement ticker and official notices for schedule changes and reminders.',
+                tall: true
+            },
+            {
+                icon: 'fa-envelope',
+                iconStyle: 'background:#ffe4e6;color:#e11d48',
+                title: 'Need help?',
+                text: 'Use Contact us — our team replies to registration and general questions.'
+            }
+        ]
+    },
+    homeCtaBand: {
+        title: 'Ready to join us?',
+        subtitle:
+            'Create your free account in minutes. Parents and teachers can help children through each step in the dashboard.',
+        buttonText: 'Create free account'
     },
     heroStats: [
         { value: '20+', label: 'Expert sessions' },
@@ -1008,9 +1082,9 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         { icon: 'fa-users', title: 'Community Network', text: 'Connect with families and professionals' }
     ],
     homeStats: [
-        { value: '1+', label: 'Active seminars' },
-        { value: '20+', label: 'Expert speakers' },
-        { value: '1972', label: 'Founded' },
+        { value: 'Free', label: 'Registration always' },
+        { value: '4', label: 'Steps to your e-ticket' },
+        { value: '100+', label: 'Families welcome' },
         { value: '24/7', label: 'Online portal' }
     ],
     contact: {
@@ -1026,12 +1100,20 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     speakers: [],
     faq: [
         {
-            q: 'How do I register?',
-            a: 'Create a doctor account on this site or use the Doctor portal, then complete registration under Available Seminars.'
+            q: 'Who can register?',
+            a: 'Children, parents, teachers, and volunteers can create a free account and join the Autism Awareness Programme.'
         },
         {
-            q: 'When will I receive my e-ticket?',
-            a: 'After your application is approved and payment is confirmed, your QR e-ticket appears in the Doctor portal.'
+            q: 'Is there a registration fee?',
+            a: 'No. This programme is free. Sign up, pre-register, and complete registration to get your e-ticket.'
+        },
+        {
+            q: 'How do I get my e-ticket?',
+            a: 'After you complete registration in your dashboard, download your e-ticket and bring it on event day.'
+        },
+        {
+            q: 'Can I enter competitions?',
+            a: 'Yes! During registration you can upload creative entries — drawings, photos, videos, or stories.'
         }
     ],
     seo: { ...siteSeoMod.DEFAULT_SEO },
@@ -1674,7 +1756,35 @@ function loadPublicSiteCms(callback) {
                     if (!base.schedulePage || typeof base.schedulePage !== 'object') {
                         base.schedulePage = { ...DEFAULT_PUBLIC_SITE_CMS.schedulePage };
                     }
-                    if (!Array.isArray(base.faq)) base.faq = DEFAULT_PUBLIC_SITE_CMS.faq;
+                    if (!Array.isArray(base.faq) || !base.faq.filter((f) => f && (f.q || f.a)).length) {
+                        base.faq = DEFAULT_PUBLIC_SITE_CMS.faq.slice();
+                    }
+                    if (!base.homeJourney || typeof base.homeJourney !== 'object') {
+                        base.homeJourney = { ...DEFAULT_PUBLIC_SITE_CMS.homeJourney };
+                    } else {
+                        const defJ = DEFAULT_PUBLIC_SITE_CMS.homeJourney;
+                        if (!(base.homeJourney.title || '').trim()) base.homeJourney.title = defJ.title;
+                        if (!(base.homeJourney.subtitle || '').trim()) base.homeJourney.subtitle = defJ.subtitle;
+                        const jSteps = Array.isArray(base.homeJourney.steps)
+                            ? base.homeJourney.steps.filter((s) => s && (s.title || s.text))
+                            : [];
+                        if (!jSteps.length) base.homeJourney.steps = defJ.steps.slice();
+                    }
+                    if (!base.homeBento || typeof base.homeBento !== 'object') {
+                        base.homeBento = { ...DEFAULT_PUBLIC_SITE_CMS.homeBento };
+                    } else {
+                        const defB = DEFAULT_PUBLIC_SITE_CMS.homeBento;
+                        if (!(base.homeBento.title || '').trim()) base.homeBento.title = defB.title;
+                        if (!(base.homeBento.subtitle || '').trim()) base.homeBento.subtitle = defB.subtitle;
+                        const bCards = Array.isArray(base.homeBento.cards)
+                            ? base.homeBento.cards.filter((c) => c && (c.title || c.text))
+                            : [];
+                        if (!bCards.length) base.homeBento.cards = defB.cards.slice();
+                    }
+                    if (!base.homeCtaBand || typeof base.homeCtaBand !== 'object') {
+                        base.homeCtaBand = { ...DEFAULT_PUBLIC_SITE_CMS.homeCtaBand };
+                    }
+                    if (!base.helpBanner) base.helpBanner = DEFAULT_PUBLIC_SITE_CMS.helpBanner;
                     if (!base.footer || typeof base.footer !== 'object') base.footer = { ...DEFAULT_PUBLIC_SITE_CMS.footer };
                     base.seo = siteSeoMod.normalizeSeo(base.seo || DEFAULT_PUBLIC_SITE_CMS.seo);
                 }
@@ -1882,18 +1992,16 @@ function sanitizeFormDataForStorage(formData) {
 function enqueueApplicationSubmitted(db, meta, cb) {
     const { userId, seminarId, registrationId } = meta || {};
     if (!userId) return cb && cb(null);
-    notifEngine.notify(
+    notifEngine.notifyUserEvent(
         db,
-        'APPLICATION_UNDER_REVIEW',
+        'SEMINAR_REGISTRATION_SUCCESS',
         {
             userId,
             seminarId,
             registrationId,
-            vars: { approval_status: 'submitted' },
-            immediate: true
+            vars: { approval_status: 'submitted' }
         },
         () => {
-            flushNotificationQueue();
             if (cb) cb(null);
         }
     );
@@ -2015,6 +2123,17 @@ function backfillTicketsForPaidOrders(cb) {
     );
 }
 
+function scanNotifyCheckInFailed(row, reason) {
+    const uid = row && (row.doctor_user_id || row.user_id);
+    if (!uid || !reason) return;
+    notifEngine.notifyCheckInFailed(db, {
+        userId: uid,
+        seminarId: row.seminar_id,
+        registrationId: row.registration_id,
+        reason: String(reason)
+    });
+}
+
 function notifyTicketIssued(userId, registrationId, ticketId, channelOpts) {
     channelOpts = channelOpts || {};
     if (!userId || !registrationId || !ticketId) return;
@@ -2028,7 +2147,7 @@ function notifyTicketIssued(userId, registrationId, ticketId, channelOpts) {
             userId,
             registrationId,
             ticketId,
-            { sendEmail, sendWhatsapp, sendTemplateNotify, drainImmediate }
+            { sendEmail, sendWhatsapp, sendTemplateNotify, drainImmediate, reissue: !!channelOpts.reissue }
         );
     });
 }
@@ -2067,23 +2186,18 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                 payment_status: portalProduct.FEATURES.noFees ? 'FREE' : 'PAID'
             };
             if (sendTemplateNotify) {
-                notifEngine.notify(
+                const ticketEventKey = opts.reissue ? 'QR_TICKET_REISSUED' : 'TICKET_ISSUED';
+                notifEngine.notifyUserEvent(
                     db,
-                    'TICKET_ISSUED',
+                    ticketEventKey,
                     {
                         userId,
                         seminarId,
                         registrationId,
                         vars,
-                        immediate: drainImmediate,
                         skipWhatsapp: !sendWhatsapp
                     },
-                    () => {
-                        if (!drainImmediate) return;
-                        try {
-                            notifEngine.drainNotificationQueue(db, 1);
-                        } catch (_) {}
-                    }
+                    () => {}
                 );
             }
             if (row && row.qr_code_data) {
@@ -2323,7 +2437,25 @@ function getOrCreatePendingOrder(registrationId, amount, cb) {
                 [orderIdStr, registrationId, amt],
                 function (insErr) {
                     if (insErr) return cb(insErr);
-                    cb(null, { id: this.lastID, order_id_string: orderIdStr });
+                    const newOrder = { id: this.lastID, order_id_string: orderIdStr };
+                    db.get(
+                        `SELECT user_id, seminar_id FROM registrations WHERE id = ?`,
+                        [registrationId],
+                        (eReg, regRow) => {
+                            if (!eReg && regRow) {
+                                notifEngine.notifyUserEvent(db, 'PAYMENT_PENDING', {
+                                    userId: regRow.user_id,
+                                    seminarId: regRow.seminar_id,
+                                    registrationId,
+                                    vars: {
+                                        payment_amount: amt,
+                                        approval_status: 'approved_pending_payment'
+                                    }
+                                });
+                            }
+                            cb(null, newOrder);
+                        }
+                    );
                 }
             );
         }
@@ -2871,15 +3003,22 @@ app.post('/api/admin/integrations', withIntegrationSettingsLoaded, (req, res) =>
     });
 });
 
-function smtpOverridesFromBody(body) {
+function zeptoOverridesFromBody(body) {
     const b = body || {};
     const o = {};
-    if (b.zoho_host != null && String(b.zoho_host).trim()) o.zoho_host = String(b.zoho_host).trim();
-    if (b.zoho_port != null && String(b.zoho_port).trim()) o.zoho_port = String(b.zoho_port).trim();
-    if (b.zoho_user != null && String(b.zoho_user).trim()) o.zoho_user = String(b.zoho_user).trim();
-    if (b.zoho_from != null && String(b.zoho_from).trim()) o.zoho_from = String(b.zoho_from).trim();
-    if (b.zoho_pass != null && String(b.zoho_pass).trim() && !integrationSettings.isMaskedSecretValue(b.zoho_pass)) {
-        o.zoho_pass = String(b.zoho_pass).trim();
+    if (b.zepto_from != null && String(b.zepto_from).trim()) o.zepto_from = String(b.zepto_from).trim();
+    if (b.zepto_from_name != null && String(b.zepto_from_name).trim()) {
+        o.zepto_from_name = String(b.zepto_from_name).trim();
+    }
+    if (b.zepto_region != null && String(b.zepto_region).trim()) {
+        o.zepto_region = String(b.zepto_region).trim().toLowerCase();
+    }
+    if (
+        b.zepto_api_key != null &&
+        String(b.zepto_api_key).trim() &&
+        !integrationSettings.isMaskedSecretValue(b.zepto_api_key)
+    ) {
+        o.zepto_api_key = String(b.zepto_api_key).trim();
     }
     return Object.keys(o).length ? o : null;
 }
@@ -2887,9 +3026,9 @@ function smtpOverridesFromBody(body) {
 app.post('/api/admin/integrations/test-email', withIntegrationSettingsLoaded, async (req, res) => {
     const to = String((req.body && req.body.to) || '').trim();
     if (!to) return res.status(400).json({ error: 'to email required' });
-    const overrides = smtpOverridesFromBody(req.body);
-    const { verifySmtpConnection, sendEmail } = require('./lib/email-service');
-    const verify = await verifySmtpConnection(overrides || undefined);
+    const overrides = zeptoOverridesFromBody(req.body);
+    const { verifyEmailConnection, sendEmail } = require('./lib/email-service');
+    const verify = await verifyEmailConnection(overrides || undefined);
     if (!verify.ok) {
         const errText = [verify.error, verify.hint].filter(Boolean).join(' ');
         notifEngine.logNotification(db, {
@@ -2898,21 +3037,21 @@ app.post('/api/admin/integrations/test-email', withIntegrationSettingsLoaded, as
             destination: to,
             status: 'failed',
             subject: 'VGMF test email',
-            body_preview: 'SMTP verify failed',
+            body_preview: 'ZeptoMail verify failed',
             error: errText
         });
         return res.status(503).json({
-            error: verify.error || 'SMTP login failed',
+            error: verify.error || 'Email not configured',
             hint: verify.hint,
             skipped: verify.skipped,
             logged: true
         });
     }
     const subject = 'VGMF test email';
-    const html = '<p>SMTP test from seminar admin integrations panel.</p>';
+    const html = '<p>ZeptoMail test from admin integrations panel.</p>';
     const r = await sendEmail(to, subject, html, {
-        text: 'SMTP test from seminar admin.',
-        smtpOverrides: overrides || undefined
+        text: 'ZeptoMail test from admin integrations panel.',
+        zeptoOverrides: overrides || undefined
     });
     const logStatus = r.ok ? 'sent' : r.skipped ? 'skipped' : 'failed';
     const logError = r.ok ? null : [r.error, r.hint].filter(Boolean).join(' ');
@@ -2922,10 +3061,10 @@ app.post('/api/admin/integrations/test-email', withIntegrationSettingsLoaded, as
         destination: to,
         status: logStatus,
         subject,
-        body_preview: 'SMTP integration test',
+        body_preview: 'ZeptoMail integration test',
         error: logError
     });
-    if (r.ok) return res.json({ success: true, logged: true, from: verify.from });
+    if (r.ok) return res.json({ success: true, logged: true, from: verify.from, provider: 'zeptomail', endpoint: r.endpoint });
     res.status(503).json({
         error: r.error || 'Send failed',
         hint: r.hint,
@@ -3439,12 +3578,12 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 if (debug) payload.debugCode = code;
                 if (!sent.ok && !sent.skipped) {
                     return res.status(503).json({
-                        error: sent.error || 'Could not deliver OTP. Configure Zoho email and/or WhatsApp API.',
+                        error: sent.error || 'Could not deliver OTP. Configure ZeptoMail email and/or WhatsApp API.',
                         debugCode: debug ? code : undefined
                     });
                 }
                 if (sent.skipped) {
-                    payload.warning = 'Messaging not fully configured; use debugCode in development or set ZOHO_* / WHATSAPP_* env vars.';
+                    payload.warning = 'Messaging not fully configured; use debugCode in development or set ZEPTOMAIL_API_KEY / WHATSAPP_* env vars.';
                 }
                 res.json(payload);
             });
@@ -3808,7 +3947,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                             error: 'No account found with this portal user ID, or password is wrong.',
                             hint:
                                 loginPortal === 'admin'
-                                    ? 'Super admin sign-in uses ADMIN_EMAIL from Vercel, not a 12-digit portal ID.'
+                                    ? 'Use your staff admin email, not a public applicant portal ID (USR_…).'
                                     : undefined,
                             needsLogin: true
                         });
@@ -3824,7 +3963,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                                         : 'No account found with this email. Please create an account first.',
                                 hint:
                                     loginPortal === 'admin'
-                                        ? 'Set ADMIN_EMAIL and ADMIN_PASSWORD in Vercel, redeploy, then sign in with that email.'
+                                        ? 'Check your admin email with the programme IT contact.'
                                         : undefined,
                                 needsSignup: loginPortal !== 'admin'
                             });
@@ -3833,7 +3972,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                             error: 'Invalid password. Use Forgot password or sign in with OTP if enabled.',
                             hint:
                                 loginPortal === 'admin'
-                                    ? 'Password must match ADMIN_PASSWORD in Vercel exactly (redeploy after changing it).'
+                                    ? 'Use the password provided for your admin account.'
                                     : undefined,
                             needsLogin: true,
                             accountExists: true
@@ -3860,7 +3999,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         return res.status(403).json({
                             error: 'This account cannot sign in to the admin console.',
                             hint:
-                                'Use the exact ADMIN_EMAIL and ADMIN_PASSWORD from Vercel environment variables, then redeploy. Do not use a participant or judge portal ID here.'
+                                'Sign in with a staff admin email and password. Public applicant accounts cannot access this console.'
                         });
                     }
                 }
@@ -5782,13 +5921,13 @@ app.post('/api/auth/change-password', (req, res) => {
 });
 
 // Forgot password — email + WhatsApp (no plain password stored)
-app.post('/api/auth/forgot-password', withAuxiliaryTables, (req, res) => {
+app.post('/api/auth/forgot-password', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const forgotEmailV = contactValidation.validateEmail((req.body && req.body.email) || '');
     if (!forgotEmailV.valid) return res.status(400).json({ error: forgotEmailV.message });
     const emailNorm = forgotEmailV.cleanedEmail;
     const respond = () => res.json({ success: true, message: 'If an account exists, reset instructions were sent.' });
-    let returnPage = String((req.body && req.body.returnTo) || 'index.html').trim();
-    if (!/^[a-z0-9._-]+\.html$/i.test(returnPage)) returnPage = 'index.html';
+    let returnTo = String((req.body && req.body.returnTo) || 'index.html').trim();
+    if (!returnTo) returnTo = 'index.html';
     authUsers.findUserByEmail(db, emailNorm, (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!user) return respond();
@@ -5801,17 +5940,14 @@ app.post('/api/auth/forgot-password', withAuxiliaryTables, (req, res) => {
                 [user.id, tokenHash, expiresAt],
                 (ierr) => {
                     if (ierr) return respond();
-                    const link =
-                        notifEngine.publicBaseUrl() +
-                        '/' +
-                        returnPage +
-                        '?resetToken=' +
-                        encodeURIComponent(token);
-                    notifEngine.notify(db, 'FORGOT_PASSWORD', {
-                        userId: user.id,
-                        vars: { forgot_password_link: link }
+                    const link = notifEngine.buildForgotPasswordLink(returnTo, token);
+                    notifEngine.sendForgotPasswordEmail(db, user.id, link, (nErr, result) => {
+                        if (nErr) console.error('[forgot-password] send failed:', nErr.message || nErr);
+                        else if (result && !result.ok && !result.skipped) {
+                            console.error('[forgot-password]', result.error || result);
+                        }
+                        respond();
                     });
-                    respond();
                 }
             );
         });
@@ -6540,6 +6676,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         'Payment not confirmed',
                         unpaidRow
                     );
+                    scanNotifyCheckInFailed(unpaidRow, 'Payment is not confirmed for this registration.');
                     return res.status(403).json({
                         success: false,
                         error: 'Application found but payment is not confirmed.',
@@ -6554,6 +6691,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                 const accountBlock = doctorAccountBlockForScan(row);
                 if (accountBlock) {
                     logScanDashboard(selectedSeminarId, staffId, 'account_blocked', accountBlock.error, row);
+                    scanNotifyCheckInFailed(row, accountBlock.error);
                     return res.status(403).json({
                         success: false,
                         error: accountBlock.error,
@@ -6572,6 +6710,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                     String(row.payment_status || '').toLowerCase() === 'success';
                 if (!payOk) {
                     logScanDashboard(selectedSeminarId, staffId, 'unpaid', 'Payment is not confirmed for this ticket', row);
+                    scanNotifyCheckInFailed(row, 'Payment is not confirmed for this ticket.');
                     return res.status(403).json({
                         success: false,
                         error: 'Payment is not confirmed for this ticket.',
@@ -6591,6 +6730,12 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         regSt === 'cancelled' ? 'Registration cancelled' : 'Registration rejected',
                         row
                     );
+                    scanNotifyCheckInFailed(
+                        row,
+                        regSt === 'cancelled'
+                            ? 'Registration was cancelled — ticket is not valid for check-in.'
+                            : 'Registration was rejected — ticket is not valid for check-in.'
+                    );
                     return res.status(403).json({
                         success: false,
                         error:
@@ -6609,6 +6754,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                 }
                 if (Number(row.is_valid) === 0 || row.is_valid === false) {
                     logScanDashboard(selectedSeminarId, staffId, 'invalid', 'Ticket no longer valid', row);
+                    scanNotifyCheckInFailed(row, 'Ticket is no longer valid (registration cancelled).');
                     return res.status(403).json({
                         success: false,
                         error: 'Ticket is no longer valid (cancelled registration).',
@@ -6624,6 +6770,12 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         'duplicate',
                         scansRequired === 2 ? 'Entry and exit scans already recorded' : 'Check-in already completed',
                         row
+                    );
+                    scanNotifyCheckInFailed(
+                        row,
+                        scansRequired === 2
+                            ? 'Entry and exit scans are already recorded for this ticket.'
+                            : 'Check-in was already completed for this ticket.'
                     );
                     const dupPayload = {
                         success: false,
@@ -6661,6 +6813,10 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         'wrong_seminar',
                         'Ticket is for ' + (row.seminar_title || 'another seminar'),
                         row
+                    );
+                    scanNotifyCheckInFailed(
+                        row,
+                        'Wrong seminar selected. This ticket is for "' + (row.seminar_title || 'another event') + '".'
                     );
                     return res.status(403).json({
                         success: false,
@@ -7758,28 +7914,20 @@ app.post('/api/admin/applications/status', (req, res) => {
 
             db.get(`SELECT user_id, seminar_id FROM registrations WHERE id = ?`, [applicationId], (eN, regRow) => {
                 if (!eN && regRow) {
-                    let ev = 'APPLICATION_UNDER_REVIEW';
-                    if (newSt === 'approved_pending_payment') ev = 'APPLICATION_APPROVED';
-                    else if (newSt === 'rejected') ev = 'APPLICATION_REJECTED';
-                    else if (newSt === 'revision_required') ev = 'APPLICATION_REVISION_REQUIRED';
-                    else if (newSt === 'cancelled') ev = 'REGISTRATION_CANCELLED';
-                    else if (
-                        newSt === 'completed' ||
-                        newSt === 'e_ticket_issued' ||
-                        newSt === 'checked_in' ||
-                        newSt === 'certificate_issued'
-                    ) {
-                        ev = null;
-                    }
+                    const ev = notifEngine.registrationStatusToEventKey(newSt);
                     if (!ev) return;
-                    notifEngine.notify(db, ev, {
+                    notifEngine.notifyUserEvent(db, ev, {
                         userId: regRow.user_id,
                         seminarId: regRow.seminar_id,
                         registrationId: applicationId,
-                        vars: { approval_status: status, rejection_reason: req.body.rejection_reason || '' }
-                                });
-                            }
-                        });
+                        vars: {
+                            approval_status: status,
+                            rejection_reason: req.body.rejection_reason || '',
+                            status_message: String(status || newSt)
+                        }
+                    });
+                }
+            });
         
         if (newSt === 'approved_pending_payment' && portalProduct.FEATURES.hasPayments) {
             getOrCreatePendingOrder(applicationId, 1500, () => {});
@@ -8646,7 +8794,7 @@ function sendCertificateVerifyOtpChannel(channel, destination, meta, cb) {
                         return cb(null, {
                             deliverError:
                                 sent.error ||
-                                'Could not deliver OTP. Configure Zoho email and/or WhatsApp API.',
+                                'Could not deliver OTP. Configure ZeptoMail email and/or WhatsApp API.',
                             debugCode: debug ? code : undefined
                         });
                     }
@@ -12034,7 +12182,8 @@ app.post('/api/admin/e-tickets/send', (req, res) => {
             notifyTicketIssued(userId, regId, ticketId, {
                 email: sendEmail,
                 whatsapp: sendWhatsapp,
-                templateNotify: sendEmail || sendWhatsapp
+                templateNotify: sendEmail || sendWhatsapp,
+                reissue: true
             });
             flushNotificationQueue();
             activityLog.logActivity(db, {
@@ -12337,6 +12486,9 @@ function startBackgroundWorkers() {
     }
     integrationSettings.loadFromDb(db, (eInt) => {
         if (eInt) console.warn('[integrations] load failed:', eInt.message);
+        integrationSettings.ensureAutismPortalIntegrationDefaults(db, (eDef) => {
+            if (eDef) console.warn('[integrations] autism defaults:', eDef.message);
+        });
         db.get(`SELECT value FROM global_settings WHERE key = ?`, [portalAuthPolicy.KEY], (ePk, rowPk) => {
             if (!ePk && !rowPk) {
                 upsertGlobalSetting(portalAuthPolicy.KEY, JSON.stringify(portalAuthPolicy.DEFAULTS), () => {});
@@ -12345,12 +12497,12 @@ function startBackgroundWorkers() {
         });
         db.get(`SELECT value FROM global_settings WHERE key = ?`, ['notification_templates_sync_v'], (eSync, row) => {
             if (eSync) return;
-            if (row && row.value === '20260517') return;
+            if (row && row.value === '20260530') return;
             notifEngine.syncDefaultNotificationTemplates(db, (syncErr) => {
                 if (syncErr) console.warn('[notifications] template sync failed:', syncErr.message);
                 else {
-                    upsertGlobalSetting('notification_templates_sync_v', '20260517', () => {
-                        console.log('[notifications] VGMF 2026 default templates synced');
+                    upsertGlobalSetting('notification_templates_sync_v', '20260530', () => {
+                        console.log('[notifications] Autism portal email templates synced (all events)');
                     });
                 }
             });
@@ -12429,6 +12581,24 @@ app.get('/api/cron/pending-registration-reminders', (req, res) => {
     run();
 });
 
+app.get('/api/cron/event-starting-today', (req, res) => {
+    if (!authorizeCron(req, res)) return;
+    const run = () => {
+        if (!jobsModule || typeof jobsModule.runEventStartingToday !== 'function') {
+            return res.status(503).json({ error: 'Event today job unavailable' });
+        }
+        jobsModule.runEventStartingToday(db, (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ ok: true, ...(result || {}) });
+        });
+    };
+    if (appReadyResolved) return run();
+    if (appReadyPromise) {
+        return appReadyPromise.then(run).catch((e) => res.status(503).json({ error: e.message }));
+    }
+    run();
+});
+
 app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);
     const msg = sanitizeDbError(err);
@@ -12453,9 +12623,17 @@ app.use((err, req, res, next) => {
 module.exports = app;
 
 if (!process.env.VERCEL) {
+    const urlCheck = validateDatabaseUrl();
+    if (!urlCheck.ok) {
+        console.error('[db] DATABASE_URL invalid:', urlCheck.message);
+        console.error('[db] Hint:', publicDatabaseHint(urlCheck.code));
+        process.exit(1);
+    }
     db.connect((err) => {
         if (err) {
-            console.error('[db] connect failed:', err.message);
+            const code = classifyDbConnectError(err);
+            console.error('[db] connect failed:', sanitizeDbError(err));
+            console.error('[db] Hint:', publicDatabaseHint(code));
             process.exit(1);
         }
         bootstrapApp(() => {
