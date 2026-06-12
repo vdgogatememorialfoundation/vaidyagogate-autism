@@ -49,8 +49,35 @@ body.nexgen-ai strong {
     color: var(--nx-text);
 }
 
-body.nexgen-ai a:not(.ak-btn-v2-primary):not(.cg-fab-register):not(.nx-sticky-primary) {
+body.nexgen-ai a:not(.ak-btn-v2-primary):not(.cg-fab-register):not(.nx-sticky-primary):not(.social-link-btn) {
     color: var(--nx-cyan);
+}
+
+/* Social pills — white text on brand-coloured buttons */
+body.nexgen-ai .social-link-btn,
+body.nexgen-ai .social-link-btn:hover,
+body.nexgen-ai .social-link-btn .social-pill-label {
+    color: #fff !important;
+}
+
+body.nexgen-ai .social-follow,
+body.nexgen-ai .footer-social {
+    padding: 0 1rem 2rem;
+}
+
+body.nexgen-ai #aboutSection .section-head h2,
+body.nexgen-ai #aboutSection .section-head p {
+    color: var(--nx-text);
+}
+
+body.nexgen-ai #about-content {
+    color: var(--nx-text-secondary);
+}
+
+body.nexgen-ai #about-content h1,
+body.nexgen-ai #about-content h2,
+body.nexgen-ai #about-content h3 {
+    color: var(--nx-text);
 }
 
 body.nexgen-ai .ak-bg-shapes {
@@ -243,7 +270,17 @@ body.nexgen-ai .ak-hero-v2-lead {
 }
 
 body.nexgen-ai .ak-hero-v2-badge {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--nx-cyan);
+    background: rgba(8, 145, 178, 0.08);
+    border: 1px solid var(--nx-border);
+    margin-bottom: 1rem;
 }
 
 body.nexgen-ai .ak-btn-v2-primary {

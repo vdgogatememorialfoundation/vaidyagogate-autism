@@ -173,7 +173,7 @@
         const el = document.getElementById('nx-typing-line');
         if (!el) return;
         const phrases = [
-            'Smart email reminders',
+            'Helpful email reminders',
             'One-click e-tickets',
             'Free for every family',
             'Competitions & certificates'
