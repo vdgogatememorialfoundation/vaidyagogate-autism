@@ -53,16 +53,74 @@ body.nexgen-ai a:not(.ak-btn-v2-primary):not(.cg-fab-register):not(.nx-sticky-pr
     color: var(--nx-cyan);
 }
 
-/* Social pills — white text on brand-coloured buttons */
+/* Header logo — clear on light background */
+body.nexgen-ai .cg-logo-zone [data-site-logo] {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--nx-border-soft);
+    box-shadow: var(--nx-shadow);
+    padding: 4px;
+    overflow: hidden;
+}
+
+body.nexgen-ai .cg-logo-zone .site-logo-img {
+    max-height: 48px !important;
+    max-width: 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    object-fit: contain;
+}
+
+/* Social pills — real brand logos on white cards */
 body.nexgen-ai .social-link-btn,
-body.nexgen-ai .social-link-btn:hover,
+body.nexgen-ai .social-link-btn.social-pill--youtube,
+body.nexgen-ai .social-link-btn.social-pill--facebook,
+body.nexgen-ai .social-link-btn.social-pill--instagram,
+body.nexgen-ai .social-link-btn.social-pill--twitter,
+body.nexgen-ai .social-link-btn.social-pill--x,
+body.nexgen-ai .social-link-btn.social-pill--linkedin,
+body.nexgen-ai .social-link-btn.social-pill--whatsapp {
+    background: #fff !important;
+    border: 2px solid var(--nx-border-soft) !important;
+    color: var(--nx-text) !important;
+    box-shadow: var(--nx-shadow);
+    min-height: 54px;
+    padding: 10px 18px !important;
+    gap: 14px !important;
+}
+
+body.nexgen-ai .social-link-btn:hover {
+    border-color: var(--nx-border) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+    filter: none;
+}
+
 body.nexgen-ai .social-link-btn .social-pill-label {
-    color: #fff !important;
+    color: var(--nx-text) !important;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+body.nexgen-ai .social-brand-logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: contain;
+    display: block;
 }
 
 body.nexgen-ai .social-follow,
 body.nexgen-ai .footer-social {
     padding: 0 1rem 2rem;
+    gap: 14px !important;
 }
 
 body.nexgen-ai #aboutSection .section-head h2,

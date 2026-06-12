@@ -3,24 +3,38 @@
  */
 (function () {
     const DEFAULT_ICON = '🏥';
+    const FALLBACK_LOGO = '/favicon.svg';
 
-    function applyLogoToSlot(el, logoPath) {
+    function applyLogoToSlot(el, logoPath, isRetry) {
         if (!el) return;
-        if (logoPath) {
-            const img = document.createElement('img');
-            img.src = logoPath;
-            img.alt = 'Site logo';
-            img.className = 'site-logo-img';
-            img.style.maxHeight = el.getAttribute('data-logo-height') || '48px';
-            img.style.maxWidth = el.getAttribute('data-logo-width') || '160px';
-            img.style.objectFit = 'contain';
-            img.style.display = 'block';
-            el.innerHTML = '';
-            el.appendChild(img);
-            el.classList.add('has-site-logo');
-        } else if (el.getAttribute('data-logo-fallback') === 'icon') {
-            el.innerHTML = '<span class="logo-icon-fallback" style="font-size:2rem;line-height:1;">' + DEFAULT_ICON + '</span>';
+        const fallbackMode = el.getAttribute('data-logo-fallback');
+        let path = String(logoPath || '').trim();
+        if (!path && fallbackMode === 'favicon') path = FALLBACK_LOGO;
+        if (!path) {
+            if (fallbackMode === 'icon') {
+                el.innerHTML =
+                    '<span class="logo-icon-fallback" style="font-size:2rem;line-height:1;">' + DEFAULT_ICON + '</span>';
+            }
+            return;
         }
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = 'Vaidya Gogate Memorial Foundation logo';
+        img.className = 'site-logo-img';
+        img.style.maxHeight = el.getAttribute('data-logo-height') || '56px';
+        img.style.maxWidth = el.getAttribute('data-logo-width') || '160px';
+        img.style.objectFit = 'contain';
+        img.style.display = 'block';
+        img.decoding = 'async';
+        img.loading = 'eager';
+        img.onerror = function onLogoError() {
+            if (!isRetry && path !== FALLBACK_LOGO) {
+                applyLogoToSlot(el, FALLBACK_LOGO, true);
+            }
+        };
+        el.innerHTML = '';
+        el.appendChild(img);
+        el.classList.add('has-site-logo');
     }
 
     async function loadSiteBranding() {

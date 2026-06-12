@@ -834,6 +834,14 @@
     font-size: 1.35rem;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
+.congress-site .social-brand-logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: contain;
+    display: block;
+}
 .congress-site .social-pill-label {
     letter-spacing: 0.01em;
 }

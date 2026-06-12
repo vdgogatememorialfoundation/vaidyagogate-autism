@@ -51,16 +51,55 @@
     }
     window.socialIcon = socialIcon;
 
-    function renderPillLink(url, iconClass, label, extraClass) {
+    const SOCIAL_BRAND_LOGOS = {
+        youtube: { src: '/images/social/youtube.svg', label: 'YouTube' },
+        facebook: { src: '/images/social/facebook.svg', label: 'Facebook' },
+        instagram: { src: '/images/social/instagram.svg', label: 'Instagram' },
+        twitter: { src: '/images/social/x.svg', label: 'X (Twitter)' },
+        x: { src: '/images/social/x.svg', label: 'X (Twitter)' },
+        linkedin: { src: '/images/social/linkedin.svg', label: 'LinkedIn' },
+        whatsapp: { src: '/images/social/whatsapp.svg', label: 'WhatsApp' }
+    };
+
+    function socialBrandKey(platform) {
+        return String(platform || 'link')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '');
+    }
+
+    function socialBrandAsset(platform) {
+        const key = socialBrandKey(platform);
+        return SOCIAL_BRAND_LOGOS[key] || { src: '', label: '' };
+    }
+
+    function socialDisplayLabel(platform, cmsLabel) {
+        const brand = socialBrandAsset(platform);
+        const custom = String(cmsLabel || '').trim();
+        if (!custom) return brand.label || 'Follow us';
+        if (custom.length > 28) return brand.label || custom;
+        if (brand.label && /foundation|vaidya|gogate|memorial/i.test(custom)) return brand.label;
+        return custom;
+    }
+
+    function renderPillLink(url, platform, cmsLabel, extraClass) {
+        const brand = socialBrandAsset(platform);
+        const label = socialDisplayLabel(platform, cmsLabel);
+        const iconHtml = brand.src
+            ? '<img class="social-brand-logo" src="' +
+              escHtml(brand.src) +
+              '" alt="" width="36" height="36" decoding="async" loading="lazy">'
+            : '<i class="' + escHtml(socialIcon(platform)) + '" aria-hidden="true"></i>';
         return (
             '<a href="' +
             escHtml(url) +
             '" target="_blank" rel="noopener noreferrer" class="' +
             escHtml(extraClass || 'social-link-btn') +
-            '"><i class="' +
-            escHtml(iconClass || 'fas fa-link') +
-            '" aria-hidden="true"></i><span class="social-pill-label">' +
-            escHtml(label || 'Open') +
+            '" aria-label="' +
+            escHtml(label) +
+            '">' +
+            iconHtml +
+            '<span class="social-pill-label">' +
+            escHtml(label) +
             '</span></a>'
         );
     }
@@ -74,7 +113,7 @@
                       const pillClass = 'social-pill social-pill--' + (p || 'link');
                       return renderPillLink(
                           l.url,
-                          socialIcon(l.platform),
+                          l.platform,
                           l.label || l.platform || 'Follow',
                           'social-link-btn ' + pillClass
                       );
