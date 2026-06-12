@@ -72,6 +72,17 @@
         return SOCIAL_BRAND_LOGOS[key] || { src: '', label: '' };
     }
 
+    function normalizePillarIcon(icon) {
+        const raw = String(icon || 'fa-star').trim().replace(/^fas\s+/, '');
+        const map = {
+            'fa-hands-holding-heart': 'fa-hand-holding-heart',
+            'hands-holding-heart': 'fa-hand-holding-heart',
+            'hand-holding-heart': 'fa-hand-holding-heart'
+        };
+        const key = raw.replace(/^fa-/, '');
+        return map[raw] || map[key] || (raw.startsWith('fa-') ? raw : 'fa-' + key);
+    }
+
     function socialDisplayLabel(platform, cmsLabel) {
         const brand = socialBrandAsset(platform);
         const custom = String(cmsLabel || '').trim();
@@ -84,11 +95,16 @@
     function renderPillLink(url, platform, cmsLabel, extraClass) {
         const brand = socialBrandAsset(platform);
         const label = socialDisplayLabel(platform, cmsLabel);
+        const faCls = escHtml(socialIcon(platform));
         const iconHtml = brand.src
-            ? '<img class="social-brand-logo" src="' +
+            ? '<span class="social-brand-wrap">' +
+              '<img class="social-brand-logo" src="' +
               escHtml(brand.src) +
-              '" alt="" width="36" height="36" decoding="async" loading="lazy">'
-            : '<i class="' + escHtml(socialIcon(platform)) + '" aria-hidden="true"></i>';
+              '" alt="" width="36" height="36" decoding="async" loading="lazy" onerror="this.style.display=\'none\';var n=this.nextElementSibling;if(n)n.style.display=\'inline-flex\'">' +
+              '<i class="' +
+              faCls +
+              ' social-brand-fa" style="display:none" aria-hidden="true"></i></span>'
+            : '<i class="' + faCls + '" aria-hidden="true"></i>';
         return (
             '<a href="' +
             escHtml(url) +
@@ -209,7 +225,7 @@
                 text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
             },
             {
-                icon: 'fa-hands-holding-heart',
+                icon: 'fa-hand-holding-heart',
                 iconTone: 'violet',
                 title: 'Inclusion',
                 text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
@@ -231,7 +247,7 @@
                 const tone = ['blue', 'violet', 'mint'].includes(String(p.iconTone || '').toLowerCase())
                     ? String(p.iconTone).toLowerCase()
                     : 'blue';
-                const icon = escHtml(p.icon || 'fa-star');
+                const icon = escHtml(normalizePillarIcon(p.icon));
                 return (
                     '<article class="ak-pillar">' +
                     '<div class="ak-pillar-icon ' +

@@ -173,10 +173,10 @@
         const el = document.getElementById('nx-typing-line');
         if (!el) return;
         const phrases = [
-            'Helpful email reminders',
             'One-click e-tickets',
             'Free for every family',
-            'Competitions & certificates'
+            'Competitions & certificates',
+            'Easy online registration'
         ];
         let pi = 0;
         let ci = 0;

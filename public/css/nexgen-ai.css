@@ -108,6 +108,15 @@ body.nexgen-ai .social-link-btn .social-pill-label {
     font-size: 1rem;
 }
 
+body.nexgen-ai .social-brand-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
 body.nexgen-ai .social-brand-logo {
     width: 36px;
     height: 36px;
@@ -115,6 +124,28 @@ body.nexgen-ai .social-brand-logo {
     border-radius: 8px;
     object-fit: contain;
     display: block;
+}
+
+body.nexgen-ai .social-brand-fa {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    font-size: 1.75rem;
+    border-radius: 8px;
+}
+
+body.nexgen-ai .social-pill--youtube .social-brand-fa {
+    color: #ff0000;
+}
+
+body.nexgen-ai .social-pill--facebook .social-brand-fa {
+    color: #1877f2;
+}
+
+body.nexgen-ai .social-pill--instagram .social-brand-fa {
+    color: #dd2a7b;
 }
 
 body.nexgen-ai .social-follow,
@@ -237,8 +268,8 @@ body.nexgen-ai .cg-utility-auth {
 }
 
 body.nexgen-ai .cg-utility-signin {
-    color: var(--nx-muted) !important;
-    font-weight: 600 !important;
+    color: var(--nx-text) !important;
+    font-weight: 700 !important;
     text-decoration: none !important;
     padding: 6px 10px;
     border-radius: 8px;
@@ -297,6 +328,42 @@ body.nexgen-ai.ak-portal .cg-utility a.cg-utility-link {
 body.nexgen-ai.autism-kids .cg-utility a.cg-utility-signup,
 body.nexgen-ai.ak-portal .cg-utility a.cg-utility-signup {
     color: #fff !important;
+}
+
+/* Header row — logo + nav side by side on desktop */
+@media (min-width: 901px) {
+    body.nexgen-ai .cg-shell .cg-header-row {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: center;
+        column-gap: 20px;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 20px;
+        width: 100%;
+    }
+
+    body.nexgen-ai .cg-header-row .cg-header {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+    }
+
+    body.nexgen-ai .cg-header-row #cg-nav.cg-nav {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        align-self: center;
+        margin: 0 !important;
+        flex-wrap: nowrap;
+    }
+
+    body.nexgen-ai .cg-header-row .cg-header-ticker {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+    }
 }
 
 /* Header */
@@ -526,6 +593,11 @@ body.nexgen-ai .nx-ai-stats {
     max-width: 420px;
 }
 
+body.nexgen-ai .nx-ai-stats.nx-ai-stats-2 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 300px;
+}
+
 body.nexgen-ai .nx-ai-stat {
     padding: 14px 12px;
     border-radius: 14px;
@@ -582,6 +654,36 @@ body.nexgen-ai .ak-step h3,
 body.nexgen-ai .ak-bento-card h3 {
     font-family: var(--nx-font);
     color: var(--nx-text);
+}
+
+body.nexgen-ai .ak-pillar-icon {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+}
+
+body.nexgen-ai .ak-pillar-icon i {
+    font-size: 1.4rem !important;
+    line-height: 1;
+    opacity: 1 !important;
+}
+
+body.nexgen-ai .ak-pillar-icon.blue {
+    background: #dbeafe !important;
+    color: #2563eb !important;
+}
+
+body.nexgen-ai .ak-pillar-icon.violet {
+    background: #ede9fe !important;
+    color: #7c3aed !important;
+}
+
+body.nexgen-ai .ak-pillar-icon.mint {
+    background: #d1fae5 !important;
+    color: #059669 !important;
 }
 
 body.nexgen-ai .ak-pillar p,
