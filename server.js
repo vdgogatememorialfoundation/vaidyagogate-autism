@@ -976,7 +976,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         '<strong>New here?</strong> Tap <em>Join us</em> to create an account, then open <strong>My dashboard</strong> to pre-register and get your e-ticket.',
     homeJourney: {
         title: 'How it works — easy peasy!',
-        subtitle: 'Four simple steps from hello to your e-ticket. Parents and teachers can help too.',
+        subtitle: 'Four simple steps from sign-up to your e-ticket — all in your dashboard.',
         steps: [
             {
                 icon: 'fa-user-plus',
