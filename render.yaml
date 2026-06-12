@@ -1,0 +1,89 @@
+# Render Blueprint — Autism Awareness Portal
+# Dashboard: New > Blueprint > connect this repo, or link manually.
+# Docs: deploy/DEPLOY-RENDER.md
+
+services:
+  - type: web
+    name: autism-portal
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORTAL_SCHEME
+        value: https
+      - key: APPLICANT_HOST
+        value: autism.vaidyagogate.org
+      - key: PUBLIC_BASE_URL
+        value: https://autism.vaidyagogate.org
+      - key: MAIN_SITE_URL
+        value: https://autism.vaidyagogate.org
+      - key: DATABASE_URL
+        sync: false
+      - key: ZEPTOMAIL_API_KEY
+        sync: false
+      - key: ZEPTO_FROM
+        sync: false
+      - key: ZEPTO_FROM_NAME
+        value: Vaidya Gogate Memorial Foundation
+      - key: ZEPTOMAIL_REGION
+        value: in
+      - key: CRON_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  - type: cron
+    name: autism-notifications-cron
+    schedule: "0 9 * * *"
+    envVars:
+      - key: CRON_URL
+        fromService:
+          type: web
+          name: autism-portal
+          property: host
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: autism-portal
+          envVarKey: CRON_SECRET
+    startCommand: 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://${CRON_URL}/api/cron/process-notifications"'
+
+  - type: cron
+    name: autism-pending-reminders-cron
+    schedule: "0 10 * * *"
+    envVars:
+      - key: CRON_URL
+        fromService:
+          type: web
+          name: autism-portal
+          property: host
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: autism-portal
+          envVarKey: CRON_SECRET
+    startCommand: 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://${CRON_URL}/api/cron/pending-registration-reminders"'
+
+  - type: cron
+    name: autism-event-today-cron
+    schedule: "30 3 * * *"
+    envVars:
+      - key: CRON_URL
+        fromService:
+          type: web
+          name: autism-portal
+          property: host
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: autism-portal
+          envVarKey: CRON_SECRET
+    startCommand: 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://${CRON_URL}/api/cron/event-starting-today"'

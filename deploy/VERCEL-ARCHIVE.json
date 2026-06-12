@@ -1,0 +1,16 @@
+{
+  "note": "Archived Vercel config — removed from repo root. Deploy on Render instead.",
+  "version": 2,
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" },
+    { "src": "server.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "server.js" }
+  ],
+  "crons": [
+    { "path": "/api/cron/process-notifications", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/pending-registration-reminders", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/event-starting-today", "schedule": "30 3 * * *" }
+  ]
+}

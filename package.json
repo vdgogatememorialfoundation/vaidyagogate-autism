@@ -1,12 +1,13 @@
 {
   "name": "autism-portal",
   "version": "1.0.0",
-  "description": "Autism Awareness Portal — applicant, admin, scanner (autism.vaidyagogate.org)",
-  "main": "index.js",
+  "description": "NexGen AI Autism Awareness Portal — Render deployment (autism.vaidyagogate.org)",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "build:pg-schema": "node scripts/build-pg-schema.js",
-    "vercel-build": "node scripts/validate-syntax.js && node scripts/build-pg-schema.js",
+    "build": "node scripts/validate-syntax.js && node scripts/build-pg-schema.js",
+    "vercel-build": "npm run build",
     "sync-images": "node scripts/sync-autism-images.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +15,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20 <23"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1050.0",
     "@aws-sdk/s3-request-presigner": "^3.1050.0",
@@ -23,7 +27,6 @@
     "express": "^5.2.1",
     "multer": "^2.1.1",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.16",
     "paytm-pg-node-sdk": "^1.0.0",
     "paytmchecksum": "^1.5.1",
     "pdf-parse": "^1.1.1",

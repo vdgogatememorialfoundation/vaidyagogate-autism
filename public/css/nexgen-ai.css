@@ -1,0 +1,357 @@
+/**
+ * NexGen AI — public site theme layer (Autism Awareness Programme)
+ * Stacks on existing autism-kids / vgmf styles without breaking CMS hooks.
+ */
+:root {
+    --nx-bg: #06080f;
+    --nx-bg-elevated: #0c1019;
+    --nx-surface: rgba(15, 23, 42, 0.72);
+    --nx-border: rgba(56, 189, 248, 0.18);
+    --nx-cyan: #22d3ee;
+    --nx-violet: #a78bfa;
+    --nx-magenta: #e879f9;
+    --nx-text: #e2e8f0;
+    --nx-muted: #94a3b8;
+    --nx-glow: 0 0 60px rgba(34, 211, 238, 0.15);
+    --nx-font: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --nx-font-body: 'Plus Jakarta Sans', 'Nunito', system-ui, sans-serif;
+}
+
+body.nexgen-ai {
+    background: var(--nx-bg);
+    color: var(--nx-text);
+    font-family: var(--nx-font-body);
+}
+
+body.nexgen-ai .ak-bg-shapes {
+    display: none;
+}
+
+body.nexgen-ai::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 211, 238, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(167, 139, 250, 0.14), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(232, 121, 249, 0.08), transparent 45%),
+        var(--nx-bg);
+    pointer-events: none;
+}
+
+body.nexgen-ai::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, black 20%, transparent 75%);
+    pointer-events: none;
+}
+
+/* Utility bar */
+body.nexgen-ai .cg-utility {
+    background: rgba(6, 8, 15, 0.85);
+    border-bottom: 1px solid var(--nx-border);
+    backdrop-filter: blur(12px);
+}
+
+body.nexgen-ai .cg-utility-link,
+body.nexgen-ai .cg-utility-item {
+    color: var(--nx-muted) !important;
+}
+
+body.nexgen-ai .cg-utility-signin,
+body.nexgen-ai .cg-utility-signup {
+    color: var(--nx-cyan) !important;
+}
+
+/* Header */
+body.nexgen-ai .cg-header {
+    background: rgba(12, 16, 25, 0.75);
+    border-bottom: 1px solid var(--nx-border);
+    backdrop-filter: blur(16px);
+}
+
+body.nexgen-ai .cg-logo-text h1 {
+    font-family: var(--nx-font);
+    font-size: 0.95rem;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+}
+
+body.nexgen-ai .cg-logo-text p {
+    background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+}
+
+body.nexgen-ai .cg-nav a {
+    color: var(--nx-muted);
+    font-family: var(--nx-font);
+    font-weight: 500;
+}
+
+body.nexgen-ai .cg-nav a.active,
+body.nexgen-ai .cg-nav a:hover {
+    color: var(--nx-cyan);
+}
+
+/* Hero — NexGen AI */
+body.nexgen-ai .ak-hero-v2 {
+    position: relative;
+    padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem) 3rem;
+    overflow: hidden;
+    background: transparent;
+    border: none;
+}
+
+body.nexgen-ai .nx-hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.nexgen-ai .nx-hero-orb-a {
+    width: 420px;
+    height: 420px;
+    top: -80px;
+    right: -60px;
+    background: rgba(34, 211, 238, 0.2);
+}
+
+body.nexgen-ai .nx-hero-orb-b {
+    width: 320px;
+    height: 320px;
+    bottom: 0;
+    left: -40px;
+    background: rgba(167, 139, 250, 0.18);
+}
+
+body.nexgen-ai .ak-hero-v2-grid {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+body.nexgen-ai .nx-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--nx-cyan);
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid var(--nx-border);
+    box-shadow: var(--nx-glow);
+    margin-bottom: 1.25rem;
+}
+
+body.nexgen-ai .nx-badge i {
+    animation: nx-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes nx-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+body.nexgen-ai .ak-hero-v2-copy h1 {
+    font-family: var(--nx-font);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.12;
+    color: #f8fafc;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+}
+
+body.nexgen-ai .ak-hero-v2-copy h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--nx-cyan) 0%, var(--nx-violet) 50%, var(--nx-magenta) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+body.nexgen-ai .ak-hero-v2-lead {
+    color: var(--nx-muted);
+    font-size: 1.1rem;
+    line-height: 1.65;
+    max-width: 32rem;
+}
+
+body.nexgen-ai .ak-hero-v2-badge {
+    display: none;
+}
+
+body.nexgen-ai .ak-btn-v2-primary {
+    background: linear-gradient(135deg, #0891b2, #7c3aed);
+    border: none;
+    color: #fff;
+    font-family: var(--nx-font);
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(34, 211, 238, 0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+body.nexgen-ai .ak-btn-v2-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(167, 139, 250, 0.35);
+}
+
+body.nexgen-ai .ak-btn-v2-ghost {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--nx-border);
+    color: var(--nx-text);
+    font-family: var(--nx-font);
+}
+
+body.nexgen-ai .ak-hero-chip {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    color: var(--nx-muted);
+    backdrop-filter: blur(8px);
+}
+
+/* Hero art — glass frame */
+body.nexgen-ai .ak-hero-v2-art {
+    position: relative;
+}
+
+body.nexgen-ai .ak-hero-photo-stack {
+    border-radius: 24px;
+    padding: 12px;
+    background: linear-gradient(145deg, rgba(34, 211, 238, 0.12), rgba(167, 139, 250, 0.1));
+    border: 1px solid var(--nx-border);
+    box-shadow: var(--nx-glow), 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+body.nexgen-ai .ak-hero-photo-main,
+body.nexgen-ai .ak-hero-photo-sub {
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+body.nexgen-ai .nx-ai-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 2rem;
+    max-width: 420px;
+}
+
+body.nexgen-ai .nx-ai-stat {
+    padding: 14px 12px;
+    border-radius: 14px;
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+body.nexgen-ai .nx-ai-stat strong {
+    display: block;
+    font-family: var(--nx-font);
+    font-size: 1.35rem;
+    color: var(--nx-cyan);
+}
+
+body.nexgen-ai .nx-ai-stat span {
+    font-size: 0.72rem;
+    color: var(--nx-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Sections */
+body.nexgen-ai .ak-section,
+body.nexgen-ai .cg-section,
+body.nexgen-ai .ak-journey,
+body.nexgen-ai .ak-bento-wrap {
+    background: transparent;
+}
+
+body.nexgen-ai .ak-section-title,
+body.nexgen-ai .cg-section h2,
+body.nexgen-ai .ak-journey h2 {
+    font-family: var(--nx-font);
+    color: #f8fafc;
+}
+
+body.nexgen-ai .ak-step,
+body.nexgen-ai .ak-bento-card,
+body.nexgen-ai .cg-card {
+    background: var(--nx-surface) !important;
+    border: 1px solid var(--nx-border) !important;
+    backdrop-filter: blur(12px);
+    color: var(--nx-text);
+}
+
+body.nexgen-ai .ak-step p,
+body.nexgen-ai .cg-card p {
+    color: var(--nx-muted);
+}
+
+/* Ticker */
+body.nexgen-ai .cg-ticker {
+    background: rgba(34, 211, 238, 0.06);
+    border-color: var(--nx-border);
+}
+
+body.nexgen-ai .cg-ticker-badge {
+    background: linear-gradient(135deg, #0891b2, #7c3aed);
+}
+
+/* Footer */
+body.nexgen-ai .cg-footer,
+body.nexgen-ai footer {
+    background: var(--nx-bg-elevated);
+    border-top: 1px solid var(--nx-border);
+    color: var(--nx-muted);
+}
+
+/* Preloader */
+body.nexgen-ai #site-preloader {
+    background: var(--nx-bg);
+}
+
+body.nexgen-ai .preloader-ring {
+    border-color: rgba(34, 211, 238, 0.2);
+    border-top-color: var(--nx-cyan);
+}
+
+/* Modals stay readable */
+body.nexgen-ai .auth-modal-content,
+body.nexgen-ai .modal-content {
+    background: #0f172a;
+    color: var(--nx-text);
+    border: 1px solid var(--nx-border);
+}
+
+@media (max-width: 768px) {
+    body.nexgen-ai .nx-ai-stats {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+}
