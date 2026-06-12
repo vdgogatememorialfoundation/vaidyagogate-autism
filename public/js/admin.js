@@ -10086,7 +10086,7 @@ function cmsDefaultHomePillars() {
             icon: 'fa-lightbulb',
             iconTone: 'blue',
             title: 'Awareness',
-            text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
+            text: 'Learn about autism with simple talks, activities, and resources for your school and community.'
         },
         {
             icon: 'fa-hands-holding-heart',
@@ -10115,7 +10115,7 @@ function cmsDefaultFeatureCards() {
 function cmsDefaultHomeJourney() {
     return {
         title: 'How it works — easy peasy!',
-        subtitle: 'Four simple steps from hello to your e-ticket. Parents and teachers can help too.',
+        subtitle: 'Four simple steps from sign-up to your e-ticket — all in your dashboard.',
         steps: [
             { icon: 'fa-user-plus', title: '1. Sign up', text: 'Create your free account on this website in a few minutes.' },
             { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you are coming — open your dashboard after login.' },
@@ -10170,7 +10170,7 @@ function cmsDefaultHomeCtaBand() {
     return {
         title: 'Ready to join us?',
         subtitle:
-            'Create your free account in minutes. Parents and teachers can help children through each step in the dashboard.',
+            'Create your free account in minutes and complete each step in your dashboard.',
         buttonText: 'Create free account'
     };
 }

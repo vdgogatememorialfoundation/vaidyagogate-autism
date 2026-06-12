@@ -8,7 +8,7 @@
     const FAQ = [
         {
             q: 'Who can register?',
-            a: 'Children, parents, teachers, and volunteers can create a free account and join the Autism Awareness Programme.'
+            a: 'Create a free account on this website to join the Autism Awareness Programme and manage registration from your dashboard.'
         },
         {
             q: 'Is there a registration fee?',
