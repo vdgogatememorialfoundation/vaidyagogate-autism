@@ -540,17 +540,26 @@
         });
     }
 
-    function moveHomepageEditorToTop() {
-        const card = document.getElementById('ak-main-cms-card');
-        const pillars = document.getElementById('ak-homepage-pillars-section');
-        const features = document.getElementById('ak-homepage-features-section');
-        const saveBtn = document.querySelector('#ak-main-cms-card button[onclick="saveHomepageCmsOnly()"]');
-        const saveRow = saveBtn && saveBtn.parentElement;
-        if (!card || !pillars) return;
-        const firstBlock = card.firstElementChild;
-        if (firstBlock) card.insertBefore(pillars, firstBlock);
-        if (features) card.insertBefore(features, pillars.nextSibling);
-        if (saveRow) card.insertBefore(saveRow, features ? features.nextSibling : pillars.nextSibling);
+    function reorderAutismHomepageCms() {
+        const tab = document.getElementById('tab-site-cms');
+        const main = document.getElementById('ak-main-cms-card');
+        const guide = document.getElementById('ak-homepage-cms-guide');
+        const headerCard = document.getElementById('cms-header-footer-card');
+        const contactCard = document.getElementById('cms-contact-card');
+        const photos = document.getElementById('ak-admin-site-images');
+        if (!tab || !main) return;
+
+        tab.insertBefore(main, tab.firstElementChild);
+        if (guide) tab.insertBefore(guide, main);
+
+        if (headerCard) tab.insertBefore(headerCard, main.nextSibling);
+        if (contactCard) {
+            const afterHeader = headerCard || main;
+            tab.insertBefore(contactCard, afterHeader.nextSibling);
+        }
+        if (photos) tab.appendChild(photos);
+
+        tightenAutismCmsTab();
     }
 
     function ensureAkHomepageDefaults() {
@@ -570,28 +579,50 @@
     function tightenAutismCmsTab() {
         const tab = document.getElementById('tab-site-cms');
         if (!tab) return;
-        tab.querySelectorAll('.ak-cms-advanced, .ak-cms-extra').forEach((el) => {
+        tab.querySelectorAll('.ak-cms-advanced').forEach((el) => {
             el.style.display = 'none';
+        });
+        tab.querySelectorAll('.ak-cms-homepage, #ak-main-cms-card, #ak-homepage-cms-guide').forEach((el) => {
+            el.style.display = '';
         });
         const intro = tab.querySelector(':scope > p');
         if (intro) intro.style.display = 'none';
         const h2 = tab.querySelector(':scope > h2');
-        if (h2) h2.textContent = 'Homepage & website content';
+        if (h2) h2.style.display = 'none';
     }
 
     function injectHomepageCmsGuide() {
-        const cmsTab = document.getElementById('tab-site-cms');
-        if (!cmsTab || document.getElementById('ak-homepage-cms-guide')) return;
-        const card = document.createElement('div');
-        card.id = 'ak-homepage-cms-guide';
-        card.className = 'card';
-        card.style.cssText = 'margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;';
-        card.innerHTML =
-            '<h3 style="margin:0 0 8px;color:#0f766e;">Edit homepage text</h3>' +
-            '<p style="color:#475569;font-size:0.88rem;margin:0;">Edit the pillar and feature fields at the top of the card below, then click <strong>Save homepage text</strong>.</p>';
-        const main = document.getElementById('ak-main-cms-card');
-        if (main) cmsTab.insertBefore(card, main);
-        else cmsTab.insertBefore(card, cmsTab.querySelector('.card'));
+        /* Guide is in admin.html; only ensure it stays at top after reorder. */
+    }
+
+    function fixLegacyAdminLoginPage() {
+        const overlay = document.getElementById('auth-overlay');
+        if (!overlay) return;
+        const text = overlay.textContent || '';
+        if (!/Welcome,\s*team|ADMIN_EMAIL|Applicant ID|Portal User ID/i.test(text)) return;
+        overlay.innerHTML =
+            '<div class="ak-login-card">' +
+            '<div class="ak-login-brand">' +
+            '<div data-site-logo data-logo-height="52px"></div>' +
+            '<span class="ak-login-badge"><i class="fas fa-lock" aria-hidden="true"></i> Staff sign-in</span>' +
+            '</div>' +
+            '<header class="ak-login-header">' +
+            '<h1>Admin console</h1>' +
+            '<p>Manage registrations, events, and e-tickets for the Autism Awareness Programme.</p>' +
+            '</header>' +
+            '<div id="admin-login-error" class="ak-login-error" role="alert"></div>' +
+            '<form id="admin-login-form" class="ak-login-form" autocomplete="off">' +
+            '<div class="ak-login-field"><label for="admin-email">Email or staff ID</label>' +
+            '<input type="text" id="admin-email" name="admin-portal-email" placeholder="you@organisation.org" required autocomplete="username"></div>' +
+            '<div class="ak-login-field"><label for="admin-password">Password</label>' +
+            '<input type="password" id="admin-password" name="admin-portal-password" placeholder="Enter your password" required autocomplete="current-password"></div>' +
+            '<div id="admin_login_otp_panel" class="ak-login-otp" style="display:none"></div>' +
+            '<button type="submit" class="btn-primary ak-login-submit"><i class="fas fa-right-to-bracket"></i> Sign in</button>' +
+            '</form>' +
+            '<footer class="ak-login-footer"><a href="/"><i class="fas fa-house"></i> Return to public website</a></footer>' +
+            '</div>';
+        if (typeof window.bindAdminLoginForm === 'function') window.bindAdminLoginForm();
+        if (typeof wireAdminLoginOtpButtons === 'function') wireAdminLoginOtpButtons();
     }
 
     function hideGalleryCmsBlocks() {
@@ -997,7 +1028,7 @@
         card.style.cssText = 'margin-bottom:20px;border-left:4px solid #7c3aed;';
         card.innerHTML =
             '<h3 style="margin:0 0 8px;">Main programme — email &amp; WhatsApp</h3>' +
-            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 14px;">Configure Zoho SMTP and Meta WhatsApp API keys for OTP and participant messages. Set the WhatsApp group link for your main event.</p>' +
+            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 14px;">Configure Zoho ZeptoMail and Meta WhatsApp API keys for OTP and participant messages. Set the WhatsApp group link for your main event.</p>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;margin-bottom:12px;">' +
             '<div><label style="font-size:0.82rem;font-weight:700;">Main event</label><select id="ak-main-seminar-select" style="width:100%;padding:8px;"></select></div>' +
             '<div><label style="font-size:0.82rem;font-weight:700;">WhatsApp group / invite URL</label><input type="url" id="ak-main-seminar-wa" placeholder="https://chat.whatsapp.com/…" style="width:100%;padding:8px;"></div>' +
@@ -1477,19 +1508,32 @@
         ].forEach(hideSecond);
     }
 
+    function patchSwitchTabForCms() {
+        if (typeof window.switchTab !== 'function' || window.switchTab.__akCmsTabHook) return;
+        const orig = window.switchTab;
+        window.switchTab = function (tabId, menuEl) {
+            orig.call(this, tabId, menuEl);
+            if (tabId === 'tab-site-cms') {
+                tightenAutismCmsTab();
+                reorderAutismHomepageCms();
+            }
+        };
+        window.switchTab.__akCmsTabHook = true;
+    }
+
     function patchLoadAdminSiteCms() {
         if (typeof loadAdminSiteCms !== 'function' || loadAdminSiteCms.__akCmsHook) return;
         const orig = loadAdminSiteCms;
         window.loadAdminSiteCms = async function () {
             await orig.apply(this, arguments);
             collapseDuplicateCmsFields();
-            moveHomepageEditorToTop();
-            ensureAkHomepageDefaults();
+            reorderAutismHomepageCms();
         };
         window.loadAdminSiteCms.__akCmsHook = true;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        fixLegacyAdminLoginPage();
         hideMenuItems();
         injectPreregFields();
         ensureSeminarPreregOverrideEditor();
@@ -1507,12 +1551,12 @@
         patchRegistrationFormTabLoader();
         patchCreateStaffUserRoles();
         patchLoadAdminSiteCms();
+        patchSwitchTabForCms();
         collapseDuplicateCmsFields();
         applyAdminBranding();
         wireSiteImageUpload();
         injectHomepageCmsGuide();
-        moveHomepageEditorToTop();
-        ensureAkHomepageDefaults();
+        reorderAutismHomepageCms();
         tightenAutismCmsTab();
         hideGalleryCmsBlocks();
         hideMedicalQualOptions();

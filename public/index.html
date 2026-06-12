@@ -3,27 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#38bdf8">
-    <meta name="description" content="Autism Awareness Programme — register, pre-register, competitions, e-tickets, and certificates.">
+    <meta name="theme-color" content="#06080f">
+    <meta name="description" content="NexGen AI-powered Autism Awareness Programme — smart registration, competitions, e-tickets, and certificates.">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="shortcut icon" href="/favicon.ico">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Autism Awareness Programme | Vaidya Gogate Memorial Foundation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>NexGen AI · Autism Awareness Programme | VGMF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/vgmf-site.css">
     <link rel="stylesheet" href="/css/vgmf-congress.css">
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
-    <link rel="stylesheet" href="/css/autism-kids.css?v=6">
+    <link rel="stylesheet" href="/css/autism-kids.css?v=8">
     <link rel="stylesheet" href="/css/autism-theme.css?v=4">
-    <link rel="stylesheet" href="/css/autism-redesign.css?v=4">
+    <link rel="stylesheet" href="/css/autism-redesign.css?v=5">
     <link rel="stylesheet" href="/css/ak-header-ticker.css?v=4">
+    <link rel="stylesheet" href="/css/nexgen-ai.css?v=2">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260522a"></script>
     <script src="/js/portal-datetime.js"></script>
 </head>
-<body class="congress-site autism-kids ak-portal ak-v2" data-portal-theme="public">
+<body class="congress-site autism-kids ak-portal ak-v2 nexgen-ai" data-portal-theme="public">
+    <canvas id="nx-particles" class="nx-particles" aria-hidden="true"></canvas>
     <div class="ak-bg-shapes" aria-hidden="true">
         <span class="ak-shape ak-shape-1"></span>
         <span class="ak-shape ak-shape-2"></span>
@@ -31,7 +33,11 @@
         <span class="ak-shape ak-shape-4"></span>
     </div>
     <a href="#main-content" class="vg-skip-link">Skip to main content</a>
-    <div id="site-preloader" aria-hidden="true"><div class="preloader-ring"></div><p style="color:#64748b;font-weight:700;font-family:'Baloo 2',cursive;">Getting things ready for you…</p></div>
+    <div id="site-preloader" aria-hidden="true" aria-live="polite">
+        <div class="nx-preloader-logo"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></div>
+        <div class="nx-preloader-bar" aria-hidden="true"><span></span></div>
+        <p class="nx-preloader-text">Loading your NexGen experience…</p>
+    </div>
 
     <div class="cg-shell" id="cg-site-top">
     <div class="cg-utility" aria-label="Contact and account">
@@ -95,19 +101,28 @@
     </div>
 
     <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" data-ak-home-only aria-label="Welcome">
+        <div class="nx-hero-orb nx-hero-orb-a" aria-hidden="true"></div>
+        <div class="nx-hero-orb nx-hero-orb-b" aria-hidden="true"></div>
         <div class="ak-hero-v2-grid">
             <div class="ak-hero-v2-copy">
+                <span class="nx-badge"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> NexGen AI · Autism Awareness 2026</span>
                 <span class="ak-hero-v2-badge"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Autism Awareness Programme 2026</span>
-                <h1>Every child shines <em>in their own beautiful way</em></h1>
-                <p class="ak-hero-v2-lead">A warm, free programme for families and schools — sign up, pre-register, join creative competitions, and get your e-ticket. No fees, just community and care.</p>
+                <h1>Intelligent care for <em>every unique mind</em></h1>
+                <p class="ak-hero-v2-lead">Register in minutes, get smart email updates, and manage everything from one friendly dashboard — competitions, e-tickets, and certificates. Always free for families and schools.</p>
+                <p class="nx-typing-wrap" aria-hidden="true"><i class="fas fa-sparkles"></i> <span id="nx-typing-line"></span></p>
                 <div class="ak-hero-v2-cta">
-                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-rocket" aria-hidden="true"></i> Start your journey</button>
-                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost" data-ak-goto-dashboard><i class="fas fa-door-open" aria-hidden="true"></i> My dashboard</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-bolt" aria-hidden="true"></i> Start with AI portal</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost" data-ak-goto-dashboard><i class="fas fa-chart-line" aria-hidden="true"></i> My dashboard</button>
                 </div>
                 <div class="ak-hero-chips">
-                    <span class="ak-hero-chip"><i class="fas fa-check-circle" style="color:#10b981"></i> Free registration</span>
-                    <span class="ak-hero-chip"><i class="fas fa-palette" style="color:#7c3aed"></i> Competitions</span>
-                    <span class="ak-hero-chip"><i class="fas fa-ticket-alt" style="color:#2563eb"></i> E-tickets</span>
+                    <span class="ak-hero-chip"><i class="fas fa-robot" style="color:#22d3ee"></i> Smart notifications</span>
+                    <span class="ak-hero-chip"><i class="fas fa-palette" style="color:#a78bfa"></i> Competitions</span>
+                    <span class="ak-hero-chip"><i class="fas fa-ticket-alt" style="color:#38bdf8"></i> Digital e-tickets</span>
+                </div>
+                <div class="nx-ai-stats" aria-label="Programme highlights">
+                    <div class="nx-ai-stat"><strong>100%</strong><span>Free access</span></div>
+                    <div class="nx-ai-stat"><strong>24/7</strong><span>Portal online</span></div>
+                    <div class="nx-ai-stat"><strong>AI</strong><span>Email alerts</span></div>
                 </div>
             </div>
             <div class="ak-hero-v2-art">
@@ -121,7 +136,7 @@
     </section>
 
     <section class="ak-pillars ak-reveal-v2" data-ak-home-only aria-label="Our focus">
-        <div class="ak-pillars-grid">
+        <div class="ak-pillars-grid nx-stagger">
             <article class="ak-pillar">
                 <div class="ak-pillar-icon blue"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
                 <h3>Awareness</h3>
@@ -141,11 +156,12 @@
     </section>
 
     <section class="ak-journey ak-reveal-v2" data-ak-home-only aria-labelledby="ak-journey-title">
-        <div class="ak-journey-head">
+        <div class="ak-journey-head ak-reveal-v2">
+            <span class="nx-section-label">Your journey</span>
             <h2 id="ak-journey-title">How it works — easy peasy!</h2>
-            <p>Four simple steps from hello to your e-ticket. Parents and teachers can help too.</p>
+            <p>Four simple steps from hello to your e-ticket. Parents and teachers can help at every stage.</p>
         </div>
-        <div class="ak-steps">
+        <div class="ak-steps nx-stagger">
             <article class="ak-step">
                 <div class="ak-step-icon"><i class="fas fa-user-plus" aria-hidden="true"></i></div>
                 <h3>1. Sign up</h3>
@@ -170,11 +186,12 @@
     </section>
 
     <section class="ak-bento ak-reveal-v2" data-ak-home-only aria-labelledby="ak-bento-title">
-        <div class="ak-bento-head">
+        <div class="ak-bento-head ak-reveal-v2">
+            <span class="nx-section-label">All-in-one portal</span>
             <h2 id="ak-bento-title">Everything in one friendly place</h2>
             <p>Register online, track your progress, and stay updated — built for families and schools.</p>
         </div>
-        <div class="ak-bento-grid">
+        <div class="ak-bento-grid nx-stagger">
             <article class="ak-bento-card wide">
                 <div class="ak-bento-icon" style="background:#dbeafe;color:#2563eb"><i class="fas fa-clipboard-check"></i></div>
                 <h3>Pre-register &amp; register</h3>
@@ -231,13 +248,18 @@
 
     <a href="#" class="cg-fab-register" id="cg-fab-register" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-user-plus"></i> Register</a>
 
+    <div class="nx-sticky-cta" id="nx-sticky-cta" role="region" aria-label="Quick actions">
+        <button type="button" class="nx-sticky-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-bolt" aria-hidden="true"></i> Join free</button>
+        <button type="button" class="nx-sticky-secondary" data-ak-goto-dashboard><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</button>
+    </div>
+
     <div id="countdown-region" data-ak-home-only></div>
     <div id="cert-verify-countdown-region" class="hidden" data-ak-home-only style="max-width:960px;margin:0 auto 16px;padding:0 16px;"></div>
 
     <main class="main-content" id="main-content">
         <div id="homeSection">
-            <p class="help-banner ak-reveal" role="note">
-                <strong>New here?</strong> Tap <em>Join us</em> to create an account, then open <strong>My dashboard</strong> to pre-register and get your e-ticket.
+            <p class="help-banner ak-reveal-v2" role="note">
+                <strong><i class="fas fa-hand-point-right" aria-hidden="true"></i> New here?</strong> Tap <strong>Start with AI portal</strong> above to create your free account, then open <strong>My dashboard</strong> to pre-register and download your e-ticket.
             </p>
             <section id="cg-video-section" class="cg-section hidden">
                 <div class="cg-section-head"><h2>Video learning hub</h2><p>Seminar recordings and featured sessions</p></div>
@@ -549,13 +571,14 @@
 
     <script src="/js/portal-content-protection.js"></script>
     <script src="/js/portal-scrolling-announcements.js"></script>
-    <script src="/js/vgmf-home.js?v=20260529e"></script>
+    <script src="/js/vgmf-home.js?v=20260530c"></script>
     <script src="/js/portal-theme.js"></script>
-    <script src="/js/vgmf-congress.js?v=20260525a"></script>
-    <script src="/js/autism-home-enhance.js?v=1"></script>
+    <script src="/js/vgmf-congress.js?v=20260530a"></script>
+    <script src="/js/nexgen-home.js?v=1"></script>
+    <script src="/js/autism-home-enhance.js?v=3"></script>
     <script src="/js/autism-site-images.js?v=2"></script>
     <script src="/js/autism-announcements.js?v=3"></script>
-    <script src="/js/vgmf-home-stats.js?v=3"></script>
+    <script src="/js/vgmf-home-stats.js?v=4"></script>
     <script src="/js/vgmf-marketing.js"></script>
     <script src="/js/otp-ui.js"></script>
     <script src="/js/http-json.js"></script>
@@ -728,7 +751,8 @@
             if (st) { st.textContent = 'Sending…'; }
             try {
                 const res = await fetch('/api/auth/forgot-password', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, returnTo: 'index.html' })
                 });
                 const data = await res.json();
                 if (st) { st.style.color = '#059669'; st.textContent = data.message || 'Check your email and WhatsApp.'; }
@@ -1128,6 +1152,12 @@
                 el.classList.toggle('hidden', !visible);
                 if (visible) el.style.removeProperty('display');
             });
+            if (visible) {
+                document.querySelectorAll('[data-ak-home-only].ak-reveal-v2, .help-banner.ak-reveal, .help-banner.ak-reveal-v2').forEach((el) => {
+                    el.classList.add('is-visible', 'ak-visible');
+                });
+                if (typeof window.akShowJourneySteps === 'function') window.akShowJourneySteps();
+            }
             document.body.classList.toggle('ak-page-home', visible);
             document.body.classList.toggle('ak-page-inner', !visible);
         }
@@ -1135,10 +1165,8 @@
         window.showSection = function showSection(section) {
             if (typeof window.closeMobileNav === 'function') window.closeMobileNav();
             const sec = String(section || 'home').toLowerCase();
-            if (sec === 'gallery') {
-                section = 'home';
-            }
-            if (typeof window.highlightCongressNav === 'function') window.highlightCongressNav(section);
+            const active = sec === 'gallery' ? 'home' : sec;
+            if (typeof window.highlightCongressNav === 'function') window.highlightCongressNav(active);
             const map = {
                 home: 'homeSection',
                 about: 'aboutSection',
@@ -1150,12 +1178,12 @@
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
             });
-            const target = document.getElementById(map[section]);
+            const target = document.getElementById(map[active]) || document.getElementById(map.home);
             if (target) target.classList.remove('hidden');
-            setAkHomeChromeVisible(section === 'home');
+            setAkHomeChromeVisible(active === 'home');
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            if (section === 'verify') loadVerifySeminars();
-            if (section === 'schedule' && typeof loadEventSchedulesPublic === 'function') {
+            if (active === 'verify') loadVerifySeminars();
+            if (active === 'schedule' && typeof loadEventSchedulesPublic === 'function') {
                 loadEventSchedulesPublic();
             }
         }
@@ -1893,9 +1921,9 @@
     <script src="/js/site-branding.js"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/autism-kids.js?v=3"></script>
-    <script src="/js/autism-public-ui.js?v=4"></script>
-    <script src="/js/autism-public-ticker.js?v=5"></script>
+    <script src="/js/autism-kids.js?v=4"></script>
+    <script src="/js/autism-public-ui.js?v=5"></script>
+    <script src="/js/autism-public-ticker.js?v=6"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
 </body>

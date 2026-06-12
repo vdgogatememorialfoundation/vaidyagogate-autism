@@ -325,8 +325,28 @@ body.nexgen-ai .cg-ticker-badge {
 
 /* Footer */
 body.nexgen-ai .cg-footer,
-body.nexgen-ai footer {
+body.nexgen-ai footer,
+body.nexgen-ai .footer {
     background: var(--nx-bg-elevated);
+    border-top: 1px solid var(--nx-border);
+    color: var(--nx-muted);
+}
+
+body.nexgen-ai .footer h4 {
+    font-family: var(--nx-font);
+    color: #f1f5f9;
+}
+
+body.nexgen-ai .footer a {
+    color: var(--nx-muted);
+    transition: color 0.2s;
+}
+
+body.nexgen-ai .footer a:hover {
+    color: var(--nx-cyan);
+}
+
+body.nexgen-ai .footer-bottom {
     border-top: 1px solid var(--nx-border);
     color: var(--nx-muted);
 }
@@ -349,9 +369,592 @@ body.nexgen-ai .modal-content {
     border: 1px solid var(--nx-border);
 }
 
+/* Particle canvas */
+body.nexgen-ai .nx-particles {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.55;
+}
+
+body.nexgen-ai .cg-shell,
+body.nexgen-ai .ak-hero-v2,
+body.nexgen-ai main {
+    position: relative;
+    z-index: 1;
+}
+
+/* Header scroll state */
+body.nexgen-ai .cg-header.nx-header-scrolled {
+    background: rgba(6, 8, 15, 0.92);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    border-bottom-color: rgba(34, 211, 238, 0.28);
+}
+
+/* Hero typing line */
+body.nexgen-ai .nx-typing-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0.75rem 0 1.25rem;
+    font-size: 0.95rem;
+    color: var(--nx-muted);
+}
+
+body.nexgen-ai .nx-typing-wrap i {
+    color: var(--nx-violet);
+    animation: nx-pulse 2s ease-in-out infinite;
+}
+
+body.nexgen-ai #nx-typing-line {
+    color: var(--nx-cyan);
+    font-weight: 600;
+    font-family: var(--nx-font);
+    min-height: 1.4em;
+}
+
+body.nexgen-ai #nx-typing-line::after {
+    content: '|';
+    margin-left: 2px;
+    animation: nx-blink 1s step-end infinite;
+    color: var(--nx-violet);
+}
+
+@keyframes nx-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Floating hero animation */
+body.nexgen-ai .ak-hero-v2-art {
+    animation: nx-float 6s ease-in-out infinite;
+}
+
+@keyframes nx-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.nexgen-ai .ak-hero-v2-art,
+    body.nexgen-ai .nx-badge i,
+    body.nexgen-ai .nx-typing-wrap i {
+        animation: none;
+    }
+
+    body.nexgen-ai #nx-typing-line::after {
+        display: none;
+    }
+}
+
+/* Section labels */
+body.nexgen-ai .nx-section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--nx-violet);
+    margin-bottom: 0.65rem;
+}
+
+body.nexgen-ai .nx-section-label::before {
+    content: '';
+    width: 24px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet));
+    border-radius: 2px;
+}
+
+/* Stagger reveal */
+body.nexgen-ai .nx-stagger > * {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+        opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.nexgen-ai .nx-stagger.nx-stagger-active > * {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.nexgen-ai .nx-stagger > *:nth-child(1) {
+    transition-delay: 0.05s;
+}
+body.nexgen-ai .nx-stagger > *:nth-child(2) {
+    transition-delay: 0.12s;
+}
+body.nexgen-ai .nx-stagger > *:nth-child(3) {
+    transition-delay: 0.19s;
+}
+body.nexgen-ai .nx-stagger > *:nth-child(4) {
+    transition-delay: 0.26s;
+}
+body.nexgen-ai .nx-stagger > *:nth-child(5) {
+    transition-delay: 0.33s;
+}
+
+/* Card hover lift */
+body.nexgen-ai .ak-pillar,
+body.nexgen-ai .ak-step,
+body.nexgen-ai .ak-bento-card {
+    transition:
+        transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.35s ease,
+        border-color 0.35s ease !important;
+}
+
+body.nexgen-ai .ak-pillar:hover,
+body.nexgen-ai .ak-step:hover,
+body.nexgen-ai .ak-bento-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px rgba(34, 211, 238, 0.12);
+    border-color: rgba(34, 211, 238, 0.35) !important;
+}
+
+body.nexgen-ai .ak-pillar h3,
+body.nexgen-ai .ak-step h3,
+body.nexgen-ai .ak-bento-card h3 {
+    font-family: var(--nx-font);
+    color: #f1f5f9;
+}
+
+body.nexgen-ai .ak-pillar-icon {
+    box-shadow: 0 0 24px rgba(34, 211, 238, 0.2);
+}
+
+/* Journey connector line */
+body.nexgen-ai .ak-journey {
+    padding: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 4vw, 2rem);
+}
+
+body.nexgen-ai .ak-journey-head p,
+body.nexgen-ai .ak-bento-head p {
+    color: var(--nx-muted);
+    max-width: 36rem;
+}
+
+body.nexgen-ai .ak-steps {
+    position: relative;
+}
+
+@media (min-width: 900px) {
+    body.nexgen-ai .ak-steps::before {
+        content: '';
+        position: absolute;
+        top: 48px;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--nx-cyan), var(--nx-violet), transparent);
+        opacity: 0.35;
+        z-index: 0;
+    }
+}
+
+body.nexgen-ai .ak-step {
+    position: relative;
+    z-index: 1;
+}
+
+body.nexgen-ai .ak-step-icon {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(167, 139, 250, 0.2)) !important;
+    color: var(--nx-cyan) !important;
+    border: 1px solid var(--nx-border);
+}
+
+/* Quick band */
+body.nexgen-ai .ak-quick-band {
+    background: rgba(12, 16, 25, 0.6);
+    border-top: 1px solid var(--nx-border);
+    border-bottom: 1px solid var(--nx-border);
+    backdrop-filter: blur(12px);
+}
+
+body.nexgen-ai .ak-quick-link {
+    color: var(--nx-muted);
+    font-family: var(--nx-font);
+    transition: color 0.2s, transform 0.2s;
+}
+
+body.nexgen-ai .ak-quick-link:hover {
+    color: var(--nx-cyan);
+    transform: translateY(-2px);
+}
+
+/* Congress hero — glass dark */
+body.nexgen-ai .congress-hero {
+    border-radius: 20px;
+    margin: 2rem auto;
+    max-width: 1200px;
+    overflow: hidden;
+    border: 1px solid var(--nx-border);
+    box-shadow: var(--nx-glow);
+}
+
+body.nexgen-ai .congress-hero-arrows button {
+    background: rgba(6, 8, 15, 0.75);
+    border: 1px solid var(--nx-border);
+    color: var(--nx-cyan);
+    backdrop-filter: blur(8px);
+}
+
+/* Stats strip */
+body.nexgen-ai .vg-stats-strip {
+    background: transparent;
+    padding: 2rem 1rem;
+}
+
+body.nexgen-ai .vg-stat {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    padding: 1.25rem;
+    transition: transform 0.3s ease;
+}
+
+body.nexgen-ai .vg-stat:hover {
+    transform: scale(1.03);
+}
+
+body.nexgen-ai .vg-stat strong {
+    font-family: var(--nx-font);
+    color: var(--nx-cyan);
+    font-size: 1.75rem;
+}
+
+body.nexgen-ai .vg-stat span {
+    color: var(--nx-muted);
+}
+
+/* Help banner */
+body.nexgen-ai .help-banner {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(167, 139, 250, 0.08));
+    border: 1px solid var(--nx-border);
+    border-radius: 16px;
+    color: var(--nx-text);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem auto;
+    max-width: 960px;
+    box-shadow: var(--nx-glow);
+}
+
+body.nexgen-ai .help-banner strong {
+    color: var(--nx-cyan);
+}
+
+/* Main sections */
+body.nexgen-ai .vgmf-section,
+body.nexgen-ai .page-panel {
+    color: var(--nx-text);
+}
+
+body.nexgen-ai .section-head h2 {
+    font-family: var(--nx-font);
+    color: #f8fafc;
+}
+
+body.nexgen-ai .section-head p {
+    color: var(--nx-muted);
+}
+
+body.nexgen-ai .cards-grid .card,
+body.nexgen-ai .speaker-card,
+body.nexgen-ai .notices-panel {
+    background: var(--nx-surface) !important;
+    border: 1px solid var(--nx-border) !important;
+    color: var(--nx-text);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+}
+
+body.nexgen-ai .notices-panel h3 {
+    color: var(--nx-cyan);
+    font-family: var(--nx-font);
+}
+
+body.nexgen-ai .ak-faq-item {
+    background: var(--nx-surface);
+    border: 1px solid var(--nx-border);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+body.nexgen-ai .ak-faq-item.is-open {
+    border-color: rgba(34, 211, 238, 0.4);
+    box-shadow: 0 8px 32px rgba(34, 211, 238, 0.08);
+}
+
+body.nexgen-ai .ak-faq-q {
+    color: #f1f5f9;
+    font-family: var(--nx-font);
+    font-weight: 600;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    border: none;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+}
+
+body.nexgen-ai .ak-faq-a {
+    color: var(--nx-muted);
+    padding: 0 1.25rem 1rem;
+    line-height: 1.65;
+}
+
+/* CTA band */
+body.nexgen-ai .ak-cta-band {
+    margin: 3rem 0;
+    padding: 0 1rem;
+}
+
+body.nexgen-ai .ak-cta-band-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 3rem);
+    border-radius: 24px;
+    text-align: center;
+    background: linear-gradient(145deg, rgba(34, 211, 238, 0.12), rgba(124, 58, 237, 0.15));
+    border: 1px solid var(--nx-border);
+    box-shadow: var(--nx-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+body.nexgen-ai .ak-cta-band-inner::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: conic-gradient(from 0deg, transparent, rgba(34, 211, 238, 0.08), transparent 30%);
+    animation: nx-spin 12s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes nx-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+body.nexgen-ai .ak-cta-band-inner > * {
+    position: relative;
+    z-index: 1;
+}
+
+body.nexgen-ai .ak-cta-band h2 {
+    font-family: var(--nx-font);
+    color: #f8fafc;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+body.nexgen-ai .ak-cta-band p {
+    color: var(--nx-muted);
+    max-width: 32rem;
+    margin: 0.75rem auto 1.5rem;
+}
+
+/* FAB */
+body.nexgen-ai .cg-fab-register {
+    background: linear-gradient(135deg, #0891b2, #7c3aed);
+    box-shadow: 0 8px 32px rgba(34, 211, 238, 0.35);
+    animation: nx-fab-pulse 3s ease-in-out infinite;
+}
+
+@keyframes nx-fab-pulse {
+    0%,
+    100% {
+        box-shadow: 0 8px 32px rgba(34, 211, 238, 0.35);
+    }
+    50% {
+        box-shadow: 0 8px 48px rgba(167, 139, 250, 0.45);
+    }
+}
+
+/* Button ripple */
+body.nexgen-ai .ak-btn-v2-primary,
+body.nexgen-ai .nx-btn-glow {
+    position: relative;
+    overflow: hidden;
+}
+
+body.nexgen-ai .nx-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0);
+    animation: nx-ripple 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes nx-ripple {
+    to {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Sticky mobile CTA */
+body.nexgen-ai .nx-sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(6, 8, 15, 0.92);
+    border-top: 1px solid var(--nx-border);
+    backdrop-filter: blur(16px);
+    transform: translateY(110%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.nexgen-ai .nx-sticky-cta.nx-sticky-visible {
+    transform: translateY(0);
+}
+
+body.nexgen-ai .nx-sticky-cta a,
+body.nexgen-ai .nx-sticky-cta button {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-family: var(--nx-font);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+body.nexgen-ai .nx-sticky-primary {
+    background: linear-gradient(135deg, #0891b2, #7c3aed);
+    color: #fff;
+}
+
+body.nexgen-ai .nx-sticky-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--nx-border);
+    color: var(--nx-text);
+}
+
+@media (min-width: 769px) {
+    body.nexgen-ai .nx-sticky-cta {
+        display: none;
+    }
+}
+
+/* Preloader — NexGen */
+body.nexgen-ai #site-preloader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    z-index: 99999;
+    transition: opacity 0.55s ease, visibility 0.55s ease;
+}
+
+body.nexgen-ai #site-preloader.done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.nexgen-ai .nx-preloader-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(167, 139, 250, 0.15));
+    border: 1px solid var(--nx-border);
+    font-size: 1.75rem;
+    color: var(--nx-cyan);
+    animation: nx-pulse 1.5s ease-in-out infinite;
+}
+
+body.nexgen-ai .nx-preloader-bar {
+    width: 160px;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(34, 211, 238, 0.15);
+    overflow: hidden;
+}
+
+body.nexgen-ai .nx-preloader-bar span {
+    display: block;
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet));
+    border-radius: 3px;
+    animation: nx-load-bar 1.2s ease-in-out infinite;
+}
+
+@keyframes nx-load-bar {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(350%);
+    }
+}
+
+body.nexgen-ai .nx-preloader-text {
+    color: var(--nx-muted);
+    font-family: var(--nx-font);
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+}
+
+/* Scroll reveal enhancement */
+body.nexgen-ai .ak-reveal-v2 {
+    opacity: 0;
+    transform: translateY(32px);
+    transition:
+        opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.nexgen-ai .ak-reveal-v2.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Bento icon glow */
+body.nexgen-ai .ak-bento-icon {
+    border-radius: 14px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
 @media (max-width: 768px) {
     body.nexgen-ai .nx-ai-stats {
         grid-template-columns: 1fr;
         max-width: 100%;
+    }
+
+    body.nexgen-ai .cg-fab-register {
+        bottom: calc(72px + env(safe-area-inset-bottom));
     }
 }

@@ -24,26 +24,33 @@
         }
     ];
 
-    function renderFaq() {
+    function renderFaq(items) {
         const list = document.getElementById('faq-list');
         const section = document.getElementById('faq-section');
-        if (!list || list.dataset.akV2) return;
+        if (!list) return;
+        const data =
+            Array.isArray(items) && items.length
+                ? items.filter((f) => f && (f.q || f.a)).map((f) => ({ q: f.q, a: f.a }))
+                : FAQ;
+        if (!data.length) return;
         list.dataset.akV2 = '1';
         if (section) section.classList.remove('hidden');
-        list.innerHTML = FAQ.map(
-            (item, i) =>
-                '<div class="ak-faq-item' +
-                (i === 0 ? ' is-open' : '') +
-                '">' +
-                '<button type="button" class="ak-faq-q" aria-expanded="' +
-                (i === 0 ? 'true' : 'false') +
-                '">' +
-                item.q +
-                ' <i class="fas fa-chevron-down" aria-hidden="true"></i></button>' +
-                '<div class="ak-faq-a">' +
-                item.a +
-                '</div></div>'
-        ).join('');
+        list.innerHTML = data
+            .map(
+                (item, i) =>
+                    '<div class="ak-faq-item' +
+                    (i === 0 ? ' is-open' : '') +
+                    '">' +
+                    '<button type="button" class="ak-faq-q" aria-expanded="' +
+                    (i === 0 ? 'true' : 'false') +
+                    '">' +
+                    item.q +
+                    ' <i class="fas fa-chevron-down" aria-hidden="true"></i></button>' +
+                    '<div class="ak-faq-a">' +
+                    item.a +
+                    '</div></div>'
+            )
+            .join('');
         list.querySelectorAll('.ak-faq-q').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const item = btn.closest('.ak-faq-item');
@@ -60,24 +67,38 @@
         });
     }
 
+    window.akRenderFaq = renderFaq;
+
     function revealOnScroll() {
         const els = document.querySelectorAll('.ak-reveal-v2, .ak-reveal');
+        const show = (el) => el.classList.add('is-visible');
+        const markInViewport = () => {
+            const vh = window.innerHeight || document.documentElement.clientHeight;
+            els.forEach((el) => {
+                const r = el.getBoundingClientRect();
+                if (r.top < vh * 0.92 && r.bottom > 0) show(el);
+            });
+        };
+        markInViewport();
         if (!('IntersectionObserver' in window)) {
-            els.forEach((el) => el.classList.add('is-visible'));
+            els.forEach(show);
             return;
         }
         const io = new IntersectionObserver(
             (entries) => {
                 entries.forEach((e) => {
                     if (e.isIntersecting) {
-                        e.target.classList.add('is-visible');
+                        show(e.target);
                         io.unobserve(e.target);
                     }
                 });
             },
-            { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+            { threshold: 0.08, rootMargin: '0px 0px -24px 0px' }
         );
-        els.forEach((el) => io.observe(el));
+        els.forEach((el) => {
+            if (!el.classList.contains('is-visible')) io.observe(el);
+        });
+        window.setTimeout(() => els.forEach(show), 2500);
     }
 
     function wireQuickLinks() {

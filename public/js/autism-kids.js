@@ -4,10 +4,14 @@
 (function () {
     'use strict';
 
+    function showJourneySteps() {
+        document.querySelectorAll('.ak-journey .ak-step').forEach((el) => el.classList.add('ak-visible'));
+    }
+
     function initReveal() {
-        const steps = document.querySelectorAll('.ak-step');
+        showJourneySteps();
         const reveals = document.querySelectorAll('.ak-reveal');
-        const all = [...steps, ...reveals];
+        const all = [...reveals];
         if (!all.length) return;
 
         const io = new IntersectionObserver(
@@ -19,7 +23,7 @@
                     }
                 });
             },
-            { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+            { threshold: 0.12, rootMargin: '0px 0px -24px 0px' }
         );
         all.forEach((el, i) => {
             if (el.classList.contains('ak-step')) {
@@ -28,6 +32,8 @@
             io.observe(el);
         });
     }
+
+    window.akShowJourneySteps = showJourneySteps;
 
     function initHeroCta() {
         document.querySelectorAll('[data-ak-goto-dashboard]').forEach((btn) => {

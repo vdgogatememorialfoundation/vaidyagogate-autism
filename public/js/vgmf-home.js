@@ -211,6 +211,176 @@
             .join('');
     }
 
+    const DEFAULT_HOME_JOURNEY = {
+        title: 'How it works — easy peasy!',
+        subtitle: 'Four simple steps from hello to your e-ticket. Parents and teachers can help too.',
+        steps: [
+            { icon: 'fa-user-plus', title: '1. Sign up', text: 'Create your free account on this website in a few minutes.' },
+            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you are coming — open your dashboard after login.' },
+            { icon: 'fa-palette', title: '3. Register & compete', text: 'Complete registration and upload competition entries if you like.' },
+            { icon: 'fa-ticket-alt', title: '4. E-ticket', text: 'Download your e-ticket and bring it on event day. That is it!' }
+        ]
+    };
+
+    function resolveHomeJourney(raw) {
+        const d = DEFAULT_HOME_JOURNEY;
+        const j = raw && typeof raw === 'object' ? raw : {};
+        const stepsRaw = Array.isArray(j.steps) ? j.steps.filter((s) => s && (s.title || s.text)) : [];
+        return {
+            title: (j.title || '').trim() || d.title,
+            subtitle: (j.subtitle || '').trim() || d.subtitle,
+            steps: stepsRaw.length ? stepsRaw : d.steps
+        };
+    }
+
+    const DEFAULT_HOME_BENTO = {
+        title: 'Everything in one friendly place',
+        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        cards: [
+            {
+                icon: 'fa-clipboard-check',
+                iconStyle: 'background:#dbeafe;color:#2563eb',
+                title: 'Pre-register & register',
+                text: 'After you create an account, open your dashboard to pre-register, complete full registration, and upload competition entries when you are ready.',
+                wide: true
+            },
+            {
+                icon: 'fa-qrcode',
+                iconStyle: 'background:#ede9fe;color:#7c3aed',
+                title: 'E-ticket',
+                text: 'Download your pass with a QR code — show it at check-in on event day.'
+            },
+            {
+                icon: 'fa-award',
+                iconStyle: 'background:#d1fae5;color:#059669',
+                title: 'Certificates',
+                text: 'Verify participation certificates online anytime from the Certificate page.'
+            },
+            {
+                icon: 'fa-bullhorn',
+                iconStyle: 'background:#fef3c7;color:#d97706',
+                title: 'Live updates',
+                text: 'Watch the announcement ticker and official notices for schedule changes and reminders.',
+                tall: true
+            },
+            {
+                icon: 'fa-envelope',
+                iconStyle: 'background:#ffe4e6;color:#e11d48',
+                title: 'Need help?',
+                text: 'Use Contact us — our team replies to registration and general questions.'
+            }
+        ]
+    };
+
+    const DEFAULT_HOME_STATS = [
+        { value: 'Free', label: 'Registration always' },
+        { value: '4', label: 'Steps to your e-ticket' },
+        { value: '100+', label: 'Families welcome' },
+        { value: '24/7', label: 'Online portal' }
+    ];
+
+    function resolveHomeBento(raw) {
+        const d = DEFAULT_HOME_BENTO;
+        const b = raw && typeof raw === 'object' ? raw : {};
+        const cardsRaw = Array.isArray(b.cards) ? b.cards.filter((c) => c && (c.title || c.text)) : [];
+        return {
+            title: (b.title || '').trim() || d.title,
+            subtitle: (b.subtitle || '').trim() || d.subtitle,
+            cards: cardsRaw.length ? cardsRaw : d.cards
+        };
+    }
+
+    function resolveHomeStats(raw) {
+        const list = Array.isArray(raw) ? raw.filter((s) => s && (s.value || s.label)) : [];
+        return list.length ? list : DEFAULT_HOME_STATS;
+    }
+
+    function renderHomeJourney(journey) {
+        const resolved = resolveHomeJourney(journey);
+        const titleEl = document.getElementById('ak-journey-title');
+        const head = document.querySelector('.ak-journey-head');
+        if (titleEl) titleEl.textContent = sanitizeDisplayText(resolved.title);
+        else if (head) {
+            const h2 = head.querySelector('h2');
+            if (h2) h2.textContent = sanitizeDisplayText(resolved.title);
+        }
+        const subEl = head && head.querySelector('p');
+        if (subEl) subEl.textContent = sanitizeDisplayText(resolved.subtitle);
+        const stepsEl = document.querySelector('.ak-steps');
+        const steps = resolved.steps;
+        if (!stepsEl || !steps.length) return;
+        stepsEl.innerHTML = steps
+            .map(
+                (s) =>
+                    '<article class="ak-step">' +
+                    '<div class="ak-step-icon"><i class="fas ' +
+                    escHtml(s.icon || 'fa-circle') +
+                    '" aria-hidden="true"></i></div>' +
+                    '<h3>' +
+                    escHtml(s.title) +
+                    '</h3><p>' +
+                    escHtml(s.text) +
+                    '</p></article>'
+            )
+            .join('');
+        stepsEl.querySelectorAll('.ak-step').forEach((el) => el.classList.add('ak-visible'));
+        if (typeof window.akShowJourneySteps === 'function') window.akShowJourneySteps();
+    }
+
+    function renderHomeBento(bento) {
+        const resolved = resolveHomeBento(bento);
+        const titleEl = document.getElementById('ak-bento-title');
+        const head = document.querySelector('.ak-bento-head');
+        if (titleEl) titleEl.textContent = sanitizeDisplayText(resolved.title);
+        else if (head) {
+            const h2 = head.querySelector('h2');
+            if (h2) h2.textContent = sanitizeDisplayText(resolved.title);
+        }
+        const subEl = head && head.querySelector('p');
+        if (subEl) subEl.textContent = sanitizeDisplayText(resolved.subtitle);
+        const grid = document.querySelector('.ak-bento-grid');
+        const cards = resolved.cards;
+        if (!grid || !cards.length) return;
+        grid.innerHTML = cards
+            .map((c) => {
+                const cls = ['ak-bento-card', c.wide ? 'wide' : '', c.tall ? 'tall' : ''].filter(Boolean).join(' ');
+                const style = c.iconStyle ? ' style="' + escHtml(c.iconStyle) + '"' : '';
+                return (
+                    '<article class="' +
+                    cls +
+                    '">' +
+                    '<div class="ak-bento-icon"' +
+                    style +
+                    '><i class="fas ' +
+                    escHtml(c.icon || 'fa-star') +
+                    '"></i></div>' +
+                    '<h3>' +
+                    escHtml(c.title) +
+                    '</h3><p>' +
+                    escHtml(c.text) +
+                    '</p></article>'
+                );
+            })
+            .join('');
+    }
+
+    function renderHomeCtaBand(cta) {
+        if (!cta) return;
+        const inner = document.querySelector('.ak-cta-band-inner');
+        if (!inner) return;
+        const h2 = inner.querySelector('h2');
+        const p = inner.querySelector('p');
+        const btn = inner.querySelector('button');
+        if (h2 && cta.title) h2.textContent = sanitizeDisplayText(cta.title);
+        if (p && cta.subtitle) p.textContent = sanitizeDisplayText(cta.subtitle);
+        if (btn && cta.buttonText) {
+            const icon = btn.querySelector('i');
+            btn.innerHTML =
+                (icon ? icon.outerHTML + ' ' : '<i class="fas fa-user-plus" aria-hidden="true"></i> ') +
+                escHtml(cta.buttonText);
+        }
+    }
+
     function renderFeatureCards(cards) {
         const featGrid = document.getElementById('feature-cards-grid');
         if (!featGrid) return;
@@ -292,14 +462,18 @@
         const logoH1 = document.getElementById('site-header-foundation');
         const logoP = document.getElementById('site-header-programme');
         if (logoH1) {
-            const name = header.foundationName || (cms.hero && cms.hero.title) || logoH1.textContent;
-            if (name) logoH1.textContent = name;
+            const name =
+                (header.foundationName || '').trim() ||
+                'Vaidya Gogate Memorial Foundation';
+            logoH1.textContent = name;
         }
         if (logoP) {
-            const sub = header.programmeName || (cms.hero && cms.hero.subtitle) || logoP.textContent;
-            if (sub) logoP.textContent = sub;
+            const sub =
+                (header.programmeName || '').trim() ||
+                'Autism Awareness Programme';
+            logoP.textContent = sub;
         }
-        setText('footer-foundation-heading', header.foundationName || (cms.hero && cms.hero.title));
+        setText('footer-foundation-heading', (header.foundationName || '').trim() || 'Vaidya Gogate Memorial Foundation');
         setText('footer-explore-title', foot.exploreTitle || 'Explore');
         setText('footer-doctor-title', foot.doctorTitle || 'Doctor access');
         const contactCol = document.querySelector('.footer-col h4');
@@ -375,7 +549,7 @@
                 .join('');
         }
 
-        const homeStats = Array.isArray(cms.homeStats) ? cms.homeStats.filter((s) => s && (s.value || s.label)) : [];
+        const homeStats = resolveHomeStats(cms.homeStats);
         const statsGrid = document.getElementById('vg-stats-grid');
         if (statsGrid && homeStats.length) {
             statsGrid.innerHTML = homeStats
@@ -396,22 +570,33 @@
         if (featTitle) setText('section-features-title', featTitle);
         if (featSub) setText('section-features-subtitle', featSub);
         renderHomePillars(cmsResolveHomePillarsForSite(cms.homePillars));
-        renderFeatureCards(cms.featureCards);
+        renderHomeJourney(resolveHomeJourney(cms.homeJourney));
+        renderHomeBento(resolveHomeBento(cms.homeBento));
+        renderHomeCtaBand(cms.homeCtaBand);
+        const helpBanner = document.querySelector('.help-banner');
+        if (helpBanner && cms.helpBanner) helpBanner.innerHTML = cms.helpBanner;
+        if (helpBanner) helpBanner.classList.add('ak-visible', 'is-visible');
+        const featureCardsRaw = Array.isArray(cms.featureCards) ? cms.featureCards.filter((c) => c && (c.title || c.text)) : [];
+        renderFeatureCards(featureCardsRaw.length ? featureCardsRaw : null);
         renderSpeakers(cms.speakers);
 
         const faqSection = document.getElementById('faq-section');
         const faqRoot = document.getElementById('faq-list');
-        const faqs = Array.isArray(cms.faq) ? cms.faq : [];
+        const faqs = Array.isArray(cms.faq) ? cms.faq.filter((f) => f && (f.q || f.a)) : [];
         if (faqRoot && faqs.length) {
-            faqRoot.innerHTML = faqs
-                .map(
-                    (f, i) => `
+            if (document.body.classList.contains('ak-v2') && typeof window.akRenderFaq === 'function') {
+                window.akRenderFaq(faqs);
+            } else {
+                faqRoot.innerHTML = faqs
+                    .map(
+                        (f, i) => `
                 <details class="faq-item" ${i === 0 ? 'open' : ''}>
                     <summary>${escHtml(f.q)}</summary>
                     <p>${escHtml(f.a)}</p>
                 </details>`
-                )
-                .join('');
+                    )
+                    .join('');
+            }
             if (faqSection) faqSection.classList.remove('hidden');
         }
 
@@ -444,6 +629,11 @@
         if (typeof renderReviewsMarquee === 'function') renderReviewsMarquee(cms.reviews || []);
         renderSocialLinks(cms);
         if (typeof renderAboutGallerySocial === 'function') renderAboutGallerySocial(cms);
+        try {
+            document.dispatchEvent(new CustomEvent('ak-cms-ready', { detail: cms }));
+        } catch (_) {
+            /* ignore */
+        }
     };
 
     function parseScheduleDate(value) {

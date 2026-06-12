@@ -1,0 +1,2 @@
+# Moved from repo root — project now deploys on Render (see DEPLOY-RENDER.md).
+# Delete the Vercel project in dashboard and point DNS to Render.

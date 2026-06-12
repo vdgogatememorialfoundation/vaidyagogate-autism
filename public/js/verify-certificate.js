@@ -157,7 +157,7 @@
             return;
         }
         if (!state.token && !state.applicationNo && !state.prn) {
-            showMsg(msg, 'Enter application number, portal registration number, or scan the certificate QR code.', 'err');
+            showMsg(msg, 'Enter application number, Participant PRN, or scan the certificate QR code.', 'err');
             return;
         }
         if (btn) btn.disabled = true;
@@ -295,7 +295,7 @@
                     '<dt>Application number</dt><dd>' +
                     escapeHtml(data.applicationNo || state.applicationNo) +
                     '</dd>' +
-                    '<dt>Portal registration number</dt><dd>' +
+                    '<dt>Participant PRN</dt><dd>' +
                     escapeHtml(data.prn || state.prn) +
                     '</dd>';
             }

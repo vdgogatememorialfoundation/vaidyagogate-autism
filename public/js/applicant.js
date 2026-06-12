@@ -2007,7 +2007,7 @@ function syncRegistrationOtpUi() {
         emailOtpRow.style.display = registrationFieldNeedsEmailOtp() ? '' : 'none';
         if (registrationEmailFieldHasVerifyOtp() && !window.__emailConfigured) {
             const st = document.getElementById('reg-otp-status-email');
-            if (st) st.textContent = 'Email OTP unavailable — configure SMTP in admin integrations.';
+            if (st) st.textContent = 'Email OTP unavailable — configure ZeptoMail in admin integrations.';
         } else if (!registrationFieldNeedsEmailOtp()) {
             const st = document.getElementById('reg-otp-status-email');
             if (st) st.textContent = '';

@@ -28,9 +28,20 @@
         };
     }
 
+    const NAV_ICONS = {
+        about: 'fa-heart',
+        schedule: 'fa-calendar-days',
+        verify: 'fa-search',
+        contact: 'fa-envelope',
+        home: 'fa-home'
+    };
+
     document.querySelectorAll('[data-nav-section]').forEach((a) => {
         const key = a.getAttribute('data-nav-section');
-        if (NAV_LABELS[key]) a.textContent = NAV_LABELS[key];
+        if (NAV_LABELS[key]) {
+            const icon = NAV_ICONS[key] || 'fa-circle';
+            a.innerHTML = '<i class="fas ' + icon + '" aria-hidden="true"></i> ' + NAV_LABELS[key];
+        }
     });
 
     const fab = document.getElementById('cg-fab-register');

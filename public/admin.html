@@ -1,14 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Admin | Autism Awareness Programme</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
-    <link rel="stylesheet" href="/css/autism-admin.css?v=1">
+    <link rel="stylesheet" href="/css/autism-admin.css?v=4">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=1">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
@@ -56,47 +58,64 @@
         .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; color: #334155; }
         .data-table th { background: linear-gradient(180deg, #f8fafc, #f1f5f9); color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
         .data-table tr:hover td { background: #fafbff; }
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(224,242,254,0.95), rgba(240,253,250,0.98)); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        #auth-overlay > div { background: #fff; border: 1px solid #bae6fd; border-radius: 20px; box-shadow: 0 24px 60px rgba(14,116,144,0.15); }
-        #auth-overlay h2 { color: #0d9488 !important; }
+        #auth-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
     </style>
 </head>
 <body class="portal-bright autism-admin ak-portal-admin">
 
-    <div id="auth-overlay">
+    <div id="auth-overlay" class="ak-admin-auth">
         <div class="ak-login-card">
-            <div data-site-logo data-logo-height="48px" style="margin-bottom:12px;"></div>
-            <h2>Welcome, team! ??</h2>
-            <p class="ak-login-hint">Sign in to manage registrations, events, and e-tickets for the Autism Awareness Programme.</p>
+            <div class="ak-login-brand">
+                <div data-site-logo data-logo-height="52px"></div>
+                <span class="ak-login-badge"><i class="fas fa-lock" aria-hidden="true"></i> Staff sign-in</span>
+            </div>
+
+            <header class="ak-login-header">
+                <h1>Admin console</h1>
+                <p>Manage registrations, events, and e-tickets for the Autism Awareness Programme.</p>
+            </header>
+
             <div id="admin-login-error" class="ak-login-error" role="alert"></div>
-            <form id="admin-login-form" autocomplete="off">
-                <label for="admin-email" style="font-weight:700;font-size:0.85rem;color:#0369a1;">Email or Portal User ID</label>
-                <input type="text" id="admin-email" name="admin-portal-email" placeholder="admin@vaidyagogate.org" required autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="email">
-                <p class="ak-login-hint" style="margin:6px 0 0;font-size:0.78rem;">Super admin: use the <strong>ADMIN_EMAIL</strong> from Vercel (not a participant ID).</p>
-                <label for="admin-password" style="font-weight:700;font-size:0.85rem;color:#0369a1;display:block;margin-top:12px;">Password</label>
-                <input type="password" id="admin-password" name="admin-portal-password" placeholder="Your password" required autocomplete="new-password">
-                <div id="admin_login_otp_panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:left;">
-                    <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Verify with codes sent to the email and phone on this account.</p>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
-                        <span style="min-width:44px;font-weight:700;font-size:0.85rem;">Email</span>
-                        <button type="button" class="btn-success" style="padding:6px 12px;" id="admin-send-login-email-otp">Send</button>
-                        <button type="button" class="btn-success" style="padding:6px 12px;background:#64748b;" id="admin-resend-login-email-otp">Resend</button>
-                        <input type="text" id="admin_login_email_otp" placeholder="Code" style="max-width:88px;margin-top:0;">
-                        <button type="button" class="btn-success" style="padding:6px 12px;" id="admin-verify-login-email-otp">Verify</button>
-                        <span id="admin_login_email_otp_ok" style="font-size:0.78rem;color:#047857;"></span>
+
+            <form id="admin-login-form" class="ak-login-form" autocomplete="off">
+                <div class="ak-login-field">
+                    <label for="admin-email">Email or staff ID</label>
+                    <input type="text" id="admin-email" name="admin-portal-email" placeholder="you@organisation.org" required autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email">
+                </div>
+
+                <div class="ak-login-field">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" name="admin-portal-password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+
+                <div id="admin_login_otp_panel" class="ak-login-otp">
+                    <p class="ak-login-otp-lead">Enter the verification codes sent to your email and phone.</p>
+                    <div class="ak-login-otp-row">
+                        <span class="ak-login-otp-label">Email</span>
+                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-email-otp">Send</button>
+                        <button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-email-otp">Resend</button>
+                        <input type="text" id="admin_login_email_otp" class="ak-login-otp-code" placeholder="Code" autocomplete="one-time-code">
+                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-verify-login-email-otp">Verify</button>
+                        <span id="admin_login_email_otp_ok" class="ak-login-otp-ok"></span>
                     </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                        <span style="min-width:44px;font-weight:700;font-size:0.85rem;">Phone</span>
-                        <button type="button" class="btn-success" style="padding:6px 12px;" id="admin-send-login-phone-otp">Send</button>
-                        <button type="button" class="btn-success" style="padding:6px 12px;background:#64748b;" id="admin-resend-login-phone-otp">Resend</button>
-                        <input type="text" id="admin_login_phone_otp" placeholder="Code" style="max-width:88px;margin-top:0;">
-                        <button type="button" class="btn-success" style="padding:6px 12px;" id="admin-verify-login-phone-otp">Verify</button>
-                        <span id="admin_login_phone_otp_ok" style="font-size:0.78rem;color:#047857;"></span>
+                    <div class="ak-login-otp-row">
+                        <span class="ak-login-otp-label">Phone</span>
+                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-phone-otp">Send</button>
+                        <button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-phone-otp">Resend</button>
+                        <input type="text" id="admin_login_phone_otp" class="ak-login-otp-code" placeholder="Code" autocomplete="one-time-code">
+                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-verify-login-phone-otp">Verify</button>
+                        <span id="admin_login_phone_otp_ok" class="ak-login-otp-ok"></span>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 18px;">Sign in</button>
+
+                <button type="submit" class="btn-primary ak-login-submit">
+                    <i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in
+                </button>
             </form>
-            <p class="ak-login-hint">Participants use the <a href="/" style="color:#0284c7;">main website</a> to sign up ... not this screen.</p>
+
+            <footer class="ak-login-footer">
+                <a href="/"><i class="fas fa-house" aria-hidden="true"></i> Return to public website</a>
+            </footer>
         </div>
     </div>
 
@@ -810,7 +829,18 @@
             </div>
 
             <div id="tab-site-cms" class="tab-pane hidden">
-                <div class="card" id="ak-admin-site-images" style="margin-bottom:20px;border-left:4px solid #2563eb;">
+                <div class="card" id="ak-homepage-cms-guide" style="margin-bottom:16px;border-left:4px solid #0d9488;background:#f0fdfa;">
+                    <h3 style="margin:0 0 10px;color:#0f766e;">Homepage editor — quick guide</h3>
+                    <ol style="margin:0 0 12px;padding-left:1.25rem;color:#475569;font-size:0.88rem;line-height:1.65;">
+                        <li><strong>Hero &amp; stats</strong> — headline, buttons, and number strip at the top of the public site.</li>
+                        <li><strong>Pillars</strong> — Awareness / Inclusion / Celebration cards.</li>
+                        <li><strong>How it works</strong> — four steps; <strong>Why join us</strong> — section title + four feature cards.</li>
+                        <li>Click <strong>Save homepage</strong> (green button at top or bottom of the large card).</li>
+                        <li>Open the public site and press <strong>Ctrl+F5</strong> to see changes.</li>
+                    </ol>
+                    <p id="ak-homepage-cms-guide-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
+                </div>
+                <div class="card ak-cms-advanced" id="ak-admin-site-images" style="margin-bottom:20px;border-left:4px solid #2563eb;">
                     <h3 style="margin:0 0 8px;">Homepage photos (live without redeploy)</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Upload images here for instant updates on the public site. Or add files to <code>public/images/autism/</code> on the server, run <code>npm run sync-images</code>, commit, and push. All times on the portal are <strong>IST</strong>.</p>
                     <input type="file" id="ak-site-images-files" accept="image/jpeg,image/png,image/webp,image/avif" multiple style="max-width:100%;">
@@ -859,11 +889,11 @@
                         </div>
                 <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #fed7aa;background:#fff7ed;">
                     <h3 style="margin:0 0 10px;color:#c2410c;font-size:1.05rem;">Email delivery (venue / bulk)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Protects free Zoho SMTP from <code>550 unusual sending activity</code> during on-spot registration (500+ delegates). POS registrations succeed even when mail is deferred.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Throttle outbound email during on-spot registration bursts. POS registrations succeed even when mail is deferred to the queue.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="ed-pos-skip-email" checked> Skip participant email at POS (recommended)</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="ed-pos-skip-staff" checked> Skip staff alert emails for POS accounts</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="ed-queue-all" checked> Queue all emails (no instant SMTP burst)</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="ed-queue-all" checked> Queue all emails (no instant send burst)</label>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:12px;max-width:720px;">
                         <div><label style="font-size:0.82rem;font-weight:700;">Max emails / hour</label><input type="number" id="ed-max-hour" min="10" max="500" value="80" style="width:100%;padding:8px;"></div>
@@ -967,7 +997,7 @@
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#15803d;" onclick="sendVenueBroadcast()">Send venue update to paid registrants</button>
                     <p id="venue-broadcast-status" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
-<div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;">
+<div class="card ak-cms-homepage" style="margin-bottom:18px;border:1px solid #7dd3fc;background:#f0f9ff;" id="cms-header-footer-card">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Site header &amp; footer</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Logo text in the public header, top contact strip, footer columns, and copyright.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
@@ -990,11 +1020,11 @@
                         <div style="grid-column:1/-1;"><label>Applicant access links</label><div id="cms-footer-doctor-rows"></div><button type="button" class="btn-primary" style="margin-top:6px;padding:6px 12px;font-size:0.85rem;" onclick="cmsAddFooterDoctorRow()">+ Link</button></div>
                     </div>
                     <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-                        <button type="button" class="btn-primary" onclick="saveAdminSiteCms()"><i class="fas fa-save"></i> Save header &amp; footer</button>
+                        <button type="button" class="btn-primary" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage</button>
                         <p id="cms-header-footer-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                 </div>
-                <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #99f6e4;background:#f0fdfa;">
+                <div class="card ak-cms-homepage" style="margin-bottom:18px;border:1px solid #99f6e4;background:#f0fdfa;" id="cms-contact-card">
                     <h3 style="margin:0 0 10px;color:#047857;font-size:1.05rem;">Contact information</h3>
                     <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Shown on the public <strong>Contact us</strong> page and in the site footer. (Top bar email/phone above are for the header strip only.)</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1004,11 +1034,15 @@
                         <div style="grid-column:1/-1;"><label>Office hours</label><input type="text" id="cms-contact-hours" style="width:100%;" placeholder="e.g. Mon–Sat 9:00 AM – 6:00 PM IST"></div>
                     </div>
                     <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-                        <button type="button" class="btn-primary" style="background:#047857;" onclick="saveAdminSiteCms()"><i class="fas fa-save"></i> Save contact information</button>
+                        <button type="button" class="btn-primary" style="background:#047857;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage</button>
                         <p id="cms-contact-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
                 </div>
 <div class="card" id="ak-main-cms-card" style="margin-bottom:18px;">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:2px solid #0d9488;">
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage</button>
+                        <p id="ak-homepage-inline-save-msg-top" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
+                    </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                         <div><label>Homepage ticker text</label><input type="text" id="cms-ticker" placeholder="Short announcement line (single line)"></div>
                         <div><label>Banner image URL</label><input type="text" id="cms-banner" placeholder="/uploads/banner.jpg"></div>
@@ -1051,7 +1085,7 @@
                             <div><label style="font-size:0.8rem;">Strip stat 4 label</label><input type="text" id="cms-home-stat4-lbl" style="width:100%"></div>
                         </div>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage speakers (faculty)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on the main website. Upload photo, name, designation, and seminar title.</p>
                         <div id="cms-speaker-rows"></div>
@@ -1088,9 +1122,78 @@
                         </div>
                         <div id="cms-pillar-rows" class="hidden" aria-hidden="true"></div>
                     </div>
+                    <div id="ak-homepage-journey-section" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <label style="font-weight:700;">How it works (4 steps)</label>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 12px;">The step-by-step section below the pillar cards on the homepage.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="ak-journey-title" style="width:100%;padding:8px;" placeholder="How it works — easy peasy!"></div>
+                            <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="ak-journey-subtitle" style="width:100%;padding:8px;"></div>
+                        </div>
+                        <div style="display:grid;gap:10px;">
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Step 1 title</label><input type="text" id="ak-step-1-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Step 1 text</label><textarea id="ak-step-1-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-step-1-icon" value="fa-user-plus">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Step 2 title</label><input type="text" id="ak-step-2-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Step 2 text</label><textarea id="ak-step-2-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-step-2-icon" value="fa-clipboard-list">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Step 3 title</label><input type="text" id="ak-step-3-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Step 3 text</label><textarea id="ak-step-3-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-step-3-icon" value="fa-palette">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Step 4 title</label><input type="text" id="ak-step-4-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Step 4 text</label><textarea id="ak-step-4-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-step-4-icon" value="fa-ticket-alt">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ak-homepage-bento-section" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <label style="font-weight:700;">Feature grid (bento cards)</label>
+                        <p style="color:#64748b;font-size:0.86rem;margin:6px 0 12px;">The colourful card grid on the homepage.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="ak-bento-title" style="width:100%;padding:8px;"></div>
+                            <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="ak-bento-subtitle" style="width:100%;padding:8px;"></div>
+                        </div>
+                        <div style="display:grid;gap:10px;">
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Card 1 title</label><input type="text" id="ak-bento-1-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Card 1 text</label><textarea id="ak-bento-1-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-bento-1-icon" value="fa-clipboard-check"><input type="hidden" id="ak-bento-1-style" value="background:#dbeafe;color:#2563eb">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Card 2 title</label><input type="text" id="ak-bento-2-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Card 2 text</label><textarea id="ak-bento-2-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-bento-2-icon" value="fa-qrcode"><input type="hidden" id="ak-bento-2-style" value="background:#ede9fe;color:#7c3aed">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Card 3 title</label><input type="text" id="ak-bento-3-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Card 3 text</label><textarea id="ak-bento-3-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-bento-3-icon" value="fa-award"><input type="hidden" id="ak-bento-3-style" value="background:#d1fae5;color:#059669">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Card 4 title</label><input type="text" id="ak-bento-4-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Card 4 text</label><textarea id="ak-bento-4-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-bento-4-icon" value="fa-bullhorn"><input type="hidden" id="ak-bento-4-style" value="background:#fef3c7;color:#d97706">
+                            </div>
+                            <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
+                                <label style="font-size:0.8rem;">Card 5 title</label><input type="text" id="ak-bento-5-title" style="width:100%;padding:8px;margin:4px 0 6px;">
+                                <label style="font-size:0.8rem;">Card 5 text</label><textarea id="ak-bento-5-text" rows="2" style="width:100%;padding:8px;"></textarea>
+                                <input type="hidden" id="ak-bento-5-icon" value="fa-envelope"><input type="hidden" id="ak-bento-5-style" value="background:#ffe4e6;color:#e11d48">
+                            </div>
+                        </div>
+                    </div>
                     <div id="ak-homepage-features-section" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">“Why join us” section</label>
                         <p style="color:#64748b;font-size:0.86rem;margin:6px 0 10px;">Heading and four feature cards on the homepage.</p>
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:0.8rem;">“New here?” help banner (HTML allowed)</label>
+                            <textarea id="cms-help-banner" rows="2" style="width:100%;padding:8px;" placeholder="&lt;strong&gt;New here?&lt;/strong&gt; Tap Join us…"></textarea>
+                        </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                             <div><label style="font-size:0.8rem;">Section title</label><input type="text" id="cms-features-title" style="width:100%;padding:8px;" placeholder="Why join us"></div>
                             <div><label style="font-size:0.8rem;">Section subtitle</label><input type="text" id="cms-features-subtitle" style="width:100%;padding:8px;" placeholder="Inclusive events, creative competitions…"></div>
@@ -1120,20 +1223,28 @@
                         <div id="cms-feature-rows" class="hidden" aria-hidden="true"></div>
                     </div>
                     <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage text</button>
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage</button>
                         <p id="ak-homepage-inline-save-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <label style="font-weight:700;">Bottom call-to-action band</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+                            <div><label style="font-size:0.8rem;">Title</label><input type="text" id="ak-cta-title" style="width:100%;padding:8px;" placeholder="Ready to join us?"></div>
+                            <div><label style="font-size:0.8rem;">Button text</label><input type="text" id="ak-cta-button" style="width:100%;padding:8px;" placeholder="Create free account"></div>
+                            <div style="grid-column:1/-1;"><label style="font-size:0.8rem;">Subtitle</label><input type="text" id="ak-cta-subtitle" style="width:100%;padding:8px;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">FAQ (homepage)</label>
                         <div id="cms-faq-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddFaqRow()">+ Add FAQ</button>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Schedule page title</label><input type="text" id="cms-schedule-title" style="width:100%"></div>
                         <div><label>Schedule page subtitle</label><input type="text" id="cms-schedule-subtitle" style="width:100%"></div>
                     </div>
-                    <p class="ak-cms-extra" style="color:#64748b;font-size:0.85rem;margin:12px 0 8px;">Homepage images: max <strong>4 MB</strong> per file on this server. iPhone photos are auto-compressed.</p>
-                    <div class="ak-cms-extra" style="margin-top:8px;display:grid;gap:10px;max-width:520px;">
+                    <p style="color:#64748b;font-size:0.85rem;margin:12px 0 8px;">Homepage images: max <strong>4 MB</strong> per file on this server. iPhone photos are auto-compressed.</p>
+                    <div style="margin-top:8px;display:grid;gap:10px;max-width:520px;">
                         <div style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">
                             <label style="font-size:0.8rem;font-weight:700;">Banner image</label>
                             <input type="file" id="cms-banner-file" accept="image/*" style="margin-top:6px;max-width:100%;">
@@ -1146,28 +1257,28 @@
                         </div>
                     </div>
 
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage sliding announcements</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Cards that scroll horizontally on the public homepage. A short auto card is added when you <strong>create</strong> a seminar and registration is already open.</p>
                         <div id="cms-scrolling-announce-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddScrollingRow()">+ Add announcement card</button>
                     </div>
 
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Extra public notices (Official Notices board)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Title, description, optional date and PDF. Shown together with seminar notices from the database.</p>
                         <div id="cms-public-notice-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddPublicNoticeRow()">+ Add notice</button>
                     </div>
 
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Applicant portal updates (all participants)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Shown on every applicant dashboard under Programme updates. Times display in IST.</p>
                         <div id="cms-doctor-update-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddDoctorUpdateRow()">+ Add update</button>
                     </div>
 
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Hero banner carousel (database)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Upload slides with title, subtitle, optional CTA. Auto-carousel on the public homepage when enabled.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px;">
@@ -1178,7 +1289,7 @@
                         <div id="mkt-banner-rows"></div>
                         <p id="mkt-banner-msg" style="margin-top:8px;font-weight:600;"></p>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage popup / lightbox</label>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
                             <div><label style="font-size:0.8rem;">Enabled</label><select id="mkt-popup-enabled" style="width:100%;"><option value="0">Off</option><option value="1">On</option></select></div>
@@ -1192,38 +1303,38 @@
                         </div>
                         <div style="margin-top:10px;"><input type="file" id="mkt-popup-file"><button type="button" class="btn-primary" style="margin-left:8px;background:#64748b;" onclick="marketingUploadPopupImage()">Upload popup image</button></div>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:18px;"><label>Legacy slides JSON (fallback if no DB banners)</label><textarea id="cms-slides" rows="4" placeholder='[{"src":"/uploads/a.jpg","caption":"","link":""}]'></textarea></div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:18px;"><label>Legacy slides JSON (fallback if no DB banners)</label><textarea id="cms-slides" rows="4" placeholder='[{"src":"/uploads/a.jpg","caption":"","link":""}]'></textarea></div>
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Main site menu</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Edit navigation labels and pages shown on the public website header. Use <strong>Section</strong> for in-page tabs, or leave section empty and set a <strong>URL</strong> (e.g. Certificate page).</p>
                         <div id="cms-menu-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddMenuRow()">+ Add menu item</button>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Past seminar gallery (by year)</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Group photos by year (e.g. 2025 ... 10 images, 2024 ... 20 images). Use <strong>Upload multiple images</strong> ... each photo uploads separately (large phone photos are auto-compressed). Then click <strong>Save website &amp; portal content</strong>. Keep each image under ~4 MB.</p>
                         <div id="cms-gallery-years"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddGalleryYear()">+ Add year album</button>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">About us</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Sections on the public homepage About area (heading + body).</p>
                         <div id="cms-about-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddAboutRow()">+ Add section</button>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Social links</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">YouTube, Facebook, Instagram, etc.</p>
                         <div id="cms-social-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddSocialRow()">+ Add link</button>
                     </div>
-                    <div class="ak-cms-extra" style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage reviews / testimonials</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Name, role, quote, and star rating (1-5).</p>
                         <div id="cms-review-rows"></div>
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#0d9488;" onclick="cmsAddReviewRow()">+ Add review</button>
                     </div>
-                    <button type="button" class="btn-primary" style="margin-top:16px;" onclick="saveAdminSiteCms()">Save website &amp; portal content</button>
+                    <button type="button" class="btn-primary" style="margin-top:16px;background:#0d9488;" onclick="saveHomepageCmsOnly()"><i class="fas fa-save"></i> Save homepage</button>
                     <p id="cms-save-msg" style="margin-top:10px;font-weight:600;"></p>
                 </div>
             </div>
@@ -1742,7 +1853,7 @@
             <!-- Notification templates -->
             <div id="tab-notifications" class="tab-pane hidden">
                 <h2 style="margin-bottom: 8px;">Notification templates</h2>
-                <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.9rem;">Email (Zoho SMTP) and WhatsApp (Meta Cloud API). Placeholders: <code>{{full_name}}</code>, <code>{{seminar_name}}</code>, <code>{{ticket_id}}</code>, etc.</p>
+                <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.9rem;">Email (Zoho ZeptoMail) and WhatsApp (Meta Cloud API). Placeholders: <code>{{full_name}}</code>, <code>{{seminar_name}}</code>, <code>{{ticket_id}}</code>, etc.</p>
                 <div class="card" style="margin-bottom: 20px;">
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
                         <div class="form-group" style="margin:0; min-width: 240px;">
@@ -1915,13 +2026,12 @@
                         <div><label>Admin host (DNS)</label><input type="text" id="int-admin-host" placeholder="admin.vaidyagogate.org" style="width:100%"></div>
                         <div><label>Judge host (DNS)</label><input type="text" id="int-judge-host" placeholder="judge.vaidyagogate.org" style="width:100%"></div>
                         <div><label>Admin contact email</label><input type="email" id="int-admin-contact" placeholder="info@vaidyagogate.org" style="width:100%"></div>
-                        <div style="grid-column:1/-1;"><h4 style="margin:8px 0;color:#0c4a6e;">Zoho SMTP</h4>
-                        <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Host smtp.zoho.in, port 465. User and From = care@vaidyagogate.org. Password = Zoho App-Specific Password (not login password). Save, then Test.</p></div>
-                        <div><label>Host</label><input type="text" id="int-zoho-host" placeholder="smtp.zoho.in" style="width:100%"></div>
-                        <div><label>Port</label><input type="number" id="int-zoho-port" placeholder="465" style="width:100%"></div>
-                        <div><label>User</label><input type="email" id="int-zoho-user" placeholder="care@vaidyagogate.org" style="width:100%"></div>
-                        <div><label>App password</label><input type="password" id="int-zoho-pass" placeholder="Zoho app password" style="width:100%" autocomplete="new-password"></div>
-                        <div><label>From</label><input type="email" id="int-zoho-from" placeholder="care@vaidyagogate.org" style="width:100%"></div>
+                        <div style="grid-column:1/-1;"><h4 style="margin:8px 0;color:#0c4a6e;">Zoho ZeptoMail</h4>
+                        <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Copy the <strong>Send Mail Token</strong> from Mail Agents → SMTP/API → <strong>API</strong> tab (not the SMTP password). From email must be verified in that Agent. India accounts use <code>api.zeptomail.in</code>.</p></div>
+                        <div style="grid-column:1/-1;"><label>Send Mail Token (API key)</label><input type="password" id="int-zepto-key" placeholder="Paste token only — no Zoho-enczapikey prefix needed" style="width:100%" autocomplete="new-password"><p id="int-zepto-key-status" style="margin:6px 0 0;font-size:12px;color:#0d9488;"></p></div>
+                        <div><label>From email</label><input type="email" id="int-zepto-from" placeholder="care@vaidyagogate.org" style="width:100%"></div>
+                        <div><label>From name</label><input type="text" id="int-zepto-from-name" placeholder="Vaidya Gogate Memorial Foundation" style="width:100%"></div>
+                        <div><label>ZeptoMail region</label><select id="int-zepto-region" style="width:100%;padding:8px;"><option value="in">India (api.zeptomail.in)</option><option value="com">Global (api.zeptomail.com)</option><option value="eu">Europe (api.zeptomail.eu)</option><option value="auto">Auto — try India then global</option></select></div>
                         <div style="display:flex;gap:8px;align-items:flex-end;"><input type="email" id="int-test-email" placeholder="Test to" style="flex:1"><button type="button" class="btn-primary" style="background:#64748b;padding:8px 12px;" onclick="testIntegrationEmail()">Test email</button></div>
                         <div style="grid-column:1/-1;"><h4 style="margin:8px 0;color:#0c4a6e;">Meta WhatsApp Business</h4>
                         <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Webhook: <code id="int-wa-webhook-url">https://your-domain/api/webhooks/whatsapp</code><br>
@@ -2372,13 +2482,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260529e"></script>
+    <script src="/js/admin.js?v=20260530e"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism23"></script>
+    <script src="/js/admin-autism.js?v=autism26"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>

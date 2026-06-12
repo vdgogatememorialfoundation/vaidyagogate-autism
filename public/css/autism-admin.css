@@ -48,3 +48,216 @@ body.autism-admin {
     background: rgba(255, 255, 255, 0.95) !important;
     border-bottom: 1px solid #e9e5ff !important;
 }
+
+/* Autism CMS tab: hide policy/advanced blocks; homepage editor stays visible */
+body.autism-admin #tab-site-cms > .ak-cms-advanced,
+body.autism-admin #tab-site-cms > h2,
+body.autism-admin #tab-site-cms > p {
+    display: none !important;
+}
+
+body.autism-admin #tab-site-cms #ak-main-cms-card {
+    display: block !important;
+}
+
+body.autism-admin #tab-site-cms #ak-homepage-cms-guide {
+    display: block !important;
+}
+
+body.autism-admin #tab-site-cms .ak-cms-homepage {
+    display: block !important;
+}
+
+body.autism-admin #tab-site-cms #ak-admin-site-images {
+    margin-top: 20px;
+    border-left-color: #94a3b8 !important;
+}
+
+/* —— Admin sign-in page —— */
+body.autism-admin .ak-admin-auth {
+    background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.18), transparent),
+        linear-gradient(165deg, #eef2ff 0%, #f0fdfa 45%, #fff7ed 100%) !important;
+}
+
+body.autism-admin .ak-login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 28px 28px;
+    background: #fff;
+    border: 1px solid #e0e7ff;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(79, 70, 229, 0.12);
+}
+
+body.autism-admin .ak-login-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+body.autism-admin .ak-login-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #4338ca;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+}
+
+body.autism-admin .ak-login-header {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+body.autism-admin .ak-login-header h1 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #312e81;
+}
+
+body.autism-admin .ak-login-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #64748b;
+}
+
+body.autism-admin .ak-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+body.autism-admin .ak-login-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4338ca;
+}
+
+body.autism-admin .ak-login-field input {
+    margin-top: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #c7d2fe;
+    font-size: 1rem;
+}
+
+body.autism-admin .ak-login-field input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+body.autism-admin .ak-login-submit {
+    width: 100%;
+    margin-top: 4px;
+    padding: 13px 20px !important;
+    font-size: 1rem !important;
+    border-radius: 12px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+body.autism-admin .ak-login-error {
+    display: none;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #be123c;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    text-align: left;
+    white-space: pre-line;
+}
+
+body.autism-admin .ak-login-error.visible {
+    display: block;
+}
+
+body.autism-admin .ak-login-otp {
+    display: none;
+    padding-top: 4px;
+    border-top: 1px solid #e2e8f0;
+}
+
+body.autism-admin .ak-login-otp-lead {
+    margin: 0 0 12px;
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+body.autism-admin .ak-login-otp-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+body.autism-admin .ak-login-otp-label {
+    min-width: 44px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+body.autism-admin .ak-login-otp-btn {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+}
+
+body.autism-admin .ak-login-otp-btn-muted {
+    background: #64748b !important;
+    border-color: #64748b !important;
+    color: #fff !important;
+}
+
+body.autism-admin .ak-login-otp-code {
+    max-width: 88px;
+    margin-top: 0 !important;
+    padding: 8px 10px !important;
+}
+
+body.autism-admin .ak-login-otp-ok {
+    font-size: 0.78rem;
+    color: #047857;
+    font-weight: 600;
+}
+
+body.autism-admin .ak-login-footer {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+body.autism-admin .ak-login-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #0284c7;
+    text-decoration: none;
+}
+
+body.autism-admin .ak-login-footer a:hover {
+    text-decoration: underline;
+}

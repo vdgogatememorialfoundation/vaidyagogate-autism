@@ -423,6 +423,12 @@
     opacity: 0;
     transform: translateY(24px);
 }
+/* Journey steps must stay visible after CMS re-render (see autism-kids.js + vgmf-home.js) */
+.ak-journey .ak-step,
+.ak-journey .ak-step.ak-visible {
+    opacity: 1;
+    transform: none;
+}
 .ak-step.ak-visible {
     opacity: 1;
     transform: translateY(0);
@@ -607,6 +613,11 @@
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.help-banner.ak-reveal,
+.help-banner.ak-reveal.ak-visible {
+    opacity: 1;
+    transform: none;
 }
 .ak-reveal.ak-visible {
     opacity: 1;

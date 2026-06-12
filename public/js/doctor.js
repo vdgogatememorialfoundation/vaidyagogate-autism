@@ -1698,7 +1698,7 @@ function syncRegistrationOtpUi() {
         emailOtpRow.style.display = window.__otpOnStep1 ? '' : 'none';
         if (window.__otpOnStep1 && !window.__emailConfigured) {
             const st = document.getElementById('reg-otp-status-email');
-            if (st) st.textContent = 'Email OTP unavailable — configure SMTP in admin integrations.';
+            if (st) st.textContent = 'Email OTP unavailable — configure ZeptoMail in admin integrations.';
         }
     }
     if (phoneOtpRow) {

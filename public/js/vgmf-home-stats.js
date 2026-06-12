@@ -4,16 +4,25 @@
 (function () {
     async function loadHomeStats() {
         const grid = document.getElementById('vg-stats-grid');
-        if (!grid || grid.children.length) return;
+        if (!grid) return;
+        const onlyLoading =
+            grid.children.length === 1 &&
+            grid.textContent &&
+            /loading/i.test(grid.textContent);
+        if (grid.children.length && !onlyLoading) return;
         if (window.__homeCms && typeof window.applySiteCms === 'function') {
             window.applySiteCms(window.__homeCms);
             return;
         }
-        try {
-            const cmsRes = await fetch('/api/public/site-cms', { cache: 'no-store' });
-            const cms = await cmsRes.json().catch(() => ({}));
-            if (typeof window.applySiteCms === 'function') window.applySiteCms(cms);
-        } catch (_) {}
+        document.addEventListener(
+            'ak-cms-ready',
+            () => {
+                if (window.__homeCms && typeof window.applySiteCms === 'function') {
+                    window.applySiteCms(window.__homeCms);
+                }
+            },
+            { once: true }
+        );
     }
 
     document.addEventListener('DOMContentLoaded', loadHomeStats);

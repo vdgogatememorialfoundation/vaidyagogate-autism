@@ -92,7 +92,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ## 5. After go-live (admin checklist)
 
 1. **Global Settings** → Public site URL = `https://seminar.yourdomain.com`
-2. **Global Settings** → Zoho SMTP + WhatsApp keys → Save → Test email / Test WhatsApp
+2. **Global Settings** → ZeptoMail API key + From address + WhatsApp keys → Save → Test email / Test WhatsApp
 3. **Website & doctor updates** → edit **Venue line** and **Contact address** (replaces “Convention Centre, Pune” on homepage)
 4. **Payment gateways** → Razorpay/Cashfree live keys, enable one gateway
 5. **Notifications** → Seed defaults, review templates

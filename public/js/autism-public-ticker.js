@@ -85,13 +85,17 @@
     };
 
     async function bootstrapTicker() {
-        try {
-            const cmsRes = await fetch('/api/public/site-cms', { cache: 'no-store' });
-            const merged = cmsRes.ok ? await cmsRes.json() : {};
-            renderAutismTicker(merged);
-        } catch (_) {
-            renderAutismTicker({});
+        if (window.__homeCms) {
+            renderAutismTicker(window.__homeCms);
+            return;
         }
+        document.addEventListener(
+            'ak-cms-ready',
+            (e) => {
+                renderAutismTicker((e && e.detail) || window.__homeCms || {});
+            },
+            { once: true }
+        );
     }
 
     if (document.readyState === 'loading') {

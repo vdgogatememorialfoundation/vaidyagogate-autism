@@ -491,15 +491,22 @@ function formatAdminApiError(data, status) {
     if (data && data.hint) parts.push(String(data.hint));
     if (data && data.detail) parts.push(String(data.detail));
     if (!parts.length && status === 503) {
-        parts.push('Database is not ready. Wait 10 seconds and try again.');
-        parts.push(
-            'On Vercel: set DATABASE_URL (Neon pooler URL) and ADMIN_EMAIL / ADMIN_PASSWORD, then Redeploy.'
-        );
+        parts.push('Database is not ready. Wait a moment and try again.');
+        parts.push('If this continues, contact your system administrator.');
     }
     return parts.join('\n\n') || 'Login failed. Please try again.';
 }
 
-document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+function bindAdminLoginForm() {
+    const form = document.getElementById('admin-login-form');
+    if (!form || form.dataset.akLoginBound === '1') return;
+    form.dataset.akLoginBound = '1';
+    form.addEventListener('submit', adminLoginFormSubmit);
+}
+window.bindAdminLoginForm = bindAdminLoginForm;
+window.__akRebindAdminLoginForm = bindAdminLoginForm;
+
+async function adminLoginFormSubmit(e) {
     e.preventDefault();
     clearAdminLoginError();
     const rawId = document.getElementById('admin-email').value.trim();
@@ -530,11 +537,11 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
             const snippet = (await res.text()).slice(0, 120).replace(/\s+/g, ' ');
             if (res.status === 503 || /maintenance/i.test(snippet)) {
                 showAdminLoginError(
-                    'The server returned a maintenance page instead of login data. Check DATABASE_URL on Vercel and redeploy, then open https://autism.vaidyagogate.org/admin'
+                    'The service is temporarily unavailable. Please wait a minute and try again.'
                 );
             } else {
                 showAdminLoginError(
-                    'Login did not receive JSON from the server. Use https://autism.vaidyagogate.org/admin (not a saved offline copy).'
+                    'Could not reach the sign-in service. Check your internet connection and try again.'
                 );
             }
             return;
@@ -551,7 +558,7 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
         const userRole = String(data.user.user_role || '').toLowerCase();
         if (role !== 'admin' && userRole !== 'co_admin') {
             showAdminLoginError(
-                'This account does not have admin portal access.\n\nUse ADMIN_EMAIL and ADMIN_PASSWORD from Vercel (Production env), then redeploy.'
+                'This account does not have access to the admin console. Sign in with a staff admin account, or register on the public website.'
             );
             return;
         }
@@ -566,7 +573,7 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
     } catch (err) {
         console.error(err);
         showAdminLoginError(
-            'Could not reach the server. If this is production, check Vercel deployment and DATABASE_URL. Locally, run: npm start'
+            'Could not reach the server. Check your connection and try again in a moment.'
         );
     } finally {
         if (submitBtn) {
@@ -574,7 +581,9 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
             submitBtn.textContent = submitBtnLabel || 'Sign in';
         }
     }
-});
+}
+
+bindAdminLoginForm();
 
 document.getElementById('btn-logout').addEventListener('click', () => {
     localStorage.removeItem('admin_auth');
@@ -6098,10 +6107,24 @@ async function loadIntegrationSettings() {
         set('int-admin-host', s.admin_host);
         set('int-judge-host', s.judge_host);
         set('int-admin-contact', s.admin_contact_email);
-        set('int-zoho-host', s.zoho_host);
-        set('int-zoho-port', s.zoho_port);
-        set('int-zoho-user', s.zoho_user);
-        set('int-zoho-from', s.zoho_from);
+        set('int-zepto-from', s.zepto_from || s.zoho_from);
+        set('int-zepto-from-name', s.zepto_from_name);
+        const regionEl = document.getElementById('int-zepto-region');
+        if (regionEl) regionEl.value = s.zepto_region || 'in';
+        const keyEl = document.getElementById('int-zepto-key');
+        const keyStatus = document.getElementById('int-zepto-key-status');
+        if (keyEl) {
+            if (s.email_configured) {
+                keyEl.placeholder = 'Token saved (hidden). Paste here only to replace it.';
+                if (keyStatus) {
+                    keyStatus.textContent =
+                        'Send Mail Token is saved and active. The field stays empty for security after save.';
+                }
+            } else {
+                keyEl.placeholder = 'Paste token only — no Zoho-enczapikey prefix needed';
+                if (keyStatus) keyStatus.textContent = '';
+            }
+        }
         set('int-wa-phone-id', s.whatsapp_phone_number_id);
         set('int-wa-waba-id', s.whatsapp_business_account_id);
         set('int-wa-lang', s.whatsapp_template_lang || 'en');
@@ -6169,19 +6192,21 @@ async function saveIntegrationSettings() {
         admin_host: (document.getElementById('int-admin-host') || {}).value.trim(),
         judge_host: (document.getElementById('int-judge-host') || {}).value.trim(),
         admin_contact_email: (document.getElementById('int-admin-contact') || {}).value.trim(),
-        zoho_host: (document.getElementById('int-zoho-host') || {}).value.trim(),
-        zoho_port: (document.getElementById('int-zoho-port') || {}).value.trim(),
-        zoho_user: (document.getElementById('int-zoho-user') || {}).value.trim(),
-        zoho_pass: (document.getElementById('int-zoho-pass') || {}).value,
-        zoho_from: (document.getElementById('int-zoho-from') || {}).value.trim(),
-        whatsapp_token: (document.getElementById('int-wa-token') || {}).value,
+        zepto_from: (document.getElementById('int-zepto-from') || {}).value.trim(),
+        zepto_from_name: (document.getElementById('int-zepto-from-name') || {}).value.trim(),
+        zepto_region: (document.getElementById('int-zepto-region') || {}).value.trim() || 'in',
         whatsapp_phone_number_id: (document.getElementById('int-wa-phone-id') || {}).value.trim(),
         whatsapp_business_account_id: (document.getElementById('int-wa-waba-id') || {}).value.trim(),
-        whatsapp_verify_token: (document.getElementById('int-wa-verify') || {}).value,
         whatsapp_template_lang: (document.getElementById('int-wa-lang') || {}).value.trim() || 'en',
         whatsapp_otp_template_name: (document.getElementById('int-wa-otp-template') || {}).value.trim(),
         otp_email_subject: (document.getElementById('int-otp-email-subject') || {}).value.trim()
     };
+    const zeptoKey = (document.getElementById('int-zepto-key') || {}).value;
+    if (zeptoKey && zeptoKey.trim() && zeptoKey !== '********') body.zepto_api_key = zeptoKey.trim();
+    const waToken = (document.getElementById('int-wa-token') || {}).value;
+    if (waToken && waToken.trim() && waToken !== '********') body.whatsapp_token = waToken.trim();
+    const waVerify = (document.getElementById('int-wa-verify') || {}).value;
+    if (waVerify && waVerify.trim() && waVerify !== '********') body.whatsapp_verify_token = waVerify.trim();
     try {
         const res = await fetch('/api/admin/integrations', {
             method: 'POST',
@@ -6193,7 +6218,7 @@ async function saveIntegrationSettings() {
             setAdminSettingsSaveMsg(data.error || 'Save failed', true);
             return;
         }
-        (document.getElementById('int-zoho-pass') || {}).value = '';
+        (document.getElementById('int-zepto-key') || {}).value = '';
         (document.getElementById('int-wa-token') || {}).value = '';
         (document.getElementById('int-wa-verify') || {}).value = '';
         await loadIntegrationSettings();
@@ -6202,8 +6227,8 @@ async function saveIntegrationSettings() {
             data.email_configured
                 ? 'Email is configured.'
                 : st && Array.isArray(st.missing) && st.missing.length
-                  ? 'Email still missing: ' + st.missing.join(', ') + '. Enter SMTP password and save again.'
-                  : 'Email is not configured — enter Zoho host, user, and password, then save.';
+                  ? 'Email still missing: ' + st.missing.join(', ') + '. Enter ZeptoMail API key and save again.'
+                  : 'Email is not configured — enter ZeptoMail API key and From address, then save.';
         const wst = data.settings && data.settings.whatsapp_status;
         const waHint = data.whatsapp_configured
             ? 'WhatsApp is configured.'
@@ -6216,30 +6241,29 @@ async function saveIntegrationSettings() {
     }
 }
 
-function integrationFormSmtpPayload() {
-    const passEl = document.getElementById('int-zoho-pass');
-    const pass = passEl ? passEl.value : '';
+function integrationFormZeptoPayload() {
+    const keyEl = document.getElementById('int-zepto-key');
+    const key = keyEl ? keyEl.value : '';
     const body = {
-        zoho_host: (document.getElementById('int-zoho-host') || {}).value.trim(),
-        zoho_port: (document.getElementById('int-zoho-port') || {}).value.trim(),
-        zoho_user: (document.getElementById('int-zoho-user') || {}).value.trim(),
-        zoho_from: (document.getElementById('int-zoho-from') || {}).value.trim()
+        zepto_from: (document.getElementById('int-zepto-from') || {}).value.trim(),
+        zepto_from_name: (document.getElementById('int-zepto-from-name') || {}).value.trim(),
+        zepto_region: (document.getElementById('int-zepto-region') || {}).value.trim() || 'in'
     };
-    if (pass && pass.trim() && pass !== '********') body.zoho_pass = pass.trim();
+    if (key && key.trim() && key !== '********') body.zepto_api_key = key.trim();
     return body;
 }
 
 async function testIntegrationEmail() {
     const to = (document.getElementById('int-test-email') || {}).value.trim();
     if (!to) return alert('Enter test email address');
-    const smtp = integrationFormSmtpPayload();
-    if (!smtp.zoho_host || !smtp.zoho_user) {
-        return alert('Fill Zoho Host and User (full mailbox e.g. care@vaidyagogate.org), then try again.');
+    const zepto = integrationFormZeptoPayload();
+    if (!zepto.zepto_from) {
+        return alert('Fill ZeptoMail From email (verified sender in your Mail Agent), then try again.');
     }
-    const passEl = document.getElementById('int-zoho-pass');
-    if (passEl && passEl.value.trim() && passEl.value !== '********') {
+    const keyEl = document.getElementById('int-zepto-key');
+    if (keyEl && keyEl.value.trim() && keyEl.value !== '********') {
         const saveFirst = confirm(
-            'Save the new app password before testing? (Recommended — click OK to save, then test.)'
+            'Save the new ZeptoMail API key before testing? (Recommended — click OK to save, then test.)'
         );
         if (saveFirst) {
             await saveIntegrationSettings();
@@ -6248,11 +6272,15 @@ async function testIntegrationEmail() {
     const res = await fetch('/api/admin/integrations/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, ...smtp })
+        body: JSON.stringify({ to, ...zepto })
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-        alert('Test email sent. Check inbox/spam. Logged under Notifications → Logs.');
+        alert(
+            'Test email sent. Check inbox/spam.' +
+                (data.endpoint ? '\n\nEndpoint: ' + data.endpoint : '') +
+                '\n\nLogged under Notifications → Logs.'
+        );
         if (typeof loadNotificationLogs === 'function') loadNotificationLogs();
     } else {
         const msg = [data.error, data.hint].filter(Boolean).join('\n\n');
@@ -10084,6 +10112,186 @@ function cmsDefaultFeatureCards() {
     ];
 }
 
+function cmsDefaultHomeJourney() {
+    return {
+        title: 'How it works — easy peasy!',
+        subtitle: 'Four simple steps from hello to your e-ticket. Parents and teachers can help too.',
+        steps: [
+            { icon: 'fa-user-plus', title: '1. Sign up', text: 'Create your free account on this website in a few minutes.' },
+            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you are coming — open your dashboard after login.' },
+            { icon: 'fa-palette', title: '3. Register & compete', text: 'Complete registration and upload competition entries if you like.' },
+            { icon: 'fa-ticket-alt', title: '4. E-ticket', text: 'Download your e-ticket and bring it on event day. That is it!' }
+        ]
+    };
+}
+
+function cmsDefaultHomeBento() {
+    return {
+        title: 'Everything in one friendly place',
+        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        cards: [
+            {
+                icon: 'fa-clipboard-check',
+                iconStyle: 'background:#dbeafe;color:#2563eb',
+                title: 'Pre-register & register',
+                text: 'After you create an account, open your dashboard to pre-register, complete full registration, and upload competition entries when you are ready.',
+                wide: true
+            },
+            {
+                icon: 'fa-qrcode',
+                iconStyle: 'background:#ede9fe;color:#7c3aed',
+                title: 'E-ticket',
+                text: 'Download your pass with a QR code — show it at check-in on event day.'
+            },
+            {
+                icon: 'fa-award',
+                iconStyle: 'background:#d1fae5;color:#059669',
+                title: 'Certificates',
+                text: 'Verify participation certificates online anytime from the Certificate page.'
+            },
+            {
+                icon: 'fa-bullhorn',
+                iconStyle: 'background:#fef3c7;color:#d97706',
+                title: 'Live updates',
+                text: 'Watch the announcement ticker and official notices for schedule changes and reminders.',
+                tall: true
+            },
+            {
+                icon: 'fa-envelope',
+                iconStyle: 'background:#ffe4e6;color:#e11d48',
+                title: 'Need help?',
+                text: 'Use Contact us — our team replies to registration and general questions.'
+            }
+        ]
+    };
+}
+
+function cmsDefaultHomeCtaBand() {
+    return {
+        title: 'Ready to join us?',
+        subtitle:
+            'Create your free account in minutes. Parents and teachers can help children through each step in the dashboard.',
+        buttonText: 'Create free account'
+    };
+}
+
+function cmsResolveHomeJourney(cms) {
+    const j = cms && cms.homeJourney;
+    if (j && (j.title || j.subtitle || (Array.isArray(j.steps) && j.steps.length))) return j;
+    return cmsDefaultHomeJourney();
+}
+
+function cmsResolveHomeBento(cms) {
+    const b = cms && cms.homeBento;
+    if (b && (b.title || b.subtitle || (Array.isArray(b.cards) && b.cards.length))) return b;
+    return cmsDefaultHomeBento();
+}
+
+function cmsApplyHomeJourneyFields(cms) {
+    const journey = cmsResolveHomeJourney(cms);
+    const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v != null ? String(v) : '';
+    };
+    set('ak-journey-title', journey.title);
+    set('ak-journey-subtitle', journey.subtitle);
+    const steps = Array.isArray(journey.steps) ? journey.steps : [];
+    steps.slice(0, 4).forEach((s, idx) => {
+        const i = idx + 1;
+        set('ak-step-' + i + '-title', s.title);
+        set('ak-step-' + i + '-text', s.text);
+        set('ak-step-' + i + '-icon', s.icon);
+    });
+}
+
+function cmsApplyHomeBentoFields(cms) {
+    const bento = cmsResolveHomeBento(cms);
+    const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v != null ? String(v) : '';
+    };
+    set('ak-bento-title', bento.title);
+    set('ak-bento-subtitle', bento.subtitle);
+    const cards = Array.isArray(bento.cards) ? bento.cards : [];
+    cards.slice(0, 5).forEach((c, idx) => {
+        const i = idx + 1;
+        set('ak-bento-' + i + '-title', c.title);
+        set('ak-bento-' + i + '-text', c.text);
+        set('ak-bento-' + i + '-icon', c.icon);
+        set('ak-bento-' + i + '-style', c.iconStyle);
+    });
+}
+
+function cmsApplyHomeCtaFields(cms) {
+    const cta = (cms && cms.homeCtaBand) || cmsDefaultHomeCtaBand();
+    const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v != null ? String(v) : '';
+    };
+    set('ak-cta-title', cta.title);
+    set('ak-cta-subtitle', cta.subtitle);
+    set('ak-cta-button', cta.buttonText);
+}
+
+function cmsCollectHomeJourneyFromDom() {
+    const gv = cmsFieldValue;
+    const defaults = cmsDefaultHomeJourney();
+    const steps = [1, 2, 3, 4].map((i) => ({
+        icon: gv('ak-step-' + i + '-icon') || (defaults.steps[i - 1] && defaults.steps[i - 1].icon) || 'fa-circle',
+        title: gv('ak-step-' + i + '-title'),
+        text: gv('ak-step-' + i + '-text')
+    }));
+    return {
+        title: gv('ak-journey-title') || defaults.title,
+        subtitle: gv('ak-journey-subtitle') || defaults.subtitle,
+        steps: steps.some((s) => s.title || s.text) ? steps : defaults.steps
+    };
+}
+
+function cmsCollectHomeBentoFromDom() {
+    const gv = cmsFieldValue;
+    const defaults = cmsDefaultHomeBento();
+    const cards = [1, 2, 3, 4, 5].map((i) => ({
+        icon: gv('ak-bento-' + i + '-icon') || (defaults.cards[i - 1] && defaults.cards[i - 1].icon) || 'fa-star',
+        iconStyle: gv('ak-bento-' + i + '-style') || (defaults.cards[i - 1] && defaults.cards[i - 1].iconStyle) || '',
+        title: gv('ak-bento-' + i + '-title'),
+        text: gv('ak-bento-' + i + '-text'),
+        wide: !!(defaults.cards[i - 1] && defaults.cards[i - 1].wide),
+        tall: !!(defaults.cards[i - 1] && defaults.cards[i - 1].tall)
+    }));
+    return {
+        title: gv('ak-bento-title') || defaults.title,
+        subtitle: gv('ak-bento-subtitle') || defaults.subtitle,
+        cards: cards.some((c) => c.title || c.text) ? cards : defaults.cards
+    };
+}
+
+function cmsCollectHomeCtaFromDom() {
+    const gv = cmsFieldValue;
+    const defaults = cmsDefaultHomeCtaBand();
+    return {
+        title: gv('ak-cta-title') || defaults.title,
+        subtitle: gv('ak-cta-subtitle') || defaults.subtitle,
+        buttonText: gv('ak-cta-button') || defaults.buttonText
+    };
+}
+
+function cmsCollectHomepageEditorFields() {
+    return {
+        tickerText: cmsFieldValue('cms-ticker') || '',
+        bannerImage: cmsFieldValue('cms-banner') || '',
+        helpBanner: cmsFieldValue('cms-help-banner') || '',
+        scrollingAnnouncements: cmsCollectScrollingAnnouncementsFromDom(),
+        publicNotices: cmsCollectPublicNoticesFromDom(),
+        reviews: cmsCollectReviewsFromDom(),
+        speakers: cmsCollectSpeakersFromDom(),
+        homeJourney: cmsCollectHomeJourneyFromDom(),
+        homeBento: cmsCollectHomeBentoFromDom(),
+        homeCtaBand: cmsCollectHomeCtaFromDom(),
+        ...cmsCollectHeroFieldsFromForm()
+    };
+}
+
 function cmsResolveHomePillars(cms) {
     const list = cms && Array.isArray(cms.homePillars) ? cms.homePillars.filter((p) => p && (p.title || p.text)) : [];
     return list.length ? list : cmsDefaultHomePillars();
@@ -10178,7 +10386,11 @@ function cmsApplyHeroFieldsToForm(cms) {
     const fs = cms.featuresSection || {};
     set('cms-features-title', fs.title || cms.featuresSectionTitle || 'Why join us');
     set('cms-features-subtitle', fs.subtitle || cms.featuresSubtitle || '');
+    set('cms-help-banner', cms.helpBanner || '');
     cmsApplyAkSimpleHomeFields(cms);
+    cmsApplyHomeJourneyFields(cms);
+    cmsApplyHomeBentoFields(cms);
+    cmsApplyHomeCtaFields(cms);
     cmsFillHomePillarRows(cmsResolveHomePillars(cms));
 }
 
@@ -10901,7 +11113,8 @@ function setCmsSaveMessage(text, color) {
         document.getElementById('cms-header-footer-save-msg'),
         document.getElementById('cms-contact-save-msg'),
         document.getElementById('ak-homepage-cms-guide-msg'),
-        document.getElementById('ak-homepage-inline-save-msg')
+        document.getElementById('ak-homepage-inline-save-msg'),
+        document.getElementById('ak-homepage-inline-save-msg-top')
     ].forEach((el) => {
         if (!el) return;
         el.innerText = text || '';
@@ -11006,25 +11219,15 @@ async function saveHomepageCmsOnly() {
         const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
         const current = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(current.error || 'Could not load current content');
-        const heroFields = cmsCollectHeroFieldsFromForm();
-        const featureCards = cmsCollectFeatureCardsFromDom();
-        const homePillars = cmsCollectHomePillarsFromDom();
         const cms = {
             ...current,
-            ...heroFields,
-            hero: { ...(current.hero || {}), ...(heroFields.hero || {}) },
-            topBar: { ...(current.topBar || {}), ...(heroFields.topBar || {}) },
-            featuresSection: heroFields.featuresSection,
-            featuresSectionTitle: heroFields.featuresSectionTitle,
-            featuresSubtitle: heroFields.featuresSubtitle,
-            featureCards: featureCards.length ? featureCards : cmsDefaultFeatureCards(),
-            homePillars: homePillars.length ? homePillars : cmsDefaultHomePillars()
+            ...cmsCollectHomepageEditorFields()
         };
         const data = await postSiteCmsPayload(cms);
         if (data.success) {
             __siteCmsEditing = cms;
-            cmsApplyAkSimpleHomeFields(cms);
-            setCmsSaveMessage('Homepage text saved. Hard-refresh the public site to see changes.', '#15803d');
+            cmsApplyHeroFieldsToForm(cms);
+            setCmsSaveMessage('Homepage saved. Hard-refresh the public site (Ctrl+F5) to see changes.', '#15803d');
         } else {
             setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
         }
@@ -11082,34 +11285,14 @@ async function saveAdminSiteCms() {
         if (!cms.faq || !cms.faq.length) {
             cms.faq = cmsCollectFaqFromDom();
         }
-        const save =
-            typeof window.autismAdminFetch === 'function'
-                ? () =>
-                      window.autismAdminFetch('/api/admin/site-cms', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ cms })
-                      })
-                : async () => {
-                      const url =
-                          typeof withActingAdminUrl === 'function'
-                              ? withActingAdminUrl('/api/admin/site-cms')
-                              : '/api/admin/site-cms';
-                      const res = await fetch(url, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'same-origin',
-                          body: JSON.stringify(
-                              typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
-                          )
-                      });
-                      const data = await res.json().catch(() => ({}));
-                      if (!res.ok) throw new Error(data.error || res.statusText);
-                      return data;
-                  };
-        const data = await save();
+        cms.homeJourney = cmsCollectHomeJourneyFromDom();
+        cms.homeBento = cmsCollectHomeBentoFromDom();
+        cms.homeCtaBand = cmsCollectHomeCtaFromDom();
+        cms.helpBanner = cmsFieldValue('cms-help-banner') || cms.helpBanner || '';
+        const data = await postSiteCmsPayload(cms);
         if (data.success) {
             __siteCmsEditing = cms;
+            cmsApplyHeroFieldsToForm(cms);
             setCmsSaveMessage(
                 (slidesWarn ? slidesWarn : '') + 'Website and portal content saved.',
                 slidesWarn ? '#b45309' : '#15803d'

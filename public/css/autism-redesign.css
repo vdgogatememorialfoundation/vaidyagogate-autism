@@ -565,6 +565,12 @@
     opacity: 1;
     transform: none;
 }
+@media (prefers-reduced-motion: reduce) {
+    .ak-reveal-v2 {
+        opacity: 1;
+        transform: none;
+    }
+}
 
 /* Auth modal */
 .autism-kids.ak-v2 .modal-content {

@@ -348,6 +348,15 @@
         return Array.isArray(cms.pastSeminarGallery) ? cms.pastSeminarGallery : [];
     }
 
+    const NAV_ICONS = {
+        home: 'fa-home',
+        about: 'fa-heart',
+        schedule: 'fa-calendar-days',
+        verify: 'fa-search',
+        contact: 'fa-envelope',
+        certificate: 'fa-award'
+    };
+
     window.applySiteMenu = function applySiteMenu(cms) {
         const host = document.getElementById('cg-nav-menu-links');
         if (!host || !cms) return;
@@ -365,16 +374,19 @@
             .map((item) => {
                 const label = esc(item.label || '');
                 const href = String(item.href || '').trim();
-                const section = String(item.section || '').trim();
+                const section = String(item.section || '').trim().toLowerCase();
+                const iconCls = NAV_ICONS[section] || NAV_ICONS[String(item.key || '').toLowerCase()] || 'fa-circle';
+                const iconHtml = '<i class="fas ' + iconCls + '" aria-hidden="true"></i> ';
                 if (href && (href.startsWith('/') || href.startsWith('http'))) {
                     const ext = href.startsWith('http') ? ' target="_blank" rel="noopener noreferrer"' : '';
-                    return '<a href="' + esc(href) + '"' + ext + '>' + label + '</a>';
+                    return '<a href="' + esc(href) + '"' + ext + '>' + iconHtml + label + '</a>';
                 }
                 if (section) {
                     return (
                         '<a href="#" data-nav-section="' +
                         esc(section) +
                         '">' +
+                        iconHtml +
                         label +
                         '</a>'
                     );
@@ -502,6 +514,7 @@
             toggle.setAttribute('aria-expanded', 'false');
             nav.setAttribute('aria-hidden', 'true');
         };
+        window.closeMobileNav = close;
         const openNav = () => {
             mountNavPortal();
             nav.classList.add('mobile-open');
@@ -621,8 +634,10 @@
             setTimeout(() => pre.classList.add('done'), 400);
         }
         (async () => {
+            if (document.body.classList.contains('ak-portal')) return;
             const root = document.getElementById('congress-hero-slides');
             if (root && root.children.length) return;
+            if (window.__homeCms) return;
             try {
                 const res = await fetch('/api/public/site-cms');
                 const cms = await res.json();
