@@ -50,9 +50,7 @@
     }
 
     document.querySelectorAll('.cg-utility-signup').forEach((el) => {
-        if (el.textContent.includes('Create account')) {
-            el.innerHTML = '<i class="fas fa-user-plus"></i> Sign up free';
-        }
+        el.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i> Sign up free';
     });
 
     if (typeof window.applySiteMenu === 'function' && !window.applySiteMenu.__akNoGallery) {
