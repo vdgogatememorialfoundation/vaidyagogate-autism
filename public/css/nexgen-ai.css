@@ -267,26 +267,39 @@ body.nexgen-ai .cg-utility-auth {
     gap: 10px 14px;
 }
 
-body.nexgen-ai .cg-utility-signin {
-    color: var(--nx-text) !important;
+/* Beat body.ak-portal .cg-utility a { color:#fff } — same link, higher specificity */
+body.nexgen-ai.ak-portal .cg-utility a.cg-utility-signin,
+body.nexgen-ai.autism-kids .cg-utility a.cg-utility-signin,
+body.nexgen-ai .cg-utility a.cg-utility-signin {
+    color: #0f172a !important;
     font-weight: 700 !important;
     text-decoration: none !important;
-    padding: 6px 10px;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px !important;
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    border: 2px solid #cbd5e1 !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-body.nexgen-ai .cg-utility-signin:hover {
+body.nexgen-ai.ak-portal .cg-utility a.cg-utility-signin:hover,
+body.nexgen-ai.autism-kids .cg-utility a.cg-utility-signin:hover,
+body.nexgen-ai .cg-utility a.cg-utility-signin:hover {
     color: var(--nx-cyan) !important;
-    background: rgba(8, 145, 178, 0.08);
+    background: #f0f9ff !important;
+    border-color: var(--nx-cyan) !important;
     text-decoration: none !important;
 }
 
 body.nexgen-ai .cg-utility-signin i {
-    background: transparent;
-    width: auto;
-    height: auto;
-    font-size: 0.9rem !important;
+    background: transparent !important;
+    color: var(--nx-cyan) !important;
+    width: auto !important;
+    height: auto !important;
+    font-size: 0.95rem !important;
 }
 
 body.nexgen-ai .cg-utility-sep {
@@ -321,7 +334,9 @@ body.nexgen-ai .cg-utility-signup i {
 }
 
 body.nexgen-ai.autism-kids .cg-utility a.cg-utility-link,
-body.nexgen-ai.ak-portal .cg-utility a.cg-utility-link {
+body.nexgen-ai.ak-portal .cg-utility a.cg-utility-link,
+body.nexgen-ai.ak-portal .cg-utility a:not(.cg-utility-signup):not(.cg-utility-signin),
+body.nexgen-ai.autism-kids .cg-utility a:not(.cg-utility-signup):not(.cg-utility-signin) {
     color: var(--nx-text) !important;
 }
 
