@@ -86,3 +86,42 @@ Blueprint cron jobs call:
 Header: `Authorization: Bearer <CRON_SECRET>`
 
 On Render web service, **node-cron** also runs in-process (reminders + queue drain).
+
+## 7. Prevent free-tier spin-down (keep server warm)
+
+**Your setup:** full-stack Node app on **Render** — static site + Express API + admin + Postgres (Neon). One web service serves everything.
+
+Render **free** web services sleep after ~15 minutes with no traffic. The first visit after sleep can take 30–60 seconds (cold start).
+
+### Recommended: external ping every 10–14 minutes (free)
+
+Use a free uptime checker — **no code changes required** beyond the built-in ping URL:
+
+| Setting | Value |
+|---------|--------|
+| URL | `https://autism.vaidyagogate.org/api/ping` |
+| Interval | Every **10–14 minutes** |
+| Expected response | `{"ok":true,"pong":true}` |
+
+**Cron-job.org**
+
+1. Create account at [cron-job.org](https://cron-job.org)
+2. **Create cronjob** → URL: `https://autism.vaidyagogate.org/api/ping`
+3. Schedule: every **10 minutes** (or `*/10 * * * *`)
+4. Save — no auth header needed for `/api/ping`
+
+**UptimeRobot** (alternative): add HTTP monitor, 5-minute interval on free tier.
+
+> Use `/api/ping` (instant, no database) — not `/api/health` (checks Postgres and is slower).
+
+### Other options
+
+| Option | Notes |
+|--------|--------|
+| **Render Starter plan** | `render.yaml` uses `plan: starter` — paid tier stays awake 24/7 |
+| **Render cron keepalive** | Possible but cron jobs are billed separately; external ping is simpler on free tier |
+| **Split frontend/backend** | Not needed — this repo is one Node app; splitting adds complexity |
+
+### Loading screen (already on site)
+
+If the server was sleeping, the homepage preloader shows **“Waking up the portal…”** while `/api/ping` completes.

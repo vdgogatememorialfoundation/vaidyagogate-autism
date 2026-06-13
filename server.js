@@ -429,6 +429,16 @@ function ensureAppReady(req, res, next) {
         });
 }
 
+app.get('/api/ping', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+        ok: true,
+        pong: true,
+        time: new Date().toISOString(),
+        render: !!process.env.RENDER
+    });
+});
+
 app.get('/api/health', (req, res) => {
     const urlCheck = validateDatabaseUrl();
     const payload = {
@@ -531,7 +541,7 @@ app.get('/api/health', (req, res) => {
 
 function requestNeedsBootstrap(req) {
     const p = req.path || '/';
-    if (p === '/api/health') return false;
+    if (p === '/api/health' || p === '/api/ping') return false;
     if (p === '/certificate/view') return true;
     if (p.startsWith('/api/branding/logo')) return false;
     if (p === '/scan' || p === '/scan/') return false;
@@ -1002,7 +1012,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     },
     homeBento: {
         title: 'Everything in one friendly place',
-        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        subtitle: 'Register online, track your progress, and stay updated — everything in one place.',
         cards: [
             {
                 icon: 'fa-clipboard-check',
@@ -1041,7 +1051,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     homeCtaBand: {
         title: 'Ready to join us?',
         subtitle:
-            'Create your free account in minutes. Parents and teachers can help children through each step in the dashboard.',
+            'Create your free account in minutes and complete each step in your dashboard.',
         buttonText: 'Create free account'
     },
     heroStats: [
@@ -1054,10 +1064,10 @@ const DEFAULT_PUBLIC_SITE_CMS = {
             icon: 'fa-lightbulb',
             iconTone: 'blue',
             title: 'Awareness',
-            text: 'Learn about autism with simple talks, activities, and resources for children, parents, and teachers.'
+            text: 'Learn about autism with simple talks, activities, and resources for your school and community.'
         },
         {
-            icon: 'fa-hands-holding-heart',
+            icon: 'fa-hand-holding-heart',
             iconTone: 'violet',
             title: 'Inclusion',
             text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."

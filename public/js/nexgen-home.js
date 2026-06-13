@@ -7,7 +7,27 @@
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* ── Preloader ───────────────────────────────────────── */
+    /* ── Preloader + cold-start wake message ─────────────── */
+    function initWakePreloader() {
+        const textEl = document.querySelector('.nx-preloader-text');
+        const slowMsg = 'Waking up the portal — first load can take up to a minute…';
+        const readyMsg = 'Almost ready…';
+        let slowTimer = setTimeout(() => {
+            if (textEl) textEl.textContent = slowMsg;
+        }, 2800);
+        const pingStart = performance.now();
+        fetch('/api/ping', { cache: 'no-store', credentials: 'same-origin' })
+            .then((r) => (r.ok ? r.json() : Promise.reject(new Error('ping failed'))))
+            .then(() => {
+                clearTimeout(slowTimer);
+                if (performance.now() - pingStart > 2800 && textEl) textEl.textContent = readyMsg;
+            })
+            .catch(() => {
+                clearTimeout(slowTimer);
+                if (textEl) textEl.textContent = slowMsg;
+            });
+    }
+
     function hidePreloader() {
         const el = document.getElementById('site-preloader');
         if (!el || el.classList.contains('done')) return;
@@ -240,6 +260,7 @@
     }
 
     function init() {
+        initWakePreloader();
         initParticles();
         initHeaderScroll();
         initStaggerReveal();
