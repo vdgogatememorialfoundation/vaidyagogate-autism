@@ -429,16 +429,6 @@ function ensureAppReady(req, res, next) {
         });
 }
 
-app.get('/api/ping', (req, res) => {
-    res.setHeader('Cache-Control', 'no-store');
-    res.json({
-        ok: true,
-        pong: true,
-        time: new Date().toISOString(),
-        render: !!process.env.RENDER
-    });
-});
-
 app.get('/api/health', (req, res) => {
     const urlCheck = validateDatabaseUrl();
     const payload = {
@@ -536,6 +526,17 @@ app.get('/api/health', (req, res) => {
         payload.ok = true;
         payload.bootstrap.state = 'connected';
         res.json(payload);
+    });
+});
+
+/** Lightweight keep-alive — no DB; use for uptime pings every 10–15 min on Render free tier */
+app.get('/api/ping', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+        ok: true,
+        pong: true,
+        time: new Date().toISOString(),
+        render: !!process.env.RENDER
     });
 });
 

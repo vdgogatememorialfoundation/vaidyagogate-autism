@@ -87,3 +87,15 @@ services:
           name: autism-portal
           envVarKey: CRON_SECRET
     startCommand: 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://${CRON_URL}/api/cron/event-starting-today"'
+
+  # Keep web service warm on free/starter tier (Render spins down after ~15 min idle)
+  - type: cron
+    name: autism-keep-alive
+    schedule: "*/10 * * * *"
+    envVars:
+      - key: CRON_URL
+        fromService:
+          type: web
+          name: autism-portal
+          property: host
+    startCommand: 'curl -fsS -o /dev/null -w "%{http_code}" "https://${CRON_URL}/api/ping" | grep -q 200'

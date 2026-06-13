@@ -71,9 +71,35 @@ Update env: `PUBLIC_BASE_URL`, `APPLICANT_HOST`, `MAIN_SITE_URL` to match.
 ## 6. Verify
 
 - `https://your-service.onrender.com/api/health` → `"ok": true`, `"render": true`
+- `https://your-service.onrender.com/api/ping` → `"pong": true` (lightweight keep-alive)
 - Homepage loads with NexGen AI theme
 - Admin → Integrations → test email
 - Forgot password email
+
+## Keep alive (prevent free tier sleep)
+
+Render **free** web services spin down after ~15 minutes with no traffic. Cold starts add 30–60+ seconds.
+
+This repo includes **two** keep-alive mechanisms (use either or both):
+
+| Method | How |
+|--------|-----|
+| **Render cron** | Blueprint job `autism-keep-alive` hits `/api/ping` every **10 minutes** (`render.yaml`) |
+| **GitHub Actions** | Workflow `.github/workflows/keep-alive.yml` pings the same URL every **10 minutes** |
+
+After pushing `main`, enable in Render dashboard if using Blueprint: **Cron Jobs → autism-keep-alive**.
+
+### External uptime checker (optional)
+
+Free services that work well:
+
+- [UptimeRobot](https://uptimerobot.com) — monitor `https://autism.vaidyagogate.org/api/ping` every **5–10 min**
+- [cron-job.org](https://cron-job.org) — HTTP GET every **10 min**
+- [Better Stack](https://betterstack.com/uptime) — similar
+
+Use **`/api/ping`** (fast, no database). Use `/api/health` only when you need a full DB check.
+
+To change the GitHub Actions target URL, set repo variable **`KEEP_ALIVE_URL`** (Settings → Secrets and variables → Actions → Variables).
 
 ## Cron jobs
 
@@ -86,42 +112,3 @@ Blueprint cron jobs call:
 Header: `Authorization: Bearer <CRON_SECRET>`
 
 On Render web service, **node-cron** also runs in-process (reminders + queue drain).
-
-## 7. Prevent free-tier spin-down (keep server warm)
-
-**Your setup:** full-stack Node app on **Render** — static site + Express API + admin + Postgres (Neon). One web service serves everything.
-
-Render **free** web services sleep after ~15 minutes with no traffic. The first visit after sleep can take 30–60 seconds (cold start).
-
-### Recommended: external ping every 10–14 minutes (free)
-
-Use a free uptime checker — **no code changes required** beyond the built-in ping URL:
-
-| Setting | Value |
-|---------|--------|
-| URL | `https://autism.vaidyagogate.org/api/ping` |
-| Interval | Every **10–14 minutes** |
-| Expected response | `{"ok":true,"pong":true}` |
-
-**Cron-job.org**
-
-1. Create account at [cron-job.org](https://cron-job.org)
-2. **Create cronjob** → URL: `https://autism.vaidyagogate.org/api/ping`
-3. Schedule: every **10 minutes** (or `*/10 * * * *`)
-4. Save — no auth header needed for `/api/ping`
-
-**UptimeRobot** (alternative): add HTTP monitor, 5-minute interval on free tier.
-
-> Use `/api/ping` (instant, no database) — not `/api/health` (checks Postgres and is slower).
-
-### Other options
-
-| Option | Notes |
-|--------|--------|
-| **Render Starter plan** | `render.yaml` uses `plan: starter` — paid tier stays awake 24/7 |
-| **Render cron keepalive** | Possible but cron jobs are billed separately; external ping is simpler on free tier |
-| **Split frontend/backend** | Not needed — this repo is one Node app; splitting adds complexity |
-
-### Loading screen (already on site)
-
-If the server was sleeping, the homepage preloader shows **“Waking up the portal…”** while `/api/ping` completes.
