@@ -2157,6 +2157,10 @@ function hasRegistrationOverrideForSeminar(seminarId) {
 
 /** Honors per-user admin override when public registration has closed. */
 function effectiveRegistrationWindowState(seminar) {
+    const flow = seminarFlowFlags(seminar);
+    if (flow.preregistrationRequired && flow.mainRegistrationRequired && !flow.mainRegistrationOpen) {
+        return { state: 'admin_closed' };
+    }
     const w = registrationWindowState(seminar);
     if (w.state === 'closed' && seminar && hasRegistrationOverrideForSeminar(seminar.id)) {
         return { state: 'open', viaOverride: true };
@@ -2245,6 +2249,10 @@ function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
             (flow.preregistrationRequired
                 ? '<button type="button" class="btn-primary" style="width:100%;" onclick="switchTab(\'tab-prereg-hub\')">Open pre-registration</button>'
                 : '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration unavailable</button>');
+    } else if (win.state === 'admin_closed') {
+        actionBlock =
+            '<p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;"><i class="fas fa-hourglass-half"></i> Final registration is not open yet.</p>' +
+            '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration not open yet</button>';
     } else if (win.state === 'unscheduled') {
         actionBlock =
             '<p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;"><i class="fas fa-calendar-xmark"></i> Registration schedule is not set yet.</p>' +

@@ -5068,10 +5068,22 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
             if (err2) return res.status(500).json({ error: err2.message });
             if (!sem) return res.status(400).json({ error: 'Seminar not found or is not active.' });
 
+            const flow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
+            if (!flow.mainRegistrationRequired) {
+                return res.status(400).json({ error: 'Main registration is not enabled for this event.' });
+            }
+            if (flow.preregistrationRequired && !flow.mainRegistrationOpen) {
+                return res.status(400).json({
+                    error:
+                        'Final registration is not open yet for this event. You will be able to register once the organisers enable it.'
+                });
+            }
             const mainWin = seminarRegFlow.mainRegistrationWindowState(sem, seminarDt);
             if (mainWin.state === 'unscheduled') {
                 return res.status(400).json({
-                    error: 'Registration schedule is not set for this event yet.'
+                    error: flow.preregistrationRequired
+                        ? 'Main registration dates are not set for this event yet.'
+                        : 'Registration schedule is not set for this event yet.'
                 });
             }
             if (mainWin.state === 'upcoming') {
@@ -5092,12 +5104,6 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
             }
 
                 function checkPreregThenSubmit() {
-                    const flow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
-                    if (!flow.mainRegistrationRequired) {
-                        return res.status(400).json({
-                            error: 'Main registration is not enabled for this event.'
-                        });
-                    }
                     if (!portalProduct.FEATURES.hasPreregistration || !flow.preregistrationRequired) {
                         return continueApplicationSubmit();
                     }
@@ -5120,12 +5126,6 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                             : pst === 'submitted'
                                             ? 'Your pre-registration is submitted and awaiting approval.'
                                             : 'Wait for pre-registration approval before main registration.'
-                                });
-                            }
-                            if (!flow.mainRegistrationOpen) {
-                                return res.status(400).json({
-                                    error:
-                                        'Final registration is not open yet for this event. You will be able to register once the organisers enable it.'
                                 });
                             }
                             continueApplicationSubmit();

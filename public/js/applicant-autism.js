@@ -926,7 +926,13 @@
             (window.activeSeminars || []).find((x) => Number(x.id) === sid);
         if (seminar) {
             const flags = seminarFlowFlags(seminar);
-            const mainWin = mainRegistrationWindowStateClient(seminar);
+            const mainWin = effectiveMainRegistrationWindowStateClient(seminar);
+            if (mainWin.state === 'admin_closed') {
+                alert(
+                    'Final registration is not open yet for this event. You will be notified when the organisers enable it.'
+                );
+                return;
+            }
             if (mainWin.state === 'unscheduled') {
                 alert('Registration schedule is not set for this event yet.');
                 return;
@@ -1021,6 +1027,14 @@
         return registrationScheduleWindowStateClient(seminar, 'registration_start', 'registration_end');
     }
 
+    function effectiveMainRegistrationWindowStateClient(seminar) {
+        const flags = seminarFlowFlags(seminar);
+        if (flags.preregistrationRequired && flags.mainRegistrationRequired && !flags.mainRegistrationOpen) {
+            return { state: 'admin_closed' };
+        }
+        return mainRegistrationWindowStateClient(seminar);
+    }
+
     function scheduleNotSetStatusHtml(kind) {
         const label =
             kind === 'prereg'
@@ -1046,7 +1060,7 @@
         const prereg = preregBySeminar[Number(s.id)] || null;
         const st = String((prereg && prereg.status) || '').toLowerCase();
         const preWin = flags.preregistrationRequired ? preregWindowStateClient(s) : { state: 'open' };
-        const mainWin = flags.mainRegistrationRequired ? mainRegistrationWindowStateClient(s) : { state: 'open' };
+        const mainWin = flags.mainRegistrationRequired ? effectiveMainRegistrationWindowStateClient(s) : { state: 'open' };
         const eventLabel = akFormatEventDate(s.event_date);
         const preEndLabel = s.preregistration_end ? akFormatTrackDateTime(s.preregistration_end) : '';
         const regEndLabel = s.registration_end ? akFormatTrackDateTime(s.registration_end) : '';
@@ -1091,7 +1105,7 @@
         } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'prereg') {
             statusBlock +=
                 '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>';
-            if (!flags.mainRegistrationOpen) {
+            if (mainWin.state === 'admin_closed') {
                 statusBlock +=
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Final registration is not open yet. We will notify you when it opens.</p>';
             } else if (mainWin.state === 'unscheduled') {
@@ -1100,7 +1114,7 @@
                 statusBlock +=
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Open the <strong>Main registration</strong> tab when final registration opens.</p>';
             }
-            if (flags.mainRegistrationOpen && mainWin.state === 'upcoming') {
+            if (mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
                     '<p style="font-size:0.8rem;color:#047857;font-weight:600;">Final registration opens</p>' +
@@ -1117,12 +1131,16 @@
             }
             actionBlock =
                 '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">' +
-                (flags.mainRegistrationOpen ? 'Use Main registration tab' : 'Final registration not open yet') +
+                (mainWin.state === 'admin_closed' || mainWin.state === 'unscheduled'
+                    ? mainWin.state === 'admin_closed'
+                        ? 'Final registration not open yet'
+                        : 'Final registration schedule pending'
+                    : 'Use Main registration tab') +
                 '</button>';
         } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'main') {
             statusBlock +=
                 '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>';
-            if (!flags.mainRegistrationOpen) {
+            if (mainWin.state === 'admin_closed') {
                 statusBlock +=
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;"><i class="fas fa-hourglass-half"></i> Final registration is not open yet. Please check back later.</p>';
                 actionBlock =

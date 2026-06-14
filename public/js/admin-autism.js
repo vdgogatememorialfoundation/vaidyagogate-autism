@@ -59,9 +59,12 @@
             note.id = 'seminar-main-reg-schedule-note';
             note.style.cssText = 'grid-column:1/-1;margin:4px 0 0;font-size:0.78rem;color:#64748b;';
             note.textContent =
-                'Both registration start and end are required before the main registration form opens.';
+                'Main registration dates are optional while pre-registration is live. Set them when you open final registration — the countdown starts then.';
             regGrid.appendChild(note);
         }
+        const regEnd = document.getElementById('seminar-reg-end');
+        if (regStart) regStart.removeAttribute('required');
+        if (regEnd) regEnd.removeAttribute('required');
         const flow = document.createElement('div');
         flow.style.cssText =
             'display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding:10px 12px;border:1px solid #d1fae5;border-radius:8px;background:#f0fdfa;';
@@ -186,6 +189,61 @@
             tr.remove();
             updatePreregFormPreview();
         });
+    }
+
+    function formatSeminarDtLocal(dtStr) {
+        return window.PortalDateTime && window.PortalDateTime.toDatetimeLocal
+            ? window.PortalDateTime.toDatetimeLocal(dtStr)
+            : dtStr
+              ? String(dtStr).slice(0, 16)
+              : '';
+    }
+
+    function applySeminarPreregDatesToUi(seminar) {
+        const ps = document.getElementById('seminar-prereg-start');
+        const pe = document.getElementById('seminar-prereg-end');
+        if (!ps || !pe) return;
+        const startVal = formatSeminarDtLocal(seminar && seminar.preregistration_start);
+        const endVal = formatSeminarDtLocal(seminar && seminar.preregistration_end);
+        ps.value = startVal;
+        pe.value = endVal;
+        window.__autismPreregStart = startVal;
+        window.__autismPreregEnd = endVal;
+    }
+
+    function syncSeminarScheduleFieldsToPayload(data) {
+        const psEl = document.getElementById('seminar-prereg-start');
+        const peEl = document.getElementById('seminar-prereg-end');
+        const rsEl = document.getElementById('seminar-reg-start');
+        const reEl = document.getElementById('seminar-reg-end');
+        if (psEl) {
+            data.preregistration_start = psEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromDatetimeLocal(psEl.value)
+                    : psEl.value
+                : null;
+        }
+        if (peEl) {
+            data.preregistration_end = peEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromRegistrationEndLocal(peEl.value)
+                    : peEl.value
+                : null;
+        }
+        if (rsEl) {
+            data.registration_start = rsEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromDatetimeLocal(rsEl.value)
+                    : rsEl.value
+                : null;
+        }
+        if (reEl) {
+            data.registration_end = reEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromRegistrationEndLocal(reEl.value)
+                    : reEl.value
+                : null;
+        }
     }
 
     function resolveMainRegistrationOpenFromUi(preOn, mainOn) {
@@ -511,16 +569,7 @@
                 try {
                     const data = JSON.parse(opts.body);
                     data.price = 0;
-                    if (window.__autismPreregStart != null) {
-                        data.preregistration_start = window.PortalDateTime
-                            ? window.PortalDateTime.fromDatetimeLocal(window.__autismPreregStart)
-                            : window.__autismPreregStart;
-                    }
-                    if (window.__autismPreregEnd != null) {
-                        data.preregistration_end = window.PortalDateTime
-                            ? window.PortalDateTime.fromRegistrationEndLocal(window.__autismPreregEnd)
-                            : window.__autismPreregEnd;
-                    }
+                    syncSeminarScheduleFieldsToPayload(data);
                     const preOn =
                         (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
                     const mainOn =
@@ -568,6 +617,7 @@
             if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
             if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
             if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
+            applySeminarPreregDatesToUi(s);
             syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
             try {
@@ -596,6 +646,7 @@
             if (mainOpen) mainOpen.checked = false;
             if (autoPre) autoPre.checked = false;
             if (autoReg) autoReg.checked = false;
+            applySeminarPreregDatesToUi(null);
             syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi('');
             applyPreregOtpToUi({});
