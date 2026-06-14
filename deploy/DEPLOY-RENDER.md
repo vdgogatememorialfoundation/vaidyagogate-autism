@@ -84,6 +84,7 @@ This repo includes **two** keep-alive mechanisms (use either or both):
 
 | Method | How |
 |--------|-----|
+| **In-app self-ping** | Server hits `/api/ping` every **30 seconds** on Render (`lib/render-keep-alive.js`). Disable with `KEEP_ALIVE_SELF_PING=0`. |
 | **Render cron** | Blueprint job `autism-keep-alive` hits `/api/ping` every **10 minutes** (`render.yaml`) |
 | **GitHub Actions** | Workflow `.github/workflows/keep-alive.yml` pings the same URL every **10 minutes** |
 

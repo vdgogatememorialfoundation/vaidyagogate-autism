@@ -12717,7 +12717,8 @@ if (!process.env.VERCEL) {
             app.listen(PORT, () => {
                 console.log(`Server is running on http://localhost:${PORT}`);
                 console.log('[routes] Case presentation APIs: /api/admin/case/programs, /api/case/programs');
+                require('./lib/render-keep-alive').startSelfPing();
+            });
         });
-});
     });
 }
