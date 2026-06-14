@@ -1,9 +1,30 @@
 /**
- * Loads site logo from /api/branding/logo into [data-site-logo] slots.
+ * Loads site logo from /api/branding/logo into [data-site-logo] slots and syncs favicon.
  */
 (function () {
     const DEFAULT_ICON = '🏥';
-    const FALLBACK_LOGO = '/favicon.svg';
+    const FALLBACK_LOGO = '/favicon.ico';
+
+    function upsertFaviconLink(rel, href) {
+        if (!href) return;
+        let el = document.querySelector(`link[rel="${rel}"]`);
+        if (!el) {
+            el = document.createElement('link');
+            el.setAttribute('rel', rel);
+            document.head.appendChild(el);
+        }
+        el.setAttribute('href', href);
+    }
+
+    function applySiteFavicon(logoPath) {
+        const href = logoPath || '/favicon.ico';
+        upsertFaviconLink('icon', href);
+        upsertFaviconLink('shortcut icon', href);
+        upsertFaviconLink('apple-touch-icon', href);
+        if (window.VgmfSiteSeo && typeof window.VgmfSiteSeo.applyFavicon === 'function') {
+            window.VgmfSiteSeo.applyFavicon(href);
+        }
+    }
 
     function applyLogoToSlot(el, logoPath, isRetry) {
         if (!el) return;
@@ -42,6 +63,7 @@
             document.documentElement.classList.contains('scanner-native-shell') ||
             /\/scanner\.html$/i.test(window.location.pathname || '');
         if (onScanner && !document.querySelector('[data-site-logo]')) {
+            applySiteFavicon('/favicon.ico');
             return;
         }
         let logoPath = '';
@@ -55,6 +77,7 @@
             console.warn('Site branding:', e.message || e);
         }
         window.__siteLogoPath = logoPath;
+        applySiteFavicon(logoPath || '/favicon.ico');
         document.querySelectorAll('[data-site-logo]').forEach((el) => applyLogoToSlot(el, logoPath));
         if (logoPath && !onScanner) {
             document.body.classList.add('has-logo-theme');

@@ -986,7 +986,7 @@ function fetchImageAsDataUrl(url) {
 async function ensurePdfLogoDataUrl() {
     if (__pdfLogoDataUrl) return __pdfLogoDataUrl;
     if (!siteLogoPath && !window.__siteLogoPath) await loadSiteBranding();
-    const candidates = [siteLogoPath, window.__siteLogoPath, '/api/branding/logo/file', '/favicon.svg'].filter(
+    const candidates = [siteLogoPath, window.__siteLogoPath, '/api/branding/logo/file', '/favicon.ico'].filter(
         Boolean
     );
     for (const url of [...new Set(candidates)]) {

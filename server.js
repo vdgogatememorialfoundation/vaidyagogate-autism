@@ -614,60 +614,7 @@ app.get('/scanner', (req, res) => {
 app.get('/scanner/', (req, res) => {
     res.redirect(302, portalUrls.getPortalUrls().scanner);
 });
-app.get('/robots.txt', (req, res) => {
-    const urls = portalUrls.getPortalUrls();
-    const base = String((urls && urls.site) || 'https://autism.vaidyagogate.org').replace(/\/$/, '');
-    const body =
-        'User-agent: *\n' +
-        'Allow: /\n' +
-        'Disallow: /admin\n' +
-        'Disallow: /admin/\n' +
-        'Disallow: /dashboard\n' +
-        'Disallow: /dashboard/\n' +
-        'Disallow: /scan\n' +
-        'Disallow: /scanner\n' +
-        'Disallow: /scanner/\n' +
-        'Disallow: /api/\n' +
-        'Disallow: /judge.html\n' +
-        'Sitemap: ' +
-        base +
-        '/sitemap.xml\n';
-    res.type('text/plain; charset=utf-8').send(body);
-});
-app.get('/sitemap.xml', (req, res) => {
-    const urls = portalUrls.getPortalUrls();
-    const base = String((urls && urls.site) || 'https://autism.vaidyagogate.org').replace(/\/$/, '');
-    const now = new Date().toISOString();
-    const pages = [
-        { loc: base + '/', changefreq: 'daily', priority: '1.0' },
-        { loc: base + '/verify-certificate.html', changefreq: 'weekly', priority: '0.8' },
-        { loc: base + '/scanner-download.html', changefreq: 'weekly', priority: '0.6' }
-    ];
-    const xml =
-        '<?xml version="1.0" encoding="UTF-8"?>\n' +
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-        pages
-            .map(
-                (p) =>
-                    '  <url>\n' +
-                    '    <loc>' +
-                    p.loc +
-                    '</loc>\n' +
-                    '    <lastmod>' +
-                    now +
-                    '</lastmod>\n' +
-                    '    <changefreq>' +
-                    p.changefreq +
-                    '</changefreq>\n' +
-                    '    <priority>' +
-                    p.priority +
-                    '</priority>\n' +
-                    '  </url>'
-            )
-            .join('\n') +
-        '\n</urlset>\n';
-    res.type('application/xml; charset=utf-8').send(xml);
-});
+siteSeoMod.registerSiteSeoRoutes(app, { db, loadPublicSiteCms });
 app.use(
     express.static(path.join(__dirname, 'public'), {
         maxAge: process.env.VERCEL ? '86400000' : 0,
@@ -1379,6 +1326,7 @@ function ensurePortalSchema(next) {
                                                             migratePreregFormConfigV2(() => {
                                                             seedGlobalSettingIfMissing('public_site_cms', DEFAULT_PUBLIC_SITE_CMS_JSON, () => {
                                                             migrateAutismPublicSiteCms(() => {
+                                                                migrateAutismSeoDefaults(() => {
                                                                 seedGlobalSettingIfMissing(
                                                                     emailDeliveryPolicy.KEY,
                                                                     JSON.stringify(emailDeliveryPolicy.DEFAULT_CONFIG),
@@ -1474,6 +1422,7 @@ function ensurePortalSchema(next) {
                                                                         );
                                                                     });
                                                                 });
+                                                            });
                                                             });
                                                             });
                                                             });
@@ -1708,6 +1657,39 @@ function migrateAutismPublicSiteCms(done) {
     });
 }
 
+function migrateAutismSeoDefaults(done) {
+    if (portalProduct.FEATURES.productId !== 'autism') return done && done();
+    db.get(`SELECT value FROM global_settings WHERE key = 'public_site_cms'`, [], (err, row) => {
+        if (err || !row || !row.value) return done && done();
+        try {
+            const parsed = JSON.parse(row.value);
+            if (!parsed || typeof parsed !== 'object') return done && done();
+            const seo = siteSeoMod.normalizeSeo(parsed.seo || {});
+            const fresh = siteSeoMod.normalizeSeo(siteSeoMod.DEFAULT_SEO);
+            let changed = false;
+            const legacy =
+                /National Seminar|national seminar|Ayurveda seminar|doctor registration/i.test(
+                    String(seo.title || '') + String(seo.description || '') + String(seo.keywords || '')
+                );
+            if (legacy || seo.faviconUrl === '/favicon.svg') {
+                parsed.seo = Object.assign({}, seo, {
+                    title: fresh.title,
+                    description: fresh.description,
+                    keywords: fresh.keywords,
+                    faviconUrl: fresh.faviconUrl,
+                    robotsIndex: true,
+                    sitemapExtraPaths: fresh.sitemapExtraPaths
+                });
+                changed = true;
+            }
+            if (!changed) return done && done();
+            upsertGlobalSetting('public_site_cms', JSON.stringify(parsed), () => done && done());
+        } catch (_) {
+            done && done();
+        }
+    });
+}
+
 const regFormCfg = require('./lib/registration-form-config');
 
 function autismApplicantFormFields(fields) {
@@ -1866,8 +1848,6 @@ function loadPublicSiteCms(callback) {
         callback(null, siteCmsHelpers.normalizeSiteCms(base));
     });
 }
-
-siteSeoMod.registerSiteSeoRoutes(app, { db, loadPublicSiteCms });
 
 function isSeminarRegistrationOpen(row) {
     const now = Date.now();
