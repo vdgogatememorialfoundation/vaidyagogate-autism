@@ -544,6 +544,8 @@
         const tab = document.getElementById('tab-site-cms');
         const main = document.getElementById('ak-main-cms-card');
         const guide = document.getElementById('ak-homepage-cms-guide');
+        const aboutCard = document.getElementById('ak-cms-about-card');
+        const previewWrap = document.getElementById('ak-homepage-live-preview-wrap');
         const headerCard = document.getElementById('cms-header-footer-card');
         const contactCard = document.getElementById('cms-contact-card');
         const photos = document.getElementById('ak-admin-site-images');
@@ -551,6 +553,11 @@
 
         tab.insertBefore(main, tab.firstElementChild);
         if (guide) tab.insertBefore(guide, main);
+
+        const afterGuide = guide || main;
+        if (previewWrap) tab.insertBefore(previewWrap, afterGuide.nextSibling);
+        if (aboutCard && previewWrap) tab.insertBefore(aboutCard, previewWrap.nextSibling);
+        else if (aboutCard) tab.insertBefore(aboutCard, afterGuide.nextSibling);
 
         if (headerCard) tab.insertBefore(headerCard, main.nextSibling);
         if (contactCard) {
@@ -582,7 +589,7 @@
         tab.querySelectorAll('.ak-cms-advanced').forEach((el) => {
             el.style.display = 'none';
         });
-        tab.querySelectorAll('.ak-cms-homepage, #ak-main-cms-card, #ak-homepage-cms-guide').forEach((el) => {
+        tab.querySelectorAll('.ak-cms-homepage, #ak-main-cms-card, #ak-homepage-cms-guide, #ak-cms-about-card').forEach((el) => {
             el.style.display = '';
         });
         const intro = tab.querySelector(':scope > p');

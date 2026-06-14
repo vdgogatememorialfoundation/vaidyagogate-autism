@@ -931,7 +931,8 @@ const DEFAULT_PUBLIC_SITE_CMS = {
     aboutSections: [
         {
             heading: 'About Vaidya Gogate Memorial Foundation',
-            body: 'The Foundation advances Ayurveda education through national seminars, clinical case presentations, and continuing medical education since 1972.'
+            body:
+                'Vaidya Gogate Memorial Foundation is a website with a sole motto: Propagation of knowledge. This is a platform to share our grandfather’s, Vd. Ramchandra Ballal Gogate’s work and carry forward his vision “knowledge for all”. We are creating this platform as an authentic source of information. Our purpose is to ignite young minds through his writings and teachings. We plan to reach out to all vaidyas, students of Ayurved as well as disseminating the knowledge across all pathies and common people. Fortunately, our family has been blessed with renowned vaidyas for many generations.'
         }
     ],
     socialLinks: [
@@ -1631,18 +1632,30 @@ function migrateAutismPublicSiteCms(done) {
         if (err || !row || !row.value) return done && done();
         try {
             const parsed = JSON.parse(row.value);
+            let changed = false;
             const eyebrow = String((parsed.hero && parsed.hero.eyebrow) || '');
-            if (!/CME/i.test(eyebrow)) return done && done();
-            parsed.hero = { ...parsed.hero, ...DEFAULT_PUBLIC_SITE_CMS.hero };
-            parsed.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards.map((c) => ({ ...c }));
-            const reviews = Array.isArray(parsed.reviews) ? parsed.reviews : [];
-            const looksLegacyReviews = reviews.some((r) => r && /^Dr\./i.test(String(r.name || '')));
-            if (!reviews.length || looksLegacyReviews) {
-                parsed.reviews = DEFAULT_PUBLIC_SITE_CMS.reviews.map((r) => ({ ...r }));
+            if (/CME/i.test(eyebrow)) {
+                parsed.hero = { ...parsed.hero, ...DEFAULT_PUBLIC_SITE_CMS.hero };
+                parsed.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards.map((c) => ({ ...c }));
+                const reviews = Array.isArray(parsed.reviews) ? parsed.reviews : [];
+                const looksLegacyReviews = reviews.some((r) => r && /^Dr\./i.test(String(r.name || '')));
+                if (!reviews.length || looksLegacyReviews) {
+                    parsed.reviews = DEFAULT_PUBLIC_SITE_CMS.reviews.map((r) => ({ ...r }));
+                }
+                if (parsed.topBar && /National Seminar/i.test(String(parsed.topBar.dateLine || ''))) {
+                    parsed.topBar = { ...parsed.topBar, dateLine: DEFAULT_PUBLIC_SITE_CMS.topBar.dateLine };
+                }
+                changed = true;
             }
-            if (parsed.topBar && /National Seminar/i.test(String(parsed.topBar.dateLine || ''))) {
-                parsed.topBar = { ...parsed.topBar, dateLine: DEFAULT_PUBLIC_SITE_CMS.topBar.dateLine };
+            const aboutSecs = Array.isArray(parsed.aboutSections) ? parsed.aboutSections : [];
+            const legacyAbout = aboutSecs.some((s) =>
+                /advances Ayurveda education through national seminars/i.test(String((s && s.body) || ''))
+            );
+            if (!aboutSecs.length || legacyAbout) {
+                parsed.aboutSections = DEFAULT_PUBLIC_SITE_CMS.aboutSections.map((s) => ({ ...s }));
+                changed = true;
             }
+            if (!changed) return done && done();
             upsertGlobalSetting('public_site_cms', JSON.stringify(parsed), () => done && done());
         } catch (_) {
             done && done();

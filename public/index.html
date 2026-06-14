@@ -1641,6 +1641,10 @@
                 const cms = await res.json();
                 if (typeof applySiteCms === 'function') applySiteCms(cms);
                 if (typeof renderAboutGallerySocial === 'function') renderAboutGallerySocial(cms);
+                const previewSection = new URLSearchParams(window.location.search).get('section');
+                if (previewSection && typeof window.showSection === 'function') {
+                    window.showSection(previewSection);
+                }
             } catch (e) {
                 console.error(e);
             }
