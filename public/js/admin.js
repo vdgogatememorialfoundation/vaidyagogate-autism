@@ -6130,6 +6130,15 @@ async function loadIntegrationSettings() {
         set('int-wa-lang', s.whatsapp_template_lang || 'en');
         set('int-wa-otp-template', s.whatsapp_otp_template_name);
         set('int-otp-email-subject', s.otp_email_subject);
+        set('int-msg91-sender', s.msg91_sender_id);
+        set('int-msg91-route', s.msg91_route || '4');
+        set('int-msg91-otp-template', s.msg91_otp_template_id);
+        set('int-msg91-flow-id', s.msg91_default_flow_id);
+        set('int-msg91-country', s.msg91_country_code || '91');
+        const msg91KeyEl = document.getElementById('int-msg91-key');
+        if (msg91KeyEl && s.msg91_configured) {
+            msg91KeyEl.placeholder = 'Auth key saved (hidden). Paste here only to replace.';
+        }
         const waHook = document.getElementById('int-wa-webhook-url');
         if (waHook) {
             let base = (s.public_base_url || '').trim().replace(/\/$/, '');
@@ -6173,7 +6182,14 @@ async function loadIntegrationSettings() {
                 }
                 if (s.whatsapp_waba_id) waLine += ' WABA: ' + s.whatsapp_waba_id + '.';
             }
-            line.textContent = emailLine + ' ' + waLine;
+            let smsLine = s.msg91_configured
+                ? 'SMS (MSG91): configured.'
+                : 'SMS (MSG91): not configured.';
+            const mst = s.msg91_status;
+            if (!s.msg91_configured && mst && Array.isArray(mst.missing) && mst.missing.length) {
+                smsLine += ' Missing: ' + mst.missing.join(', ') + '.';
+            }
+            line.textContent = emailLine + ' ' + waLine + ' ' + smsLine;
         }
         await loadWhatsAppEventTemplatesTable();
     } catch (e) {
@@ -6199,7 +6215,12 @@ async function saveIntegrationSettings() {
         whatsapp_business_account_id: (document.getElementById('int-wa-waba-id') || {}).value.trim(),
         whatsapp_template_lang: (document.getElementById('int-wa-lang') || {}).value.trim() || 'en',
         whatsapp_otp_template_name: (document.getElementById('int-wa-otp-template') || {}).value.trim(),
-        otp_email_subject: (document.getElementById('int-otp-email-subject') || {}).value.trim()
+        otp_email_subject: (document.getElementById('int-otp-email-subject') || {}).value.trim(),
+        msg91_sender_id: (document.getElementById('int-msg91-sender') || {}).value.trim(),
+        msg91_route: (document.getElementById('int-msg91-route') || {}).value.trim() || '4',
+        msg91_otp_template_id: (document.getElementById('int-msg91-otp-template') || {}).value.trim(),
+        msg91_default_flow_id: (document.getElementById('int-msg91-flow-id') || {}).value.trim(),
+        msg91_country_code: (document.getElementById('int-msg91-country') || {}).value.trim() || '91'
     };
     const zeptoKey = (document.getElementById('int-zepto-key') || {}).value;
     if (zeptoKey && zeptoKey.trim() && zeptoKey !== '********') body.zepto_api_key = zeptoKey.trim();
@@ -6207,6 +6228,8 @@ async function saveIntegrationSettings() {
     if (waToken && waToken.trim() && waToken !== '********') body.whatsapp_token = waToken.trim();
     const waVerify = (document.getElementById('int-wa-verify') || {}).value;
     if (waVerify && waVerify.trim() && waVerify !== '********') body.whatsapp_verify_token = waVerify.trim();
+    const msg91Key = (document.getElementById('int-msg91-key') || {}).value;
+    if (msg91Key && msg91Key.trim() && msg91Key !== '********') body.msg91_auth_key = msg91Key.trim();
     try {
         const res = await fetch('/api/admin/integrations', {
             method: 'POST',
@@ -6221,6 +6244,7 @@ async function saveIntegrationSettings() {
         (document.getElementById('int-zepto-key') || {}).value = '';
         (document.getElementById('int-wa-token') || {}).value = '';
         (document.getElementById('int-wa-verify') || {}).value = '';
+        (document.getElementById('int-msg91-key') || {}).value = '';
         await loadIntegrationSettings();
         const st = data.email_status;
         const emailHint =
@@ -6424,6 +6448,27 @@ async function testIntegrationWhatsApp() {
         ].filter(Boolean);
         alert(lines.join('\n\n') + '\n\nSee Notifications → Logs.');
         if (typeof loadNotificationLogs === 'function') loadNotificationLogs();
+    }
+}
+
+async function testIntegrationSms() {
+    const phone = (document.getElementById('int-test-sms-phone') || document.getElementById('int-test-phone') || {}).value.trim();
+    if (!phone) return alert('Enter test mobile number');
+    const res = await fetch('/api/admin/integrations/test-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+        alert(
+            ['SMS test sent via MSG91.', data.to ? 'To: ' + data.to : '', data.requestId ? 'Request ID: ' + data.requestId : '']
+                .filter(Boolean)
+                .join('\n')
+        );
+        if (typeof loadNotificationLogs === 'function') loadNotificationLogs();
+    } else {
+        alert([data.error || 'SMS test failed', data.skipped ? '(MSG91 not configured)' : ''].filter(Boolean).join('\n'));
     }
 }
 
@@ -10756,6 +10801,8 @@ async function loadPendingReminderAdminForm() {
         if (ce) ce.checked = ch.email !== false;
         const cw = document.getElementById('pr-ch-wa');
         if (cw) cw.checked = ch.whatsapp !== false;
+        const cs = document.getElementById('pr-ch-sms');
+        if (cs) cs.checked = ch.sms !== false;
     } catch (_) {}
 }
 
@@ -10775,7 +10822,8 @@ async function savePendingReminderAdminConfig() {
         statuses,
         channels: {
             email: !!(document.getElementById('pr-ch-email') || {}).checked,
-            whatsapp: !!(document.getElementById('pr-ch-wa') || {}).checked
+            whatsapp: !!(document.getElementById('pr-ch-wa') || {}).checked,
+            sms: !!(document.getElementById('pr-ch-sms') || {}).checked
         }
     };
     try {
@@ -10903,7 +10951,8 @@ async function sendVenueBroadcast() {
                 venue: message,
                 seminarId: seminarId || undefined,
                 sendEmail: !!(document.getElementById('venue-broadcast-email') || {}).checked,
-                sendWhatsApp: !!(document.getElementById('venue-broadcast-wa') || {}).checked
+                sendWhatsApp: !!(document.getElementById('venue-broadcast-wa') || {}).checked,
+                sendSms: !!(document.getElementById('venue-broadcast-sms') || {}).checked
             })
         });
         const data = await res.json();

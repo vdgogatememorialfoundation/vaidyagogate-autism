@@ -976,6 +976,7 @@
                     <div style="margin-top:10px;display:flex;gap:14px;font-size:0.9rem;">
                         <label><input type="checkbox" id="pr-ch-email" checked> Email</label>
                         <label><input type="checkbox" id="pr-ch-wa" checked> WhatsApp</label>
+                        <label><input type="checkbox" id="pr-ch-sms" checked> SMS (MSG91)</label>
                     </div>
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#b91c1c;" onclick="savePendingReminderAdminConfig()">Save reminder settings</button>
                     <p id="pr-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
@@ -1001,6 +1002,7 @@
                     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:14px;font-size:0.9rem;">
                         <label><input type="checkbox" id="venue-broadcast-email" checked> Email</label>
                         <label><input type="checkbox" id="venue-broadcast-wa" checked> WhatsApp</label>
+                        <label><input type="checkbox" id="venue-broadcast-sms" checked> SMS (MSG91)</label>
                 </div>
                     <button type="button" class="btn-primary" style="margin-top:12px;background:#15803d;" onclick="sendVenueBroadcast()">Send venue update to paid registrants</button>
                     <p id="venue-broadcast-status" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
@@ -1888,6 +1890,9 @@
                                 <option value="both">Email + WhatsApp</option>
                                 <option value="email">Email only</option>
                                 <option value="whatsapp">WhatsApp only</option>
+                                <option value="sms">SMS only (MSG91)</option>
+                                <option value="email_sms">Email + SMS</option>
+                                <option value="all">Email + WhatsApp + SMS</option>
                             </select>
                         </div>
                         <div class="form-group"><label>Seminar ID (blank = global)</label><input id="notif-edit-seminar-id" class="form-control" type="number" placeholder=""></div>
@@ -1909,7 +1914,7 @@
                     <div id="notif-preview-box" class="hidden" style="margin-top: 16px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; max-height: 320px; overflow: auto;"></div>
                     <div style="margin-top: 12px; font-size: 0.8rem; color: #64748b;">
                         Test: <input id="notif-test-dest" class="form-control" type="text" placeholder="email or phone" style="max-width:280px;display:inline-block;">
-                        <select id="notif-test-channel" style="padding:6px;"><option value="email">Email</option><option value="whatsapp">WhatsApp</option></select>
+                        <select id="notif-test-channel" style="padding:6px;"><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="sms">SMS (MSG91)</option></select>
                     </div>
                 </div>
                 <div class="card">
@@ -2017,7 +2022,7 @@
                     </div>
 
                 <div class="card" style="margin-top: 20px;">
-                    <h3><i class="fas fa-plug"></i> Email, WhatsApp &amp; live site URL</h3>
+                    <h3><i class="fas fa-plug"></i> Email, SMS (MSG91), WhatsApp &amp; live site URL</h3>
                     <p style="color:#64748b;font-size:0.9rem;margin-bottom:16px;">Saved in the database and applied immediately. Leave password/token blank to keep existing values.</p>
                     <p style="font-size:0.85rem;margin-bottom:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><strong>Homepage venue</strong> (e.g. Convention Centre, Pune): <a href="#" onclick="switchTab('tab-site-cms');loadAdminSiteCms();return false;">Website &amp; doctor updates</a> &rarr; <em>Venue line</em> + <em>Contact address</em>, then click <strong>Save website &amp; portal content</strong>.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -2067,7 +2072,19 @@
                             <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;margin-left:6px;" onclick="switchTab('tab-notifications');if(typeof initAdminNotificationsTab==='function')initAdminNotificationsTab();">Open notification bodies</button>
                         </div>
 
-                        <div style="display:flex;gap:8px;align-items:flex-end;"><input type="text" id="int-test-phone" placeholder="10-digit mobile (no leading 0)" style="flex:1"><button type="button" class="btn-primary" style="background:#64748b;padding:8px 12px;" onclick="testIntegrationWhatsApp()">Test WhatsApp</button></div>
+                        <div style="grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid #e2e8f0;">
+                            <h4 style="margin:0 0 8px;color:#0c4a6e;">MSG91 SMS (India)</h4>
+                            <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Transactional SMS for OTP and programme updates. Use DLT-approved <strong>Flow ID</strong> templates from your MSG91 panel. Phone OTP uses MSG91 when configured (WhatsApp is fallback).</p>
+                        </div>
+                        <div style="grid-column:1/-1;"><label>MSG91 Auth Key</label><input type="password" id="int-msg91-key" placeholder="From MSG91 dashboard → API" style="width:100%" autocomplete="new-password"></div>
+                        <div><label>Sender ID (DLT, 6 chars)</label><input type="text" id="int-msg91-sender" placeholder="VGMFND" style="width:100%" maxlength="6"></div>
+                        <div><label>Route</label><select id="int-msg91-route" style="width:100%;padding:8px;"><option value="4">4 — Transactional</option><option value="1">1 — Promotional</option></select></div>
+                        <div><label>OTP template / Flow ID</label><input type="text" id="int-msg91-otp-template" placeholder="MSG91 OTP or flow template ID" style="width:100%"></div>
+                        <div><label>Default update SMS Flow ID</label><input type="text" id="int-msg91-flow-id" placeholder="For venue/reminder SMS (VAR1 = message)" style="width:100%"></div>
+                        <div><label>Country code</label><input type="text" id="int-msg91-country" placeholder="91" style="width:100%"></div>
+                        <div style="display:flex;gap:8px;align-items:flex-end;grid-column:1/-1;"><input type="text" id="int-test-sms-phone" placeholder="10-digit mobile for SMS test" style="flex:1"><button type="button" class="btn-primary" style="background:#0d9488;padding:8px 12px;" onclick="testIntegrationSms()">Test SMS</button></div>
+
+                        <div style="display:flex;gap:8px;align-items:flex-end;grid-column:1/-1;"><input type="text" id="int-test-phone" placeholder="10-digit mobile (no leading 0)" style="flex:1"><button type="button" class="btn-primary" style="background:#64748b;padding:8px 12px;" onclick="testIntegrationWhatsApp()">Test WhatsApp</button></div>
                     </div>
                     <p id="int-status-line" style="margin-top:12px;font-size:0.85rem;color:#64748b;"></p>
                     <button type="button" class="btn-primary" style="margin-top:8px;background:#0d9488;" onclick="saveIntegrationSettings()">Save API keys &amp; messaging</button>
@@ -2484,7 +2501,7 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260614b"></script>
+    <script src="/js/admin.js?v=20260615a"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>

@@ -2880,6 +2880,8 @@ function integrationSettingsJson(data) {
     masked.email_status = integrationSettings.getEmailConfigStatus();
     masked.whatsapp_configured = integrationSettings.isWhatsAppConfiguredFromSettings();
     masked.whatsapp_status = integrationSettings.getWhatsAppConfigStatus();
+    masked.msg91_configured = integrationSettings.isMsg91ConfiguredFromSettings();
+    masked.msg91_status = integrationSettings.getMsg91ConfigStatus();
     return masked;
 }
 
@@ -3021,10 +3023,39 @@ app.post('/api/admin/integrations', withIntegrationSettingsLoaded, (req, res) =>
                 settings: integrationSettingsJson(merged),
                 email_configured: integrationSettings.isEmailConfiguredFromSettings(),
                 email_status: integrationSettings.getEmailConfigStatus(),
-                whatsapp_configured: integrationSettings.isWhatsAppConfiguredFromSettings()
+                whatsapp_configured: integrationSettings.isWhatsAppConfiguredFromSettings(),
+                msg91_configured: integrationSettings.isMsg91ConfiguredFromSettings(),
+                msg91_status: integrationSettings.getMsg91ConfigStatus()
             });
         });
     });
+});
+
+app.post('/api/admin/integrations/test-sms', withIntegrationSettingsLoaded, async (req, res) => {
+    const phone = String((req.body && req.body.phone) || '').trim();
+    if (!phone) return res.status(400).json({ error: 'phone required' });
+    const { sendSms, isMsg91Configured, normalizeMobileForMsg91 } = require('./lib/msg91-service');
+    if (!isMsg91Configured()) {
+        return res.status(503).json({ error: 'MSG91 not configured — save Auth Key in Admin → Integrations.' });
+    }
+    const to = normalizeMobileForMsg91(phone);
+    const bodyText =
+        String((req.body && req.body.message) || '').trim() ||
+        'Test SMS from Vaidya Gogate Memorial Foundation — MSG91 integration is working.';
+    const r = await sendSms(phone, bodyText);
+    const logStatus = r.ok ? 'sent' : r.skipped ? 'skipped' : 'failed';
+    notifEngine.logNotification(db, {
+        event_key: 'INTEGRATION_TEST_SMS',
+        channel: 'sms',
+        destination: to,
+        status: logStatus,
+        body_preview: bodyText.slice(0, 200),
+        error: r.ok ? null : r.error || ''
+    });
+    if (r.ok) {
+        return res.json({ success: true, to, requestId: r.requestId || '', logged: true });
+    }
+    res.status(503).json({ error: r.error || 'SMS send failed', skipped: r.skipped, logged: true });
 });
 
 function zeptoOverridesFromBody(body) {
@@ -4629,7 +4660,7 @@ app.post('/api/admin/site-cms', (req, res) => {
 });
 
 app.post('/api/admin/broadcast-venue-update', (req, res) => {
-    const { actingAdminId, message, venue, seminarId, sendEmail, sendWhatsApp } = req.body || {};
+    const { actingAdminId, message, venue, seminarId, sendEmail, sendWhatsApp, sendSms } = req.body || {};
     const aid = parseInt(actingAdminId, 10);
     const sid = seminarId != null && seminarId !== '' ? parseInt(seminarId, 10) : null;
     if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId is required' });
@@ -4642,6 +4673,7 @@ app.post('/api/admin/broadcast-venue-update', (req, res) => {
         if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
         const doEmail = sendEmail !== false;
         const doWa = sendWhatsApp !== false;
+        const doSms = sendSms !== false && require('./lib/msg91-service').isMsg91Configured();
         let sql = `SELECT DISTINCT u.id, u.email, u.phone, u.first_name, u.last_name, s.title AS seminar_title
                    FROM registrations r
                    JOIN users u ON u.id = r.user_id
@@ -4668,6 +4700,7 @@ app.post('/api/admin/broadcast-venue-update', (req, res) => {
                 let pending = 0;
                 if (doEmail && u.email) pending++;
                 if (doWa && u.phone) pending++;
+                if (doSms && u.phone) pending++;
                 const doneOne = () => {
                     pending--;
                     if (pending > 0) return;
@@ -4703,6 +4736,14 @@ app.post('/api/admin/broadcast-venue-update', (req, res) => {
                     notifEngine.enqueueDirectMessage(
                         db,
                         { channel: 'whatsapp', destination: u.phone, body: waLine, event_key: 'VENUE_UPDATE' },
+                        doneOne
+                    );
+                }
+                if (doSms && u.phone) {
+                    queued++;
+                    notifEngine.enqueueDirectMessage(
+                        db,
+                        { channel: 'sms', destination: u.phone, body: waLine, event_key: 'VENUE_UPDATE' },
                         doneOne
                     );
                 }
