@@ -11791,18 +11791,18 @@ const SUPPORT_TICKET_ADMIN_LIST_COLS = `st.id, st.user_id, st.category, st.subje
 function resolveSupportTicketByRef(ticketRef, cb) {
     const ref = String(ticketRef || '').trim();
     if (!ref) return cb(new Error('Ticket id required'));
-    db.get(
-        `SELECT st.id, st.ticket_id, st.tracking_id, st.user_id, st.category, st.subject, st.description,
+    const selectSql = `SELECT st.id, st.ticket_id, st.tracking_id, st.user_id, st.category, st.subject, st.description,
                 st.priority, st.status, st.expected_response_at, st.created_at, st.updated_at, st.attachment_path,
                 u.first_name, u.last_name, u.email
          FROM support_tickets st
-         LEFT JOIN users u ON st.user_id = u.id
-         WHERE TRIM(COALESCE(st.ticket_id, '')) = TRIM(?)
-            OR TRIM(COALESCE(st.tracking_id, '')) = TRIM(?)
-            OR CAST(st.id AS TEXT) = TRIM(?)`,
-        [ref, ref, ref],
-        cb
-    );
+         LEFT JOIN users u ON st.user_id = u.id`;
+    db.get(`${selectSql} WHERE st.ticket_id = ? OR st.tracking_id = ? LIMIT 1`, [ref, ref], (e, row) => {
+        if (e) return cb(e);
+        if (row) return cb(null, row);
+        const idNum = parseInt(ref, 10);
+        if (!Number.isInteger(idNum) || idNum < 1) return cb(null, null);
+        db.get(`${selectSql} WHERE st.id = ? LIMIT 1`, [idNum], cb);
+    });
 }
 
 function canonicalTicketMessageId(ticketRow) {
@@ -11863,24 +11863,53 @@ function fetchTicketMessages(ticketRow, cb) {
         );
     };
 
-    loadNewMessages((e1, newMsgs) => {
-        if (e1) return cb(e1);
-        loadLegacyMessages((e2, legacyMsgs) => {
-            if (e2) return cb(e2);
-            const all = [...(newMsgs || []), ...(legacyMsgs || [])];
-            all.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
-            if (!all.length && ticketRow.description) {
-                all.push({
-                    id: 'initial_description',
-                    message: ticketRow.description,
-                    created_at: ticketRow.created_at,
-                    sender_type: 'user',
-                    first_name: ticketRow.first_name || 'Doctor',
-                    last_name: ticketRow.last_name || ''
-                });
-            }
-            cb(null, all);
-        });
+    let newMsgs = null;
+    let legacyMsgs = null;
+    let newDone = false;
+    let legacyDone = false;
+    let settled = false;
+
+    function mergeAndSettle() {
+        if (settled) return;
+        if (!newDone || !legacyDone) return;
+        settled = true;
+        const skipLegacy = Array.isArray(newMsgs) && newMsgs.length > 0;
+        const all = [...(newMsgs || []), ...(skipLegacy ? [] : legacyMsgs || [])];
+        all.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+        if (!all.length && ticketRow.description) {
+            all.push({
+                id: 'initial_description',
+                message: ticketRow.description,
+                created_at: ticketRow.created_at,
+                sender_type: 'user',
+                first_name: ticketRow.first_name || 'Applicant',
+                last_name: ticketRow.last_name || ''
+            });
+        }
+        cb(null, all);
+    }
+
+    loadNewMessages((e1, rows) => {
+        if (settled) return;
+        if (e1) {
+            settled = true;
+            return cb(e1);
+        }
+        newMsgs = rows || [];
+        newDone = true;
+        if (newMsgs.length) legacyDone = true;
+        mergeAndSettle();
+    });
+
+    loadLegacyMessages((e2, rows) => {
+        if (settled) return;
+        if (e2 && !/does not exist|relation/i.test(String(e2.message || ''))) {
+            settled = true;
+            return cb(e2);
+        }
+        legacyMsgs = rows || [];
+        legacyDone = true;
+        mergeAndSettle();
     });
 }
 
@@ -12729,7 +12758,7 @@ function startBackgroundWorkers() {
             notifEngine.syncDefaultNotificationTemplates(db, (syncErr) => {
                 if (syncErr) console.warn('[notifications] template sync failed:', syncErr.message);
                 else {
-                    upsertGlobalSetting('notification_templates_sync_v', '20260615c', () => {
+                    upsertGlobalSetting('notification_templates_sync_v', '20260615e', () => {
                         console.log('[notifications] Autism portal email templates synced (all events)');
                     });
                 }

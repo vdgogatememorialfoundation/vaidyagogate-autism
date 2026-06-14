@@ -8943,23 +8943,34 @@ async function loadSupportTickets(force) {
 }
 
 async function viewSupportTicket(ticketId) {
+    const modal = document.getElementById('ticket-detail-modal');
+    const infoEl = document.getElementById('ticket-info');
+    const msgEl = document.getElementById('ticket-messages');
+    if (modal) modal.classList.remove('hidden');
+    if (infoEl) {
+        infoEl.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Loading ticket…</p>';
+    }
+    if (msgEl) {
+        msgEl.innerHTML = '<p style="text-align:center;color:#64748b;">Loading messages…</p>';
+    }
     try {
-        const res = await fetch(`/api/support-ticket/${encodeURIComponent(ticketId)}`);
+        const res = await fetch(`/api/support-ticket/${encodeURIComponent(ticketId)}`, { cache: 'no-store' });
         const ticket = await res.json();
         if (!res.ok) {
+            if (modal) modal.classList.add('hidden');
             return alert((ticket && ticket.error) || 'Could not load ticket');
         }
 
         currentViewingTicketId = ticketId;
-        
+
         const infoHtml = `
             <div>
-                <p><strong>Ticket ID:</strong> ${ticket.ticket_id}</p>
-                <p><strong>Doctor:</strong> ${ticket.first_name} ${ticket.last_name} (${ticket.email})</p>
-                <p><strong>Subject:</strong> ${ticket.subject}</p>
-                <p><strong>Category:</strong> ${ticket.category}</p>
-                <p><strong>Priority:</strong> ${String(ticket.priority || 'medium').toUpperCase()}</p>
-                <p><strong>Status:</strong> ${ticket.status}</p>
+                <p><strong>Ticket ID:</strong> ${escAdmin(ticket.ticket_id || ticketId)}</p>
+                <p><strong>User:</strong> ${escAdmin([ticket.first_name, ticket.last_name].filter(Boolean).join(' '))} (${escAdmin(ticket.email || '—')})</p>
+                <p><strong>Subject:</strong> ${escAdmin(ticket.subject || '—')}</p>
+                <p><strong>Category:</strong> ${escAdmin(ticket.category || '—')}</p>
+                <p><strong>Priority:</strong> ${escAdmin(String(ticket.priority || 'medium').toUpperCase())}</p>
+                <p><strong>Status:</strong> ${escAdmin(ticket.status || 'open')}</p>
                 ${
                     ticket.expected_response_at
                         ? '<p><strong>Expected response by:</strong> ' +
@@ -8971,26 +8982,44 @@ async function viewSupportTicket(ticketId) {
                           ' IST</p>'
                         : ''
                 }
-                <p><strong>Description:</strong> ${ticket.description}</p>
+                <p><strong>Description:</strong> ${escAdmin(ticket.description || '—')}</p>
             </div>
         `;
-        
-        document.getElementById('ticket-info').innerHTML = infoHtml;
-        
-        const messagesHtml = (Array.isArray(ticket.messages) ? ticket.messages : []).map(m => {
-            const isAdmin = String(m.sender_type || '').toLowerCase() === 'admin';
-            const who = isAdmin ? 'Admin' : escAdmin([m.first_name, m.last_name].filter(Boolean).join(' ') || 'Doctor');
-            return `
-            <div style="margin-bottom: 10px; padding: 10px; background: ${isAdmin ? '#e0e7ff' : '#f0fdf4'}; border-radius: 4px;">
-                <strong>${isAdmin ? '🔵 Admin' : '👤 ' + who}:</strong> ${escAdmin(m.message || '')}
-                <br><small style="color: #64748b;">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</small>
-            </div>`;
-        }).join('');
-        
-        document.getElementById('ticket-messages').innerHTML = messagesHtml || '<p style="text-align: center; color: #94a3b8;">No messages yet</p>';
-        document.getElementById('ticket-reply-input').value = '';
-        document.getElementById('ticket-detail-modal').classList.remove('hidden');
-    } catch(err) { console.error(err); alert('Error loading ticket'); }
+
+        if (infoEl) infoEl.innerHTML = infoHtml;
+
+        const messagesHtml = (Array.isArray(ticket.messages) ? ticket.messages : [])
+            .map((m) => {
+                const isAdmin = String(m.sender_type || '').toLowerCase() === 'admin';
+                const who = isAdmin
+                    ? 'Admin'
+                    : escAdmin([m.first_name, m.last_name].filter(Boolean).join(' ') || 'User');
+                return (
+                    '<div style="margin-bottom: 10px; padding: 10px; background: ' +
+                    (isAdmin ? '#e0e7ff' : '#f0fdf4') +
+                    '; border-radius: 4px;">' +
+                    '<strong>' +
+                    (isAdmin ? '🔵 Admin' : '👤 ' + who) +
+                    ':</strong> ' +
+                    escAdmin(m.message || '') +
+                    '<br><small style="color: #64748b;">' +
+                    (m.created_at ? new Date(m.created_at).toLocaleString() : '') +
+                    '</small></div>'
+                );
+            })
+            .join('');
+
+        if (msgEl) {
+            msgEl.innerHTML =
+                messagesHtml || '<p style="text-align: center; color: #94a3b8;">No messages yet</p>';
+        }
+        const replyInput = document.getElementById('ticket-reply-input');
+        if (replyInput) replyInput.value = '';
+    } catch (err) {
+        console.error(err);
+        if (modal) modal.classList.add('hidden');
+        alert('Error loading ticket');
+    }
 }
 
 async function updateTicketStatus() {
