@@ -253,7 +253,7 @@
             submissions.style.marginTop = '20px';
             submissions.innerHTML =
                 '<h4 style="margin-bottom:12px;color:#0f766e;"><i class="fas fa-folder-open"></i> Your pre-registration submissions</h4>' +
-                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">All information you sent, status, and tracking IDs (PRE…).</p>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">All information you sent, status, and 12-digit tracking IDs.</p>' +
                 '<p id="prereg-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#0f766e;margin-bottom:12px;"></p>' +
                 '<div id="prereg-list" class="ak-track-list"></div>';
             preregHub.appendChild(submissions);
@@ -269,7 +269,7 @@
                 '<div id="ak-main-events-grid" class="seminars-grid" style="margin-bottom:24px;"></div>' +
                 '<div class="card" id="ak-main-reg-submissions" style="margin-top:20px;">' +
                 '<h4 style="margin-bottom:12px;color:#1a237e;"><i class="fas fa-folder-open"></i> Your main registrations</h4>' +
-                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">Track status and view everything submitted for main registration (REG… tracking IDs).</p>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">Track status and view everything submitted for main registration.</p>' +
                 '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;margin-bottom:12px;"></p>' +
                 '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
                 '</div>';
@@ -2422,7 +2422,7 @@
             modifier: 'prereg',
             typeLabel: 'Pre-registration',
             title: r.seminar_title || 'Event ' + r.seminar_id,
-            code: r.application_no ? 'PRE-REG · ' + r.application_no : '—',
+            code: r.application_no || '—',
             statusMeta: meta,
             steps: buildPreregStepDefs(r),
             footHtml: foot
@@ -2472,7 +2472,7 @@
             typeLabel: 'Main registration',
             title: a.seminar_title || 'Event registration',
             subtitle: a.portal_year ? 'Year ' + a.portal_year : '',
-            code: a.application_no ? 'MAIN-REG · ' + a.application_no : '—',
+            code: a.application_no || '—',
             statusMeta: meta,
             steps: steps,
             footHtml: foot

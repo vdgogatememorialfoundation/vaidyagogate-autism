@@ -3923,15 +3923,10 @@ app.post('/api/auth/signup', (req, res) => {
                     if (!newUserId) {
                         return res.status(500).json({ error: 'Account was created but could not be confirmed. Try signing in with your email.' });
                     }
-                    notifEngine.notify(
+                    notifEngine.notifyAccountCreatedWithCredentials(
                         db,
-                        'ACCOUNT_CREATED',
-                        {
-                            userId: newUserId,
-                            vars: {
-                                temporary_password: String(password || '')
-                            }
-                        },
+                        newUserId,
+                        String(password || ''),
                         () => {
                             flushNotificationQueue();
                         }
@@ -5234,7 +5229,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                     function doInsertRegistration() {
                         const regFlow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
                         const initialStatus = regFlow.autoAcceptRegistration ? 'e_ticket_issued' : 'submitted';
-                        const applicationNo = portalTracking.generateMainRegTrackingId();
+                        const applicationNo = generateId();
                         const finishInsert = () => {
                         const stored = sanitizeFormDataForStorage(formData || {});
                         db.run(
@@ -8592,17 +8587,9 @@ app.post('/api/admin/users/:userId/password', (req, res) => {
     db.run(`UPDATE users SET password = ? WHERE id = ?`, [newPass, uid], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
-        notifEngine.notify(
-            db,
-            'ACCOUNT_CREATED',
-            {
-                userId: uid,
-                vars: { temporary_password: newPass }
-            },
-            () => {
-                flushNotificationQueue();
-            }
-        );
+        notifEngine.notifyAccountCreatedWithCredentials(db, uid, newPass, () => {
+            flushNotificationQueue();
+        });
         res.json({ success: true, password: newPass });
     });
 });
@@ -9851,13 +9838,10 @@ app.post('/api/admin/users/create', (req, res) => {
                                 }
                                 const newId = saved.id || insertedId;
                                 userAccountLifecycle.stampAccountActivated(db, newId, () => {});
-                                notifEngine.notify(
+                                notifEngine.notifyAccountCreatedWithCredentials(
                                     db,
-                                    'ACCOUNT_CREATED',
-                                    {
-                                        userId: newId,
-                                        vars: { temporary_password: finalPassword }
-                                    },
+                                    newId,
+                                    finalPassword,
                                     () => {
                                         flushNotificationQueue();
                                     }
@@ -12728,7 +12712,7 @@ function startBackgroundWorkers() {
             notifEngine.syncDefaultNotificationTemplates(db, (syncErr) => {
                 if (syncErr) console.warn('[notifications] template sync failed:', syncErr.message);
                 else {
-                    upsertGlobalSetting('notification_templates_sync_v', '20260615b', () => {
+                    upsertGlobalSetting('notification_templates_sync_v', '20260615c', () => {
                         console.log('[notifications] Autism portal email templates synced (all events)');
                     });
                 }
