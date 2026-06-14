@@ -3,6 +3,21 @@
     const PORTAL_DISPLAY_TZ = 'Asia/Kolkata';
     const IST_OFFSET = '+05:30';
 
+    function pad2(n) {
+        return String(n).padStart(2, '0');
+    }
+
+    function normalizeIstHour(hour) {
+        const h = parseInt(hour, 10);
+        if (!Number.isFinite(h)) return 0;
+        if (h === 24) return 0;
+        return Math.max(0, Math.min(23, h));
+    }
+
+    function formatIstIso(y, mo, d, h, mi, sec) {
+        return y + '-' + pad2(mo) + '-' + pad2(d) + 'T' + pad2(normalizeIstHour(h)) + ':' + pad2(mi) + ':' + pad2(sec) + IST_OFFSET;
+    }
+
     function parsePortalDateTime(iso) {
         if (!iso) return null;
         if (iso instanceof Date) return Number.isNaN(iso.getTime()) ? null : iso;
@@ -26,7 +41,11 @@
             second: '2-digit',
             hour12: false
         }).formatToParts(d);
-        const get = (t) => (parts.find((p) => p.type === t) || {}).value || '00';
+        const get = (t) => {
+            let v = (parts.find((p) => p.type === t) || {}).value || '00';
+            if (t === 'hour') v = pad2(normalizeIstHour(v));
+            return v;
+        };
         return get;
     }
 
@@ -41,12 +60,23 @@
 
     /** Registration / pre-registration close: inclusive through end minute (e.g. 21:32 → 21:32:59 IST). */
     function fromRegistrationEndLocal(localStr) {
+        if (!localStr) return null;
+        const s = String(localStr).trim();
+        if (!s) return null;
+        const bare = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+        if (bare) {
+            return formatIstIso(bare[1], bare[2], bare[3], bare[4], bare[5], 59);
+        }
         const base = fromDatetimeLocal(localStr);
         if (!base) return null;
+        const iso = base.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+05:30$/);
+        if (iso) {
+            return formatIstIso(iso[1], iso[2], iso[3], iso[4], iso[5], 59);
+        }
         const d = parsePortalDateTime(base);
-        if (!d || Number.isNaN(d.getTime())) return base;
+        if (!d || Number.isNaN(d.getTime())) return base.replace(/:00\+05:30$/, ':59+05:30');
         const g = partsInIst(d);
-        return g('year') + '-' + g('month') + '-' + g('day') + 'T' + g('hour') + ':' + g('minute') + ':59' + IST_OFFSET;
+        return formatIstIso(g('year'), g('month'), g('day'), g('hour'), g('minute'), 59);
     }
 
     function formatStored(iso, opts) {
@@ -164,7 +194,7 @@
         const sec = parseInt(g('second'), 10) || 0;
         if (sec === 0) {
             const inclusive = parsePortalDateTime(
-                g('year') + '-' + g('month') + '-' + g('day') + 'T' + g('hour') + ':' + g('minute') + ':59' + IST_OFFSET
+                formatIstIso(g('year'), g('month'), g('day'), g('hour'), g('minute'), 59)
             );
             return inclusive && !Number.isNaN(inclusive.getTime()) ? inclusive.getTime() : d.getTime();
         }
