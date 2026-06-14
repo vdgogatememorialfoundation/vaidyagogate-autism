@@ -56,6 +56,7 @@
         const bodyEl = document.getElementById('ak-preview-body');
         const barEl = document.getElementById('ak-preview-barcode');
         const confirmBtn = document.getElementById('ak-preview-confirm-btn');
+        const downloadBtn = document.getElementById('ak-preview-download-btn');
         const sheet = modal && modal.querySelector('.ak-preview-sheet');
         if (!modal || !bodyEl) return;
         if (sheet) sheet.classList.add('ak-preview-sheet--v2');
@@ -71,6 +72,17 @@
                 if (previewConfirmHandler) previewConfirmHandler();
                 closeFormPreviewModal();
             };
+        }
+        if (downloadBtn) {
+            if (typeof opts.onDownload === 'function') {
+                downloadBtn.style.display = '';
+                downloadBtn.onclick = function () {
+                    opts.onDownload();
+                };
+            } else {
+                downloadBtn.style.display = 'none';
+                downloadBtn.onclick = null;
+            }
         }
         modal.classList.remove('hidden');
     }
@@ -118,7 +130,10 @@
     }
 
     window.previewPreregistration = function previewPreregistration() {
-        const sid = parseInt(document.getElementById('prereg-seminar-select')?.value, 10);
+        const sid =
+            parseInt(document.getElementById('prereg-seminar-select')?.value, 10) ||
+            Number(window.__akActivePreregSeminarId) ||
+            0;
         if (!sid) return alert('Select an event first.');
         if (!validatePreregPreview()) return;
         const sel = document.getElementById('prereg-seminar-select');
@@ -129,6 +144,12 @@
             barcodeText: 'PREREG-PREVIEW',
             barcodeNote: 'Your unique barcode is issued immediately after submit.',
             rows,
+            onDownload:
+                typeof window.downloadPreregDraftPdf === 'function'
+                    ? function () {
+                          window.downloadPreregDraftPdf();
+                      }
+                    : null,
             onConfirm: function () {
                 document.getElementById('prereg-form')?.requestSubmit();
             }

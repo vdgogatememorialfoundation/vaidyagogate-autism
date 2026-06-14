@@ -534,6 +534,7 @@
                                 <button type="button" id="prereg-wizard-next" class="btn-primary">Next <i class="fas fa-arrow-right"></i></button>
                                 <button type="submit" id="prereg-submit-btn" class="btn-primary" style="display:none;"><i class="fas fa-paper-plane"></i> Submit registration</button>
                                 <button type="button" class="btn-primary" style="background:#475569;" onclick="previewPreregistration()"><i class="fas fa-eye"></i> Preview form &amp; barcode</button>
+                                <button type="button" class="btn-primary" style="background:#334155;" onclick="downloadPreregDraftPdf()"><i class="fas fa-file-pdf"></i> Download preview PDF</button>
                             </div>
                             <p id="prereg-status-msg" style="margin-top:12px;font-weight:600;"></p>
                         </form>
@@ -869,8 +870,8 @@
     <script src="/js/applicant-auth-ui.js"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism16"></script>
-    <script src="/js/autism-form-preview.js?v=3"></script>
-    <script src="/js/applicant-autism.js?v=autism30"></script>
+    <script src="/js/autism-form-preview.js?v=4"></script>
+    <script src="/js/applicant-autism.js?v=autism31"></script>
     <script src="/js/autism-announcements.js?v=4"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
@@ -896,6 +897,7 @@
             <div id="ak-preview-body" class="ak-preview-body"></div>
             <div class="ak-preview-actions">
                 <button type="button" class="btn-primary" style="background:#64748b;" onclick="closeFormPreviewModal()">Back to edit</button>
+                <button type="button" class="btn-primary" style="background:#334155;display:none;" id="ak-preview-download-btn"><i class="fas fa-file-pdf"></i> Download PDF</button>
                 <button type="button" class="btn-primary" id="ak-preview-confirm-btn">Confirm &amp; submit</button>
             </div>
         </div>

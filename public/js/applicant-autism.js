@@ -1331,6 +1331,7 @@
                     }
                 }
                 if (sel) sel.value = sid;
+                window.__akActivePreregSeminarId = Number(sid);
                 grid.querySelectorAll('.ak-prereg-event-card').forEach((card) => {
                     card.style.outline = '';
                     card.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
@@ -1656,6 +1657,7 @@
             sel.value = String(row.seminar_id || '');
             sel.disabled = true;
         }
+        window.__akActivePreregSeminarId = Number(row.seminar_id);
         showPreregFormPanel(row.seminar_title || '');
         await loadPreregFormConfig(row.seminar_id || null);
         renderPreregFields(document.getElementById('prereg-fields'));
@@ -1826,6 +1828,33 @@
         drawFooter(doc.getNumberOfPages());
         doc.save('Pre_Registration_' + (row.application_no || row.id) + '.pdf');
     }
+
+    function buildPreregPdfFromDraft(seminarTitle, formData) {
+        return {
+            application_no: 'DRAFT',
+            seminar_title: seminarTitle || 'Event',
+            status: 'draft',
+            form_data: formData || {}
+        };
+    }
+
+    window.downloadPreregDraftPdf = function downloadPreregDraftPdf() {
+        const sid =
+            parseInt(document.getElementById('prereg-seminar-select')?.value, 10) ||
+            Number(window.__akActivePreregSeminarId) ||
+            0;
+        const sel = document.getElementById('prereg-seminar-select');
+        const semTitle = sel?.selectedOptions?.[0]?.textContent || 'Event';
+        const formData = {};
+        (window.__akPreregFields || preregFields || []).forEach((f) => {
+            if (!f || f.enabled === false) return;
+            const el = document.getElementById('prereg-field-' + f.key);
+            if (!el) return;
+            formData[f.key] = f.type === 'boolean' ? !!el.checked : el.value;
+        });
+        if (!sid) return alert('Select an event first.');
+        downloadPreregPdf(buildPreregPdfFromDraft(semTitle, formData));
+    };
     window.downloadPreregPdf = downloadPreregPdf;
 
     function preregStatusMeta(status) {
@@ -2142,14 +2171,18 @@
                 '<div class="ak-track-card-v3__actions">' +
                 '<button type="button" class="btn-warning" data-ak-prereg-edit="' +
                 r.id +
-                '">Edit &amp; resubmit</button>' +
-                '<button type="button" class="btn-primary" style="background:#475569;" data-ak-prereg-dl="' +
-                r.id +
-                '">Download PDF</button></div>';
+                '">Edit &amp; resubmit</button></div>';
         } else if (st === 'rejected') {
             foot += '<p class="ak-track-card-v3__msg" style="color:#b91c1c;">Contact us if you need help.</p>';
         } else {
             foot += '<p class="ak-track-card-v3__msg">We will notify you when pre-registration is approved.</p>';
+        }
+        if (r.application_no) {
+            foot +=
+                '<div class="ak-track-card-v3__actions" style="margin-top:8px;">' +
+                '<button type="button" class="btn-primary" style="background:#475569;" data-ak-prereg-dl="' +
+                r.id +
+                '"><i class="fas fa-file-pdf"></i> Download PDF</button></div>';
         }
         foot += preregSubmittedDetailsHtml(r);
         if (r.application_no) {

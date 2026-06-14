@@ -199,6 +199,12 @@
               : '';
     }
 
+    function existingSeminarFromForm() {
+        const sid = (document.getElementById('seminar-id') || {}).value;
+        if (!sid) return null;
+        return (window.globalSeminars || []).find((x) => String(x.id) === String(sid)) || null;
+    }
+
     function applySeminarPreregDatesToUi(seminar) {
         const ps = document.getElementById('seminar-prereg-start');
         const pe = document.getElementById('seminar-prereg-end');
@@ -211,7 +217,42 @@
         window.__autismPreregEnd = endVal;
     }
 
+    async function hydrateSeminarScheduleForEdit(index) {
+        const sid = (document.getElementById('seminar-id') || {}).value;
+        let seminar =
+            sid != null && sid !== ''
+                ? (window.globalSeminars || []).find((x) => String(x.id) === String(sid))
+                : null;
+        if (!seminar && Array.isArray(window.globalSeminars) && index >= 0) {
+            seminar = window.globalSeminars[index];
+        }
+        if (sid) {
+            try {
+                const res = await fetch(withAdminQuery('/api/admin/seminars/all'), {
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+                const rows = await res.json();
+                const fresh = (rows || []).find((x) => String(x.id) === String(sid));
+                if (fresh) {
+                    seminar = fresh;
+                    const gi = (window.globalSeminars || []).findIndex((x) => String(x.id) === String(sid));
+                    if (gi >= 0) window.globalSeminars[gi] = fresh;
+                }
+            } catch (_) {}
+        }
+        applySeminarPreregDatesToUi(seminar);
+        if (seminar) {
+            const rs = document.getElementById('seminar-reg-start');
+            const re = document.getElementById('seminar-reg-end');
+            if (rs) rs.value = formatSeminarDtLocal(seminar.registration_start);
+            if (re) re.value = formatSeminarDtLocal(seminar.registration_end);
+        }
+        return seminar;
+    }
+
     function syncSeminarScheduleFieldsToPayload(data) {
+        const existing = existingSeminarFromForm();
         const psEl = document.getElementById('seminar-prereg-start');
         const peEl = document.getElementById('seminar-prereg-end');
         const rsEl = document.getElementById('seminar-reg-start');
@@ -221,14 +262,18 @@
                 ? window.PortalDateTime
                     ? window.PortalDateTime.fromDatetimeLocal(psEl.value)
                     : psEl.value
-                : null;
+                : existing && existing.preregistration_start
+                  ? existing.preregistration_start
+                  : null;
         }
         if (peEl) {
             data.preregistration_end = peEl.value
                 ? window.PortalDateTime
                     ? window.PortalDateTime.fromRegistrationEndLocal(peEl.value)
                     : peEl.value
-                : null;
+                : existing && existing.preregistration_end
+                  ? existing.preregistration_end
+                  : null;
         }
         if (rsEl) {
             data.registration_start = rsEl.value
@@ -617,7 +662,6 @@
             if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
             if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
             if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
-            applySeminarPreregDatesToUi(s);
             syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
             try {
@@ -626,6 +670,7 @@
             } catch (_) {
                 applyPreregOtpToUi({});
             }
+            hydrateSeminarScheduleForEdit(index);
         };
         window.editSeminar.__akFlowHook = true;
     }
