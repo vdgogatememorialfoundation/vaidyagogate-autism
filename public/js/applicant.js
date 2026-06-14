@@ -2364,6 +2364,37 @@ function ensureDraftApplicationNo() {
     }
     return window.__draftApplicationNo;
 }
+
+async function applyCurrentUserToRegistrationForm() {
+    if (!currentUser) return;
+    const fillIfEmpty = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el || val == null || String(val).trim() === '') return;
+        if (String(el.value || '').trim() !== '') return;
+        el.value = String(val).trim();
+    };
+    fillIfEmpty('reg-fname', currentUser.first_name);
+    fillIfEmpty('reg-mname', currentUser.middle_name);
+    fillIfEmpty('reg-lname', currentUser.last_name);
+    fillIfEmpty('reg-email', currentUser.email);
+    fillIfEmpty('reg-phone', currentUser.phone);
+    try {
+        const uid = doctorNumericUserId();
+        if (!uid) return;
+        const res = await fetch(`/api/doctor/account/${uid}`);
+        if (!res.ok) return;
+        const acc = await res.json();
+        fillIfEmpty('reg-fname', acc.firstName || currentUser.first_name);
+        fillIfEmpty('reg-mname', acc.middleName || currentUser.middle_name);
+        fillIfEmpty('reg-lname', acc.lastName || currentUser.last_name);
+        fillIfEmpty('reg-email', acc.email || currentUser.email);
+        fillIfEmpty('reg-phone', acc.phone || currentUser.phone);
+    } catch (_) {
+        /* optional account fetch */
+    }
+}
+
+window.applyCurrentUserToRegistrationForm = applyCurrentUserToRegistrationForm;
 window.__seminarTermsText = '';
 
 function proceedFromSeminarTnc() {
@@ -2434,10 +2465,7 @@ async function startRegistration(seminarId, opts) {
     if (step0) step0.classList.toggle('hidden', !hasTerms && !window.__seminarCancellationSummary);
     if (ind0) ind0.style.display = hasTerms || window.__seminarCancellationSummary ? '' : 'none';
     await loadRegistrationFormConfigAndApply(seminarId);
-    const emailEl = document.getElementById('reg-email');
-    const phoneEl = document.getElementById('reg-phone');
-    if (emailEl && currentUser && currentUser.email) emailEl.value = currentUser.email;
-    if (phoneEl && currentUser && currentUser.phone) phoneEl.value = currentUser.phone;
+    await applyCurrentUserToRegistrationForm();
 
     nextStep(hasTerms || window.__seminarCancellationSummary ? 0 : 1);
 }
@@ -3678,6 +3706,108 @@ function pdfCongressHeader(doc, opts) {
     return headerH + 10;
 }
 
+function pdfAutismDraftHeader(doc, opts, qrImgElement) {
+    const seminarName = String(opts.seminarName || '').trim();
+    const footerLine = String(opts.footerLine || 'Main registration application form').trim();
+    const logoData = __pdfLogoDataUrl;
+    const headerH = 54;
+    const qrSz = 28;
+    const qrX = 170;
+    const qrY = 11;
+
+    doc.setFillColor(15, 118, 110);
+    doc.rect(0, 0, 210, headerH, 'F');
+    doc.setFillColor(201, 162, 39);
+    doc.rect(0, headerH, 210, 2.5, 'F');
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(qrX - 2.5, qrY - 2.5, qrSz + 5, qrSz + 5, 2.5, 2.5, 'F');
+    pdfAddQrCode(doc, qrImgElement, qrX, qrY, qrSz);
+
+    const textLeft = logoData ? 36 : 14;
+    if (logoData) {
+        try {
+            doc.addImage(logoData, 'PNG', 12, 12, 18, 18);
+        } catch (_) {
+            /* skip broken logo */
+        }
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    const orgLines = doc.splitTextToSize(PDF_ORG_NAME, 124);
+    doc.text(orgLines, textLeft, 16);
+
+    let textY = 16 + orgLines.length * 4.8 + 1;
+    if (seminarName) {
+        doc.setFontSize(9.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(236, 253, 245);
+        const semLines = doc.splitTextToSize(seminarName, 124);
+        doc.text(semLines, textLeft, textY);
+        textY += semLines.length * 4.6 + 1;
+    }
+    if (footerLine) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(204, 251, 241);
+        doc.text(footerLine, textLeft, textY);
+    }
+
+    doc.setFillColor(254, 243, 199);
+    doc.setDrawColor(245, 158, 11);
+    doc.roundedRect(14, headerH - 11, 52, 7.5, 2, 2, 'FD');
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 83, 9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DRAFT PREVIEW', 17.5, headerH - 6);
+
+    return headerH + 10;
+}
+
+function pdfAutismSectionTitle(doc, y, title) {
+    doc.setFillColor(240, 253, 250);
+    doc.setDrawColor(153, 246, 228);
+    doc.roundedRect(14, y, 182, 9.5, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 118, 110);
+    doc.text(title, 18, y + 6.5);
+    return y + 13;
+}
+
+function pdfAutismFieldRow(doc, y, label, value) {
+    const lh = 4.8;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 116, 139);
+    const valLines = doc.splitTextToSize(String(value || '—'), 108);
+    const rowH = Math.max(11, valLines.length * lh + 4);
+    doc.text(label, 18, y + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(15, 23, 42);
+    doc.text(valLines, 68, y + 6);
+    doc.setDrawColor(241, 245, 249);
+    doc.setLineWidth(0.2);
+    doc.line(18, y + rowH - 1, 192, y + rowH - 1);
+    return y + rowH;
+}
+
+function pdfAutismDraftFooter(doc, y) {
+    const footerY = Math.max(y + 6, 278);
+    doc.setFillColor(255, 251, 235);
+    doc.setDrawColor(253, 230, 138);
+    doc.roundedRect(14, footerY, 182, 10, 2, 2, 'FD');
+    doc.setFontSize(9.5);
+    doc.setTextColor(180, 83, 9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Not submitted — review details above, then submit your application.', 105, footerY + 6.5, {
+        align: 'center'
+    });
+    return footerY + 14;
+}
+
 function pdfCongressSectionTitle(doc, y, title, accent, ink) {
     doc.setFillColor(240, 253, 250);
     doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F');
@@ -3813,72 +3943,56 @@ async function generateAutismRegistrationPdfBlob(qrImgElement) {
     await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const accent = [15, 118, 110];
-    const ink = [15, 23, 42];
-    const muted = [71, 85, 105];
     const seminarName = getSeminarTitleForRegistrationPdf();
-    let y = pdfCongressHeader(doc, {
+    let y = pdfAutismDraftHeader(doc, {
         seminarName,
         footerLine: 'Main registration application form (draft)'
-    });
-    const drawSection = (title) => {
-        y = pdfCongressSectionTitle(doc, y + 4, title, accent, ink);
-    };
-    const drawTableRow = (label, value) => {
-        const lh = 6.2;
-        doc.setFontSize(9.5);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...muted);
-        const lines = doc.splitTextToSize(String(value || '-'), 118);
-        const rowH = Math.max(10, lines.length * lh - 1);
-        doc.setDrawColor(226, 232, 240);
-        doc.line(14, y + rowH, 196, y + rowH);
-        doc.text(label, 18, y + 7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...ink);
-        doc.text(lines, 72, y + 7);
-        y += rowH;
-    };
+    }, qrImgElement);
+
     const appNo = window.__draftApplicationNo || '';
     if (appNo || seminarName) {
-        drawSection('Application');
-        if (seminarName) drawTableRow('Event', seminarName);
-        if (appNo) drawTableRow('Application number', appNo);
+        y = pdfAutismSectionTitle(doc, y + 2, 'Application');
+        if (seminarName) y = pdfAutismFieldRow(doc, y, 'Event', seminarName);
+        if (appNo) y = pdfAutismFieldRow(doc, y, 'Application number', appNo);
     }
-    drawSection('Participant');
-    drawTableRow(
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Participant');
+    y = pdfAutismFieldRow(
+        doc,
+        y,
         'Full name',
         `${document.getElementById('reg-fname').value} ${document.getElementById('reg-mname').value} ${document.getElementById('reg-lname').value}`.trim()
     );
-    drawTableRow('Email', document.getElementById('reg-email').value);
-    drawTableRow('Phone', document.getElementById('reg-phone').value);
+    y = pdfAutismFieldRow(doc, y, 'Email', document.getElementById('reg-email').value);
+    y = pdfAutismFieldRow(doc, y, 'Phone', document.getElementById('reg-phone').value);
     const dobEl = document.getElementById('reg-dob');
-    if (dobEl && dobEl.value) drawTableRow('Date of birth', dobEl.value);
-    drawSection('Address');
-    drawTableRow('Address', document.getElementById('reg-addr').value);
-    drawTableRow(
+    if (dobEl && dobEl.value) y = pdfAutismFieldRow(doc, y, 'Date of birth', dobEl.value);
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Address');
+    y = pdfAutismFieldRow(doc, y, 'Address', document.getElementById('reg-addr').value);
+    y = pdfAutismFieldRow(
+        doc,
+        y,
         'City / State / PIN',
         `${document.getElementById('reg-city').value}, ${document.getElementById('reg-state').value} — ${document.getElementById('reg-pin').value}`
     );
     const countryEl = document.getElementById('reg-country');
-    if (countryEl && countryEl.value) drawTableRow('Country', countryEl.value);
+    if (countryEl && countryEl.value) y = pdfAutismFieldRow(doc, y, 'Country', countryEl.value);
+
     const extras = getAutismMainRegExtraFields();
     if (extras.length) {
-        drawSection('Programme details');
+        y = pdfAutismSectionTitle(doc, y + 2, 'Programme details');
         extras.forEach((f) => {
             const el = document.getElementById('reg-field-' + f.key);
             if (!el) return;
             let raw =
                 f.type === 'boolean' ? (el.checked ? 'Yes' : 'No') : f.type === 'file' ? el.files?.[0]?.name || '—' : el.value;
-            drawTableRow(f.label || f.key, fieldDisplayLabel(f, raw) || raw || '—');
+            y = pdfAutismFieldRow(doc, y, f.label || f.key, fieldDisplayLabel(f, raw) || raw || '—');
         });
     }
-    pdfAddQrCode(doc, qrImgElement, 166, 44, 34);
-    y += 8;
-    doc.setFontSize(11);
-    doc.setTextColor(180, 83, 9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DRAFT PREVIEW — not submitted', 105, y, { align: 'center' });
+
+    pdfAutismDraftFooter(doc, y);
+
     const pdfBlob = doc.output('blob');
     if (currentPdfBlobUrl) URL.revokeObjectURL(currentPdfBlobUrl);
     currentPdfBlobUrl = URL.createObjectURL(pdfBlob);

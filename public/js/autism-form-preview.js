@@ -16,13 +16,37 @@
         const c = String(code || '').trim();
         if (!c) return '<p style="color:#64748b;">Barcode appears after you submit.</p>';
         return (
+            '<div class="ak-preview-barcode-card">' +
             '<img src="/api/qrcode/' +
             encodeURIComponent(c) +
             '" alt="Barcode" width="120" height="120">' +
-            '<code>' +
+            '<div><code>' +
             esc(c) +
             '</code>' +
-            (note ? '<small>' + esc(note) + '</small>' : '')
+            (note ? '<small>' + esc(note) + '</small>' : '') +
+            '</div></div>'
+        );
+    }
+
+    function previewRowsHtml(rows) {
+        if (!rows || !rows.length) {
+            return '<p style="color:#64748b;">No fields to preview.</p>';
+        }
+        return (
+            '<div class="ak-preview-fields">' +
+            rows
+                .map(
+                    ([k, v]) =>
+                        '<div class="ak-preview-field">' +
+                        '<span class="ak-preview-field__label">' +
+                        esc(k) +
+                        '</span>' +
+                        '<span class="ak-preview-field__value">' +
+                        esc(v == null || v === '' ? '—' : v) +
+                        '</span></div>'
+                )
+                .join('') +
+            '</div>'
         );
     }
 
@@ -32,20 +56,13 @@
         const bodyEl = document.getElementById('ak-preview-body');
         const barEl = document.getElementById('ak-preview-barcode');
         const confirmBtn = document.getElementById('ak-preview-confirm-btn');
+        const sheet = modal && modal.querySelector('.ak-preview-sheet');
         if (!modal || !bodyEl) return;
+        if (sheet) sheet.classList.add('ak-preview-sheet--v2');
         if (titleEl) titleEl.textContent = opts.title || 'Form preview';
         if (barEl) barEl.innerHTML = barcodeHtml(opts.barcodeText, opts.barcodeNote);
-        const rows = opts.rows || [];
-        bodyEl.innerHTML = rows.length
-            ? '<dl>' +
-              rows
-                  .map(
-                      ([k, v]) =>
-                          '<dt>' + esc(k) + '</dt><dd>' + esc(v == null || v === '' ? '—' : v) + '</dd>'
-                  )
-                  .join('') +
-              '</dl>'
-            : '<p style="color:#64748b;">No fields to preview.</p>';
+        bodyEl.innerHTML =
+            '<div class="ak-preview-draft-badge">Draft preview — not submitted</div>' + previewRowsHtml(opts.rows || []);
         previewConfirmHandler = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
         if (confirmBtn) {
             confirmBtn.style.display = previewConfirmHandler ? '' : 'none';

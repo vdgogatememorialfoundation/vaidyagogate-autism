@@ -265,14 +265,16 @@
         const approveBtn = document.getElementById('ak-final-approve');
         const ticketBtn = document.getElementById('ak-final-issue-ticket');
         if (approveBtn) {
-            approveBtn.disabled = !['submitted', 'revision_required', 'documents_requested'].includes(st);
+            approveBtn.disabled = !['submitted', 'revision_required', 'documents_requested', 'pending_approval'].includes(st);
+            approveBtn.title = 'Approve the application and issue the e-ticket immediately (no payment required)';
         }
         if (ticketBtn) {
             const canIssue = st === 'pending_approval';
+            ticketBtn.style.display = canIssue ? '' : 'none';
             ticketBtn.disabled = !canIssue;
             ticketBtn.title = canIssue
-                ? 'Creates participant e-ticket (no payment on autism portal)'
-                : 'Approve the application first, then issue e-ticket';
+                ? 'Issue e-ticket for this legacy pending approval'
+                : 'Use Approve — e-ticket is issued automatically';
         }
     }
 
@@ -333,7 +335,12 @@
         const msg = document.getElementById('ak-final-action-msg');
         const st = String(status || '').toLowerCase();
         if (st === 'e_ticket_issued' && confirmTicket !== false) {
-            if (!confirm('Issue e-ticket for this registration? No payment is required on the autism portal.')) return;
+            if (
+                !confirm(
+                    'Approve this registration and issue the e-ticket? No payment is required on the autism portal.'
+                )
+            )
+                return;
         }
         try {
             const body =
@@ -415,7 +422,7 @@
         });
         document.getElementById('ak-final-approve')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);
-            if (id) setStatus(id, 'pending_approval', false);
+            if (id) setStatus(id, 'e_ticket_issued');
         });
         document.getElementById('ak-final-issue-ticket')?.addEventListener('click', () => {
             const id = parseInt(document.getElementById('ak-final-detail')?.dataset.rowId, 10);

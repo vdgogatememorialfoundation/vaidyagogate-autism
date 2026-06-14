@@ -776,6 +776,28 @@
         resetPreregWizard();
         wirePreregPinLookup();
         syncPreregOtpUi();
+        applyUserDefaultsToPreregForm();
+    }
+
+    function applyUserDefaultsToPreregForm() {
+        const u = window.currentUser;
+        if (!u) return;
+        const fullName = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ').trim();
+        const defaults = {
+            parent_name: fullName,
+            email: u.email || '',
+            phone: u.phone || ''
+        };
+        (window.__akPreregFields || preregFields || []).forEach((f) => {
+            if (!f || f.enabled === false) return;
+            const val = defaults[f.key];
+            if (val == null || String(val).trim() === '') return;
+            const el = document.getElementById('prereg-field-' + f.key);
+            if (!el) return;
+            if (f.type !== 'boolean' && String(el.value || '').trim() !== '') return;
+            if (f.type === 'boolean') el.checked = !!val;
+            else el.value = val;
+        });
     }
 
     function akPreregSeminarId() {

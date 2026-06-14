@@ -27,6 +27,86 @@
     padding: 24px 22px 20px;
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
 }
+.ak-preview-sheet--v2 {
+    max-width: 560px;
+    border: 1px solid #d1fae5;
+    background: linear-gradient(180deg, #f0fdfa 0%, #fff 72px);
+}
+.ak-preview-sheet--v2 #ak-preview-title {
+    color: #0f766e;
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+}
+.ak-preview-draft-badge {
+    display: inline-block;
+    margin-bottom: 14px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    color: #b45309;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.ak-preview-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+}
+.ak-preview-field {
+    display: grid;
+    grid-template-columns: minmax(110px, 38%) 1fr;
+    gap: 10px 12px;
+    padding: 11px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.92rem;
+}
+.ak-preview-field:last-child {
+    border-bottom: none;
+}
+.ak-preview-field__label {
+    font-weight: 700;
+    color: #64748b;
+}
+.ak-preview-field__value {
+    color: #0f172a;
+    word-break: break-word;
+}
+.ak-preview-barcode-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 14px 0 18px;
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+}
+.ak-preview-barcode-card img {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #fff;
+}
+.ak-preview-barcode-card code {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+.ak-preview-barcode-card small {
+    display: block;
+    color: #64748b;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
 .ak-preview-close {
     position: absolute;
     top: 10px;

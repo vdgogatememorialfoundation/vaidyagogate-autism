@@ -8038,6 +8038,9 @@ app.post('/api/admin/applications/status', (req, res) => {
     if (portalProduct.FEATURES.noFees && newSt === 'approved_pending_payment') {
         newSt = 'pending_approval';
     }
+    if (portalProduct.FEATURES.noFees && newSt === 'pending_approval') {
+        newSt = 'e_ticket_issued';
+    }
     if (!ALLOWED_REGISTRATION_STATUSES.has(newSt)) {
         return res.status(400).json({ error: 'Invalid application status.' });
     }
