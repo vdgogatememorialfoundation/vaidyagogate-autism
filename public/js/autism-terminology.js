@@ -9,7 +9,9 @@
 
     /** Longest phrases first */
     const SEMINAR_REPLACEMENTS = [
-        [/Seminar registration tracking/gi, 'Event registration tracking'],
+        [/Seminar terms & conditions/gi, 'Event terms & conditions'],
+        [/Seminar terms/gi, 'Event terms'],
+        [/seminar terms/gi, 'event terms'],
         [/Track seminar applications/gi, 'Track main registration'],
         [/Seminar applications/gi, 'Main registrations'],
         [/seminar applications/gi, 'main registrations'],

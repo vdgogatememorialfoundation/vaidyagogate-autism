@@ -3707,8 +3707,10 @@ function pdfCongressHeader(doc, opts) {
 }
 
 function pdfAutismDraftHeader(doc, opts, qrImgElement) {
-    const seminarName = String(opts.seminarName || '').trim();
+    const seminarName = String(opts.seminarName || opts.eventName || '').trim();
     const footerLine = String(opts.footerLine || 'Main registration application form').trim();
+    const badgeText = opts.badgeText != null ? String(opts.badgeText) : 'DRAFT PREVIEW';
+    const badgeTone = opts.badgeTone === 'success' ? 'success' : 'draft';
     const logoData = __pdfLogoDataUrl;
     const headerH = 54;
     const qrSz = 28;
@@ -3744,9 +3746,9 @@ function pdfAutismDraftHeader(doc, opts, qrImgElement) {
         doc.setFontSize(9.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(236, 253, 245);
-        const semLines = doc.splitTextToSize(seminarName, 124);
-        doc.text(semLines, textLeft, textY);
-        textY += semLines.length * 4.6 + 1;
+        const eventLines = doc.splitTextToSize(seminarName, 124);
+        doc.text(eventLines, textLeft, textY);
+        textY += eventLines.length * 4.6 + 1;
     }
     if (footerLine) {
         doc.setFontSize(8);
@@ -3755,15 +3757,43 @@ function pdfAutismDraftHeader(doc, opts, qrImgElement) {
         doc.text(footerLine, textLeft, textY);
     }
 
-    doc.setFillColor(254, 243, 199);
-    doc.setDrawColor(245, 158, 11);
-    doc.roundedRect(14, headerH - 11, 52, 7.5, 2, 2, 'FD');
-    doc.setFontSize(7.5);
-    doc.setTextColor(180, 83, 9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DRAFT PREVIEW', 17.5, headerH - 6);
+    if (badgeText) {
+        const badgeW = Math.min(92, Math.max(52, badgeText.length * 2.1 + 8));
+        if (badgeTone === 'success') {
+            doc.setFillColor(220, 252, 231);
+            doc.setDrawColor(16, 185, 129);
+            doc.setTextColor(4, 120, 87);
+        } else {
+            doc.setFillColor(254, 243, 199);
+            doc.setDrawColor(245, 158, 11);
+            doc.setTextColor(180, 83, 9);
+        }
+        doc.roundedRect(14, headerH - 11, badgeW, 7.5, 2, 2, 'FD');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(badgeText, 17.5, headerH - 6);
+    }
 
     return headerH + 10;
+}
+
+function formatRegistrationStatusLabel(status) {
+    const st = String(status || '')
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .trim();
+    if (!st) return '—';
+    return st.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function loadQrImageForCode(code) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = '/api/qrcode/' + encodeURIComponent(String(code || 'APP'));
+    });
 }
 
 function pdfAutismSectionTitle(doc, y, title) {
@@ -3794,15 +3824,18 @@ function pdfAutismFieldRow(doc, y, label, value) {
     return y + rowH;
 }
 
-function pdfAutismDraftFooter(doc, y) {
+function pdfAutismDraftFooter(doc, y, opts) {
+    const text =
+        (opts && opts.text) ||
+        'Not submitted — review details above, then submit your application.';
     const footerY = Math.max(y + 6, 278);
     doc.setFillColor(255, 251, 235);
     doc.setDrawColor(253, 230, 138);
     doc.roundedRect(14, footerY, 182, 10, 2, 2, 'FD');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(180, 83, 9);
     doc.setFont('helvetica', 'bold');
-    doc.text('Not submitted — review details above, then submit your application.', 105, footerY + 6.5, {
+    doc.text(text, 105, footerY + 6.5, {
         align: 'center'
     });
     return footerY + 14;
@@ -3915,7 +3948,7 @@ async function generatePdfBlob(qrImgElement) {
     const terms = window.__seminarTermsText || '';
     if (terms) {
         y += 6;
-        drawSection('Seminar terms & conditions');
+        drawSection('Event terms & conditions');
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...ink);
@@ -3952,7 +3985,7 @@ async function generateAutismRegistrationPdfBlob(qrImgElement) {
     const appNo = window.__draftApplicationNo || '';
     if (appNo || seminarName) {
         y = pdfAutismSectionTitle(doc, y + 2, 'Application');
-        if (seminarName) y = pdfAutismFieldRow(doc, y, 'Event', seminarName);
+        if (seminarName) y = pdfAutismFieldRow(doc, y, 'Event name', seminarName);
         if (appNo) y = pdfAutismFieldRow(doc, y, 'Application number', appNo);
     }
 
@@ -3989,6 +4022,21 @@ async function generateAutismRegistrationPdfBlob(qrImgElement) {
                 f.type === 'boolean' ? (el.checked ? 'Yes' : 'No') : f.type === 'file' ? el.files?.[0]?.name || '—' : el.value;
             y = pdfAutismFieldRow(doc, y, f.label || f.key, fieldDisplayLabel(f, raw) || raw || '—');
         });
+    }
+
+    const terms = window.__seminarTermsText || '';
+    if (terms) {
+        if (y > 248) {
+            doc.addPage();
+            y = 20;
+        }
+        y = pdfAutismSectionTitle(doc, y + 2, 'Event terms & conditions');
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        const tLines = doc.splitTextToSize(terms, 175);
+        doc.text(tLines, 18, y + 4);
+        y += tLines.length * 4.2 + 8;
     }
 
     pdfAutismDraftFooter(doc, y);
@@ -5022,6 +5070,102 @@ document.getElementById('view-app-modal')?.querySelector('button:not(#view-app-d
     document.getElementById('view-app-modal').style.display = '';
 });
 
+async function downloadViewedAutismAppPdf(app, formData) {
+    await ensurePdfLogoDataUrl();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const eventName = (app.seminar_title || app.title || '').trim();
+    const qrImg = await loadQrImageForCode(app.application_no || app.id);
+    const statusLabel = formatRegistrationStatusLabel(app.status);
+    const statusBadge =
+        String(app.status || '').toLowerCase() === 'e_ticket_issued' ? 'E-Ticket Issued' : statusLabel;
+
+    let y = pdfAutismDraftHeader(
+        doc,
+        {
+            eventName,
+            footerLine: 'Main registration submission',
+            badgeText: statusBadge,
+            badgeTone: String(app.status || '').toLowerCase() === 'e_ticket_issued' ? 'success' : 'draft'
+        },
+        qrImg
+    );
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Registration');
+    y = pdfAutismFieldRow(doc, y, 'Application number', app.application_no || '—');
+    y = pdfAutismFieldRow(doc, y, 'Status', statusLabel);
+    if (eventName) y = pdfAutismFieldRow(doc, y, 'Event name', eventName);
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Personal & contact');
+    y = pdfAutismFieldRow(
+        doc,
+        y,
+        'Full name',
+        `${formData.fname || ''} ${formData.mname || ''} ${formData.lname || ''}`.trim()
+    );
+    y = pdfAutismFieldRow(doc, y, 'Email', formData.email || '');
+    y = pdfAutismFieldRow(doc, y, 'Phone', formData.phone || '');
+    if (formData.dob) y = pdfAutismFieldRow(doc, y, 'Date of birth', formData.dob);
+    if (formData.country) y = pdfAutismFieldRow(doc, y, 'Country', formData.country);
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Address');
+    y = pdfAutismFieldRow(doc, y, 'Street / full address', formData.address || '');
+    y = pdfAutismFieldRow(
+        doc,
+        y,
+        'City, state, PIN',
+        `${formData.city || ''}, ${formData.state || ''} — ${formData.pin || ''}`
+    );
+
+    y = pdfAutismSectionTitle(doc, y + 2, 'Programme details');
+    const skip = new Set([
+        'fname',
+        'mname',
+        'lname',
+        'email',
+        'phone',
+        'dob',
+        'address',
+        'pin',
+        'city',
+        'state',
+        'country',
+        'qual',
+        'ncism',
+        'cpin',
+        'college',
+        'ccity',
+        'cstate',
+        'agree_terms',
+        'certificate_path'
+    ]);
+    Object.keys(formData).forEach((k) => {
+        if (skip.has(k) || formData[k] == null || String(formData[k]).trim() === '') return;
+        const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        y = pdfAutismFieldRow(doc, y, label, formData[k]);
+    });
+
+    const terms = app.terms_conditions || '';
+    if (terms) {
+        if (y > 248) {
+            doc.addPage();
+            y = 20;
+        }
+        y = pdfAutismSectionTitle(doc, y + 2, 'Event terms & conditions');
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        const tLines = doc.splitTextToSize(terms, 175);
+        doc.text(tLines, 18, y + 4);
+        y += tLines.length * 4.2 + 8;
+    }
+
+    pdfAutismDraftFooter(doc, y, {
+        text: 'Official registration record — keep this PDF for your records.'
+    });
+    doc.save(`Main_Registration_${app.application_no || app.id}.pdf`);
+}
+
 async function downloadViewedAppPdf() {
     if (!currentlyViewedApp) return;
     const app = currentlyViewedApp;
@@ -5029,6 +5173,14 @@ async function downloadViewedAppPdf() {
     try {
         formData = JSON.parse(app.form_data || '{}');
     } catch (e) {}
+
+    const isAutismApp =
+        document.body.classList.contains('ak-portal-dash') ||
+        window.PORTAL_IS_AUTISM ||
+        !formData.qual;
+    if (isAutismApp) {
+        return downloadViewedAutismAppPdf(app, formData);
+    }
 
     await ensurePdfLogoDataUrl();
     const { jsPDF } = window.jspdf;
@@ -5069,7 +5221,7 @@ async function downloadViewedAppPdf() {
     };
     rowEarly('Application number', app.application_no || '—');
     rowEarly('Status', String(app.status || '').toUpperCase());
-    if (seminarName) rowEarly('Event', seminarName);
+    if (seminarName) rowEarly('Event name', seminarName);
 
     const row = (label, val) => {
         doc.setDrawColor(226, 232, 240);
@@ -5096,11 +5248,7 @@ async function downloadViewedAppPdf() {
     row('Street / full address', formData.address || '');
     row('City, state, PIN', `${formData.city || ''}, ${formData.state || ''} — ${formData.pin || ''}`);
 
-    const isAutismApp =
-        document.body.classList.contains('ak-portal-dash') ||
-        window.PORTAL_IS_AUTISM ||
-        !formData.qual;
-    if (isAutismApp) {
+    if (!formData.qual) {
         drawSection('Programme details');
         const skip = new Set([
             'fname',
@@ -5144,7 +5292,7 @@ async function downloadViewedAppPdf() {
             doc.addPage();
             y = 20;
         }
-        drawSection('Seminar terms & conditions');
+        drawSection('Event terms & conditions');
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...ink);
