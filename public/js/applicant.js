@@ -2125,17 +2125,26 @@ function registrationWindowState(seminar) {
         window.PortalDateTime && window.PortalDateTime.parseMs
             ? (v) => window.PortalDateTime.parseMs(v)
             : (v) => (v ? new Date(v).getTime() : null);
-    const rs = parseMs(seminar.registration_start);
-    const re =
+    const parseEnd =
         window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
-            ? window.PortalDateTime.parseRegistrationEndMs(seminar.registration_end)
-            : parseMs(seminar.registration_end);
+            ? (v) => window.PortalDateTime.parseRegistrationEndMs(v)
+            : parseMs;
+    const startRaw = seminar && seminar.registration_start;
+    const endRaw = seminar && seminar.registration_end;
+    if (!startRaw || !String(startRaw).trim() || !endRaw || !String(endRaw).trim()) {
+        return { state: 'unscheduled' };
+    }
+    const rs = parseMs(startRaw);
+    const re = parseEnd(endRaw);
     const rsValid = rs != null && !Number.isNaN(rs);
     const reValid = re != null && !Number.isNaN(re);
-    if (rsValid && now < rs) {
+    if (!rsValid || !reValid) {
+        return { state: 'unscheduled' };
+    }
+    if (now < rs) {
         return { state: 'upcoming', opensAt: rs };
     }
-    if (reValid && now > re) {
+    if (now > re) {
         return { state: 'closed' };
     }
     return { state: 'open' };
@@ -2236,6 +2245,10 @@ function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
             (flow.preregistrationRequired
                 ? '<button type="button" class="btn-primary" style="width:100%;" onclick="switchTab(\'tab-prereg-hub\')">Open pre-registration</button>'
                 : '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration unavailable</button>');
+    } else if (win.state === 'unscheduled') {
+        actionBlock =
+            '<p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;"><i class="fas fa-calendar-xmark"></i> Registration schedule is not set yet.</p>' +
+            '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Registration not open yet</button>';
     } else if (win.state === 'upcoming') {
         actionBlock =
             '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +

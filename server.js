@@ -5068,15 +5068,18 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
             if (err2) return res.status(500).json({ error: err2.message });
             if (!sem) return res.status(400).json({ error: 'Seminar not found or is not active.' });
 
-            const now = Date.now();
-            const rs = seminarDt.parseSeminarMs(sem.registration_start);
-            const re = seminarDt.parseRegistrationEndMs(sem.registration_end);
-            if (rs != null && !Number.isNaN(rs) && now < rs) {
+            const mainWin = seminarRegFlow.mainRegistrationWindowState(sem, seminarDt);
+            if (mainWin.state === 'unscheduled') {
+                return res.status(400).json({
+                    error: 'Registration schedule is not set for this event yet.'
+                });
+            }
+            if (mainWin.state === 'upcoming') {
                 return res.status(400).json({
                     error: 'Registration for this seminar has not opened yet. Please wait until the scheduled registration date.'
                 });
             }
-            if (re != null && !Number.isNaN(re) && now > re) {
+            if (mainWin.state === 'closed') {
                     return extModules.userHasRegistrationOverride(db, userId, seminarId, (ovErr, hasOverride) => {
                         if (ovErr) return res.status(500).json({ error: ovErr.message });
                         if (!hasOverride) {

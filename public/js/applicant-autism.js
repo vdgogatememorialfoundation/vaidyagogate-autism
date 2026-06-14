@@ -927,6 +927,10 @@
         if (seminar) {
             const flags = seminarFlowFlags(seminar);
             const mainWin = mainRegistrationWindowStateClient(seminar);
+            if (mainWin.state === 'unscheduled') {
+                alert('Registration schedule is not set for this event yet.');
+                return;
+            }
             if (mainWin.state === 'upcoming') {
                 alert(
                     'Registration has not opened yet for this seminar. Please wait until the countdown reaches zero.'
@@ -984,8 +988,7 @@
         return akFormatTrackDateTime(iso);
     }
 
-    function preregWindowStateClient(seminar) {
-        const now = Date.now();
+    function registrationScheduleWindowStateClient(seminar, startKey, endKey) {
         const parseMs =
             window.PortalDateTime && window.PortalDateTime.parseMs
                 ? (v) => window.PortalDateTime.parseMs(v)
@@ -994,28 +997,40 @@
             window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
                 ? (v) => window.PortalDateTime.parseRegistrationEndMs(v)
                 : parseMs;
-        const ps = parseMs(seminar.preregistration_start);
-        const pe = parseEnd(seminar.preregistration_end);
-        if (ps != null && !Number.isNaN(ps) && now < ps) return { state: 'upcoming', opensAt: ps };
-        if (pe != null && !Number.isNaN(pe) && now > pe) return { state: 'closed' };
+        const startRaw = seminar && seminar[startKey];
+        const endRaw = seminar && seminar[endKey];
+        if (!startRaw || !String(startRaw).trim() || !endRaw || !String(endRaw).trim()) {
+            return { state: 'unscheduled' };
+        }
+        const ps = parseMs(startRaw);
+        const pe = parseEnd(endRaw);
+        if (ps == null || Number.isNaN(ps) || pe == null || Number.isNaN(pe)) {
+            return { state: 'unscheduled' };
+        }
+        const now = Date.now();
+        if (now < ps) return { state: 'upcoming', opensAt: ps };
+        if (now > pe) return { state: 'closed' };
         return { state: 'open' };
     }
 
+    function preregWindowStateClient(seminar) {
+        return registrationScheduleWindowStateClient(seminar, 'preregistration_start', 'preregistration_end');
+    }
+
     function mainRegistrationWindowStateClient(seminar) {
-        const now = Date.now();
-        const parseMs =
-            window.PortalDateTime && window.PortalDateTime.parseMs
-                ? (v) => window.PortalDateTime.parseMs(v)
-                : (v) => (v ? new Date(v).getTime() : null);
-        const parseEnd =
-            window.PortalDateTime && window.PortalDateTime.parseRegistrationEndMs
-                ? (v) => window.PortalDateTime.parseRegistrationEndMs(v)
-                : parseMs;
-        const rs = parseMs(seminar.registration_start);
-        const re = parseEnd(seminar.registration_end);
-        if (rs != null && !Number.isNaN(rs) && now < rs) return { state: 'upcoming', opensAt: rs };
-        if (re != null && !Number.isNaN(re) && now > re) return { state: 'closed' };
-        return { state: 'open' };
+        return registrationScheduleWindowStateClient(seminar, 'registration_start', 'registration_end');
+    }
+
+    function scheduleNotSetStatusHtml(kind) {
+        const label =
+            kind === 'prereg'
+                ? 'Pre-registration schedule is not set yet.'
+                : 'Registration schedule is not set yet.';
+        return (
+            '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;"><i class="fas fa-calendar-xmark"></i> ' +
+            akEscapeHtml(label) +
+            '</p>'
+        );
     }
 
     function buildAutismEventGridCard(s, preregBySeminar, gridMode) {
@@ -1039,7 +1054,11 @@
         let actionBlock = '';
 
         if (mainOnly) {
-            if (mainWin.state === 'upcoming') {
+            if (mainWin.state === 'unscheduled') {
+                statusBlock += scheduleNotSetStatusHtml('main');
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
+            } else if (mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
                     '<p style="font-size:0.8rem;color:#4338ca;font-weight:600;"><i class="fas fa-hourglass-half"></i> Registration opens</p>' +
@@ -1075,6 +1094,8 @@
             if (!flags.mainRegistrationOpen) {
                 statusBlock +=
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Final registration is not open yet. We will notify you when it opens.</p>';
+            } else if (mainWin.state === 'unscheduled') {
+                statusBlock += scheduleNotSetStatusHtml('main');
             } else {
                 statusBlock +=
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Open the <strong>Main registration</strong> tab when final registration opens.</p>';
@@ -1106,6 +1127,10 @@
                     '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;"><i class="fas fa-hourglass-half"></i> Final registration is not open yet. Please check back later.</p>';
                 actionBlock =
                     '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Final registration not open yet</button>';
+            } else if (mainWin.state === 'unscheduled') {
+                statusBlock += scheduleNotSetStatusHtml('main');
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
             } else if (mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
@@ -1150,6 +1175,12 @@
                 '<button type="button" class="btn-primary ak-prereg-grid-action" data-mode="revise" data-sid="' +
                 s.id +
                 '" style="width:100%;background:#7c3aed;">Update application</button>';
+        } else if (flags.preregistrationRequired && preWin.state === 'unscheduled' && !st) {
+            statusBlock +=
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>';
+            statusBlock += scheduleNotSetStatusHtml('prereg');
+            actionBlock =
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Preregister</button>';
         } else if (flags.preregistrationRequired && preWin.state === 'upcoming') {
             statusBlock +=
                 '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>';
@@ -1186,7 +1217,11 @@
                 s.id +
                 '" style="width:100%;">Preregister</button>';
         } else if (!flags.preregistrationRequired && flags.mainRegistrationRequired) {
-            if (mainWin.state === 'upcoming') {
+            if (mainWin.state === 'unscheduled') {
+                statusBlock += scheduleNotSetStatusHtml('main');
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Register now</button>';
+            } else if (mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#eef2ff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c7d2fe;">' +
                     '<p style="font-size:0.8rem;color:#4338ca;font-weight:600;">Registration opens</p>' +
@@ -1261,6 +1296,22 @@
                     if (row) window.beginPreregRevision(row);
                     return;
                 }
+                const seminar = byId[Number(sid)];
+                if (seminar && seminarFlowFlags(seminar).preregistrationRequired) {
+                    const preWin = preregWindowStateClient(seminar);
+                    if (preWin.state === 'unscheduled') {
+                        alert('Pre-registration schedule is not set for this event yet.');
+                        return;
+                    }
+                    if (preWin.state !== 'open') {
+                        alert(
+                            preWin.state === 'upcoming'
+                                ? 'Pre-registration has not opened yet.'
+                                : 'Pre-registration has closed.'
+                        );
+                        return;
+                    }
+                }
                 if (sel) sel.value = sid;
                 grid.querySelectorAll('.ak-prereg-event-card').forEach((card) => {
                     card.style.outline = '';
@@ -1271,7 +1322,6 @@
                     card.style.outline = '2px solid #0f766e';
                     card.style.boxShadow = '0 8px 24px rgba(15,118,110,0.15)';
                 }
-                const seminar = byId[Number(sid)];
                 showPreregFormPanel(seminar && seminar.title ? seminar.title : '');
                 loadPreregFormConfig(Number(sid) || null).then(() => {
                     renderPreregFields(document.getElementById('prereg-fields'));

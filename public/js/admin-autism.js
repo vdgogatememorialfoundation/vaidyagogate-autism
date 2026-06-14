@@ -50,8 +50,18 @@
             '<div><label>Pre-registration Start <span style="font-weight:normal;color:#64748b;">(IST)</span></label>' +
             '<input type="datetime-local" id="seminar-prereg-start"></div>' +
             '<div><label>Pre-registration End <span style="font-weight:normal;color:#64748b;">(IST)</span></label>' +
-            '<input type="datetime-local" id="seminar-prereg-end"></div>';
+            '<input type="datetime-local" id="seminar-prereg-end"></div>' +
+            '<p style="grid-column:1/-1;margin:0;font-size:0.78rem;color:#64748b;">Both pre-registration start and end are required before the pre-registration form opens.</p>';
         grid.parentNode.insertBefore(block, grid.nextSibling);
+        const regGrid = regStart.closest('div[style*="grid"]');
+        if (regGrid && !document.getElementById('seminar-main-reg-schedule-note')) {
+            const note = document.createElement('p');
+            note.id = 'seminar-main-reg-schedule-note';
+            note.style.cssText = 'grid-column:1/-1;margin:4px 0 0;font-size:0.78rem;color:#64748b;';
+            note.textContent =
+                'Both registration start and end are required before the main registration form opens.';
+            regGrid.appendChild(note);
+        }
         const flow = document.createElement('div');
         flow.style.cssText =
             'display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding:10px 12px;border:1px solid #d1fae5;border-radius:8px;background:#f0fdfa;';
