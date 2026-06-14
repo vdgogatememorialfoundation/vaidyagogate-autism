@@ -4089,6 +4089,22 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     }
                 }
 
+                if (loginPortal === 'staff') {
+                    if (userRoles.isSuperAdminAccount(row)) {
+                        return res.status(403).json({
+                            error: 'Super administrators use the full admin console.',
+                            hint: 'Sign in at /admin for full administrator access.'
+                        });
+                    }
+                    if (!userRoles.isStaffPortalAccount(row)) {
+                        return res.status(403).json({
+                            error: 'This account cannot sign in to the staff portal.',
+                            hint:
+                                'Use a co-admin or staff account created by your programme administrator. Applicant accounts sign in at /dashboard.'
+                        });
+                    }
+                }
+
                 function markEmailVerifiedFromOtp(cb) {
                     if (!portalAuthPolicy.getPortalAuthConfig().requireEmailVerification) {
                         return cb();
@@ -9174,10 +9190,7 @@ function assertAdminPortalActor(adminId, cb) {
             if (e) return cb(e, null);
             if (!adm) return cb(new Error('FORBIDDEN'), null);
             const ur = userRoles.normalizeUserRole(adm.user_role);
-            const ok =
-                userRoles.isSuperAdminAccount(adm) ||
-                ur === 'co_admin' ||
-                ur === 'scanner_dashboard_user';
+            const ok = userRoles.isSuperAdminAccount(adm) || userRoles.isStaffPortalAccount(adm);
             if (!ok) return cb(new Error('FORBIDDEN'), null);
             cb(null, adm);
         }

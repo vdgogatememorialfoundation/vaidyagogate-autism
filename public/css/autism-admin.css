@@ -261,3 +261,28 @@ body.autism-admin .ak-login-footer a {
 body.autism-admin .ak-login-footer a:hover {
     text-decoration: underline;
 }
+
+/** Staff portal (/staff) — teal accent, same shell as admin */
+body.autism-admin.ak-portal-staff {
+    background: linear-gradient(165deg, #f0fdfa 0%, #f8fafc 50%, #fff7ed 100%) !important;
+}
+
+body.autism-admin.ak-portal-staff .sidebar-header h2,
+body.autism-admin.ak-portal-staff .sidebar-header h3 {
+    color: #0f766e !important;
+}
+
+body.autism-admin.ak-portal-staff .menu-item.active {
+    background: #ccfbf1 !important;
+    color: #0f766e !important;
+    border-left-color: #f97316 !important;
+}
+
+body.autism-admin.ak-portal-staff .btn-primary {
+    background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.28) !important;
+}
+
+body.autism-admin.ak-portal-staff #ak-admin-staff-link {
+    display: none !important;
+}

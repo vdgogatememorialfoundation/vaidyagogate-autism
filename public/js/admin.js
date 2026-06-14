@@ -332,6 +332,9 @@ async function adminDeleteUserAccount(userId, displayName, portalId) {
 function adminCanAccessTab(tabId) {
     let checkId = tabId === 'tab-seminar-details' ? 'tab-seminars' : tabId;
     if (checkId === 'tab-users') checkId = 'tab-staff-users';
+    if (window.PORTAL_IS_STAFF && window.STAFF_PORTAL_SUPER_ADMIN_ONLY && window.STAFF_PORTAL_SUPER_ADMIN_ONLY.has(checkId)) {
+        return false;
+    }
     const autismPortalTabs = new Set([
         'tab-announcements',
         'tab-prereg-tracking',
@@ -366,6 +369,9 @@ function applyCoAdminSidebarVisibility() {
         if (!adminCanAccessTab(m)) el.classList.add('hidden');
         else el.classList.remove('hidden');
     });
+    if (window.PORTAL_IS_STAFF && typeof window.ensureStaffPortalLandingTab === 'function') {
+        window.ensureStaffPortalLandingTab();
+    }
 }
 
 async function refreshAdminLoginOtpPanel() {
@@ -376,6 +382,22 @@ async function refreshAdminLoginOtpPanel() {
 
 window.onload = () => {
     refreshAdminLoginOtpPanel();
+    if (window.PORTAL_IS_STAFF && localStorage.getItem('admin_auth')) {
+        let sessionUser = null;
+        try {
+            sessionUser = JSON.parse(localStorage.getItem('admin_user') || 'null');
+        } catch (_) {}
+        if (
+            sessionUser &&
+            typeof UserRoles !== 'undefined' &&
+            UserRoles.isSuperAdminAccount &&
+            UserRoles.isSuperAdminAccount(sessionUser)
+        ) {
+            clearAdminSession();
+        } else if (sessionUser && typeof window.staffPortalAccountOk === 'function' && !window.staffPortalAccountOk(sessionUser)) {
+            clearAdminSession();
+        }
+    }
     if (localStorage.getItem('admin_auth') && hasValidAdminSession()) {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
@@ -512,7 +534,7 @@ async function adminLoginFormSubmit(e) {
     const rawId = document.getElementById('admin-email').value.trim();
     const email = rawId.includes('@') ? rawId.toLowerCase() : rawId.replace(/\s/g, '');
     const password = document.getElementById('admin-password').value;
-    const body = { email, password, portal: 'admin' };
+    const body = { email, password, portal: window.PORTAL_IS_STAFF ? 'staff' : 'admin' };
     const submitBtn = e.target.querySelector('button[type="submit"]');
     let submitBtnLabel = submitBtn ? submitBtn.textContent : '';
     if (submitBtn) {
@@ -556,7 +578,20 @@ async function adminLoginFormSubmit(e) {
         }
         const role = String(data.user.role || '').toLowerCase();
         const userRole = String(data.user.user_role || '').toLowerCase();
-        if (role !== 'admin' && userRole !== 'co_admin') {
+        if (window.PORTAL_IS_STAFF) {
+            if (typeof UserRoles !== 'undefined' && UserRoles.isSuperAdminAccount && UserRoles.isSuperAdminAccount(data.user)) {
+                showAdminLoginError(
+                    'Super administrators sign in at the admin console (/admin), not the staff portal.'
+                );
+                return;
+            }
+            if (typeof window.staffPortalAccountOk === 'function' && !window.staffPortalAccountOk(data.user)) {
+                showAdminLoginError(
+                    'This account cannot access the staff portal. Ask your administrator for a co-admin or staff login.'
+                );
+                return;
+            }
+        } else if (role !== 'admin' && userRole !== 'co_admin') {
             showAdminLoginError(
                 'This account does not have access to the admin console. Sign in with a staff admin account, or register on the public website.'
             );

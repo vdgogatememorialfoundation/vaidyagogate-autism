@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
-    <link rel="stylesheet" href="/css/autism-admin.css?v=4">
+    <link rel="stylesheet" href="/css/autism-admin.css?v=5">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=1">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
@@ -118,6 +118,7 @@
 
             <footer class="ak-login-footer">
                 <a href="/"><i class="fas fa-house" aria-hidden="true"></i> Return to public website</a>
+                <a href="/staff" id="ak-admin-staff-link" style="display:block;margin-top:10px;color:#64748b;font-size:0.85rem;"><i class="fas fa-users-gear" aria-hidden="true"></i> Co-admin or staff? Use the staff portal</a>
             </footer>
         </div>
     </div>
@@ -182,7 +183,7 @@
             <!-- Staff users -->
             <div id="tab-staff-users" class="tab-pane">
                 <h2 style="margin-bottom: 20px;">Staff &amp; portal users</h2>
-                <p style="color:#64748b;font-size:0.88rem;margin:-8px 0 16px;">Co-admin and scanner accounts appear here. Super Admin is not listed. Public sign-ups appear under <strong>Participants</strong>.</p>
+                <p style="color:#64748b;font-size:0.88rem;margin:-8px 0 16px;">Co-admin and scanner accounts appear here. Super Admin is not listed. Public sign-ups appear under <strong>Participants</strong>. Co-admins and staff sign in at <a href="/staff" target="_blank" rel="noopener"><strong>/staff</strong></a> (limited modules); super administrators use <a href="/admin" target="_blank" rel="noopener"><strong>/admin</strong></a>.</p>
                 <div class="card" style="margin-bottom:16px;padding:14px 18px;border-left-color:#0d9488;">
                     <label for="admin-user-lookup" style="font-weight:600;font-size:0.9rem;">Find any account</label>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
@@ -2513,7 +2514,8 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260615a"></script>
+    <script src="/js/staff-portal.js?v=20260615a"></script>
+    <script src="/js/admin.js?v=20260615b"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=11"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
