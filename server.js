@@ -49,7 +49,7 @@ const siteMarketing = require('./lib/site-marketing');
 const siteKillSwitch = require('./lib/site-kill-switch');
 const activityLog = require('./lib/activity-log');
 const whatsappWebhook = require('./lib/whatsapp-webhook');
-const { ensureSupportTicketSchema } = require('./lib/support-tickets-schema');
+const { ensureSupportTicketSchema, ensureSupportTicketSchemaOnce } = require('./lib/support-tickets-schema');
 const supportTicketNotify = require('./lib/support-ticket-notify');
 const supportTicketSla = require('./lib/support-ticket-sla');
 const { ensureContactInquiriesSchema } = require('./lib/contact-inquiries-schema');
@@ -2874,17 +2874,7 @@ function withAuxiliaryTables(req, res, next) {
 }
 
 function withSupportTickets(req, res, next) {
-    const run = () => ensureSupportTicketSchema(db, ignoreSchemaMigrationErr, next);
-    if (pgDb && typeof pgDb.ensureAuxiliaryTables === 'function') {
-        return pgDb
-            .ensureAuxiliaryTables()
-            .then(run)
-            .catch((e) => {
-                console.warn('[support-tickets-schema]', e.message);
-                run();
-            });
-    }
-    run();
+    ensureSupportTicketSchemaOnce(db, ignoreSchemaMigrationErr, next);
 }
 
 function formatCheckInTimeForNotify(at) {
@@ -11792,6 +11782,12 @@ const SUPPORT_TICKET_LIST_COLS = `st.id, st.user_id, st.category, st.subject, st
     st.ticket_id AS ticket_id_raw, st.tracking_id,
     COALESCE(NULLIF(TRIM(st.ticket_id), ''), NULLIF(TRIM(st.tracking_id), '')) AS ticket_id`;
 
+/** Lighter columns for admin list (no description body). */
+const SUPPORT_TICKET_ADMIN_LIST_COLS = `st.id, st.user_id, st.category, st.subject, st.priority, st.status,
+    st.created_at, st.updated_at, st.expected_response_at, st.assigned_to_admin,
+    st.ticket_id AS ticket_id_raw, st.tracking_id,
+    COALESCE(NULLIF(TRIM(st.ticket_id), ''), NULLIF(TRIM(st.tracking_id), '')) AS ticket_id`;
+
 function resolveSupportTicketByRef(ticketRef, cb) {
     const ref = String(ticketRef || '').trim();
     if (!ref) return cb(new Error('Ticket id required'));
@@ -12499,7 +12495,7 @@ app.delete('/api/admin/tickets/:id', (req, res) => {
 // Admin: Get All Support Tickets
 app.get('/api/admin/support-tickets', (req, res) => {
     const { status, category, priority } = req.query;
-    let query = `SELECT ${SUPPORT_TICKET_LIST_COLS},
+    let query = `SELECT ${SUPPORT_TICKET_ADMIN_LIST_COLS},
                         u.first_name, u.last_name, u.email FROM support_tickets st 
                  LEFT JOIN users u ON st.user_id = u.id WHERE 1=1`;
     const params = [];

@@ -647,6 +647,9 @@ function switchTab(tabId) {
     if (tabId === 'tab-staff-users' || tabId === 'tab-doctors') {
         loadUsers();
     }
+    if (tabId === 'tab-support-tickets') {
+        loadSupportTickets(true);
+    }
 }
 
 let adminAutoRefreshInterval = null;
@@ -4133,7 +4136,7 @@ async function adminTransferSupportTicket() {
             msgEl.classList.remove('hidden');
         }
         viewSupportTicket(currentViewingTicketId);
-        loadSupportTickets();
+        loadSupportTickets(true);
     } catch (e) {
         console.error(e);
         alert('Network error');
@@ -8887,7 +8890,7 @@ async function adminCreateSupportTicketForDoctor() {
         const uidEl = document.getElementById('admin-st-create-user-id');
         if (uidEl) uidEl.value = '';
         clearAdminSupportTicketDoctorPreview();
-        loadSupportTickets();
+        loadSupportTickets(true);
     } catch (e) {
         console.error(e);
         if (msgEl) {
@@ -8897,22 +8900,46 @@ async function adminCreateSupportTicketForDoctor() {
     }
 }
 
-async function loadSupportTickets() {
+async function loadSupportTickets(force) {
+    const tbody = document.getElementById('support-tickets-list');
+    const tab = document.getElementById('tab-support-tickets');
+    const tabOpen = tab && !tab.classList.contains('hidden');
+    if (!force && !tabOpen) return;
+    if (tbody) {
+        tbody.innerHTML =
+            '<tr><td colspan="8" style="text-align:center;color:#64748b;">Loading tickets…</td></tr>';
+    }
     try {
-        const status = document.getElementById('ticket-status-filter').value;
-        const priority = document.getElementById('ticket-priority-filter').value;
-        
+        const status = (document.getElementById('ticket-status-filter') || {}).value || '';
+        const priority = (document.getElementById('ticket-priority-filter') || {}).value || '';
+
         let url = '/api/admin/support-tickets';
         const params = [];
-        if(status) params.push(`status=${status}`);
-        if(priority) params.push(`priority=${priority}`);
-        if(params.length > 0) url += '?' + params.join('&');
-        
-        const res = await fetch(url);
-        const tickets = await res.json();
-        __supportTicketsCache = Array.isArray(tickets) ? tickets : [];
+        if (status) params.push(`status=${encodeURIComponent(status)}`);
+        if (priority) params.push(`priority=${encodeURIComponent(priority)}`);
+        if (params.length > 0) url += '?' + params.join('&');
+
+        const res = await fetch(url, { cache: 'no-store' });
+        const tickets = await res.json().catch(() => null);
+        if (!res.ok || !Array.isArray(tickets)) {
+            const errMsg = (tickets && tickets.error) || res.statusText || 'Could not load tickets';
+            if (tbody) {
+                tbody.innerHTML =
+                    '<tr><td colspan="8" style="text-align:center;color:#b91c1c;">' +
+                    escAdmin(errMsg) +
+                    '</td></tr>';
+            }
+            return;
+        }
+        __supportTicketsCache = tickets;
         renderSupportTicketsTable();
-    } catch(err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        if (tbody) {
+            tbody.innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:#b91c1c;">Network error loading tickets.</td></tr>';
+        }
+    }
 }
 
 async function viewSupportTicket(ticketId) {
@@ -8981,7 +9008,7 @@ async function updateTicketStatus() {
         if(res.ok) {
             alert('Ticket status updated');
             document.getElementById('ticket-status-update').value = '';
-            loadSupportTickets();
+            loadSupportTickets(true);
         }
     } catch(err) { console.error(err); }
 }
@@ -9000,7 +9027,7 @@ async function updateTicketPriority() {
         if(res.ok) {
             alert('Ticket priority updated');
             document.getElementById('ticket-priority-update').value = '';
-            loadSupportTickets();
+            loadSupportTickets(true);
         }
     } catch(err) { console.error(err); }
 }
@@ -9047,7 +9074,6 @@ function loadAllData() {
     loadSeminars();
     loadEventSchedules();
     loadFeedbackSeminars();
-    loadSupportTickets();
     startAdminAutoRefresh();
     applyCoAdminSidebarVisibility();
 }
