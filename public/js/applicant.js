@@ -4295,7 +4295,10 @@ async function submitApplication() {
                 window.__regCertServerUploaded = true;
                 updateRegCertUploadUi({ uploaded: true });
             }
-            alert(`Application submitted successfully. Your application number is ${result.applicationNo}. You can track status under View Applications.`);
+            alert(
+                result.message ||
+                    `Application submitted successfully. Your application number is ${result.applicationNo}. You can track status under View Applications.`
+            );
             cancelRegistration();
             loadApplications();
         } else {

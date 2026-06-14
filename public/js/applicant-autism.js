@@ -741,10 +741,17 @@
             }
             return {
                 preregistrationRequired: flow.preregistrationRequired === true,
-                mainRegistrationRequired: flow.mainRegistrationRequired === true
+                mainRegistrationRequired: flow.mainRegistrationRequired === true,
+                autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
+                autoAcceptRegistration: flow.autoAcceptRegistration === true
             };
         } catch (_) {
-            return { preregistrationRequired: true, mainRegistrationRequired: true };
+            return {
+                preregistrationRequired: true,
+                mainRegistrationRequired: true,
+                autoAcceptPreregistration: false,
+                autoAcceptRegistration: false
+            };
         }
     }
 
@@ -1377,7 +1384,7 @@
         const msg = document.getElementById('prereg-status-msg');
         try {
             if (preregResubmitId) {
-                await fetchJson('/api/preregistrations/resubmit', {
+                const resubmitResult = await fetchJson('/api/preregistrations/resubmit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: uid, preregistrationId: preregResubmitId, formData })
@@ -1386,19 +1393,22 @@
                 const sel = document.getElementById('prereg-seminar-select');
                 if (sel) sel.disabled = false;
                 if (msg) {
-                    msg.textContent = 'Pre-registration updated and sent for review again.';
+                    msg.textContent =
+                        (resubmitResult && resubmitResult.message) ||
+                        'Pre-registration updated and sent for review again.';
                     msg.style.color = '#047857';
                 }
                 loadPreregList();
                 return;
             }
-            await fetchJson('/api/preregistrations/submit', {
+            const submitResult = await fetchJson('/api/preregistrations/submit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: uid, seminarId: sid, formData })
             });
             if (msg) {
-                msg.textContent = 'Application submitted successfully.';
+                msg.textContent =
+                    (submitResult && submitResult.message) || 'Application submitted successfully.';
                 msg.style.color = '#047857';
             }
             resetPreregWizard();

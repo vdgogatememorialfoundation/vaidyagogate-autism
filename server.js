@@ -178,15 +178,57 @@ function seminarFlowFlagsFromJson(raw) {
             Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
             Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
         if (!hasFlow) {
-            return { preregistrationRequired: true, mainRegistrationRequired: true };
+            return {
+                preregistrationRequired: true,
+                mainRegistrationRequired: true,
+                autoAcceptPreregistration: false,
+                autoAcceptRegistration: false
+            };
         }
         return {
             preregistrationRequired: flow.preregistrationRequired === true,
-            mainRegistrationRequired: flow.mainRegistrationRequired === true
+            mainRegistrationRequired: flow.mainRegistrationRequired === true,
+            autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
+            autoAcceptRegistration: flow.autoAcceptRegistration === true
         };
     } catch (_) {
-        return { preregistrationRequired: true, mainRegistrationRequired: true };
+        return {
+            preregistrationRequired: true,
+            mainRegistrationRequired: true,
+            autoAcceptPreregistration: false,
+            autoAcceptRegistration: false
+        };
     }
+}
+
+function issueRegistrationTicketImmediately(registrationId, userId, seminarRow, cb) {
+    const amt = paymentAmountForSeminar(seminarRow || {});
+    ensureParticipantTicketForRegistration(
+        registrationId,
+        { createOrderIfMissing: true, promotePendingToSuccess: true, amount: amt },
+        (eTix, tixMeta) => {
+            if (eTix) return cb(eTix);
+            if (!tixMeta || tixMeta.skipped || !tixMeta.ticketId) return cb(null, { ticketIssued: false });
+            notifyTicketIssued(userId, registrationId, tixMeta.ticketId, {
+                email: true,
+                whatsapp: false
+            });
+            db.get(`SELECT seminar_id FROM registrations WHERE id = ?`, [registrationId], (eN, regRow) => {
+                if (!eN && regRow) {
+                    notifEngine.notifyUserEvent(db, 'registration_e_ticket_issued', {
+                        userId,
+                        seminarId: regRow.seminar_id,
+                        registrationId,
+                        vars: {
+                            approval_status: 'e_ticket_issued',
+                            status_message: 'e_ticket_issued'
+                        }
+                    });
+                }
+                cb(null, { ticketIssued: true, ticketId: tixMeta.ticketId });
+            });
+        }
+    );
 }
 
 function mountPaymentsRoutes() {
@@ -5169,12 +5211,14 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                     const otpTokensToConsume = [];
 
                     function doInsertRegistration() {
+                        const regFlow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
+                        const initialStatus = regFlow.autoAcceptRegistration ? 'e_ticket_issued' : 'submitted';
                         const applicationNo = generateId();
                         const finishInsert = () => {
                         const stored = sanitizeFormDataForStorage(formData || {});
                         db.run(
-                            `INSERT INTO registrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'submitted', ?)`,
-                            [userId, seminarId, applicationNo, JSON.stringify(stored)],
+                            `INSERT INTO registrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, ?, ?)`,
+                            [userId, seminarId, applicationNo, initialStatus, JSON.stringify(stored)],
                 function (err3) {
                     if (err3) return res.status(500).json({ error: err3.message });
                                 const newId = this.lastID;
@@ -5186,6 +5230,22 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                     'Registration received.',
                                     () => {}
                                 );
+                                if (regFlow.autoAcceptRegistration) {
+                                    portalTracking.registrationStatusToLog(
+                                        'e_ticket_issued',
+                                        'submitted',
+                                        portalProduct.FEATURES.noFees
+                                    ).forEach((entry) => {
+                                        portalTracking.logRegistrationEvent(
+                                            db,
+                                            newId,
+                                            entry.key,
+                                            entry.label,
+                                            entry.message,
+                                            () => {}
+                                        );
+                                    });
+                                }
                                 const seminarTitle = sem.title || 'Seminar';
                                 db.get(
                                     `SELECT first_name, last_name, email, phone FROM users WHERE id = ?`,
@@ -5210,11 +5270,36 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                         success: true,
                                         applicationId: newId,
                                         applicationNo,
+                                        status: initialStatus,
                                         ...(extra || {})
                                     };
+                                    if (regFlow.autoAcceptRegistration && extra && extra.ticketIssued) {
+                                        payload.message =
+                                            'Registration accepted — your e-ticket has been issued. Application no. ' +
+                                            applicationNo +
+                                            '.';
+                                    }
                                     res.json(payload);
                                 };
                                 const afterVolunteerTicket = () => {
+                                    const runFinish = (extra) => {
+                                        if (!regFlow.autoAcceptRegistration) {
+                                            if (!otpTokensToConsume.length) return finishResponse(extra);
+                                            return otpLib.consumeVerificationTokens(db, otpTokensToConsume, (cErr) => {
+                                                if (cErr) console.warn('[otp] consume after submit:', cErr.message);
+                                                finishResponse(extra);
+                                            });
+                                        }
+                                        issueRegistrationTicketImmediately(newId, userId, sem, (tixErr, tixMeta) => {
+                                            if (tixErr) console.warn('[auto-ticket]', tixErr.message);
+                                            const merged = { ...(extra || {}), ...(tixMeta || {}) };
+                                            if (!otpTokensToConsume.length) return finishResponse(merged);
+                                            otpLib.consumeVerificationTokens(db, otpTokensToConsume, (cErr) => {
+                                                if (cErr) console.warn('[otp] consume after submit:', cErr.message);
+                                                finishResponse(merged);
+                                            });
+                                        });
+                                    };
                                     volunteerTicketFlow.tryFulfillVolunteerAfterRegistration(
                                         db,
                                         volunteerTicketDeps(),
@@ -5226,11 +5311,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                                 extra.volunteerTicketId = vRes.ticketId;
                                                 extra.message = vRes.message;
                                             }
-                                            if (!otpTokensToConsume.length) return finishResponse(extra);
-                                            otpLib.consumeVerificationTokens(db, otpTokensToConsume, (cErr) => {
-                                                if (cErr) console.warn('[otp] consume after submit:', cErr.message);
-                                                finishResponse(extra);
-                                            });
+                                            runFinish(extra);
                                         }
                                     );
                                 };
