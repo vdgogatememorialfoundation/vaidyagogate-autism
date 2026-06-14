@@ -11907,38 +11907,52 @@ function createSupportTicketRecord(opts, cb) {
     const description = opts.description && String(opts.description).trim();
     if (!subject) return cb(new Error('Subject is required'));
     if (!description) return cb(new Error('Description is required'));
-    const ticketId = 'TKT_' + generateId();
+    const ticketId = generateId();
     const cat = opts.category || 'general';
     const senderType = opts.senderType || 'user';
     const senderId = parseInt(opts.senderId, 10) || uid;
 
     const runInsert = (slaMeta) => {
         const expectedAt = slaMeta && slaMeta.iso ? slaMeta.iso : null;
-        db.run(
-            `INSERT INTO support_tickets (ticket_id, tracking_id, user_id, category, subject, description, attachment_path, priority, status, expected_response_at, created_at, updated_at) 
+        db.get(`SELECT id FROM users WHERE id = ? LIMIT 1`, [uid], (eUser, userRow) => {
+            if (eUser) return cb(eUser);
+            if (!userRow) return cb(new Error('User account not found. Sign out and sign in again.'));
+            db.run(
+                `INSERT INTO support_tickets (ticket_id, tracking_id, user_id, category, subject, description, attachment_path, priority, status, expected_response_at, created_at, updated_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-            [ticketId, ticketId, uid, cat, subject, description, opts.attachment_path || null, opts.priority || 'medium', expectedAt],
-            function (err) {
-                if (err) return cb(err);
-                db.run(
-                    `INSERT INTO ticket_messages (ticket_id, sender_id, sender_type, message) VALUES (?, ?, ?, ?)`,
-                    [ticketId, senderId, senderType, description],
-                    function (err2) {
-                        if (err2) return cb(err2);
-                        supportTicketNotify.notifySupportTicketCreated(db, ticketId, (nErr) => {
-                            if (nErr) console.warn('[support-ticket] create notify:', nErr.message);
-                            cb(null, {
-                                ticketId,
-                                userId: uid,
-                                expectedResponseAt: expectedAt,
-                                expectedResponseHours: slaMeta && slaMeta.hours,
-                                expectedResponseDisplay: supportTicketSla.formatExpectedDisplay(expectedAt)
+                [
+                    ticketId,
+                    ticketId,
+                    uid,
+                    cat,
+                    subject,
+                    description,
+                    opts.attachment_path || null,
+                    opts.priority || 'medium',
+                    expectedAt
+                ],
+                function (err) {
+                    if (err) return cb(err);
+                    db.run(
+                        `INSERT INTO ticket_messages (ticket_id, sender_id, sender_type, message) VALUES (?, ?, ?, ?)`,
+                        [ticketId, senderId, senderType, description],
+                        function (err2) {
+                            if (err2) return cb(err2);
+                            supportTicketNotify.notifySupportTicketCreated(db, ticketId, (nErr) => {
+                                if (nErr) console.warn('[support-ticket] create notify:', nErr.message);
+                                cb(null, {
+                                    ticketId,
+                                    userId: uid,
+                                    expectedResponseAt: expectedAt,
+                                    expectedResponseHours: slaMeta && slaMeta.hours,
+                                    expectedResponseDisplay: supportTicketSla.formatExpectedDisplay(expectedAt)
+                                });
                             });
-                        });
-                    }
-                );
-            }
-        );
+                        }
+                    );
+                }
+            );
+        });
     };
 
     const afterSla = (slaMeta) => {
@@ -11957,15 +11971,22 @@ app.use('/api/support-ticket', withSupportTickets);
 app.use('/api/admin/support-ticket', withSupportTickets);
 app.use('/api/admin/support-tickets', withSupportTickets);
 
-// Create Support Ticket (doctor portal)
+// Create Support Ticket (applicant / doctor portal)
 app.post('/api/support-ticket/create', (req, res) => {
-    const { userId, category, subject, description, attachment_path } = req.body;
+    const { userId, category, subject, description, attachment_path } = req.body || {};
+    const uid = parseInt(userId, 10);
+    if (!Number.isInteger(uid) || uid < 1) {
+        return res.status(400).json({ error: 'Valid userId is required. Sign out and sign in again.' });
+    }
     createSupportTicketRecord(
-        { userId, category, subject, description, attachment_path, senderType: 'user', senderId: userId },
+        { userId: uid, category, subject, description, attachment_path, senderType: 'user', senderId: uid },
         (err, out) => {
             if (err) {
                 console.error('[support-ticket/create]', err.message);
-                return res.status(500).json({ error: err.message || 'Could not create ticket. Please try again.' });
+                const msg = err.message || 'Could not create ticket. Please try again.';
+                const code =
+                    /required|not found|invalid user/i.test(msg) ? 400 : 500;
+                return res.status(code).json({ error: msg });
             }
             res.json({
                 success: true,

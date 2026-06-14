@@ -6447,36 +6447,55 @@ async function submitSupportTicket() {
         alert('Subject and description are required.');
         return;
     }
+    const resultEl = document.getElementById('ticket-result');
+    if (resultEl) {
+        resultEl.style.color = '#64748b';
+        resultEl.textContent = 'Submitting…';
+    }
     try {
         const res = await fetch('/api/support-ticket/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: uid, category, subject, description })
         });
-        const result = await res.json();
+        const result = await res.json().catch(() => ({}));
         if (!res.ok || !result.success) {
-            alert(result.error || 'Could not create support ticket. Please try again.');
+            const errMsg = (result && result.error) || 'Could not create support ticket. Please try again.';
+            if (resultEl) {
+                resultEl.style.color = '#b91c1c';
+                resultEl.textContent = errMsg;
+            }
+            alert(errMsg);
             return;
         }
-        if (result.success) {
-            let msg = 'Ticket created: ' + result.ticketId;
-            if (result.expectedResponseDisplay) {
-                msg += ' — Expected response by ' + result.expectedResponseDisplay + ' (IST)';
-            }
-            document.getElementById('ticket-result').innerText = msg;
-            document.getElementById('ticket-subj').value = '';
-            document.getElementById('ticket-desc').value = '';
-            setTimeout(() => {
-                document.getElementById('new-ticket-form').classList.add('hidden');
-                document.getElementById('ticket-result').innerText = '';
-            }, 2500);
-            loadTickets();
-            loadDoctorDashboardStats();
+        let msg = 'Ticket created: ' + result.ticketId;
+        if (result.expectedResponseDisplay) {
+            msg += ' — Expected response by ' + result.expectedResponseDisplay + ' (IST)';
         }
+        if (resultEl) {
+            resultEl.style.color = '#059669';
+            resultEl.textContent = msg;
+        }
+        document.getElementById('ticket-subj').value = '';
+        document.getElementById('ticket-desc').value = '';
+        setTimeout(() => {
+            document.getElementById('new-ticket-form').classList.add('hidden');
+            if (resultEl) resultEl.textContent = '';
+        }, 2500);
+        loadTickets();
+        if (typeof loadDoctorDashboardStats === 'function') loadDoctorDashboardStats();
     } catch (err) {
         console.error(err);
+        const errMsg = 'Network error — could not create ticket. Check your connection and try again.';
+        if (resultEl) {
+            resultEl.style.color = '#b91c1c';
+            resultEl.textContent = errMsg;
+        }
+        alert(errMsg);
     }
 }
+
+window.submitSupportTicket = submitSupportTicket;
 
 // Doctor Profile Management
 function isDoctorProfileComplete(profile) {
