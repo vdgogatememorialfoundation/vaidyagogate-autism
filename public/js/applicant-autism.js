@@ -1198,6 +1198,61 @@
         );
     }
 
+    function hasExistingMainRegistration() {
+        const apps =
+            typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        return apps.length >= 1;
+    }
+
+    function alreadyRegisteredMainActionBlock() {
+        return (
+            '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Already registered</button>'
+        );
+    }
+
+    function alreadyRegisteredMainStatusHtml() {
+        const apps =
+            typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        const app = apps[0];
+        const idPart = app && app.application_no ? ' (ID: ' + akEscapeHtml(app.application_no) + ')' : '';
+        return (
+            '<p style="font-size:0.85rem;color:#15803d;margin-bottom:10px;"><i class="fas fa-check-circle"></i> Already registered' +
+            idPart +
+            '</p>'
+        );
+    }
+
+    function applyAlreadyRegisteredMainUi(actionBlock, statusBlock, gridMode) {
+        if (gridMode !== 'main' || !hasExistingMainRegistration()) {
+            return { actionBlock, statusBlock };
+        }
+        const isRegisterAction =
+            actionBlock.indexOf('Register now') >= 0 || actionBlock.indexOf('data-mode="main"') >= 0;
+        if (!isRegisterAction) return { actionBlock, statusBlock };
+        if (statusBlock.indexOf('Already registered') < 0) {
+            statusBlock += alreadyRegisteredMainStatusHtml();
+        }
+        return { actionBlock: alreadyRegisteredMainActionBlock(), statusBlock };
+    }
+
+    function syncMainRegStartCard() {
+        const card = document.getElementById('ak-main-reg-start');
+        if (!card || !document.body.classList.contains('ak-portal-dash')) return;
+        if (!hasExistingMainRegistration()) return;
+        const apps =
+            typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        const app = apps[0];
+        const idPart =
+            app && app.application_no
+                ? ' — Tracking ID: <strong>' + escapeAkHtml(String(app.application_no)) + '</strong>'
+                : '';
+        card.innerHTML =
+            '<p style="margin:0 0 10px;font-size:0.92rem;color:#15803d;"><i class="fas fa-check-circle"></i> Already registered' +
+            idPart +
+            '.</p>' +
+            alreadyRegisteredMainActionBlock();
+    }
+
     function buildAutismEventGridCard(s, preregBySeminar, gridMode) {
         gridMode = gridMode || 'prereg';
         const flags = seminarFlowFlags(s);
@@ -1418,6 +1473,8 @@
             actionBlock =
                 '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Unavailable</button>';
         }
+
+        ({ actionBlock, statusBlock } = applyAlreadyRegisteredMainUi(actionBlock, statusBlock, gridMode));
 
         return (
             '<div class="ak-prereg-event-card" data-sid="' +
@@ -2848,6 +2905,25 @@
         window.loadRegistrationFormConfigAndApply.__akMainRegHook = true;
     }
 
+    function patchLoadApplicationsForMainRegUi() {
+        if (typeof loadApplications !== 'function' || loadApplications.__akMainRegUiHook) return;
+        const orig = loadApplications;
+        window.loadApplications = async function () {
+            await orig.apply(this, arguments);
+            syncMainRegStartCard();
+            const mainGrid = document.getElementById('ak-main-events-grid');
+            if (mainGrid && window.__akAllSeminars && window.__akPreregBySeminar) {
+                paintAutismEventsGrid(
+                    'ak-main-events-grid',
+                    window.__akAllSeminars,
+                    window.__akPreregBySeminar,
+                    'main'
+                );
+            }
+        };
+        window.loadApplications.__akMainRegUiHook = true;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
@@ -2858,6 +2934,7 @@
         patchMainRegistrationOnEventTab();
         patchSubmitApplicationSuccessBanner();
         patchLoadRegistrationFormConfig();
+        patchLoadApplicationsForMainRegUi();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
         if (accountFields) {
