@@ -563,7 +563,7 @@
     <script src="/js/vgmf-home.js?v=20260612c"></script>
     <script src="/js/portal-theme.js"></script>
     <script src="/js/vgmf-congress.js?v=20260530a"></script>
-    <script src="/js/nexgen-home.js?v=5"></script>
+    <script src="/js/nexgen-home.js?v=4"></script>
     <script src="/js/autism-home-enhance.js?v=7"></script>
     <script src="/js/autism-site-images.js?v=2"></script>
     <script src="/js/autism-announcements.js?v=3"></script>
@@ -1637,7 +1637,7 @@
 
         async function loadPublicCmsAndApply() {
             try {
-                const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+                const res = await fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
                 const cms = await res.json();
                 if (typeof applySiteCms === 'function') applySiteCms(cms);
                 if (typeof renderAboutGallerySocial === 'function') renderAboutGallerySocial(cms);
@@ -1648,7 +1648,10 @@
 
         async function loadNotices() {
             try {
-                const [resN, cmsRes] = await Promise.all([fetch('/api/notices'), fetch('/api/public/site-cms')]);
+                const [resN, cmsRes] = await Promise.all([
+                    fetch('/api/notices'),
+                    fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' })
+                ]);
                 const notices = await resN.json();
                 const cms = await cmsRes.json().catch(() => ({}));
                 const extra = Array.isArray(cms.publicNotices) ? cms.publicNotices : [];

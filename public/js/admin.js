@@ -10047,14 +10047,25 @@ function cmsCollectFooterDoctorLinks() {
 }
 
 function cmsFieldValue(id) {
-    const els = document.querySelectorAll('[id="' + id.replace(/"/g, '') + '"]');
+    const safeId = String(id || '').replace(/"/g, '');
+    const els = document.querySelectorAll('#' + safeId);
     if (!els.length) return '';
     for (let i = 0; i < els.length; i++) {
         const el = els[i];
         if (el.type === 'hidden') continue;
-        if (el.offsetParent !== null || el === document.activeElement) return el.value || '';
+        const card = el.closest('.ak-cms-homepage, #ak-main-cms-card, #cms-header-footer-card, #cms-contact-card');
+        if (card && card.classList.contains('hidden')) continue;
+        if (el.offsetParent !== null || el.getClientRects().length > 0) return el.value || '';
+    }
+    for (let i = 0; i < els.length; i++) {
+        const el = els[i];
+        if (el.type !== 'hidden' && String(el.value || '').trim()) return el.value;
     }
     return els[0].value || '';
+}
+
+function fetchPublicSiteCms() {
+    return fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
 }
 
 function cmsPadStatRows(list, count) {
@@ -10936,7 +10947,7 @@ async function loadAdminSiteCms() {
     loadJudgeCommunicationsAdmin().catch(console.error);
     populateVenueBroadcastSeminars().catch(console.error);
     try {
-        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+        const res = await fetchPublicSiteCms();
         const cms = await res.json();
         __siteCmsEditing = cms;
         tickerEl.value = cms.tickerText || '';
@@ -11190,7 +11201,7 @@ async function loadAkContentUpdatesTab() {
     const dashRoot = document.getElementById('ak-dashboard-update-rows');
     if (!webRoot && !dashRoot) return;
     try {
-        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+        const res = await fetchPublicSiteCms();
         const cms = await res.json();
         if (!res.ok) throw new Error(cms.error || 'Could not load');
         if (webRoot) cmsFillPublicNoticeRows(cms.publicNotices || [], 'ak-website-notice-rows');
@@ -11202,11 +11213,23 @@ async function loadAkContentUpdatesTab() {
 }
 
 async function postSiteCmsPayload(cms) {
-    const res = await fetch('/api/admin/site-cms', {
+    const body = typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms };
+    if (typeof window.autismAdminFetch === 'function') {
+        const data = await window.autismAdminFetch('/api/admin/site-cms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body
+        });
+        if (!data || !data.success) throw new Error((data && data.error) || 'Save failed');
+        return data;
+    }
+    const url =
+        typeof withActingAdminUrl === 'function' ? withActingAdminUrl('/api/admin/site-cms') : '/api/admin/site-cms';
+    const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ cms })
+        body: JSON.stringify(body)
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || res.statusText || 'Save failed');
@@ -11216,18 +11239,29 @@ async function postSiteCmsPayload(cms) {
 async function saveHomepageCmsOnly() {
     setCmsSaveMessage('');
     try {
-        const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+        const res = await fetchPublicSiteCms();
         const current = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(current.error || 'Could not load current content');
+        const patch = cmsCollectHomepageEditorFields();
         const cms = {
             ...current,
-            ...cmsCollectHomepageEditorFields()
+            ...patch,
+            hero: { ...(current.hero || {}), ...(patch.hero || {}) },
+            topBar: { ...(current.topBar || {}), ...(patch.topBar || {}) },
+            siteHeader: { ...(current.siteHeader || {}), ...(patch.siteHeader || {}) },
+            footer: { ...(current.footer || {}), ...(patch.footer || {}) },
+            contact: { ...(current.contact || {}), ...(patch.contact || {}) }
         };
         const data = await postSiteCmsPayload(cms);
         if (data.success) {
-            __siteCmsEditing = cms;
-            cmsApplyHeroFieldsToForm(cms);
-            setCmsSaveMessage('Homepage saved. Hard-refresh the public site (Ctrl+F5) to see changes.', '#15803d');
+            const verify = await fetchPublicSiteCms();
+            const saved = await verify.json().catch(() => cms);
+            __siteCmsEditing = saved;
+            cmsApplyHeroFieldsToForm(saved);
+            setCmsSaveMessage(
+                'Homepage saved. Open the public site and press Ctrl+F5 — changes apply within a few seconds.',
+                '#15803d'
+            );
         } else {
             setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
         }
@@ -11258,7 +11292,11 @@ async function saveAdminSiteCms() {
     }, []);
     const siteMenu = cmsCollectMenuFromDom();
     try {
+        const resCurrent = await fetchPublicSiteCms();
+        const current = await resCurrent.json().catch(() => ({}));
+        if (!resCurrent.ok) throw new Error(current.error || 'Could not load current content');
         const cms = {
+            ...current,
             tickerText: (document.getElementById('cms-ticker') || {}).value || '',
             bannerImage: (document.getElementById('cms-banner') || {}).value || '',
             scrollingAnnouncements: cmsCollectScrollingAnnouncementsFromDom(),

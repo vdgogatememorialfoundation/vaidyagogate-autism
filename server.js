@@ -4476,10 +4476,15 @@ app.get('/api/public/announcements', (req, res) => {
 
 app.get('/api/public/site-cms', (req, res) => {
     const cacheKey = 'api:public:site-cms';
-    const cached = getReadApiCache(cacheKey);
-    if (cached) {
-        setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
-        return res.json(cached);
+    const bypassCache = req.query.fresh === '1' || req.query.t != null;
+    if (!bypassCache) {
+        const cached = getReadApiCache(cacheKey);
+        if (cached) {
+            setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+            return res.json(cached);
+        }
+    } else {
+        res.setHeader('Cache-Control', 'no-store');
     }
     loadPublicSiteCms((e, cms) => {
         if (e) return res.status(500).json({ error: e.message });
@@ -4487,8 +4492,12 @@ app.get('/api/public/site-cms', (req, res) => {
             if (e2) return res.status(500).json({ error: e2.message });
             enrichSiteCmsSpeakers(enriched, (e3, withSpeakers) => {
                 if (e3) return res.status(500).json({ error: e3.message });
-                setReadApiCache(cacheKey, withSpeakers, 60000);
-                setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+                if (!bypassCache) {
+                    setReadApiCache(cacheKey, withSpeakers, 60000);
+                    setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
+                } else {
+                    res.setHeader('Cache-Control', 'no-store');
+                }
                 res.json(withSpeakers);
             });
         });
@@ -4583,6 +4592,14 @@ app.post('/api/admin/site-cms', (req, res) => {
                 merged[k] = { ...(merged[k] || {}), ...incoming[k] };
             }
         });
+        ['homeJourney', 'homeBento', 'homeCtaBand', 'featuresSection'].forEach((k) => {
+            if (incoming[k] && typeof incoming[k] === 'object') {
+                merged[k] = { ...(merged[k] || {}), ...incoming[k] };
+                if (k === 'homeJourney' && Array.isArray(incoming[k].steps)) merged[k].steps = incoming[k].steps;
+                if (k === 'homeBento' && Array.isArray(incoming[k].cards)) merged[k].cards = incoming[k].cards;
+            }
+        });
+        if (typeof incoming.helpBanner === 'string') merged.helpBanner = incoming.helpBanner;
         if (Array.isArray(incoming.heroStats)) merged.heroStats = incoming.heroStats;
         if (Array.isArray(incoming.homeStats)) merged.homeStats = incoming.homeStats;
         if (Array.isArray(incoming.featureCards)) merged.featureCards = incoming.featureCards;
@@ -4592,13 +4609,14 @@ app.post('/api/admin/site-cms', (req, res) => {
             merged.seo = siteSeoMod.normalizeSeo({ ...(merged.seo || {}), ...incoming.seo });
         }
         merged.scrollingAnnouncements = sanitizeScrollingAnnouncements(merged.scrollingAnnouncements);
+        merged.cmsUpdatedAt = Date.now();
         const normalized = siteCmsHelpers.normalizeSiteCms(merged);
         const payload = JSON.stringify(normalized);
         upsertGlobalSetting('public_site_cms', payload, (err) => {
             if (err) return res.status(500).json({ error: err.message });
             READ_API_CACHE.delete('api:public:site-cms');
             READ_API_CACHE.delete('api:public:announcements');
-            res.json({ success: true });
+            res.json({ success: true, cmsUpdatedAt: normalized.cmsUpdatedAt });
         });
     });
 });
