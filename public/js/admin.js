@@ -9,7 +9,7 @@ let __requireBehalfApplicantOtp = true;
 
 const ADMIN_REGISTRATION_STATUSES = [
     { value: 'submitted', label: 'Submitted' },
-    { value: 'pending_approval', label: 'Under admin review' },
+    { value: 'pending_approval', label: 'Under review' },
     { value: 'revision_required', label: 'Documents need re-upload' },
     { value: 'approved_pending_payment', label: 'Approved — payment due' },
     { value: 'completed', label: 'Payment completed' },

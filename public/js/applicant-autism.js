@@ -2436,7 +2436,7 @@
         if (!steps.length) {
             steps = [
                 { title: 'Application submitted', desc: 'Registration received.', icon: 'fa-clipboard-check', state: 'completed' },
-                { title: 'Under admin review', desc: 'Team is verifying your application.', icon: 'fa-user-shield', state: 'active' },
+                { title: 'Under review', desc: 'Team is verifying your application.', icon: 'fa-user-shield', state: 'active' },
                 { title: 'Registration approved', desc: 'Approved for the programme.', icon: 'fa-circle-check', state: 'pending' },
                 { title: 'E-ticket', desc: 'QR pass for event day.', icon: 'fa-qrcode', state: 'pending' }
             ];

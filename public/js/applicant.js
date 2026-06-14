@@ -3090,7 +3090,7 @@ function caseApplicationStatusLabel(st) {
     if (s === 'priority_invited') return 'Complete application (priority)';
     if (s === 'judging') return 'Judges scoring';
     if (s === 'judged') return 'Judged — awaiting final result';
-    if (s === 'under_review') return 'Admin reviewing files';
+    if (s === 'under_review') return 'Under review';
     if (s === 'approved_for_judging') return 'Ready for judges';
     if (s === 'selected') return 'Selected / winner';
     if (s === 'disqualified') return 'Disqualified';
