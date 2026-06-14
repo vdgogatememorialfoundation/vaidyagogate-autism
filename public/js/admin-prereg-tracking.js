@@ -375,11 +375,15 @@
         const id = parseInt(document.getElementById('ak-prereg-detail')?.dataset.rowId, 10);
         if (!id) return;
         const msg = document.getElementById('ak-prereg-action-msg');
+        let rejection_reason = '';
+        if (status === 'rejected' || status === 'revision_required') {
+            rejection_reason = prompt('Note to applicant (optional — included in email):', '') || '';
+        }
         try {
             await api('/api/admin/preregistrations/status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preregistrationId: id, status })
+                body: JSON.stringify({ preregistrationId: id, status, rejection_reason })
             });
             if (msg) {
                 msg.textContent = 'Status updated to ' + status.replace(/_/g, ' ') + '.';

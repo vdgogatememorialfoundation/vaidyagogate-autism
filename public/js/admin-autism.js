@@ -1159,13 +1159,18 @@
         };
 
         window.updateAutismPreregStatus = async function (preregistrationId, status) {
+            let rejection_reason = '';
+            if (status === 'rejected' || status === 'revision_required') {
+                rejection_reason = prompt('Note to applicant (optional — included in email):', '') || '';
+            }
+            const payload = { preregistrationId, status, rejection_reason };
             try {
                 const call =
                     typeof window.autismAdminFetch === 'function'
                         ? window.autismAdminFetch('/api/admin/preregistrations/status', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ preregistrationId, status })
+                              body: JSON.stringify(payload)
                           })
                         : fetch('/api/admin/preregistrations/status', {
                               method: 'POST',
@@ -1173,8 +1178,8 @@
                               credentials: 'same-origin',
                               body: JSON.stringify(
                                   typeof withActingAdminBody === 'function'
-                                      ? withActingAdminBody({ preregistrationId, status })
-                                      : { preregistrationId, status }
+                                      ? withActingAdminBody(payload)
+                                      : payload
                               )
                           }).then(async (r) => {
                               const data = await r.json().catch(() => ({}));
