@@ -10068,25 +10068,6 @@ function fetchPublicSiteCms() {
     return fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
 }
 
-function getPublicHomepagePreviewUrl(section) {
-    const origin = window.location.origin || '';
-    const base = origin.replace(/\/$/, '') + '/?_=' + Date.now();
-    const sec = section ? String(section).trim().toLowerCase() : '';
-    return sec && sec !== 'home' ? base + '&section=' + encodeURIComponent(sec) : base;
-}
-
-function refreshHomepageLivePreview(scrollIntoView, section) {
-    const frame = document.getElementById('ak-homepage-live-preview');
-    if (!frame) return false;
-    frame.src = getPublicHomepagePreviewUrl(section);
-    if (scrollIntoView) {
-        const wrap = document.getElementById('ak-homepage-live-preview-wrap');
-        if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    return true;
-}
-window.refreshHomepageLivePreview = refreshHomepageLivePreview;
-
 function cmsPadStatRows(list, count) {
     const out = Array.isArray(list) ? list.slice() : [];
     while (out.length < count) out.push({ value: '', label: '' });
@@ -10307,13 +10288,6 @@ function cmsCollectHomeCtaFromDom() {
 }
 
 function cmsCollectHomepageEditorFields() {
-    const seminarGalleryYears = cmsCollectGalleryYearsFromDom();
-    const pastSeminarGallery = seminarGalleryYears.reduce((acc, yg) => {
-        (yg.images || []).forEach((img) => {
-            acc.push({ src: img.src, caption: img.caption || yg.title || '', year: yg.year });
-        });
-        return acc;
-    }, []);
     return {
         tickerText: cmsFieldValue('cms-ticker') || '',
         bannerImage: cmsFieldValue('cms-banner') || '',
@@ -10322,11 +10296,6 @@ function cmsCollectHomepageEditorFields() {
         publicNotices: cmsCollectPublicNoticesFromDom(),
         reviews: cmsCollectReviewsFromDom(),
         speakers: cmsCollectSpeakersFromDom(),
-        aboutSections: cmsCollectAboutFromDom(),
-        socialLinks: cmsCollectSocialFromDom(),
-        siteMenu: cmsCollectMenuFromDom(),
-        seminarGalleryYears,
-        pastSeminarGallery,
         homeJourney: cmsCollectHomeJourneyFromDom(),
         homeBento: cmsCollectHomeBentoFromDom(),
         homeCtaBand: cmsCollectHomeCtaFromDom(),
@@ -11005,7 +10974,6 @@ async function loadAdminSiteCms() {
         cmsFillFaqRows(cms.faq || []);
         await loadAdminMarketing();
         await loadPortalAuthAdminForm();
-        refreshHomepageLivePreview(false);
     } catch (e) {
         console.error(e);
     }
@@ -11173,17 +11141,16 @@ function setAkContentSaveMessage(which, text, color) {
 }
 
 async function saveCmsContentPartial(patch, msgWhich) {
-    const res = await fetchPublicSiteCms();
-    const current = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(current.error || 'Could not load current website content');
-    const cms = { ...(current || {}), ...(patch || {}) };
+    if (!patch || typeof patch !== 'object') throw new Error('Nothing to save');
     const save =
         typeof window.autismAdminFetch === 'function'
             ? () =>
                   window.autismAdminFetch('/api/admin/site-cms', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ cms })
+                      body: JSON.stringify(
+                          typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms: patch }) : { cms: patch }
+                      )
                   })
             : async () => {
                   const url =
@@ -11195,7 +11162,7 @@ async function saveCmsContentPartial(patch, msgWhich) {
                       headers: { 'Content-Type': 'application/json' },
                       credentials: 'same-origin',
                       body: JSON.stringify(
-                          typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms }) : { cms }
+                          typeof withActingAdminBody === 'function' ? withActingAdminBody({ cms: patch }) : { cms: patch }
                       )
                   });
                   const data = await r.json().catch(() => ({}));
@@ -11204,7 +11171,7 @@ async function saveCmsContentPartial(patch, msgWhich) {
               };
     const data = await save();
     if (!data.success) throw new Error(data.error || 'Save failed');
-    if (msgWhich) setAkContentSaveMessage(msgWhich, 'Saved successfully.', '#047857');
+    if (msgWhich) setAkContentSaveMessage(msgWhich, 'Saved — live site updates within a few seconds.', '#047857');
     return data;
 }
 
@@ -11271,24 +11238,16 @@ async function postSiteCmsPayload(cms) {
 async function saveAboutFoundationCms() {
     setCmsSaveMessage('');
     try {
-        const res = await fetchPublicSiteCms();
-        const current = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(current.error || 'Could not load current content');
-        const aboutSections = cmsCollectAboutFromDom();
-        const socialLinks = cmsCollectSocialFromDom();
-        const cms = { ...current, aboutSections, socialLinks };
-        const data = await postSiteCmsPayload(cms);
-        if (data.success) {
-            const verify = await fetchPublicSiteCms();
-            const saved = await verify.json().catch(() => cms);
-            __siteCmsEditing = saved;
-            cmsFillAboutRows(saved.aboutSections || []);
-            cmsFillSocialRows(saved.socialLinks || []);
-            refreshHomepageLivePreview(true, 'about');
-            setCmsSaveMessage('About page saved — preview updated below.', '#15803d');
-        } else {
-            setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
-        }
+        await saveCmsContentPartial({
+            aboutSections: cmsCollectAboutFromDom(),
+            socialLinks: cmsCollectSocialFromDom()
+        });
+        const verify = await fetchPublicSiteCms();
+        const saved = await verify.json().catch(() => ({}));
+        __siteCmsEditing = saved;
+        cmsFillAboutRows(saved.aboutSections || []);
+        cmsFillSocialRows(saved.socialLinks || []);
+        setCmsSaveMessage('About page saved — live site updates within a few seconds.', '#15803d');
     } catch (e) {
         setCmsSaveMessage(e.message || 'Network error — check connection and try again.', '#b91c1c');
     }
@@ -11298,32 +11257,20 @@ window.saveAboutFoundationCms = saveAboutFoundationCms;
 async function saveHomepageCmsOnly() {
     setCmsSaveMessage('');
     try {
-        const res = await fetchPublicSiteCms();
-        const current = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(current.error || 'Could not load current content');
         const patch = cmsCollectHomepageEditorFields();
-        const cms = {
-            ...current,
+        await saveCmsContentPartial({
             ...patch,
-            hero: { ...(current.hero || {}), ...(patch.hero || {}) },
-            topBar: { ...(current.topBar || {}), ...(patch.topBar || {}) },
-            siteHeader: { ...(current.siteHeader || {}), ...(patch.siteHeader || {}) },
-            footer: { ...(current.footer || {}), ...(patch.footer || {}) },
-            contact: { ...(current.contact || {}), ...(patch.contact || {}) }
-        };
-        const data = await postSiteCmsPayload(cms);
-        if (data.success) {
-            const verify = await fetchPublicSiteCms();
-            const saved = await verify.json().catch(() => cms);
-            __siteCmsEditing = saved;
-            cmsApplyHeroFieldsToForm(saved);
-            cmsFillAboutRows(saved.aboutSections || []);
-            cmsFillSocialRows(saved.socialLinks || []);
-            refreshHomepageLivePreview(true);
-            setCmsSaveMessage('Homepage saved — live preview updated below.', '#15803d');
-        } else {
-            setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
-        }
+            hero: { ...(patch.hero || {}) },
+            topBar: { ...(patch.topBar || {}) },
+            siteHeader: { ...(patch.siteHeader || {}) },
+            footer: { ...(patch.footer || {}) },
+            contact: { ...(patch.contact || {}) }
+        });
+        const verify = await fetchPublicSiteCms();
+        const saved = await verify.json().catch(() => ({}));
+        __siteCmsEditing = saved;
+        cmsApplyHeroFieldsToForm(saved);
+        setCmsSaveMessage('Homepage saved — live site updates within a few seconds.', '#15803d');
     } catch (e) {
         setCmsSaveMessage(e.message || 'Network error — check connection and try again.', '#b91c1c');
     }
@@ -11392,9 +11339,8 @@ async function saveAdminSiteCms() {
             const saved = await verify.json().catch(() => cms);
             __siteCmsEditing = saved;
             cmsApplyHeroFieldsToForm(saved);
-            refreshHomepageLivePreview(true);
             setCmsSaveMessage(
-                (slidesWarn ? slidesWarn : '') + 'Website saved — live preview updated below.',
+                (slidesWarn ? slidesWarn : '') + 'Website saved — live site updates within a few seconds.',
                 slidesWarn ? '#b45309' : '#15803d'
             );
         } else {

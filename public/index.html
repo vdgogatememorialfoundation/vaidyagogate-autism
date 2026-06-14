@@ -1641,13 +1641,26 @@
                 const cms = await res.json();
                 if (typeof applySiteCms === 'function') applySiteCms(cms);
                 if (typeof renderAboutGallerySocial === 'function') renderAboutGallerySocial(cms);
-                const previewSection = new URLSearchParams(window.location.search).get('section');
-                if (previewSection && typeof window.showSection === 'function') {
-                    window.showSection(previewSection);
-                }
+                window.__publicCmsVersion = Number(cms.cmsUpdatedAt) || 0;
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        async function syncPublicCmsLive() {
+            try {
+                const vRes = await fetch('/api/public/site-cms-version?t=' + Date.now(), { cache: 'no-store' });
+                if (!vRes.ok) return;
+                const meta = await vRes.json();
+                const v = Number(meta.cmsUpdatedAt) || 0;
+                if (!v || v === window.__publicCmsVersion) return;
+                await loadPublicCmsAndApply();
+            } catch (_) {}
+        }
+
+        if (!window.__publicCmsSyncStarted) {
+            window.__publicCmsSyncStarted = true;
+            setInterval(syncPublicCmsLive, 12000);
         }
 
         async function loadNotices() {

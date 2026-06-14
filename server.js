@@ -4487,6 +4487,15 @@ app.get('/api/public/announcements', (req, res) => {
     });
 });
 
+app.get('/api/public/site-cms-version', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    loadPublicSiteCms((e, cms) => {
+        if (e) return res.status(500).json({ error: e.message });
+        res.json({ cmsUpdatedAt: Number(cms.cmsUpdatedAt) || 0 });
+    });
+});
+
 app.get('/api/public/site-cms', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.setHeader('Pragma', 'no-cache');

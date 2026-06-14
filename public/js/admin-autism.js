@@ -545,7 +545,6 @@
         const main = document.getElementById('ak-main-cms-card');
         const guide = document.getElementById('ak-homepage-cms-guide');
         const aboutCard = document.getElementById('ak-cms-about-card');
-        const previewWrap = document.getElementById('ak-homepage-live-preview-wrap');
         const headerCard = document.getElementById('cms-header-footer-card');
         const contactCard = document.getElementById('cms-contact-card');
         const photos = document.getElementById('ak-admin-site-images');
@@ -554,10 +553,7 @@
         tab.insertBefore(main, tab.firstElementChild);
         if (guide) tab.insertBefore(guide, main);
 
-        const afterGuide = guide || main;
-        if (previewWrap) tab.insertBefore(previewWrap, afterGuide.nextSibling);
-        if (aboutCard && previewWrap) tab.insertBefore(aboutCard, previewWrap.nextSibling);
-        else if (aboutCard) tab.insertBefore(aboutCard, afterGuide.nextSibling);
+        if (aboutCard) tab.insertBefore(aboutCard, guide ? guide.nextSibling : main.nextSibling);
 
         if (headerCard) tab.insertBefore(headerCard, main.nextSibling);
         if (contactCard) {
@@ -1523,7 +1519,6 @@
             if (tabId === 'tab-site-cms') {
                 tightenAutismCmsTab();
                 reorderAutismHomepageCms();
-                if (typeof refreshHomepageLivePreview === 'function') refreshHomepageLivePreview(false);
             }
         };
         window.switchTab.__akCmsTabHook = true;
