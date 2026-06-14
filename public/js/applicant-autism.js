@@ -335,6 +335,7 @@
 
     window.showEventRegisterView = showPreregHubView;
     window.showEventTrackView = showMainRegHubView;
+    window.showMainRegHubView = showMainRegHubView;
 
     function showCompRegisterView() {
         if (typeof switchTab === 'function') switchTab('tab-comp-register');
@@ -1711,9 +1712,12 @@
             const btn = document.getElementById('open-main-reg-from-prereg');
             if (btn) {
                 btn.onclick = function () {
-                    if (typeof window.switchTab === 'function') window.switchTab('tab-seminars');
-                    if (typeof window.loadSeminars === 'function') window.loadSeminars();
-                    else if (typeof window.loadSeminarsGrid === 'function') window.loadSeminarsGrid();
+                    if (typeof window.showMainRegHubView === 'function') {
+                        window.showMainRegHubView();
+                        return;
+                    }
+                    if (typeof window.switchTab === 'function') window.switchTab('tab-main-reg-hub');
+                    if (typeof window.loadMainRegEvents === 'function') window.loadMainRegEvents();
                 };
             }
         }

@@ -3658,7 +3658,7 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 eventKey: purposeKey
             }).then((results) => {
                 const sent = channel === 'phone' ? results.whatsapp : results.email;
-                const debug = process.env.OTP_RETURN_CODE === '1' || process.env.NODE_ENV === 'development';
+                const debug = otpLib.otpDebugResponsesEnabled();
                 const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                 if (debug) payload.debugCode = code;
                 if (!sent.ok && !sent.skipped) {
@@ -9006,7 +9006,7 @@ function sendCertificateVerifyOtpChannel(channel, destination, meta, cb) {
                 .then((results) => {
                     const sent = channel === 'phone' ? results.whatsapp : results.email;
                     const debug =
-                        process.env.OTP_RETURN_CODE === '1' || process.env.NODE_ENV === 'development';
+                        otpLib.otpDebugResponsesEnabled();
                     if (!sent.ok && !sent.skipped) {
                         return cb(null, {
                             deliverError:
@@ -9059,7 +9059,7 @@ app.post('/api/public/certificate-verify/otp/send-both', withIntegrationSettings
                         return res.status(503).json({ error: r2.deliverError, debugCode: r2.debugCode });
                     }
                     const debug =
-                        process.env.OTP_RETURN_CODE === '1' || process.env.NODE_ENV === 'development';
+                        otpLib.otpDebugResponsesEnabled();
                     const payload = {
                         success: true,
                         ttlMinutes: otpLib.OTP_TTL_MIN,
@@ -9649,7 +9649,7 @@ app.post('/api/admin/otp/send', withIntegrationSettingsLoaded, (req, res) => {
                         })
                         .then((results) => {
                             const sent = channel === 'phone' ? results.whatsapp : results.email;
-                            const debug = process.env.OTP_RETURN_CODE === '1' || process.env.NODE_ENV === 'development';
+                            const debug = otpLib.otpDebugResponsesEnabled();
                             const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                             if (debug) payload.debugCode = code;
                             if (!sent.ok && !sent.skipped) {
@@ -10491,7 +10491,7 @@ app.post('/api/admin/proxy-otp/send', withIntegrationSettingsLoaded, (req, res) 
                     eventKey: 'OTP_VERIFICATION'
                 }).then((results) => {
                     const sent = channel === 'phone' ? results.whatsapp : results.email;
-                    const debug = process.env.OTP_RETURN_CODE === '1' || process.env.NODE_ENV === 'development';
+                    const debug = otpLib.otpDebugResponsesEnabled();
                     const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                     if (debug) payload.debugCode = code;
                     if (!sent.ok && !sent.skipped) {

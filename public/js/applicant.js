@@ -593,11 +593,7 @@ function isApplicationDetailModalOpen() {
 
 function shouldPollSeminarTracking() {
     if (document.body.classList.contains('ak-portal-dash')) {
-        return (
-            doctorTabVisible('tab-main-reg-hub') ||
-            doctorTabVisible('tab-applications') ||
-            isApplicationDetailModalOpen()
-        );
+        return false;
     }
     return doctorTabVisible('tab-applications') || isApplicationDetailModalOpen();
 }
@@ -1584,11 +1580,14 @@ async function sendRegistrationOtpForField(fieldKey) {
             return alert(data.error || 'Could not send code.');
         }
         if (statusEl) {
-            statusEl.textContent = data.debugCode
-                ? 'Code sent (dev: ' + data.debugCode + ')'
-                : 'Sent ✓';
+            statusEl.textContent =
+                data.debugCode && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+                    ? 'Code sent (dev: ' + data.debugCode + ')'
+                    : 'Sent ✓';
         }
-        if (data.debugCode) console.info('OTP debug:', data.debugCode);
+        if (data.debugCode && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+            console.info('OTP debug:', data.debugCode);
+        }
         if (window.OtpUi) window.OtpUi.notifyOtpSent(channel, data);
         else alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
     } catch (e) {
@@ -2233,6 +2232,12 @@ function startSeminarGridCountdownTimer() {
     seminarGridCountdownTimer = setInterval(tick, 1000);
 }
 
+function applicantTrackTabId() {
+    return document.body.classList.contains('ak-portal-dash') || window.PORTAL_IS_AUTISM
+        ? 'tab-main-reg-hub'
+        : 'tab-applications';
+}
+
 function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
     const flow = seminarFlowFlags(s);
     const win = effectiveRegistrationWindowState(s);
@@ -2245,11 +2250,15 @@ function renderSeminarGridCard(s, readOnlyPast, alreadyRegistered) {
     if (alreadyRegistered) {
         actionBlock =
             '<p style="font-size:0.85rem;color:#15803d;margin-bottom:12px;"><i class="fas fa-check-circle"></i> You already have an application for this seminar.</p>' +
-            '<button type="button" class="btn-primary" style="width:100%;opacity:0.7;" onclick="switchTab(\'tab-applications\')">View my application</button>';
+            '<button type="button" class="btn-primary" style="width:100%;opacity:0.7;" onclick="switchTab(\'' +
+            applicantTrackTabId() +
+            '\')">View my application</button>';
     } else if (readOnlyPast) {
         actionBlock =
             '<p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;"><i class="fas fa-archive"></i> Past seminar — registration closed. Track your application under <strong>Track seminar applications</strong>.</p>' +
-            '<button type="button" class="btn-primary" style="width:100%;opacity:0.7;" onclick="switchTab(\'tab-applications\')">View my registration</button>';
+            '<button type="button" class="btn-primary" style="width:100%;opacity:0.7;" onclick="switchTab(\'' +
+            applicantTrackTabId() +
+            '\')">View my registration</button>';
     } else if (!flow.mainRegistrationRequired) {
         actionBlock =
             '<p style="font-size:0.85rem;color:#334155;margin-bottom:12px;"><i class="fas fa-info-circle"></i> Main registration is not enabled for this event right now.</p>' +
@@ -2451,15 +2460,37 @@ async function startRegistration(seminarId, opts) {
     const volunteerBypass = !!opts.volunteerBypass;
     const s = activeSeminars.find((x) => Number(x.id) === Number(seminarId));
     const seminarTitle = s && s.title ? s.title : 'Seminar';
+    const trackTab = applicantTrackTabId();
+    const trackLabel = document.body.classList.contains('ak-portal-dash') ? 'Main registration' : 'Track seminar applications';
     const regSet = window.__userRegisteredSeminarIds;
+    if (document.body.classList.contains('ak-portal-dash')) {
+        const apps = typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        if (apps.length >= 1) {
+            const existing = apps[0];
+            alert(
+                'You already have a main registration (' +
+                    (existing.application_no || existing.id) +
+                    '). Track it under Main registration.'
+            );
+            switchTab('tab-main-reg-hub');
+            return;
+        }
+    }
     if (regSet && regSet.has(Number(seminarId))) {
-        alert('You have already registered for this seminar. Track your application under Track seminar applications.');
-        switchTab('tab-applications');
+        alert('You have already registered for this seminar. Track your application under ' + trackLabel + '.');
+        switchTab(trackTab);
         return;
     }
     if (!volunteerBypass && s && effectiveRegistrationWindowState(s).state !== 'open') {
-        if (registrationWindowState(s).state === 'upcoming') {
+        const win = effectiveRegistrationWindowState(s);
+        if (win.state === 'admin_closed') {
+            alert(
+                'Final registration is not open yet for this event. You will be notified when the organisers enable it.'
+            );
+        } else if (registrationWindowState(s).state === 'upcoming') {
             alert('Registration has not opened yet for this seminar. Please wait until the countdown reaches zero.');
+        } else if (win.state === 'unscheduled') {
+            alert('Registration schedule is not set for this event yet.');
         } else {
             alert('Registration for this seminar has closed.');
         }

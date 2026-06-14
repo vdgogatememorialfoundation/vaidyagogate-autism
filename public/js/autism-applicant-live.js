@@ -160,14 +160,8 @@
     }
 
     function hookTracking() {
-        if (typeof syncDoctorTrackingPolls === 'function') {
-            syncDoctorTrackingPolls();
-        }
         if (typeof loadApplications === 'function') {
-            loadApplications().then(() => {
-                if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
-                updateLiveLabels();
-            });
+            loadApplications().then(() => updateLiveLabels());
         }
         startPreregPoll();
         startMainRegPoll();
@@ -187,7 +181,6 @@
                 tabId === 'tab-competition' ||
                 tabId === 'tab-comp-track'
             ) {
-                if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
                 if (tabId === 'tab-prereg-hub' || tabId === 'tab-prereg') pollPrereg();
                 if (tabId === 'tab-main-reg-hub' || tabId === 'tab-applications') pollMainReg();
             }
@@ -204,7 +197,6 @@
             startPreregPoll();
             startMainRegPoll();
             startCompPoll();
-            if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
         }
     });
 
