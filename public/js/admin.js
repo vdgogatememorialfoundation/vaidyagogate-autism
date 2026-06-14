@@ -11141,7 +11141,7 @@ function setAkContentSaveMessage(which, text, color) {
 }
 
 async function saveCmsContentPartial(patch, msgWhich) {
-    const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+    const res = await fetchPublicSiteCms();
     const current = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(current.error || 'Could not load current website content');
     const cms = { ...(current || {}), ...(patch || {}) };
