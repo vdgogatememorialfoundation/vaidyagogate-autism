@@ -44,6 +44,86 @@
         form.dataset.akMountedOnEvent = '1';
     }
 
+    function registerModalEl() {
+        return document.getElementById('ak-register-modal');
+    }
+
+    function registerModalBodyEl() {
+        return document.getElementById('ak-register-modal-body');
+    }
+
+    function rememberPanelHome(panel) {
+        if (!panel || panel.__akRegisterModalHome) return;
+        panel.__akRegisterModalHome = panel.parentElement;
+    }
+
+    function isPanelInRegisterModal(panel) {
+        const body = registerModalBodyEl();
+        return !!(panel && body && body.contains(panel));
+    }
+
+    function closeRegisterModal(panelOpt) {
+        const modal = registerModalEl();
+        const body = registerModalBodyEl();
+        if (!modal || !body) return;
+        let panel = panelOpt;
+        if (!panel && body.firstElementChild) panel = body.firstElementChild;
+        if (panel) {
+            panel.classList.add('hidden');
+            const home = panel.__akRegisterModalHome;
+            if (home && home !== body) home.appendChild(panel);
+        }
+        modal.classList.add('hidden');
+        document.body.classList.remove('ak-register-modal-open');
+        document.body.style.overflow = '';
+    }
+
+    function openRegisterModal(title, panel) {
+        const modal = registerModalEl();
+        const body = registerModalBodyEl();
+        if (!modal || !body || !panel) return;
+        const other =
+            panel.id === 'ak-prereg-form-panel' ? mainRegFormPanelEl() : preregFormPanelEl();
+        if (other && isPanelInRegisterModal(other)) closeRegisterModal(other);
+        rememberPanelHome(panel);
+        const titleEl = document.getElementById('ak-register-modal-title');
+        if (titleEl) titleEl.textContent = title || 'Registration';
+        panel.classList.remove('hidden');
+        body.appendChild(panel);
+        modal.classList.remove('hidden');
+        document.body.classList.add('ak-register-modal-open');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('ak-register-modal-close')?.focus();
+    }
+
+    function dismissRegisterModal() {
+        const body = registerModalBodyEl();
+        const panel = body && body.firstElementChild;
+        if (!panel) {
+            closeRegisterModal();
+            return;
+        }
+        if (panel.id === 'multi-step-form') {
+            if (typeof window.cancelRegistration === 'function') window.cancelRegistration();
+            return;
+        }
+        hidePreregFormPanel();
+        preregResubmitId = null;
+        const sel = document.getElementById('prereg-seminar-select');
+        if (sel) sel.disabled = false;
+    }
+
+    function wireRegisterModal() {
+        document.getElementById('ak-register-modal-close')?.addEventListener('click', dismissRegisterModal);
+        document.getElementById('ak-register-modal-backdrop')?.addEventListener('click', dismissRegisterModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const modal = registerModalEl();
+            if (!modal || modal.classList.contains('hidden')) return;
+            dismissRegisterModal();
+        });
+    }
+
     function showMainRegFormPanel(eventTitle) {
         const panel = mainRegFormPanelEl();
         if (!panel) return;
@@ -52,13 +132,14 @@
             heading.textContent = eventTitle ? 'Main registration — ' + eventTitle : 'Main registration form';
             heading.classList.remove('hidden');
         }
-        panel.classList.remove('hidden');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const title = eventTitle ? 'Main registration — ' + eventTitle : 'Main registration';
+        openRegisterModal(title, panel);
     }
 
     function hideMainRegFormPanel() {
         const panel = mainRegFormPanelEl();
-        if (panel) panel.classList.add('hidden');
+        if (isPanelInRegisterModal(panel)) closeRegisterModal(panel);
+        else if (panel) panel.classList.add('hidden');
         const heading = document.getElementById('ak-main-reg-form-heading');
         if (heading) heading.classList.add('hidden');
     }
@@ -769,13 +850,14 @@
                 ? 'Pre-registration form — ' + eventTitle
                 : 'Pre-registration form';
         }
-        panel.classList.remove('hidden');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const title = eventTitle ? 'Pre-registration — ' + eventTitle : 'Pre-registration';
+        openRegisterModal(title, panel);
     }
 
     function hidePreregFormPanel() {
         const panel = preregFormPanelEl();
-        if (panel) panel.classList.add('hidden');
+        if (isPanelInRegisterModal(panel)) closeRegisterModal(panel);
+        else if (panel) panel.classList.add('hidden');
         const msg = document.getElementById('prereg-status-msg');
         if (msg) msg.textContent = '';
     }
@@ -1133,7 +1215,6 @@
                 loadPreregFormConfig(Number(sid) || null).then(() => {
                     renderPreregFields(document.getElementById('prereg-fields'));
                     resetPreregWizard();
-                    preregFormPanelEl()?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
             });
         });
@@ -1460,7 +1541,6 @@
             msg.textContent = 'Update your pre-registration below, then submit again.';
             msg.style.color = '#6d28d9';
         }
-        document.getElementById('prereg-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     function preregFieldLabel(key) {
@@ -2293,6 +2373,8 @@
             }
             await origStart.call(this, seminarId, opts);
             if (onMainHub) {
+                const form = mainRegFormPanelEl();
+                if (form) form.classList.add('hidden');
                 const title =
                     window.__activeSeminarTitle ||
                     (window.activeSeminars || []).find((x) => Number(x.id) === Number(seminarId))?.title ||
@@ -2352,6 +2434,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
+        wireRegisterModal();
         setupDashboardHub();
         patchSwitchTabForHub();
         patchAutismRegistrationFlow();

@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
     <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=3">
-    <link rel="stylesheet" href="/css/ak-form-preview.css?v=1">
+    <link rel="stylesheet" href="/css/ak-form-preview.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -869,11 +869,22 @@
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism12"></script>
     <script src="/js/autism-form-preview.js?v=2"></script>
-    <script src="/js/applicant-autism.js?v=autism25"></script>
+    <script src="/js/applicant-autism.js?v=autism26"></script>
     <script src="/js/autism-announcements.js?v=4"></script>
     <script src="/js/autism-applicant-live.js?v=2"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
+
+    <div id="ak-register-modal" class="ak-register-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ak-register-modal-title">
+        <div class="ak-register-modal__backdrop" id="ak-register-modal-backdrop"></div>
+        <div class="ak-register-modal__window">
+            <div class="ak-register-modal__header">
+                <h4 id="ak-register-modal-title">Registration</h4>
+                <button type="button" class="ak-register-modal__close" id="ak-register-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div id="ak-register-modal-body" class="ak-register-modal__body"></div>
+        </div>
+    </div>
 
     <div id="ak-form-preview-modal" class="ak-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ak-preview-title">
         <div class="ak-preview-backdrop" onclick="closeFormPreviewModal()"></div>
