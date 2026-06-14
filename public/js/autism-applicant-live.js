@@ -7,7 +7,9 @@
 
     const POLL_MS = 4000;
     let preregTimer = null;
+    let mainRegTimer = null;
     let lastPreregFp = '';
+    let lastMainRegFp = '';
 
     function formatIstNow() {
         if (window.PortalDateTime && window.PortalDateTime.format) {
@@ -33,15 +35,24 @@
         return el && !el.classList.contains('hidden');
     }
 
-    function shouldPollComp() {
-        return tabVisible('tab-competition');
+    function preregTimelineSig(row) {
+        const steps = (row && row.timeline && row.timeline.steps) || [];
+        return steps.map((s) => [s.key, s.state, s.at || ''].join(':')).join(',');
+    }
+
+    function shouldPollPrereg() {
+        return tabVisible('tab-prereg-hub') || tabVisible('tab-prereg') || tabVisible('tab-applications');
+    }
+
+    function shouldPollMainReg() {
+        return tabVisible('tab-main-reg-hub') || tabVisible('tab-applications');
     }
 
     let compTimer = null;
     let lastCompFp = '';
 
     async function pollCompetition() {
-        if (!shouldPollComp()) return;
+        if (!tabVisible('tab-competition') && !tabVisible('tab-comp-track')) return;
         const uid =
             typeof doctorNumericUserId === 'function'
                 ? doctorNumericUserId()
@@ -75,10 +86,6 @@
         }
     }
 
-    function shouldPollPrereg() {
-        return tabVisible('tab-prereg') || tabVisible('tab-applications');
-    }
-
     async function pollPrereg() {
         if (!shouldPollPrereg()) return;
         const uid =
@@ -90,13 +97,26 @@
             const r = await fetch('/api/preregistrations/' + uid, { cache: 'no-store' });
             const rows = await r.json();
             if (!r.ok || !Array.isArray(rows)) return;
-            const fp = rows.map((x) => [x.id, x.status, x.updated_at].join(':')).join('|');
+            const fp = rows
+                .map((x) =>
+                    [x.id, x.status, x.updated_at || '', x.application_no || '', preregTimelineSig(x)].join(':')
+                )
+                .join('|');
             if (fp === lastPreregFp) {
                 updateLiveLabels();
                 return;
             }
             lastPreregFp = fp;
             if (typeof loadPreregList === 'function') loadPreregList();
+            updateLiveLabels();
+        } catch (_) {}
+    }
+
+    async function pollMainReg() {
+        if (!shouldPollMainReg()) return;
+        if (typeof loadApplications !== 'function') return;
+        try {
+            await loadApplications(true);
             updateLiveLabels();
         } catch (_) {}
     }
@@ -111,6 +131,19 @@
         if (preregTimer) {
             clearInterval(preregTimer);
             preregTimer = null;
+        }
+    }
+
+    function startMainRegPoll() {
+        if (mainRegTimer) return;
+        mainRegTimer = setInterval(pollMainReg, POLL_MS);
+        pollMainReg();
+    }
+
+    function stopMainRegPoll() {
+        if (mainRegTimer) {
+            clearInterval(mainRegTimer);
+            mainRegTimer = null;
         }
     }
 
@@ -137,6 +170,7 @@
             });
         }
         startPreregPoll();
+        startMainRegPoll();
         startCompPoll();
     }
 
@@ -145,28 +179,30 @@
         window.switchTab = function (tabId) {
             origSwitch.apply(this, arguments);
             updateLiveLabels();
-            if (tabId === 'tab-applications' || tabId === 'tab-prereg' || tabId === 'tab-competition') {
+            if (
+                tabId === 'tab-applications' ||
+                tabId === 'tab-prereg' ||
+                tabId === 'tab-prereg-hub' ||
+                tabId === 'tab-main-reg-hub' ||
+                tabId === 'tab-competition' ||
+                tabId === 'tab-comp-track'
+            ) {
                 if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
+                if (tabId === 'tab-prereg-hub' || tabId === 'tab-prereg') pollPrereg();
+                if (tabId === 'tab-main-reg-hub' || tabId === 'tab-applications') pollMainReg();
             }
         };
         window.switchTab.__akLiveHook = true;
     }
 
-    const origLoadApps = window.loadApplications;
-    if (typeof origLoadApps === 'function' && !origLoadApps.__akLiveHook) {
-        window.loadApplications = async function (silentPoll) {
-            await origLoadApps.apply(this, arguments);
-            if (!silentPoll || silentPoll) updateLiveLabels();
-        };
-        window.loadApplications.__akLiveHook = true;
-    }
-
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             stopPreregPoll();
+            stopMainRegPoll();
             stopCompPoll();
         } else {
             startPreregPoll();
+            startMainRegPoll();
             startCompPoll();
             if (typeof syncDoctorTrackingPolls === 'function') syncDoctorTrackingPolls();
         }

@@ -592,6 +592,13 @@ function isApplicationDetailModalOpen() {
 }
 
 function shouldPollSeminarTracking() {
+    if (document.body.classList.contains('ak-portal-dash')) {
+        return (
+            doctorTabVisible('tab-main-reg-hub') ||
+            doctorTabVisible('tab-applications') ||
+            isApplicationDetailModalOpen()
+        );
+    }
     return doctorTabVisible('tab-applications') || isApplicationDetailModalOpen();
 }
 

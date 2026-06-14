@@ -253,7 +253,8 @@
             submissions.style.marginTop = '20px';
             submissions.innerHTML =
                 '<h4 style="margin-bottom:12px;color:#0f766e;"><i class="fas fa-folder-open"></i> Your pre-registration submissions</h4>' +
-                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">All information you sent, status, and application IDs.</p>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">All information you sent, status, and tracking IDs (PRE…).</p>' +
+                '<p id="prereg-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#0f766e;margin-bottom:12px;"></p>' +
                 '<div id="prereg-list" class="ak-track-list"></div>';
             preregHub.appendChild(submissions);
             if (listCard) listCard.remove();
@@ -268,8 +269,8 @@
                 '<div id="ak-main-events-grid" class="seminars-grid" style="margin-bottom:24px;"></div>' +
                 '<div class="card" id="ak-main-reg-submissions" style="margin-top:20px;">' +
                 '<h4 style="margin-bottom:12px;color:#1a237e;"><i class="fas fa-folder-open"></i> Your main registrations</h4>' +
-                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Track status and view everything submitted for main registration.</p>' +
-                '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;"></p>' +
+                '<p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">Track status and view everything submitted for main registration (REG… tracking IDs).</p>' +
+                '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;margin-bottom:12px;"></p>' +
                 '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
                 '</div>';
 
@@ -1059,6 +1060,18 @@
     function openMainRegistrationForSeminar(seminarId) {
         const sid = Number(seminarId);
         if (!Number.isFinite(sid) || sid < 1) return;
+        const existingApps =
+            typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        if (existingApps.length >= 1) {
+            const existing = existingApps[0];
+            alert(
+                'You already have a main registration (' +
+                    (existing.application_no || existing.id) +
+                    '). Only one main registration is allowed per account. Track it under Main registration.'
+            );
+            showMainRegHubView();
+            return;
+        }
         const seminar =
             (window.__akAllSeminars || []).find((x) => Number(x.id) === sid) ||
             (window.activeSeminars || []).find((x) => Number(x.id) === sid);
@@ -2199,6 +2212,9 @@
     }
 
     function buildPreregStepDefs(r) {
+        if (r && r.timeline && Array.isArray(r.timeline.steps) && r.timeline.steps.length) {
+            return timelineToStepDefs(r.timeline);
+        }
         const st = String(r.status || 'submitted').toLowerCase();
         const regSt = String(r.registration_status || '').toLowerCase();
         const hasReg = !!r.registration_id;
@@ -2208,7 +2224,8 @@
                 title: 'Application submitted',
                 desc: 'Your pre-registration was received.',
                 icon: 'fa-clipboard-check',
-                state: 'completed'
+                state: 'completed',
+                at: r.created_at
             },
             {
                 title: 'Under review',
@@ -2225,13 +2242,20 @@
                             : 'fail'
                         : st === 'submitted'
                           ? 'active'
-                          : 'completed'
+                          : 'completed',
+                at:
+                    st === 'revision_required' || st === 'approved' || fail
+                        ? r.updated_at || r.created_at
+                        : st === 'submitted'
+                          ? r.created_at
+                          : null
             },
             {
                 title: 'Pre-registration approved',
                 desc: 'You can proceed to main registration when it opens.',
                 icon: 'fa-circle-check',
-                state: st === 'approved' ? 'completed' : st === 'submitted' || fail ? 'pending' : 'pending'
+                state: st === 'approved' ? 'completed' : st === 'submitted' || fail ? 'pending' : 'pending',
+                at: st === 'approved' ? r.updated_at || r.created_at : null
             },
             {
                 title: 'Main registration',
@@ -2242,7 +2266,8 @@
                         ? 'active'
                         : hasReg
                           ? 'completed'
-                          : 'pending'
+                          : 'pending',
+                at: hasReg ? r.updated_at : null
             },
             {
                 title: 'E-ticket',
@@ -2252,11 +2277,17 @@
                     hasReg &&
                     (regSt === 'completed' || regSt === 'checked_in' || regSt === 'e_ticket_issued')
                         ? 'completed'
-                        : 'pending'
+                        : 'pending',
+                at:
+                    hasReg &&
+                    (regSt === 'completed' || regSt === 'checked_in' || regSt === 'e_ticket_issued')
+                        ? r.updated_at
+                        : null
             }
         ];
         if (st === 'approved') {
             steps[2].state = 'completed';
+            steps[2].at = r.updated_at || r.created_at;
             if (hasReg) steps[3].state = regSt === 'e_ticket_issued' || regSt === 'checked_in' ? 'completed' : 'active';
         }
         if (fail) steps[2].state = 'pending';
@@ -2383,7 +2414,7 @@
             foot +=
                 '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
                 encodeURIComponent(r.application_no) +
-                '" alt="Pre-reg QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Pre-registration ID</strong><br><code>' +
+                '" alt="Pre-reg QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Pre-registration tracking ID</strong><br><code style="font-size:1rem;letter-spacing:0.04em;">' +
                 escapeAkHtml(r.application_no) +
                 '</code></div></div>';
         }
@@ -2391,7 +2422,7 @@
             modifier: 'prereg',
             typeLabel: 'Pre-registration',
             title: r.seminar_title || 'Event ' + r.seminar_id,
-            code: r.application_no || '—',
+            code: r.application_no ? 'PRE-REG · ' + r.application_no : '—',
             statusMeta: meta,
             steps: buildPreregStepDefs(r),
             footHtml: foot
@@ -2426,7 +2457,7 @@
             foot +=
                 '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
                 encodeURIComponent(a.application_no) +
-                '" alt="Registration QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Application ID</strong><br><code>' +
+                '" alt="Registration QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Main registration tracking ID</strong><br><code style="font-size:1rem;letter-spacing:0.04em;">' +
                 escapeAkHtml(a.application_no) +
                 '</code></div></div><div class="ak-track-card-v3__actions">' +
                 (appIdx >= 0
@@ -2441,7 +2472,7 @@
             typeLabel: 'Main registration',
             title: a.seminar_title || 'Event registration',
             subtitle: a.portal_year ? 'Year ' + a.portal_year : '',
-            code: a.application_no || '—',
+            code: a.application_no ? 'MAIN-REG · ' + a.application_no : '—',
             statusMeta: meta,
             steps: steps,
             footHtml: foot

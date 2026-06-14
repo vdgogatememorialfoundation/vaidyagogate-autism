@@ -5068,12 +5068,20 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
     }
     const fieldOtpTokensObj = parseMaybeJson(fieldOtpTokens) || (fieldOtpTokens && typeof fieldOtpTokens === 'object' ? fieldOtpTokens : {});
     
-    // Check if user already registered for this event
-    db.get(`SELECT id FROM registrations WHERE user_id = ? AND seminar_id = ?`, [userId, seminarId], (err, row) => {
+    // Check if user already has a main registration (one per account)
+    db.get(`SELECT id, seminar_id, application_no FROM registrations WHERE user_id = ?`, [userId], (err, existingReg) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (row) {
+        if (existingReg) {
+            if (Number(existingReg.seminar_id) === seminarId) {
+                return res.status(400).json({
+                    error: 'You have already registered an application for this event. You can track it in your Dashboard.'
+                });
+            }
             return res.status(400).json({
-                error: 'You have already registered an application for this event. You can track it in your Dashboard.'
+                error:
+                    'You already have a main registration (ID ' +
+                    (existingReg.application_no || existingReg.id) +
+                    '). Only one main registration is allowed per account.'
             });
         }
 
@@ -5226,7 +5234,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                     function doInsertRegistration() {
                         const regFlow = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
                         const initialStatus = regFlow.autoAcceptRegistration ? 'e_ticket_issued' : 'submitted';
-                        const applicationNo = generateId();
+                        const applicationNo = portalTracking.generateMainRegTrackingId();
                         const finishInsert = () => {
                         const stored = sanitizeFormDataForStorage(formData || {});
                         db.run(
@@ -5240,8 +5248,24 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                     newId,
                                     'submitted',
                                     'Application submitted',
-                                    'Registration received.',
+                                    'Main registration received.',
                                     () => {}
+                                );
+                                db.get(
+                                    `SELECT id FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
+                                    [userId, seminarId],
+                                    (preLogErr, preLogRow) => {
+                                        if (!preLogErr && preLogRow) {
+                                            portalTracking.logPreregistrationEvent(
+                                                db,
+                                                preLogRow.id,
+                                                'main_registration',
+                                                'Main registration started',
+                                                'Final registration submitted.',
+                                                () => {}
+                                            );
+                                        }
+                                    }
                                 );
                                 if (regFlow.autoAcceptRegistration) {
                                     portalTracking.registrationStatusToLog(
