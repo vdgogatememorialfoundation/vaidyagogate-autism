@@ -7372,7 +7372,14 @@ app.put('/api/admin/seminars/:id', (req, res) => {
     portalTracking.getPortalYear(db, (ePy, defaultYear) => {
         if (ePy) return res.status(500).json({ error: ePy.message });
         const finalPortalYear = Number.isInteger(py) && py > 2000 ? py : defaultYear;
-        db.run(
+        const seminarId = parseInt(req.params.id, 10);
+        db.get(`SELECT registration_form_json FROM seminars WHERE id = ?`, [seminarId], (eRf, existingRow) => {
+            if (eRf) return res.status(500).json({ error: eRf.message });
+            const finalRfj = seminarRegFlow.mergeRegistrationFormJsonForStorage(
+                existingRow && existingRow.registration_form_json,
+                rfj
+            );
+            db.run(
             `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, preregistration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=? WHERE id=?`,
             [
                 title,
@@ -7392,7 +7399,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
                 hero_image_path != null ? hero_image_path : null,
                 flyer_path != null ? flyer_path : null,
                 gallery_paths != null ? gallery_paths : null,
-                rfj,
+                finalRfj,
                 prfj,
                 cpj,
                 wu,
@@ -7413,6 +7420,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
                 res.json({ success: true, portalYear: finalPortalYear });
             }
         );
+        });
     });
 });
 

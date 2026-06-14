@@ -2105,7 +2105,7 @@ function seminarFlowFlags(seminar) {
         } else if (mainRegistrationRequired && preregistrationRequired) {
             mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
                 ? flow.mainRegistrationOpen === true
-                : true;
+                : false;
         } else {
             mainRegistrationOpen = false;
         }

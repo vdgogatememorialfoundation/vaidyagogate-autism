@@ -297,6 +297,37 @@
         return (document.getElementById('seminar-flow-main-open') || {}).checked === true;
     }
 
+    function buildSeminarFlowFlagsFromUi() {
+        const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
+        const mainOn = (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
+        return {
+            preregistrationRequired: preOn,
+            mainRegistrationRequired: mainOn,
+            mainRegistrationOpen: resolveMainRegistrationOpenFromUi(preOn, mainOn),
+            autoAcceptPreregistration:
+                (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
+            autoAcceptRegistration: (document.getElementById('seminar-flow-auto-reg') || {}).checked === true
+        };
+    }
+
+    function mergeSeminarRegistrationFormJsonForSave(regFormOverride) {
+        let regCfg = {};
+        try {
+            if (regFormOverride && String(regFormOverride).trim()) {
+                regCfg = JSON.parse(regFormOverride);
+            } else {
+                const existing = existingSeminarFromForm();
+                if (existing && existing.registration_form_json) {
+                    regCfg = JSON.parse(existing.registration_form_json);
+                }
+            }
+        } catch (_) {
+            regCfg = {};
+        }
+        regCfg.flow = { ...(regCfg.flow || {}), ...buildSeminarFlowFlagsFromUi() };
+        return JSON.stringify(regCfg);
+    }
+
     function syncSeminarFlowFormSections() {
         const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
         const mainOn = (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
@@ -315,7 +346,10 @@
         if (mainOpenWrap) mainOpenWrap.style.display = preOn && mainOn ? '' : 'none';
         if (autoPre && !preOn) autoPre.checked = false;
         if (autoReg && !mainOn) autoReg.checked = false;
-        if (mainOpen && (!preOn || !mainOn)) mainOpen.checked = mainOn && !preOn;
+        if (mainOpen) {
+            if (!mainOn) mainOpen.checked = false;
+            else if (!preOn) mainOpen.checked = true;
+        }
     }
 
     function escapeHtml(v) {
@@ -560,7 +594,7 @@
             } else if (mainRegistrationRequired && preregistrationRequired) {
                 mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
                     ? flow.mainRegistrationOpen === true
-                    : true;
+                    : false;
             } else {
                 mainRegistrationOpen = false;
             }
@@ -575,7 +609,7 @@
             return {
                 preregistrationRequired: true,
                 mainRegistrationRequired: true,
-                mainRegistrationOpen: true,
+                mainRegistrationOpen: false,
                 autoAcceptPreregistration: false,
                 autoAcceptRegistration: false
             };
@@ -615,27 +649,9 @@
                     const data = JSON.parse(opts.body);
                     data.price = 0;
                     syncSeminarScheduleFieldsToPayload(data);
-                    const preOn =
-                        (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
-                    const mainOn =
-                        (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
-                    const flowFlags = {
-                        preregistrationRequired: preOn,
-                        mainRegistrationRequired: mainOn,
-                        mainRegistrationOpen: resolveMainRegistrationOpenFromUi(preOn, mainOn),
-                        autoAcceptPreregistration:
-                            (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
-                        autoAcceptRegistration:
-                            (document.getElementById('seminar-flow-auto-reg') || {}).checked === true
-                    };
-                    let regCfg = {};
-                    try {
-                        regCfg = data.registration_form_json ? JSON.parse(data.registration_form_json) : {};
-                    } catch (_) {
-                        regCfg = {};
-                    }
-                    regCfg.flow = { ...(regCfg.flow || {}), ...flowFlags };
-                    data.registration_form_json = JSON.stringify(regCfg);
+                    data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(
+                        data.registration_form_json
+                    );
                     data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
                     opts = { ...opts, body: JSON.stringify(data) };
                 } catch (_) {}
