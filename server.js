@@ -209,24 +209,27 @@ function issueRegistrationTicketImmediately(registrationId, userId, seminarRow, 
         (eTix, tixMeta) => {
             if (eTix) return cb(eTix);
             if (!tixMeta || tixMeta.skipped || !tixMeta.ticketId) return cb(null, { ticketIssued: false });
-            notifyTicketIssued(userId, registrationId, tixMeta.ticketId, {
-                email: true,
-                whatsapp: false
-            });
-            db.get(`SELECT seminar_id FROM registrations WHERE id = ?`, [registrationId], (eN, regRow) => {
-                if (!eN && regRow) {
-                    notifEngine.notifyUserEvent(db, 'registration_e_ticket_issued', {
-                        userId,
-                        seminarId: regRow.seminar_id,
-                        registrationId,
-                        vars: {
-                            approval_status: 'e_ticket_issued',
-                            status_message: 'e_ticket_issued'
-                        }
-                    });
-                }
+            const seminarId = seminarRow && seminarRow.id;
+            const finishTicket = () => {
+                notifyTicketIssued(userId, registrationId, tixMeta.ticketId, {
+                    email: true,
+                    whatsapp: false
+                });
                 cb(null, { ticketIssued: true, ticketId: tixMeta.ticketId });
-            });
+            };
+            if (portalProduct.FEATURES.noFees && seminarId) {
+                return notifyRegistrationApprovedIfNeeded(
+                    db,
+                    'submitted',
+                    'e_ticket_issued',
+                    userId,
+                    seminarId,
+                    registrationId,
+                    { approval_status: 'approved', status_message: 'approved' },
+                    finishTicket
+                );
+            }
+            finishTicket();
         }
     );
 }
@@ -2055,6 +2058,34 @@ function sanitizeFormDataForStorage(formData) {
     return out;
 }
 
+const REG_STATUSES_BEFORE_ETICKET = new Set([
+    'submitted',
+    'revision_required',
+    'documents_requested',
+    'pending_approval',
+    'under_review'
+]);
+
+function notifyRegistrationApprovedIfNeeded(db, prevStatus, newSt, userId, seminarId, registrationId, extraVars, cb) {
+    if (!portalProduct.FEATURES.noFees || newSt !== 'e_ticket_issued') {
+        return cb && cb();
+    }
+    if (!REG_STATUSES_BEFORE_ETICKET.has(String(prevStatus || '').toLowerCase())) {
+        return cb && cb();
+    }
+    notifEngine.notifyUserEvent(
+        db,
+        'APPLICATION_APPROVED',
+        {
+            userId,
+            seminarId,
+            registrationId,
+            vars: Object.assign({ approval_status: 'approved', status_message: 'approved' }, extraVars || {})
+        },
+        cb || (() => {})
+    );
+}
+
 function enqueueApplicationSubmitted(db, meta, cb) {
     const { userId, seminarId, registrationId } = meta || {};
     if (!userId) return cb && cb(null);
@@ -2295,9 +2326,10 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                                     contentType: 'text/html'
                                 }
                             ];
+                            const eventLabel = row.seminar_title || 'the event';
                             const waLine =
                                 'Your e-ticket for ' +
-                                (row.seminar_title || 'the seminar') +
+                                eventLabel +
                                 ' is ready.\nTicket ID: ' +
                                 ticketId +
                                 '\nDownload / print: ' +
@@ -2308,9 +2340,11 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                                     {
                                         channel: 'email',
                                         destination: u.email,
-                                        subject: 'Your e-ticket (printable)',
+                                        subject: 'Your e-ticket — ' + eventLabel,
                                         html:
-                                            '<p>Your e-ticket is attached. You can also open: <a href="' +
+                                            '<p>Your e-ticket for <strong>' +
+                                            eventLabel +
+                                            '</strong> is attached. You can also open: <a href="' +
                                             pdfUrl +
                                             '">' +
                                             pdfUrl +
@@ -8074,20 +8108,20 @@ app.post('/api/admin/applications/status', (req, res) => {
             }
 
             db.get(`SELECT user_id, seminar_id FROM registrations WHERE id = ?`, [applicationId], (eN, regRow) => {
-                if (!eN && regRow) {
-                    const ev = notifEngine.registrationStatusToEventKey(newSt);
-                    if (!ev) return;
-                    notifEngine.notifyUserEvent(db, ev, {
-                        userId: regRow.user_id,
-                        seminarId: regRow.seminar_id,
-                        registrationId: applicationId,
-                        vars: {
-                            approval_status: status,
-                            rejection_reason: req.body.rejection_reason || '',
-                            status_message: String(status || newSt)
-                        }
-                    });
-                }
+                if (eN || !regRow) return;
+                const notifyVars = {
+                    approval_status: status,
+                    rejection_reason: req.body.rejection_reason || '',
+                    status_message: String(status || newSt)
+                };
+                const ev = notifEngine.registrationStatusToEventKey(newSt);
+                if (!ev) return;
+                notifEngine.notifyUserEvent(db, ev, {
+                    userId: regRow.user_id,
+                    seminarId: regRow.seminar_id,
+                    registrationId: applicationId,
+                    vars: notifyVars
+                });
             });
         
         if (newSt === 'approved_pending_payment' && portalProduct.FEATURES.hasPayments) {
@@ -8107,13 +8141,32 @@ app.post('/api/admin/applications/status', (req, res) => {
                         { createOrderIfMissing: true, promotePendingToSuccess: true, amount: amt },
                         (eTix, tixMeta) => {
                             if (eTix || !tixMeta || tixMeta.skipped || !tixMeta.ticketId) return;
-                            db.get(`SELECT user_id FROM registrations WHERE id = ?`, [applicationId], (eU, regU) => {
-                                if (!eU && regU) {
+                            db.get(`SELECT user_id, seminar_id FROM registrations WHERE id = ?`, [applicationId], (eU, regU) => {
+                                if (eU || !regU) return;
+                                const sendTicket = () => {
                                     notifyTicketIssued(regU.user_id, applicationId, tixMeta.ticketId, {
                                         email: true,
                                         whatsapp: false
                                     });
+                                };
+                                if (newSt === 'e_ticket_issued') {
+                                    notifyRegistrationApprovedIfNeeded(
+                                        db,
+                                        prevStatus,
+                                        newSt,
+                                        regU.user_id,
+                                        regU.seminar_id,
+                                        applicationId,
+                                        {
+                                            approval_status: status,
+                                            rejection_reason: req.body.rejection_reason || '',
+                                            status_message: String(status || newSt)
+                                        },
+                                        sendTicket
+                                    );
+                                    return;
                                 }
+                                sendTicket();
                             });
                         }
                     );
