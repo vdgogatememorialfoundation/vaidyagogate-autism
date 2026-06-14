@@ -140,7 +140,7 @@
         try {
             const [sRes, cmsRes] = await Promise.all([
                 fetch('/api/seminars?bucket=current'),
-                fetch('/api/public/site-cms')
+                fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' })
             ]);
             const seminarsData = await sRes.json().catch(() => []);
             const cms = await cmsRes.json().catch(() => ({}));

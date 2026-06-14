@@ -61,7 +61,7 @@
 
     async function loadPublicSeo() {
         try {
-            const res = await fetch('/api/public/site-cms', { cache: 'no-store' });
+            const res = await fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
             const cms = await res.json();
             applySeo(cms.seo || {});
         } catch (_) {}

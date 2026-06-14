@@ -10068,6 +10068,23 @@ function fetchPublicSiteCms() {
     return fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
 }
 
+function getPublicHomepagePreviewUrl() {
+    const origin = window.location.origin || '';
+    return origin.replace(/\/$/, '') + '/?_=' + Date.now();
+}
+
+function refreshHomepageLivePreview(scrollIntoView) {
+    const frame = document.getElementById('ak-homepage-live-preview');
+    if (!frame) return false;
+    frame.src = getPublicHomepagePreviewUrl();
+    if (scrollIntoView) {
+        const wrap = document.getElementById('ak-homepage-live-preview-wrap');
+        if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return true;
+}
+window.refreshHomepageLivePreview = refreshHomepageLivePreview;
+
 function cmsPadStatRows(list, count) {
     const out = Array.isArray(list) ? list.slice() : [];
     while (out.length < count) out.push({ value: '', label: '' });
@@ -10974,6 +10991,7 @@ async function loadAdminSiteCms() {
         cmsFillFaqRows(cms.faq || []);
         await loadAdminMarketing();
         await loadPortalAuthAdminForm();
+        refreshHomepageLivePreview(false);
     } catch (e) {
         console.error(e);
     }
@@ -11258,10 +11276,8 @@ async function saveHomepageCmsOnly() {
             const saved = await verify.json().catch(() => cms);
             __siteCmsEditing = saved;
             cmsApplyHeroFieldsToForm(saved);
-            setCmsSaveMessage(
-                'Homepage saved. Open the public site and press Ctrl+F5 — changes apply within a few seconds.',
-                '#15803d'
-            );
+            refreshHomepageLivePreview(true);
+            setCmsSaveMessage('Homepage saved — live preview updated below.', '#15803d');
         } else {
             setCmsSaveMessage(data.error || 'Save failed', '#b91c1c');
         }
@@ -11329,10 +11345,13 @@ async function saveAdminSiteCms() {
         cms.helpBanner = cmsFieldValue('cms-help-banner') || cms.helpBanner || '';
         const data = await postSiteCmsPayload(cms);
         if (data.success) {
-            __siteCmsEditing = cms;
-            cmsApplyHeroFieldsToForm(cms);
+            const verify = await fetchPublicSiteCms();
+            const saved = await verify.json().catch(() => cms);
+            __siteCmsEditing = saved;
+            cmsApplyHeroFieldsToForm(saved);
+            refreshHomepageLivePreview(true);
             setCmsSaveMessage(
-                (slidesWarn ? slidesWarn : '') + 'Website and portal content saved.',
+                (slidesWarn ? slidesWarn : '') + 'Website saved — live preview updated below.',
                 slidesWarn ? '#b45309' : '#15803d'
             );
         } else {

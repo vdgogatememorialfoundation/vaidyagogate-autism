@@ -1516,6 +1516,7 @@
             if (tabId === 'tab-site-cms') {
                 tightenAutismCmsTab();
                 reorderAutismHomepageCms();
+                if (typeof refreshHomepageLivePreview === 'function') refreshHomepageLivePreview(false);
             }
         };
         window.switchTab.__akCmsTabHook = true;

@@ -4475,29 +4475,14 @@ app.get('/api/public/announcements', (req, res) => {
 });
 
 app.get('/api/public/site-cms', (req, res) => {
-    const cacheKey = 'api:public:site-cms';
-    const bypassCache = req.query.fresh === '1' || req.query.t != null;
-    if (!bypassCache) {
-        const cached = getReadApiCache(cacheKey);
-        if (cached) {
-            setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
-            return res.json(cached);
-        }
-    } else {
-        res.setHeader('Cache-Control', 'no-store');
-    }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     loadPublicSiteCms((e, cms) => {
         if (e) return res.status(500).json({ error: e.message });
         mergeScrollingAnnouncementsWithOpenSeminars(cms, (e2, enriched) => {
             if (e2) return res.status(500).json({ error: e2.message });
             enrichSiteCmsSpeakers(enriched, (e3, withSpeakers) => {
                 if (e3) return res.status(500).json({ error: e3.message });
-                if (!bypassCache) {
-                    setReadApiCache(cacheKey, withSpeakers, 60000);
-                    setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
-                } else {
-                    res.setHeader('Cache-Control', 'no-store');
-                }
                 res.json(withSpeakers);
             });
         });

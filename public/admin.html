@@ -835,10 +835,17 @@
                         <li><strong>Hero &amp; stats</strong> — headline, buttons, and number strip at the top of the public site.</li>
                         <li><strong>Pillars</strong> — Awareness / Inclusion / Celebration cards.</li>
                         <li><strong>How it works</strong> — four steps; <strong>Why join us</strong> — section title + four feature cards.</li>
-                        <li>Click <strong>Save homepage</strong> (green button at top or bottom of the large card).</li>
-                        <li>Open the public site and press <strong>Ctrl+F5</strong> to see changes.</li>
+                        <li>Click <strong>Save homepage</strong> — the live preview below updates instantly.</li>
                     </ol>
                     <p id="ak-homepage-cms-guide-msg" style="margin:0;font-size:0.88rem;font-weight:600;"></p>
+                </div>
+                <div class="card" id="ak-homepage-live-preview-wrap" style="margin-bottom:16px;border:1px solid #99f6e4;background:#fff;">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                        <h3 style="margin:0;color:#0f766e;font-size:1rem;"><i class="fas fa-desktop" aria-hidden="true"></i> Live homepage preview</h3>
+                        <button type="button" class="btn-primary btn-sm" style="background:#64748b;" onclick="refreshHomepageLivePreview(true)"><i class="fas fa-sync-alt"></i> Refresh preview</button>
+                    </div>
+                    <p style="margin:0 0 10px;color:#64748b;font-size:0.85rem;">Updates automatically when you save. This is the real public homepage.</p>
+                    <iframe id="ak-homepage-live-preview" title="Homepage live preview" style="width:100%;height:min(560px,70vh);border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;"></iframe>
                 </div>
                 <div class="card ak-cms-advanced" id="ak-admin-site-images" style="margin-bottom:20px;border-left:4px solid #2563eb;">
                     <h3 style="margin:0 0 8px;">Homepage photos (live without redeploy)</h3>
@@ -2482,13 +2489,13 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/admin.js?v=20260612d"></script>
+    <script src="/js/admin.js?v=20260612e"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=10"></script>
     <script src="/js/admin-final-tracking.js?v=4"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism26"></script>
+    <script src="/js/admin-autism.js?v=autism27"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>
