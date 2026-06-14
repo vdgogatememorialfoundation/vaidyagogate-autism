@@ -13,6 +13,12 @@
         );
     }
 
+    function faviconHrefFromLogoPath(logoPath) {
+        const lp = String(logoPath || '').trim();
+        const m = lp.match(/[?&]v=(\d+)/);
+        return m ? '/favicon.ico?v=' + m[1] : '/favicon.ico';
+    }
+
     function upsertMeta(attr, key, content) {
         if (!content) return;
         let el = document.querySelector(`meta[${attr}="${key}"]`);
@@ -39,10 +45,18 @@
     }
 
     function applyFavicon(href) {
-        const url = href || '/favicon.ico';
-        upsertLink('icon', url, { sizes: 'any' });
+        const url = href || faviconHrefFromLogoPath(window.__siteLogoPath);
+        upsertLink('icon', url, { type: 'image/png', sizes: '32x32' });
         upsertLink('shortcut icon', url);
-        upsertLink('apple-touch-icon', url);
+        upsertLink('apple-touch-icon', url.replace('/favicon.ico', '/apple-touch-icon.png'));
+    }
+
+    function resolveFaviconUrl(seo) {
+        const raw = String((seo && seo.faviconUrl) || '').trim();
+        if (!raw || raw === '/favicon.svg' || raw.indexOf('/api/branding/logo') === 0) {
+            return faviconHrefFromLogoPath(window.__siteLogoPath);
+        }
+        return raw;
     }
 
     function applySeo(seo) {
@@ -60,7 +74,7 @@
         }
         const canon = seo.canonicalUrl || window.location.origin + '/';
         if (!privatePortal) upsertLink('canonical', canon);
-        applyFavicon(seo.faviconUrl || '/favicon.ico');
+        if (!window.__siteLogoPath) applyFavicon(resolveFaviconUrl(seo));
         if (!privatePortal) {
             upsertMeta('property', 'og:title', title || '');
             upsertMeta('property', 'og:description', seo.description || '');
@@ -88,7 +102,12 @@
         }
     }
 
-    window.VgmfSiteSeo = { applySeo, applyFavicon, loadPublicSeo, isPrivatePortalPath };
+    document.addEventListener('site-branding-loaded', function (ev) {
+        const logoPath = ev && ev.detail && ev.detail.logoPath;
+        applyFavicon(faviconHrefFromLogoPath(logoPath));
+    });
+
+    window.VgmfSiteSeo = { applySeo, applyFavicon, loadPublicSeo, isPrivatePortalPath, faviconHrefFromLogoPath };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', loadPublicSeo);

@@ -3,9 +3,14 @@
  */
 (function () {
     const DEFAULT_ICON = '🏥';
-    const FALLBACK_LOGO = '/favicon.ico';
 
-    function upsertFaviconLink(rel, href) {
+    function faviconHref(logoPath) {
+        const lp = String(logoPath || '').trim();
+        const m = lp.match(/[?&]v=(\d+)/);
+        return m ? '/favicon.ico?v=' + m[1] : '/favicon.ico';
+    }
+
+    function upsertFaviconLink(rel, href, extra) {
         if (!href) return;
         let el = document.querySelector(`link[rel="${rel}"]`);
         if (!el) {
@@ -14,13 +19,15 @@
             document.head.appendChild(el);
         }
         el.setAttribute('href', href);
+        if (extra) Object.keys(extra).forEach((k) => el.setAttribute(k, extra[k]));
     }
 
     function applySiteFavicon(logoPath) {
-        const href = logoPath || '/favicon.ico';
-        upsertFaviconLink('icon', href);
+        const href = faviconHref(logoPath);
+        upsertFaviconLink('icon', href, { type: 'image/png', sizes: '32x32' });
         upsertFaviconLink('shortcut icon', href);
-        upsertFaviconLink('apple-touch-icon', href);
+        const touch = href.replace('/favicon.ico', '/apple-touch-icon.png');
+        upsertFaviconLink('apple-touch-icon', touch.indexOf('?') >= 0 ? touch : touch + (href.indexOf('?') >= 0 ? href.slice(href.indexOf('?')) : ''));
         if (window.VgmfSiteSeo && typeof window.VgmfSiteSeo.applyFavicon === 'function') {
             window.VgmfSiteSeo.applyFavicon(href);
         }
@@ -30,7 +37,7 @@
         if (!el) return;
         const fallbackMode = el.getAttribute('data-logo-fallback');
         let path = String(logoPath || '').trim();
-        if (!path && fallbackMode === 'favicon') path = FALLBACK_LOGO;
+        if (!path && fallbackMode === 'favicon') path = faviconHref('');
         if (!path) {
             if (fallbackMode === 'icon') {
                 el.innerHTML =
@@ -49,8 +56,8 @@
         img.decoding = 'async';
         img.loading = 'eager';
         img.onerror = function onLogoError() {
-            if (!isRetry && path !== FALLBACK_LOGO) {
-                applyLogoToSlot(el, FALLBACK_LOGO, true);
+            if (!isRetry && path !== faviconHref('')) {
+                applyLogoToSlot(el, faviconHref(''), true);
             }
         };
         el.innerHTML = '';
@@ -63,7 +70,7 @@
             document.documentElement.classList.contains('scanner-native-shell') ||
             /\/scanner\.html$/i.test(window.location.pathname || '');
         if (onScanner && !document.querySelector('[data-site-logo]')) {
-            applySiteFavicon('/favicon.ico');
+            applySiteFavicon('');
             return;
         }
         let logoPath = '';
@@ -77,7 +84,7 @@
             console.warn('Site branding:', e.message || e);
         }
         window.__siteLogoPath = logoPath;
-        applySiteFavicon(logoPath || '/favicon.ico');
+        applySiteFavicon(logoPath);
         document.querySelectorAll('[data-site-logo]').forEach((el) => applyLogoToSlot(el, logoPath));
         if (logoPath && !onScanner) {
             document.body.classList.add('has-logo-theme');

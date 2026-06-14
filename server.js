@@ -62,6 +62,7 @@ const feedbackFormConfig = require('./lib/feedback-form-config');
 const { registerLiveScannerRoutes } = require('./lib/routes-live-scanner');
 const { registerPosRoutes } = require('./lib/pos-onspot');
 const siteSeoMod = require('./lib/site-seo');
+const siteFavicon = require('./lib/site-favicon');
 const emailDeliveryPolicy = require('./lib/email-delivery-policy');
 const volunteerCertFlow = require('./lib/volunteer-cert-flow');
 const volunteerTicketFlow = require('./lib/volunteer-ticket-flow');
@@ -1659,11 +1660,12 @@ function migrateAutismPublicSiteCms(done) {
 
 function migrateAutismSeoDefaults(done) {
     if (portalProduct.FEATURES.productId !== 'autism') return done && done();
+    const finish = () => siteFavicon.regenerateFaviconPngsCb(db, () => done && done());
     db.get(`SELECT value FROM global_settings WHERE key = 'public_site_cms'`, [], (err, row) => {
-        if (err || !row || !row.value) return done && done();
+        if (err || !row || !row.value) return finish();
         try {
             const parsed = JSON.parse(row.value);
-            if (!parsed || typeof parsed !== 'object') return done && done();
+            if (!parsed || typeof parsed !== 'object') return finish();
             const seo = siteSeoMod.normalizeSeo(parsed.seo || {});
             const fresh = siteSeoMod.normalizeSeo(siteSeoMod.DEFAULT_SEO);
             let changed = false;
@@ -1671,7 +1673,7 @@ function migrateAutismSeoDefaults(done) {
                 /National Seminar|national seminar|Ayurveda seminar|doctor registration/i.test(
                     String(seo.title || '') + String(seo.description || '') + String(seo.keywords || '')
                 );
-            if (legacy || seo.faviconUrl === '/favicon.svg') {
+            if (legacy || seo.faviconUrl === '/favicon.svg' || String(parsed.seo && parsed.seo.faviconUrl) === '/favicon.svg') {
                 parsed.seo = Object.assign({}, seo, {
                     title: fresh.title,
                     description: fresh.description,
@@ -1682,10 +1684,10 @@ function migrateAutismSeoDefaults(done) {
                 });
                 changed = true;
             }
-            if (!changed) return done && done();
-            upsertGlobalSetting('public_site_cms', JSON.stringify(parsed), () => done && done());
+            if (!changed) return finish();
+            upsertGlobalSetting('public_site_cms', JSON.stringify(parsed), finish);
         } catch (_) {
-            done && done();
+            finish();
         }
     });
 }
