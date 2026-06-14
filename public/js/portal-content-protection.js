@@ -15,7 +15,15 @@
         return false;
     }
 
-    document.addEventListener('contextmenu', block, { capture: true });
+    document.addEventListener(
+        'contextmenu',
+        function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        },
+        { capture: true }
+    );
 
     document.addEventListener(
         'keydown',
