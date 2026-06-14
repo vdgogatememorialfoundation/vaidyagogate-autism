@@ -5275,6 +5275,11 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                             'Registration accepted — your e-ticket has been issued. Application no. ' +
                                             applicationNo +
                                             '.';
+                                    } else if (!payload.message) {
+                                        payload.message =
+                                            'Registration submitted successfully. Your application number is ' +
+                                            applicationNo +
+                                            '. Track status below and check your email for confirmation.';
                                     }
                                     res.json(payload);
                                 };
@@ -12682,11 +12687,11 @@ function startBackgroundWorkers() {
         });
         db.get(`SELECT value FROM global_settings WHERE key = ?`, ['notification_templates_sync_v'], (eSync, row) => {
             if (eSync) return;
-            if (row && row.value === '20260530') return;
+            if (row && row.value === '20260615b') return;
             notifEngine.syncDefaultNotificationTemplates(db, (syncErr) => {
                 if (syncErr) console.warn('[notifications] template sync failed:', syncErr.message);
                 else {
-                    upsertGlobalSetting('notification_templates_sync_v', '20260530', () => {
+                    upsertGlobalSetting('notification_templates_sync_v', '20260615b', () => {
                         console.log('[notifications] Autism portal email templates synced (all events)');
                     });
                 }

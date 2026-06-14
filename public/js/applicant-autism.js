@@ -904,6 +904,73 @@
         if (msg) msg.textContent = '';
     }
 
+    function ensureHubBanner(hostId, bannerId) {
+        const host = document.getElementById(hostId);
+        if (!host) return null;
+        let el = document.getElementById(bannerId);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = bannerId;
+            el.setAttribute('role', 'status');
+            el.className = 'ak-hub-success-banner hidden';
+            el.style.cssText =
+                'margin:0 0 16px;padding:14px 16px;border-radius:10px;font-weight:600;line-height:1.5;';
+            host.insertBefore(el, host.firstChild);
+        }
+        return el;
+    }
+
+    function showHubSuccessBanner(hostId, bannerId, html, tone) {
+        const el = ensureHubBanner(hostId, bannerId);
+        if (!el) return;
+        const colors =
+            tone === 'error'
+                ? { bg: '#fef2f2', border: '#fecaca', text: '#b91c1c' }
+                : { bg: '#ecfdf5', border: '#a7f3d0', text: '#047857' };
+        el.style.background = colors.bg;
+        el.style.border = '1px solid ' + colors.border;
+        el.style.color = colors.text;
+        el.innerHTML = html;
+        el.classList.remove('hidden');
+        try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (_) {}
+    }
+
+    function formatPreregSubmitSuccessHtml(result) {
+        const appNo = result && result.applicationNo ? escapeAkHtml(String(result.applicationNo)) : '';
+        const msg = result && result.message ? escapeAkHtml(result.message) : 'Application submitted successfully.';
+        return (
+            '<p style="margin:0 0 6px;"><i class="fas fa-check-circle"></i> ' +
+            msg +
+            '</p>' +
+            (appNo
+                ? '<p style="margin:0;font-size:0.92rem;font-weight:700;">Tracking ID: <code style="background:#fff;padding:2px 8px;border-radius:6px;">' +
+                  appNo +
+                  '</code></p>'
+                : '')
+        );
+    }
+
+    function formatMainRegSubmitSuccessHtml(result) {
+        const appNo = result && result.applicationNo ? escapeAkHtml(String(result.applicationNo)) : '';
+        const msg =
+            result && result.message
+                ? escapeAkHtml(result.message)
+                : 'Main registration submitted successfully.';
+        return (
+            '<p style="margin:0 0 6px;"><i class="fas fa-check-circle"></i> ' +
+            msg +
+            '</p>' +
+            (appNo
+                ? '<p style="margin:0;font-size:0.92rem;font-weight:700;">Application number: <code style="background:#fff;padding:2px 8px;border-radius:6px;">' +
+                  appNo +
+                  '</code></p>'
+                : '') +
+            '<p style="margin:8px 0 0;font-size:0.88rem;font-weight:500;">Track status below and check your email for confirmation.</p>'
+        );
+    }
+
     function hideEventRegisterForms() {
         hidePreregFormPanel();
         hideMainRegFormPanel();
@@ -1603,12 +1670,21 @@
                 preregResubmitId = null;
                 const sel = document.getElementById('prereg-seminar-select');
                 if (sel) sel.disabled = false;
-                if (msg) {
-                    msg.textContent =
-                        (resubmitResult && resubmitResult.message) ||
-                        'Pre-registration updated and sent for review again.';
-                    msg.style.color = '#047857';
-                }
+                resetPreregWizard();
+                document.getElementById('prereg-form')?.reset();
+                hidePreregFormPanel();
+                if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+                showHubSuccessBanner(
+                    'tab-prereg-hub',
+                    'ak-prereg-hub-banner',
+                    formatPreregSubmitSuccessHtml(
+                        Object.assign({}, resubmitResult, {
+                            applicationNo:
+                                (resubmitResult && resubmitResult.applicationNo) ||
+                                (window.__akLastPreregApplicationNo || '')
+                        })
+                    )
+                );
                 loadPreregList();
                 return;
             }
@@ -1617,16 +1693,20 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: uid, seminarId: sid, formData })
             });
-            if (msg) {
-                msg.textContent =
-                    (submitResult && submitResult.message) || 'Application submitted successfully.';
-                msg.style.color = '#047857';
+            if (submitResult && submitResult.applicationNo) {
+                window.__akLastPreregApplicationNo = submitResult.applicationNo;
             }
             resetPreregWizard();
             document.getElementById('prereg-form')?.reset();
             const countryEl = document.getElementById('prereg-field-country');
             if (countryEl) countryEl.value = 'India';
             hidePreregFormPanel();
+            if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+            showHubSuccessBanner(
+                'tab-prereg-hub',
+                'ak-prereg-hub-banner',
+                formatPreregSubmitSuccessHtml(submitResult)
+            );
             loadPreregList();
             loadPreregSeminars();
         } catch (e) {
@@ -1634,6 +1714,13 @@
                 msg.textContent = e.message || 'Submit failed';
                 msg.style.color = '#b91c1c';
             }
+            showHubSuccessBanner(
+                'tab-prereg-hub',
+                'ak-prereg-hub-banner',
+                escapeAkHtml(e.message || 'Submit failed'),
+                'error'
+            );
+            if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
         }
     }
 
@@ -2580,6 +2667,45 @@
         window.switchTab.__akHubHook = true;
     }
 
+    function patchSubmitApplicationSuccessBanner() {
+        if (typeof window.submitApplication !== 'function' || window.submitApplication.__akBannerHook) return;
+        const orig = window.submitApplication;
+        window.submitApplication = async function () {
+            if (!document.body.classList.contains('ak-portal-dash')) {
+                return orig.apply(this, arguments);
+            }
+            const nativeFetch = window.fetch;
+            let captured = null;
+            window.fetch = function (url, opts) {
+                const resPromise = nativeFetch.apply(this, arguments);
+                if (typeof url === 'string' && url.indexOf('/api/applications/submit') >= 0) {
+                    return resPromise.then(async (res) => {
+                        try {
+                            captured = await res.clone().json();
+                        } catch (_) {}
+                        return res;
+                    });
+                }
+                return resPromise;
+            };
+            try {
+                await orig.apply(this, arguments);
+                if (captured && captured.success) {
+                    hideMainRegFormPanel();
+                    if (typeof switchTab === 'function') switchTab('tab-main-reg-hub');
+                    showHubSuccessBanner(
+                        'tab-main-reg-hub',
+                        'ak-main-reg-hub-banner',
+                        formatMainRegSubmitSuccessHtml(captured)
+                    );
+                }
+            } finally {
+                window.fetch = nativeFetch;
+            }
+        };
+        window.submitApplication.__akBannerHook = true;
+    }
+
     function patchLoadRegistrationFormConfig() {
         if (typeof loadRegistrationFormConfigAndApply !== 'function' || loadRegistrationFormConfigAndApply.__akMainRegHook) {
             return;
@@ -2601,6 +2727,7 @@
         patchSwitchTabForHub();
         patchAutismRegistrationFlow();
         patchMainRegistrationOnEventTab();
+        patchSubmitApplicationSuccessBanner();
         patchLoadRegistrationFormConfig();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
