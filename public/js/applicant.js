@@ -4491,12 +4491,30 @@ async function submitApplication() {
                 window.__regCertServerUploaded = true;
                 updateRegCertUploadUi({ uploaded: true });
             }
-            alert(
-                result.message ||
-                    `Application submitted successfully. Your application number is ${result.applicationNo}. You can track status under View Applications.`
-            );
-            cancelRegistration();
-            loadApplications();
+            if (
+                document.body.classList.contains('ak-portal-dash') &&
+                typeof window.showSubmissionSuccessModal === 'function'
+            ) {
+                await window.showSubmissionSuccessModal({
+                    kind: 'main',
+                    title: 'Main registration submitted',
+                    message:
+                        result.message ||
+                        'Your main registration was received successfully.',
+                    applicationNo: result.applicationNo,
+                    onClose: function () {
+                        cancelRegistration();
+                        loadApplications();
+                    }
+                });
+            } else {
+                alert(
+                    result.message ||
+                        `Application submitted successfully. Your application number is ${result.applicationNo}. You can track status under View Applications.`
+                );
+                cancelRegistration();
+                loadApplications();
+            }
         } else {
             const msg = result.error || `Submission failed (HTTP ${res.status}).`;
             alert(/^Missing required field:/i.test(msg) ? formatRegValidationError(msg) : msg);

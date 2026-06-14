@@ -91,6 +91,18 @@
             mainCard.id = 'seminar-main-form-card';
             const heading = mainCard.querySelector('label[style*="font-weight:600"]');
             if (heading) heading.textContent = 'Main registration form (this seminar)';
+            if (!mainCard.querySelector('#seminar-main-add-extra-btn')) {
+                const addMainBtn = document.createElement('button');
+                addMainBtn.type = 'button';
+                addMainBtn.id = 'seminar-main-add-extra-btn';
+                addMainBtn.className = 'btn-primary';
+                addMainBtn.style.cssText = 'margin-top:8px;padding:4px 12px;font-size:0.82rem;background:#0d9488;';
+                addMainBtn.textContent = '+ Add main registration field';
+                addMainBtn.addEventListener('click', () => {
+                    if (typeof window.addSeminarExtraFieldRow === 'function') window.addSeminarExtraFieldRow();
+                });
+                mainCard.appendChild(addMainBtn);
+            }
             if (!document.getElementById('seminar-main-custom-only')) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -1677,13 +1689,38 @@
         }
     }
 
+    function enhanceRegistrationFormTabUi() {
+        const tab = document.getElementById('tab-reg-form');
+        if (!tab || tab.dataset.akFormUiEnhanced) return;
+        tab.dataset.akFormUiEnhanced = '1';
+        const h2 = tab.querySelector('h2');
+        if (h2) h2.textContent = 'Registration form fields';
+        const intro = tab.querySelector('p');
+        if (intro) {
+            intro.textContent =
+                'Edit global defaults for main registration and pre-registration forms. Use + Add field to create custom questions. Per-event overrides are in each event’s edit form under Event Management.';
+        }
+        const mainCard = tab.querySelector('.card');
+        if (mainCard && !document.getElementById('ak-main-reg-form-editor-label')) {
+            const label = document.createElement('h3');
+            label.id = 'ak-main-reg-form-editor-label';
+            label.style.cssText = 'margin:0 0 8px;color:#1e40af;';
+            label.textContent = 'Main registration form (global defaults)';
+            mainCard.insertBefore(label, mainCard.firstChild);
+        }
+    }
+
     function patchRegistrationFormTabLoader() {
         if (typeof window.switchTab !== 'function' || window.switchTab.__akRegFormHook) return;
         const orig = window.switchTab;
         window.switchTab = function (tabId, menuEl) {
             orig.call(this, tabId, menuEl);
             if (tabId === 'tab-reg-form') {
+                enhanceRegistrationFormTabUi();
                 loadAdminPreregFormConfig();
+                if (typeof window.loadAdminRegistrationFormConfig === 'function') {
+                    window.loadAdminRegistrationFormConfig();
+                }
             }
         };
         window.switchTab.__akRegFormHook = true;

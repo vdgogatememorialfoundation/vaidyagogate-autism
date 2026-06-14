@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
     <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=3">
-    <link rel="stylesheet" href="/css/ak-form-preview.css?v=3">
+    <link rel="stylesheet" href="/css/ak-form-preview.css?v=20260615b">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -856,27 +856,6 @@
         <input type="text" id="ncism"><input type="text" id="college"><input type="text" id="ccity">
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/js/portal-content-protection.js?v=2"></script>
-    <script src="/js/portal-theme.js"></script>
-    <script src="/js/site-seo.js?v=20260529b"></script>
-    <script src="/js/portal-datetime.js?v=20260525b"></script>
-    <script src="/js/site-branding.js?v=20260529b"></script>
-    <script src="/js/otp-ui.js"></script>
-    <script src="/js/http-json.js"></script>
-    <script src="/js/portal-auth.js"></script>
-    <script src="/js/name-validation.js"></script>
-    <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js"></script>
-    <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism16"></script>
-    <script src="/js/autism-form-preview.js?v=4"></script>
-    <script src="/js/applicant-autism.js?v=autism32"></script>
-    <script src="/js/autism-announcements.js?v=4"></script>
-    <script src="/js/autism-applicant-live.js?v=2"></script>
-    <script src="/js/autism-theme.js?v=3"></script>
-    <script src="/js/autism-terminology.js?v=3"></script>
-
     <div id="ak-register-modal" class="ak-register-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ak-register-modal-title">
         <div class="ak-register-modal__backdrop" id="ak-register-modal-backdrop"></div>
         <div class="ak-register-modal__window">
@@ -892,6 +871,7 @@
         <div class="ak-preview-backdrop" onclick="closeFormPreviewModal()"></div>
         <div class="ak-preview-sheet">
             <button type="button" class="ak-preview-close" onclick="closeFormPreviewModal()" aria-label="Close">&times;</button>
+            <div id="ak-preview-logo-wrap"></div>
             <h3 id="ak-preview-title">Form preview</h3>
             <div id="ak-preview-barcode" class="ak-preview-barcode"></div>
             <div id="ak-preview-body" class="ak-preview-body"></div>
@@ -902,5 +882,41 @@
             </div>
         </div>
     </div>
+
+    <div id="ak-submit-success-modal" class="ak-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ak-success-title">
+        <div class="ak-preview-backdrop" id="ak-success-backdrop"></div>
+        <div class="ak-preview-sheet ak-success-sheet">
+            <img id="ak-success-logo" class="ak-success-sheet__logo hidden" alt="Logo">
+            <div class="ak-success-sheet__icon" aria-hidden="true"><i class="fas fa-check"></i></div>
+            <h3 id="ak-success-title">Submitted successfully</h3>
+            <p id="ak-success-message" style="margin:8px 0 0;color:#334155;line-height:1.5;"></p>
+            <div id="ak-success-tracking" class="ak-success-sheet__tracking hidden"></div>
+            <p id="ak-success-note" class="ak-success-sheet__note">Save this tracking ID. We have also sent a confirmation email if your email is on file.</p>
+            <div class="ak-preview-actions" style="justify-content:center;margin-top:20px;">
+                <button type="button" class="btn-primary" id="ak-success-ok-btn">View my submissions</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/js/portal-content-protection.js?v=2"></script>
+    <script src="/js/portal-theme.js"></script>
+    <script src="/js/site-seo.js?v=20260529b"></script>
+    <script src="/js/portal-datetime.js?v=20260525b"></script>
+    <script src="/js/site-branding.js?v=20260529b"></script>
+    <script src="/js/otp-ui.js"></script>
+    <script src="/js/http-json.js"></script>
+    <script src="/js/portal-auth.js"></script>
+    <script src="/js/name-validation.js"></script>
+    <script src="/js/contact-validation.js"></script>
+    <script src="/js/applicant-auth-ui.js"></script>
+    <script src="/js/portal-upload.js?v=20260523"></script>
+    <script src="/js/applicant.js?v=autism18"></script>
+    <script src="/js/autism-form-preview.js?v=20260615c"></script>
+    <script src="/js/applicant-autism.js?v=autism34"></script>
+    <script src="/js/autism-announcements.js?v=4"></script>
+    <script src="/js/autism-applicant-live.js?v=2"></script>
+    <script src="/js/autism-theme.js?v=3"></script>
+    <script src="/js/autism-terminology.js?v=3"></script>
 </body>
 </html>

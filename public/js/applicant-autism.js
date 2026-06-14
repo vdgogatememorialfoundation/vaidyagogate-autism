@@ -116,6 +116,8 @@
     function wireRegisterModal() {
         document.getElementById('ak-register-modal-close')?.addEventListener('click', dismissRegisterModal);
         document.getElementById('ak-register-modal-backdrop')?.addEventListener('click', dismissRegisterModal);
+        document.getElementById('ak-success-ok-btn')?.addEventListener('click', closeSubmissionSuccessModal);
+        document.getElementById('ak-success-backdrop')?.addEventListener('click', closeSubmissionSuccessModal);
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             const modal = registerModalEl();
@@ -937,6 +939,75 @@
         } catch (_) {}
     }
 
+    let successModalOnClose = null;
+
+    async function resolveBrandingLogoUrl() {
+        if (window.__siteLogoPath) return window.__siteLogoPath;
+        try {
+            const res = await fetch('/api/branding/logo', { cache: 'no-store' });
+            const data = await res.json();
+            return (data && data.logoPath) || '/api/branding/logo/file';
+        } catch (_) {
+            return '/api/branding/logo/file';
+        }
+    }
+
+    function closeSubmissionSuccessModal() {
+        document.getElementById('ak-submit-success-modal')?.classList.add('hidden');
+        document.body.classList.remove('ak-success-modal-open');
+        const fn = successModalOnClose;
+        successModalOnClose = null;
+        if (fn) fn();
+    }
+
+    async function showSubmissionSuccessModal(opts) {
+        opts = opts || {};
+        dismissRegisterModal();
+        if (typeof window.closeFormPreviewModal === 'function') window.closeFormPreviewModal();
+        const modal = document.getElementById('ak-submit-success-modal');
+        const titleEl = document.getElementById('ak-success-title');
+        const msgEl = document.getElementById('ak-success-message');
+        const trackEl = document.getElementById('ak-success-tracking');
+        const logoEl = document.getElementById('ak-success-logo');
+        const code = opts.applicationNo ? String(opts.applicationNo) : '';
+        const title =
+            opts.title ||
+            (opts.kind === 'main' ? 'Main registration submitted' : 'Pre-registration submitted');
+        const message = opts.message || 'Your application was received successfully.';
+        if (!modal) {
+            alert(message + (code ? '\n\nTracking ID: ' + code : ''));
+            if (typeof opts.onClose === 'function') opts.onClose();
+            return;
+        }
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.textContent = message;
+        if (trackEl) {
+            if (code) {
+                trackEl.textContent = code;
+                trackEl.classList.remove('hidden');
+            } else {
+                trackEl.textContent = '';
+                trackEl.classList.add('hidden');
+            }
+        }
+        if (logoEl) logoEl.classList.add('hidden');
+        successModalOnClose = typeof opts.onClose === 'function' ? opts.onClose : null;
+        modal.classList.remove('hidden');
+        document.body.classList.add('ak-success-modal-open');
+        document.getElementById('ak-success-ok-btn')?.focus();
+        if (logoEl) {
+            try {
+                const url = await resolveBrandingLogoUrl();
+                if (url) {
+                    logoEl.src = url;
+                    logoEl.classList.remove('hidden');
+                }
+            } catch (_) {}
+        }
+    }
+    window.showSubmissionSuccessModal = showSubmissionSuccessModal;
+    window.closeSubmissionSuccessModal = closeSubmissionSuccessModal;
+
     function formatPreregSubmitSuccessHtml(result) {
         const appNo = result && result.applicationNo ? escapeAkHtml(String(result.applicationNo)) : '';
         const msg = result && result.message ? escapeAkHtml(result.message) : 'Application submitted successfully.';
@@ -1673,19 +1744,33 @@
                 resetPreregWizard();
                 document.getElementById('prereg-form')?.reset();
                 hidePreregFormPanel();
-                if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
-                showHubSuccessBanner(
-                    'tab-prereg-hub',
-                    'ak-prereg-hub-banner',
-                    formatPreregSubmitSuccessHtml(
-                        Object.assign({}, resubmitResult, {
-                            applicationNo:
-                                (resubmitResult && resubmitResult.applicationNo) ||
-                                (window.__akLastPreregApplicationNo || '')
-                        })
-                    )
-                );
-                loadPreregList();
+                const afterPreregSuccess = function () {
+                    if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+                    showHubSuccessBanner(
+                        'tab-prereg-hub',
+                        'ak-prereg-hub-banner',
+                        formatPreregSubmitSuccessHtml(
+                            Object.assign({}, resubmitResult, {
+                                applicationNo:
+                                    (resubmitResult && resubmitResult.applicationNo) ||
+                                    (window.__akLastPreregApplicationNo || '')
+                            })
+                        )
+                    );
+                    loadPreregList();
+                };
+                await showSubmissionSuccessModal({
+                    kind: 'prereg',
+                    title: 'Pre-registration updated',
+                    message:
+                        (resubmitResult && resubmitResult.message) ||
+                        'Pre-registration updated and sent for review again.',
+                    applicationNo:
+                        (resubmitResult && resubmitResult.applicationNo) ||
+                        window.__akLastPreregApplicationNo ||
+                        '',
+                    onClose: afterPreregSuccess
+                });
                 return;
             }
             const submitResult = await fetchJson('/api/preregistrations/submit', {
@@ -1701,14 +1786,25 @@
             const countryEl = document.getElementById('prereg-field-country');
             if (countryEl) countryEl.value = 'India';
             hidePreregFormPanel();
-            if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
-            showHubSuccessBanner(
-                'tab-prereg-hub',
-                'ak-prereg-hub-banner',
-                formatPreregSubmitSuccessHtml(submitResult)
-            );
-            loadPreregList();
-            loadPreregSeminars();
+            const afterPreregSuccess = function () {
+                if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+                showHubSuccessBanner(
+                    'tab-prereg-hub',
+                    'ak-prereg-hub-banner',
+                    formatPreregSubmitSuccessHtml(submitResult)
+                );
+                loadPreregList();
+                loadPreregSeminars();
+            };
+            await showSubmissionSuccessModal({
+                kind: 'prereg',
+                title: 'Pre-registration submitted',
+                message:
+                    (submitResult && submitResult.message) ||
+                    'Your pre-registration was received successfully.',
+                applicationNo: submitResult && submitResult.applicationNo,
+                onClose: afterPreregSuccess
+            });
         } catch (e) {
             if (msg) {
                 msg.textContent = e.message || 'Submit failed';
@@ -1806,16 +1902,27 @@
         const marginX = 14;
         const valueX = 66;
         const lineMaxW = pageW - valueX - marginX;
+        let logoData = '';
+        if (typeof ensurePdfLogoDataUrl === 'function') {
+            try {
+                logoData = await ensurePdfLogoDataUrl();
+            } catch (_) {}
+        }
 
         function drawHeader() {
             doc.setFillColor(15, 118, 110);
             doc.rect(0, 0, pageW, 24, 'F');
+            if (logoData) {
+                try {
+                    doc.addImage(logoData, 'PNG', marginX, 3, 18, 18);
+                } catch (_) {}
+            }
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
-            doc.text('Autism Awareness Programme', marginX, 10);
+            doc.text('Autism Awareness Programme', logoData ? marginX + 22 : marginX, 10);
             doc.setFontSize(10);
-            doc.text('Vaidya Gogate Memorial Foundation', marginX, 16);
+            doc.text('Vaidya Gogate Memorial Foundation', logoData ? marginX + 22 : marginX, 16);
             doc.setTextColor(0, 0, 0);
         }
 
@@ -2690,15 +2797,6 @@
             };
             try {
                 await orig.apply(this, arguments);
-                if (captured && captured.success) {
-                    hideMainRegFormPanel();
-                    if (typeof switchTab === 'function') switchTab('tab-main-reg-hub');
-                    showHubSuccessBanner(
-                        'tab-main-reg-hub',
-                        'ak-main-reg-hub-banner',
-                        formatMainRegSubmitSuccessHtml(captured)
-                    );
-                }
             } finally {
                 window.fetch = nativeFetch;
             }

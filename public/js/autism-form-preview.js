@@ -50,6 +50,36 @@
         );
     }
 
+    let previewLogoUrl = null;
+
+    async function resolvePreviewLogoUrl() {
+        if (previewLogoUrl) return previewLogoUrl;
+        if (window.__siteLogoPath) {
+            previewLogoUrl = window.__siteLogoPath;
+            return previewLogoUrl;
+        }
+        try {
+            const res = await fetch('/api/branding/logo', { cache: 'no-store' });
+            const data = await res.json();
+            previewLogoUrl = (data && data.logoPath) || '/api/branding/logo/file';
+        } catch (_) {
+            previewLogoUrl = '/api/branding/logo/file';
+        }
+        return previewLogoUrl;
+    }
+
+    async function renderPreviewLogoWrap() {
+        const wrap = document.getElementById('ak-preview-logo-wrap');
+        if (!wrap) return;
+        const url = await resolvePreviewLogoUrl();
+        wrap.innerHTML =
+            '<div class="ak-preview-logo-row">' +
+            '<img src="' +
+            esc(url) +
+            '" alt="Logo">' +
+            '<div class="ak-preview-logo-row__text"><strong>Vaidya Gogate Memorial Foundation</strong><br>Autism Awareness Programme</div></div>';
+    }
+
     function openFormPreviewModal(opts) {
         const modal = document.getElementById('ak-form-preview-modal');
         const titleEl = document.getElementById('ak-preview-title');
@@ -61,6 +91,7 @@
         if (!modal || !bodyEl) return;
         if (sheet) sheet.classList.add('ak-preview-sheet--v2');
         if (titleEl) titleEl.textContent = opts.title || 'Form preview';
+        renderPreviewLogoWrap();
         if (barEl) barEl.innerHTML = barcodeHtml(opts.barcodeText, opts.barcodeNote);
         bodyEl.innerHTML =
             '<div class="ak-preview-draft-badge">Draft preview — not submitted</div>' + previewRowsHtml(opts.rows || []);
@@ -69,8 +100,9 @@
             confirmBtn.style.display = previewConfirmHandler ? '' : 'none';
             confirmBtn.textContent = opts.confirmLabel || 'Confirm & submit';
             confirmBtn.onclick = function () {
-                if (previewConfirmHandler) previewConfirmHandler();
-                closeFormPreviewModal();
+                if (!previewConfirmHandler) return;
+                previewConfirmHandler();
+                if (opts.closeOnConfirm !== false) closeFormPreviewModal();
             };
         }
         if (downloadBtn) {
@@ -152,7 +184,8 @@
                     : null,
             onConfirm: function () {
                 document.getElementById('prereg-form')?.requestSubmit();
-            }
+            },
+            closeOnConfirm: false
         });
     };
 
