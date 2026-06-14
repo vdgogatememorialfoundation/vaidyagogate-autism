@@ -7,6 +7,111 @@
     let preregRows = [];
     let selectedId = null;
     let statusFilter = 'all';
+    let cachedSeminars = [];
+
+    function seminarFlowFlags(seminar) {
+        try {
+            const parsed = seminar && seminar.registration_form_json ? JSON.parse(seminar.registration_form_json) : {};
+            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            const hasFlow =
+                Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+                Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+            if (!hasFlow) {
+                return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
+            }
+            const preregistrationRequired = flow.preregistrationRequired === true;
+            const mainRegistrationRequired = flow.mainRegistrationRequired === true;
+            let mainRegistrationOpen = true;
+            if (mainRegistrationRequired && !preregistrationRequired) {
+                mainRegistrationOpen = true;
+            } else if (mainRegistrationRequired && preregistrationRequired) {
+                mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
+                    ? flow.mainRegistrationOpen === true
+                    : true;
+            } else {
+                mainRegistrationOpen = false;
+            }
+            return { preregistrationRequired, mainRegistrationRequired, mainRegistrationOpen };
+        } catch (_) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
+        }
+    }
+
+    function updateMainRegOpenPanel() {
+        const panel = document.getElementById('ak-main-reg-open-panel');
+        const desc = document.getElementById('ak-main-reg-open-desc');
+        const msg = document.getElementById('ak-main-reg-open-msg');
+        const openBtn = document.getElementById('ak-open-main-reg');
+        const closeBtn = document.getElementById('ak-close-main-reg');
+        const seminarId = document.getElementById('ak-prereg-seminar')?.value || '';
+        if (!panel) return;
+        if (!seminarId) {
+            panel.style.display = 'none';
+            return;
+        }
+        const seminar = cachedSeminars.find((s) => String(s.id) === String(seminarId));
+        if (!seminar) {
+            panel.style.display = 'none';
+            return;
+        }
+        const flags = seminarFlowFlags(seminar);
+        if (!flags.preregistrationRequired || !flags.mainRegistrationRequired) {
+            panel.style.display = 'none';
+            return;
+        }
+        panel.style.display = '';
+        const title = seminar.title || 'Event ' + seminar.id;
+        if (desc) {
+            desc.textContent =
+                (flags.mainRegistrationOpen
+                    ? 'Final registration is open for "' + title + '". Approved participants can register in their dashboard.'
+                    : 'Final registration is closed for "' + title + '". Pre-registration stays live; open final registration when you are ready.') +
+                ' You can also change this in event settings.';
+        }
+        if (openBtn) openBtn.disabled = !!flags.mainRegistrationOpen;
+        if (closeBtn) closeBtn.disabled = !flags.mainRegistrationOpen;
+        if (msg) {
+            msg.textContent = flags.mainRegistrationOpen
+                ? 'Status: open for applicants'
+                : 'Status: closed — waiting for you to open';
+            msg.style.color = flags.mainRegistrationOpen ? '#047857' : '#b45309';
+        }
+    }
+
+    async function setMainRegistrationOpen(open) {
+        const seminarId = document.getElementById('ak-prereg-seminar')?.value || '';
+        const msg = document.getElementById('ak-main-reg-open-msg');
+        if (!seminarId) return;
+        try {
+            const data = await api('/api/admin/seminars/' + encodeURIComponent(seminarId) + '/main-registration-open', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ open: !!open })
+            });
+            const seminar = cachedSeminars.find((s) => String(s.id) === String(seminarId));
+            if (seminar) {
+                let cfg = {};
+                try {
+                    cfg = seminar.registration_form_json ? JSON.parse(seminar.registration_form_json) : {};
+                } catch (_) {
+                    cfg = {};
+                }
+                if (!cfg.flow || typeof cfg.flow !== 'object') cfg.flow = {};
+                cfg.flow.mainRegistrationOpen = !!open;
+                seminar.registration_form_json = JSON.stringify(cfg);
+            }
+            updateMainRegOpenPanel();
+            if (msg) {
+                msg.textContent = data.message || (open ? 'Final registration opened.' : 'Final registration closed.');
+                msg.style.color = '#047857';
+            }
+        } catch (e) {
+            if (msg) {
+                msg.textContent = e.message || 'Update failed';
+                msg.style.color = '#b91c1c';
+            }
+        }
+    }
 
     function esc(s) {
         const d = document.createElement('div');
@@ -41,6 +146,7 @@
         try {
             const list = await api('/api/admin/seminars');
             const seminars = Array.isArray(list) ? list : list.seminars || [];
+            cachedSeminars = seminars;
             sel.innerHTML = '<option value="">All events</option>';
             seminars.forEach((s) => {
                 const o = document.createElement('option');
@@ -49,6 +155,7 @@
                 sel.appendChild(o);
             });
             sel.dataset.loaded = '1';
+            updateMainRegOpenPanel();
         } catch (_) {}
     }
 
@@ -301,6 +408,7 @@
             preregRows = await api(url);
             await loadStats();
             renderTable();
+            updateMainRegOpenPanel();
         } catch (e) {
             if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
         }
@@ -344,6 +452,8 @@
                 switchTab('tab-final-tracking');
             }
         });
+        document.getElementById('ak-open-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(true));
+        document.getElementById('ak-close-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(false));
     };
 
     const origSwitch = window.switchTab;

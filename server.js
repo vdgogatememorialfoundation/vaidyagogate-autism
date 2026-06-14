@@ -171,36 +171,8 @@ function paymentAmountForSeminar(row) {
     return Number.isFinite(p) && p > 0 ? p : 1500;
 }
 
-function seminarFlowFlagsFromJson(raw) {
-    try {
-        const parsed = raw ? JSON.parse(raw) : {};
-        const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
-        const hasFlow =
-            Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
-            Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
-        if (!hasFlow) {
-            return {
-                preregistrationRequired: true,
-                mainRegistrationRequired: true,
-                autoAcceptPreregistration: false,
-                autoAcceptRegistration: false
-            };
-        }
-        return {
-            preregistrationRequired: flow.preregistrationRequired === true,
-            mainRegistrationRequired: flow.mainRegistrationRequired === true,
-            autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
-            autoAcceptRegistration: flow.autoAcceptRegistration === true
-        };
-    } catch (_) {
-        return {
-            preregistrationRequired: true,
-            mainRegistrationRequired: true,
-            autoAcceptPreregistration: false,
-            autoAcceptRegistration: false
-        };
-    }
-}
+const seminarRegFlow = require('./lib/seminar-registration-flow');
+const seminarFlowFlagsFromJson = seminarRegFlow.seminarFlowFlagsFromRegistrationFormJson;
 
 function issueRegistrationTicketImmediately(registrationId, userId, seminarRow, cb) {
     const amt = paymentAmountForSeminar(seminarRow || {});
@@ -5145,6 +5117,12 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                                             : pst === 'submitted'
                                             ? 'Your pre-registration is submitted and awaiting approval.'
                                             : 'Wait for pre-registration approval before main registration.'
+                                });
+                            }
+                            if (!flow.mainRegistrationOpen) {
+                                return res.status(400).json({
+                                    error:
+                                        'Final registration is not open yet for this event. You will be able to register once the organisers enable it.'
                                 });
                             }
                             continueApplicationSubmit();

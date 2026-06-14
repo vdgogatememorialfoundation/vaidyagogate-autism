@@ -840,11 +840,30 @@
                 Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
                 Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
             if (!hasFlow) {
-                return { preregistrationRequired: true, mainRegistrationRequired: true };
+                return {
+                    preregistrationRequired: true,
+                    mainRegistrationRequired: true,
+                    mainRegistrationOpen: true,
+                    autoAcceptPreregistration: false,
+                    autoAcceptRegistration: false
+                };
+            }
+            const preregistrationRequired = flow.preregistrationRequired === true;
+            const mainRegistrationRequired = flow.mainRegistrationRequired === true;
+            let mainRegistrationOpen = true;
+            if (mainRegistrationRequired && !preregistrationRequired) {
+                mainRegistrationOpen = true;
+            } else if (mainRegistrationRequired && preregistrationRequired) {
+                mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
+                    ? flow.mainRegistrationOpen === true
+                    : true;
+            } else {
+                mainRegistrationOpen = false;
             }
             return {
-                preregistrationRequired: flow.preregistrationRequired === true,
-                mainRegistrationRequired: flow.mainRegistrationRequired === true,
+                preregistrationRequired,
+                mainRegistrationRequired,
+                mainRegistrationOpen,
                 autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
                 autoAcceptRegistration: flow.autoAcceptRegistration === true
             };
@@ -852,6 +871,7 @@
             return {
                 preregistrationRequired: true,
                 mainRegistrationRequired: true,
+                mainRegistrationOpen: true,
                 autoAcceptPreregistration: false,
                 autoAcceptRegistration: false
             };
@@ -919,6 +939,12 @@
             }
             if (flags.preregistrationRequired && !isPreregApprovedForSeminar(sid)) {
                 alert('Complete pre-registration and wait for approval before main registration.');
+                return;
+            }
+            if (flags.preregistrationRequired && !flags.mainRegistrationOpen) {
+                alert(
+                    'Final registration is not open yet for this event. You will be notified when the organisers enable it.'
+                );
                 return;
             }
         }
@@ -1045,9 +1071,15 @@
             }
         } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'prereg') {
             statusBlock +=
-                '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>' +
-                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Open the <strong>Main registration</strong> tab when final registration opens.</p>';
-            if (mainWin.state === 'upcoming') {
+                '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>';
+            if (!flags.mainRegistrationOpen) {
+                statusBlock +=
+                    '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Final registration is not open yet. We will notify you when it opens.</p>';
+            } else {
+                statusBlock +=
+                    '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Open the <strong>Main registration</strong> tab when final registration opens.</p>';
+            }
+            if (flags.mainRegistrationOpen && mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
                     '<p style="font-size:0.8rem;color:#047857;font-weight:600;">Final registration opens</p>' +
@@ -1063,11 +1095,18 @@
                     '</p></div>';
             }
             actionBlock =
-                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Use Main registration tab</button>';
+                '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">' +
+                (flags.mainRegistrationOpen ? 'Use Main registration tab' : 'Final registration not open yet') +
+                '</button>';
         } else if (st === 'approved' && flags.mainRegistrationRequired && gridMode === 'main') {
             statusBlock +=
                 '<p style="font-size:0.85rem;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Pre-registration approved</p>';
-            if (mainWin.state === 'upcoming') {
+            if (!flags.mainRegistrationOpen) {
+                statusBlock +=
+                    '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;"><i class="fas fa-hourglass-half"></i> Final registration is not open yet. Please check back later.</p>';
+                actionBlock =
+                    '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Final registration not open yet</button>';
+            } else if (mainWin.state === 'upcoming') {
                 statusBlock +=
                     '<div style="background:#ecfdf5;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #a7f3d0;">' +
                     '<p style="font-size:0.8rem;color:#047857;font-weight:600;">Final registration opens</p>' +

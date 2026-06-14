@@ -2095,14 +2095,27 @@ function seminarFlowFlags(seminar) {
             Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
             Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
         if (!hasFlow) {
-            return { preregistrationRequired: true, mainRegistrationRequired: true };
+            return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
+        }
+        const preregistrationRequired = flow.preregistrationRequired === true;
+        const mainRegistrationRequired = flow.mainRegistrationRequired === true;
+        let mainRegistrationOpen = true;
+        if (mainRegistrationRequired && !preregistrationRequired) {
+            mainRegistrationOpen = true;
+        } else if (mainRegistrationRequired && preregistrationRequired) {
+            mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
+                ? flow.mainRegistrationOpen === true
+                : true;
+        } else {
+            mainRegistrationOpen = false;
         }
         return {
-            preregistrationRequired: flow.preregistrationRequired === true,
-            mainRegistrationRequired: flow.mainRegistrationRequired === true
+            preregistrationRequired,
+            mainRegistrationRequired,
+            mainRegistrationOpen
         };
     } catch (_) {
-        return { preregistrationRequired: true, mainRegistrationRequired: true };
+        return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
     }
 }
 

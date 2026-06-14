@@ -58,6 +58,10 @@
         flow.innerHTML =
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-prereg-required" checked> Pre-registration required</label>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="seminar-flow-main-required" checked> Main registration required</label>' +
+            '<div id="seminar-flow-main-open-wrap" style="flex:1 1 100%;display:none;padding:8px 10px;border:1px dashed #99f6e4;border-radius:8px;background:#fff;">' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;font-weight:600;color:#0f766e;"><input type="checkbox" id="seminar-flow-main-open"> Main registration open for applicants</label>' +
+            '<p style="margin:6px 0 0;font-size:0.78rem;color:#64748b;">When pre-registration is also required, leave this off while you review responses. Turn it on when you are ready for final registration. Registration start/end dates apply once open.</p>' +
+            '</div>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;" id="seminar-flow-auto-prereg-wrap"><input type="checkbox" id="seminar-flow-auto-prereg"> Auto-accept pre-registration (skip review)</label>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;" id="seminar-flow-auto-reg-wrap"><input type="checkbox" id="seminar-flow-auto-reg"> Auto-accept registration &amp; issue e-ticket immediately</label>' +
             '<p style="flex:1 1 100%;margin:0;font-size:0.78rem;color:#64748b;">With auto-accept on, applicants are approved instantly; you can still reject any application from tracking at any time.</p>';
@@ -174,6 +178,12 @@
         });
     }
 
+    function resolveMainRegistrationOpenFromUi(preOn, mainOn) {
+        if (!mainOn) return false;
+        if (!preOn) return true;
+        return (document.getElementById('seminar-flow-main-open') || {}).checked === true;
+    }
+
     function syncSeminarFlowFormSections() {
         const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
         const mainOn = (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
@@ -181,14 +191,18 @@
         const mainCard = document.getElementById('seminar-main-form-card');
         const autoPreWrap = document.getElementById('seminar-flow-auto-prereg-wrap');
         const autoRegWrap = document.getElementById('seminar-flow-auto-reg-wrap');
+        const mainOpenWrap = document.getElementById('seminar-flow-main-open-wrap');
+        const mainOpen = document.getElementById('seminar-flow-main-open');
         const autoPre = document.getElementById('seminar-flow-auto-prereg');
         const autoReg = document.getElementById('seminar-flow-auto-reg');
         if (preCard) preCard.style.display = preOn ? '' : 'none';
         if (mainCard) mainCard.style.display = mainOn ? '' : 'none';
         if (autoPreWrap) autoPreWrap.style.display = preOn ? '' : 'none';
         if (autoRegWrap) autoRegWrap.style.display = mainOn ? '' : 'none';
+        if (mainOpenWrap) mainOpenWrap.style.display = preOn && mainOn ? '' : 'none';
         if (autoPre && !preOn) autoPre.checked = false;
         if (autoReg && !mainOn) autoReg.checked = false;
+        if (mainOpen && (!preOn || !mainOn)) mainOpen.checked = mainOn && !preOn;
     }
 
     function escapeHtml(v) {
@@ -422,9 +436,25 @@
         try {
             const parsed = registrationFormJson ? JSON.parse(registrationFormJson) : {};
             const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            const hasFlow =
+                Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+                Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+            const preregistrationRequired = hasFlow ? flow.preregistrationRequired === true : true;
+            const mainRegistrationRequired = hasFlow ? flow.mainRegistrationRequired === true : true;
+            let mainRegistrationOpen = true;
+            if (mainRegistrationRequired && !preregistrationRequired) {
+                mainRegistrationOpen = true;
+            } else if (mainRegistrationRequired && preregistrationRequired) {
+                mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
+                    ? flow.mainRegistrationOpen === true
+                    : true;
+            } else {
+                mainRegistrationOpen = false;
+            }
             return {
-                preregistrationRequired: flow.preregistrationRequired !== false,
-                mainRegistrationRequired: flow.mainRegistrationRequired !== false,
+                preregistrationRequired,
+                mainRegistrationRequired,
+                mainRegistrationOpen,
                 autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
                 autoAcceptRegistration: flow.autoAcceptRegistration === true
             };
@@ -432,6 +462,7 @@
             return {
                 preregistrationRequired: true,
                 mainRegistrationRequired: true,
+                mainRegistrationOpen: true,
                 autoAcceptPreregistration: false,
                 autoAcceptRegistration: false
             };
@@ -480,11 +511,14 @@
                             ? window.PortalDateTime.fromRegistrationEndLocal(window.__autismPreregEnd)
                             : window.__autismPreregEnd;
                     }
+                    const preOn =
+                        (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
+                    const mainOn =
+                        (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
                     const flowFlags = {
-                        preregistrationRequired:
-                            (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false,
-                        mainRegistrationRequired:
-                            (document.getElementById('seminar-flow-main-required') || {}).checked !== false,
+                        preregistrationRequired: preOn,
+                        mainRegistrationRequired: mainOn,
+                        mainRegistrationOpen: resolveMainRegistrationOpenFromUi(preOn, mainOn),
                         autoAcceptPreregistration:
                             (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
                         autoAcceptRegistration:
@@ -516,10 +550,12 @@
             const flags = parseSeminarFlowFlags(s && s.registration_form_json);
             const pre = document.getElementById('seminar-flow-prereg-required');
             const main = document.getElementById('seminar-flow-main-required');
+            const mainOpen = document.getElementById('seminar-flow-main-open');
             const autoPre = document.getElementById('seminar-flow-auto-prereg');
             const autoReg = document.getElementById('seminar-flow-auto-reg');
             if (pre) pre.checked = flags.preregistrationRequired;
             if (main) main.checked = flags.mainRegistrationRequired;
+            if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
             if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
             if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
             syncSeminarFlowFormSections();
@@ -542,10 +578,12 @@
             orig.apply(this, arguments);
             const pre = document.getElementById('seminar-flow-prereg-required');
             const main = document.getElementById('seminar-flow-main-required');
+            const mainOpen = document.getElementById('seminar-flow-main-open');
             const autoPre = document.getElementById('seminar-flow-auto-prereg');
             const autoReg = document.getElementById('seminar-flow-auto-reg');
             if (pre) pre.checked = true;
             if (main) main.checked = true;
+            if (mainOpen) mainOpen.checked = false;
             if (autoPre) autoPre.checked = false;
             if (autoReg) autoReg.checked = false;
             syncSeminarFlowFormSections();
