@@ -563,9 +563,7 @@
     };
 
     window.__akShouldKeepSeminarModalOpen = function akShouldKeepSeminarModalOpen() {
-        const enabled = (document.getElementById('seminar-flow-public-prereg') || {}).checked === true;
-        const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
-        return enabled && preOn;
+        return false;
     };
 
     window.__akSeminarSaveSuccessMessage = function akSeminarSaveSuccessMessage(result, existingId) {
@@ -1029,6 +1027,99 @@
             });
         };
         window.renderSeminarsTable.__akHook = true;
+    }
+
+    function injectManagePublicPreregCard() {
+        const tab = document.getElementById('tab-seminar-details');
+        if (!tab || document.getElementById('ak-manage-public-prereg-card')) return;
+        const card = document.createElement('div');
+        card.id = 'ak-manage-public-prereg-card';
+        card.className = 'card';
+        card.style.cssText = 'margin-bottom:20px;display:none;border-left:4px solid #2563eb;background:#eff6ff;';
+        card.innerHTML =
+            '<h3 style="margin:0 0 6px;color:#1d4ed8;">Public pre-registration link</h3>' +
+            '<p id="ak-manage-public-prereg-lead" style="margin:0 0 10px;font-size:0.88rem;color:#475569;">Share this link on WhatsApp or your website — no sign-in required (same data as portal pre-registration).</p>' +
+            '<div id="ak-manage-public-prereg-active" style="display:none;">' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+            '<input type="text" readonly id="ak-manage-public-prereg-url" style="flex:1;min-width:240px;padding:8px;font-size:0.85rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;">' +
+            '<button type="button" class="btn-primary" id="ak-manage-public-prereg-copy" style="padding:6px 12px;font-size:0.82rem;background:#2563eb;">Copy link</button>' +
+            '<a class="btn-primary" id="ak-manage-public-prereg-open" href="/preregister" target="_blank" rel="noopener" style="padding:6px 12px;font-size:0.82rem;background:#0d9488;text-decoration:none;">Open form</a>' +
+            '</div>' +
+            '<p id="ak-manage-public-prereg-hint" style="margin:8px 0 0;font-size:0.76rem;color:#64748b;">Link works when pre-registration dates are set and currently open.</p>' +
+            '</div>' +
+            '<div id="ak-manage-public-prereg-inactive" style="display:none;">' +
+            '<p style="margin:0;font-size:0.88rem;color:#64748b;">Public link is off for this event. Edit the event and check <strong>Enable public pre-registration link</strong> under pre-registration settings.</p>' +
+            '<button type="button" class="btn-primary" id="ak-manage-public-prereg-edit" style="margin-top:10px;padding:6px 12px;font-size:0.82rem;background:#475569;">Edit event settings</button>' +
+            '</div>';
+        const statsGrid = document.getElementById('stat-pending-apps')?.closest('div[style*="grid"]');
+        if (statsGrid && statsGrid.parentNode) {
+            statsGrid.insertAdjacentElement('afterend', card);
+        } else {
+            tab.insertBefore(card, tab.querySelector('.card'));
+        }
+        document.getElementById('ak-manage-public-prereg-copy')?.addEventListener('click', () => {
+            const input = document.getElementById('ak-manage-public-prereg-url');
+            const val = input && input.value ? input.value : '';
+            if (!val || val.indexOf('/preregister') < 0) return;
+            const done = () => alert('Public pre-registration link copied.');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(val).then(done).catch(done);
+            } else if (input) {
+                input.select();
+                document.execCommand('copy');
+                done();
+            }
+        });
+        document.getElementById('ak-manage-public-prereg-edit')?.addEventListener('click', () => {
+            const id = window.currentManageSeminarId;
+            const idx = (window.globalSeminars || []).findIndex((s) => Number(s.id) === Number(id));
+            if (idx >= 0 && typeof window.editSeminar === 'function') window.editSeminar(idx);
+            else alert('Open Events, then Edit this event to enable the public pre-registration link.');
+        });
+    }
+
+    function syncManagePublicPreregLink(seminarId) {
+        injectManagePublicPreregCard();
+        const card = document.getElementById('ak-manage-public-prereg-card');
+        const active = document.getElementById('ak-manage-public-prereg-active');
+        const inactive = document.getElementById('ak-manage-public-prereg-inactive');
+        const urlInput = document.getElementById('ak-manage-public-prereg-url');
+        const openBtn = document.getElementById('ak-manage-public-prereg-open');
+        if (!card || !seminarId) {
+            if (card) card.style.display = 'none';
+            return;
+        }
+        const seminar = (window.globalSeminars || []).find((s) => Number(s.id) === Number(seminarId));
+        if (!seminar) {
+            card.style.display = 'none';
+            return;
+        }
+        const flags = parseSeminarFlowFlags(seminar.registration_form_json);
+        if (!flags.preregistrationRequired) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = '';
+        if (flags.publicPreregEnabled) {
+            const url = publicPreregUrlForSeminar(seminarId);
+            if (active) active.style.display = '';
+            if (inactive) inactive.style.display = 'none';
+            if (urlInput) urlInput.value = url;
+            if (openBtn) openBtn.href = url;
+        } else {
+            if (active) active.style.display = 'none';
+            if (inactive) inactive.style.display = '';
+        }
+    }
+
+    function patchManageSeminar() {
+        if (typeof window.manageSeminar !== 'function' || window.manageSeminar.__akHook) return;
+        const orig = window.manageSeminar;
+        window.manageSeminar = async function (id, title) {
+            await orig.call(this, id, title);
+            syncManagePublicPreregLink(id);
+        };
+        window.manageSeminar.__akHook = true;
     }
 
     function patchEditSeminarFlowFlags() {
@@ -2144,6 +2235,7 @@
         hideMenuItems();
         injectPreregFields();
         ensureSeminarPreregOverrideEditor();
+        injectManagePublicPreregCard();
         labelMainRegistrationOtpSection();
         patchOpenCreateSeminarModal();
         injectEventManagementFormGuide();
@@ -2152,6 +2244,7 @@
         patchSaveSeminar();
         patchSeminarPayload();
         patchRenderSeminarsTable();
+        patchManageSeminar();
         patchEditSeminarFlowFlags();
         document.getElementById('seminar-flow-prereg-required')?.addEventListener('change', syncSeminarFlowFormSections);
         document.getElementById('seminar-flow-main-required')?.addEventListener('change', syncSeminarFlowFormSections);
