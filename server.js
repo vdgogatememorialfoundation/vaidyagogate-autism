@@ -566,6 +566,7 @@ function requestNeedsBootstrap(req) {
     if (p === '/scan' || p === '/scan/') return false;
     if (p === '/scanner' || p === '/scanner/') return false;
     if (p === '/dashboard' || p.startsWith('/dashboard/')) return false;
+    if (p === '/preregister' || p.startsWith('/preregister')) return false;
     if (/\.(html?|css|js|ico|png|jpe?g|gif|webp|svg|woff2?|json|webmanifest|txt|map)$/i.test(p)) return false;
     if (p.startsWith('/css/') || p.startsWith('/js/') || p.startsWith('/uploads/')) return false;
     if (p.startsWith('/api/')) return true;

@@ -77,6 +77,15 @@
             '</div>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;" id="seminar-flow-auto-prereg-wrap"><input type="checkbox" id="seminar-flow-auto-prereg"> Auto-accept pre-registration (skip review)</label>' +
             '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;" id="seminar-flow-auto-reg-wrap"><input type="checkbox" id="seminar-flow-auto-reg"> Auto-accept registration &amp; issue e-ticket immediately</label>' +
+            '<div id="seminar-flow-public-prereg-wrap" style="flex:1 1 100%;display:none;padding:8px 10px;border:1px dashed #93c5fd;border-radius:8px;background:#eff6ff;">' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;font-weight:600;color:#1d4ed8;"><input type="checkbox" id="seminar-flow-public-prereg"> Enable public pre-registration link (no sign-in)</label>' +
+            '<p style="margin:6px 0 8px;font-size:0.78rem;color:#64748b;">Share a simple link with families who do not want to create an account. Submissions use the same database and pre-registration tracking.</p>' +
+            '<div id="seminar-public-prereg-link-wrap" style="display:none;">' +
+            '<label style="font-size:0.8rem;font-weight:600;">Public link</label>' +
+            '<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center;">' +
+            '<input type="text" readonly id="seminar-public-prereg-url" style="flex:1;min-width:200px;padding:8px;font-size:0.82rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;">' +
+            '<button type="button" class="btn-primary" id="seminar-public-prereg-copy" style="padding:6px 12px;font-size:0.82rem;background:#2563eb;">Copy link</button>' +
+            '</div></div></div>' +
             '<p style="flex:1 1 100%;margin:0;font-size:0.78rem;color:#64748b;">With auto-accept on, applicants are approved instantly; you can still reject any application from tracking at any time.</p>';
         block.insertAdjacentElement('afterend', flow);
     }
@@ -329,7 +338,8 @@
             mainRegistrationOpen: resolveMainRegistrationOpenFromUi(preOn, mainOn),
             autoAcceptPreregistration:
                 (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
-            autoAcceptRegistration: (document.getElementById('seminar-flow-auto-reg') || {}).checked === true
+            autoAcceptRegistration: (document.getElementById('seminar-flow-auto-reg') || {}).checked === true,
+            publicPreregEnabled: (document.getElementById('seminar-flow-public-prereg') || {}).checked === true
         };
     }
 
@@ -362,16 +372,40 @@
         const mainOpen = document.getElementById('seminar-flow-main-open');
         const autoPre = document.getElementById('seminar-flow-auto-prereg');
         const autoReg = document.getElementById('seminar-flow-auto-reg');
+        const publicWrap = document.getElementById('seminar-flow-public-prereg-wrap');
+        const publicChk = document.getElementById('seminar-flow-public-prereg');
         if (preCard) preCard.style.display = preOn ? '' : 'none';
         if (mainCard) mainCard.style.display = mainOn ? '' : 'none';
         if (autoPreWrap) autoPreWrap.style.display = preOn ? '' : 'none';
         if (autoRegWrap) autoRegWrap.style.display = mainOn ? '' : 'none';
+        if (publicWrap) publicWrap.style.display = preOn ? '' : 'none';
         if (mainOpenWrap) mainOpenWrap.style.display = preOn && mainOn ? '' : 'none';
         if (autoPre && !preOn) autoPre.checked = false;
         if (autoReg && !mainOn) autoReg.checked = false;
+        if (publicChk && !preOn) publicChk.checked = false;
         if (mainOpen) {
             if (!mainOn) mainOpen.checked = false;
             else if (!preOn) mainOpen.checked = true;
+        }
+        syncPublicPreregLinkUi();
+    }
+
+    function syncPublicPreregLinkUi() {
+        const linkWrap = document.getElementById('seminar-public-prereg-link-wrap');
+        const urlInput = document.getElementById('seminar-public-prereg-url');
+        const enabled = (document.getElementById('seminar-flow-public-prereg') || {}).checked === true;
+        const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
+        const sid = window.__akEditingSeminarId;
+        if (!linkWrap || !urlInput) return;
+        if (!enabled || !preOn) {
+            linkWrap.style.display = 'none';
+            return;
+        }
+        linkWrap.style.display = '';
+        if (sid) {
+            urlInput.value = window.location.origin + '/preregister?event=' + encodeURIComponent(String(sid));
+        } else {
+            urlInput.value = 'Save this event first to generate the public link.';
         }
     }
 
@@ -689,7 +723,8 @@
                 mainRegistrationRequired,
                 mainRegistrationOpen,
                 autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
-                autoAcceptRegistration: flow.autoAcceptRegistration === true
+                autoAcceptRegistration: flow.autoAcceptRegistration === true,
+                publicPreregEnabled: flow.publicPreregEnabled === true
             };
         } catch (_) {
             return {
@@ -697,7 +732,8 @@
                 mainRegistrationRequired: true,
                 mainRegistrationOpen: false,
                 autoAcceptPreregistration: false,
-                autoAcceptRegistration: false
+                autoAcceptRegistration: false,
+                publicPreregEnabled: false
             };
         }
     }
@@ -759,11 +795,14 @@
             const mainOpen = document.getElementById('seminar-flow-main-open');
             const autoPre = document.getElementById('seminar-flow-auto-prereg');
             const autoReg = document.getElementById('seminar-flow-auto-reg');
+            const publicPrereg = document.getElementById('seminar-flow-public-prereg');
             if (pre) pre.checked = flags.preregistrationRequired;
             if (main) main.checked = flags.mainRegistrationRequired;
             if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
             if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
             if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
+            if (publicPrereg) publicPrereg.checked = flags.publicPreregEnabled;
+            window.__akEditingSeminarId = s && s.id ? s.id : null;
             syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
             try {
@@ -793,6 +832,9 @@
             if (mainOpen) mainOpen.checked = false;
             if (autoPre) autoPre.checked = false;
             if (autoReg) autoReg.checked = false;
+            const publicPrereg = document.getElementById('seminar-flow-public-prereg');
+            if (publicPrereg) publicPrereg.checked = false;
+            window.__akEditingSeminarId = null;
             applySeminarPreregDatesToUi(null);
             syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi('');
@@ -1856,7 +1898,19 @@
         patchEditSeminarFlowFlags();
         document.getElementById('seminar-flow-prereg-required')?.addEventListener('change', syncSeminarFlowFormSections);
         document.getElementById('seminar-flow-main-required')?.addEventListener('change', syncSeminarFlowFormSections);
-        document.getElementById('seminar-flow-main-required')?.addEventListener('change', syncSeminarFlowFormSections);
+        document.getElementById('seminar-flow-public-prereg')?.addEventListener('change', syncPublicPreregLinkUi);
+        document.getElementById('seminar-public-prereg-copy')?.addEventListener('click', () => {
+            const input = document.getElementById('seminar-public-prereg-url');
+            const val = input && input.value ? input.value : '';
+            if (!val || val.indexOf('/preregister') < 0) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(val).then(() => alert('Public pre-registration link copied.'));
+            } else {
+                input.select();
+                document.execCommand('copy');
+                alert('Public pre-registration link copied.');
+            }
+        });
         syncSeminarFlowFormSections();
         patchRegistrationFormTabLoader();
         patchCreateStaffUserRoles();

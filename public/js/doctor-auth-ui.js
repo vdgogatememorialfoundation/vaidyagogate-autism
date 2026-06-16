@@ -34,12 +34,12 @@
         if (login) login.classList.toggle('hidden', !showLogin);
         if (signup) signup.classList.toggle('hidden', showLogin);
         if (btnIn) {
-            btnIn.classList.toggle('btn-primary', showLogin);
-            btnIn.style.opacity = showLogin ? '1' : '0.7';
+            btnIn.classList.toggle('is-active', showLogin);
+            btnIn.setAttribute('aria-selected', showLogin ? 'true' : 'false');
         }
         if (btnUp) {
-            btnUp.classList.toggle('btn-primary', !showLogin);
-            btnUp.style.opacity = showLogin ? '0.7' : '1';
+            btnUp.classList.toggle('is-active', !showLogin);
+            btnUp.setAttribute('aria-selected', !showLogin ? 'true' : 'false');
         }
         const title = document.getElementById('doctor-auth-title');
         if (title) title.textContent = showLogin ? "Doctor's Portal Sign In" : 'Create doctor account';

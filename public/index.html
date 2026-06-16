@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/css/vgmf-congress.css">
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
     <link rel="stylesheet" href="/css/autism-kids.css?v=8">
-    <link rel="stylesheet" href="/css/autism-theme.css?v=4">
+    <link rel="stylesheet" href="/css/autism-theme.css?v=5">
     <link rel="stylesheet" href="/css/autism-redesign.css?v=5">
     <link rel="stylesheet" href="/css/ak-header-ticker.css?v=4">
     <link rel="stylesheet" href="/css/nexgen-ai.css?v=8">
@@ -397,9 +397,9 @@
                     <p style="font-size:0.9rem;color:#64748b;margin:-8px 0 16px;">Sign up or sign in to join the programme and get your e-ticket.</p>
                     <button type="button" onclick="closeAuthModal()" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--muted);">&times;</button>
                 </div>
-                <div style="display:flex;gap:8px;margin-bottom:20px;">
-                    <button type="button" id="auth-tab-login" class="btn-primary auth-tab-btn active" style="flex:1;" onclick="switchAuthTab('login')">Sign in</button>
-                    <button type="button" id="auth-tab-signup" class="btn-ghost auth-tab-btn" style="flex:1;color:var(--ink);border-color:var(--line);" onclick="switchAuthTab('signup')">Create account</button>
+                <div class="ak-auth-tabs" role="tablist" aria-label="Account access">
+                    <button type="button" id="auth-tab-login" class="ak-auth-tab is-active" role="tab" aria-selected="true" onclick="switchAuthTab('login')">Sign in</button>
+                    <button type="button" id="auth-tab-signup" class="ak-auth-tab" role="tab" aria-selected="false" onclick="switchAuthTab('signup')">Create account</button>
                 </div>
                 <div id="loginForm">
                     <form onsubmit="handleLogin(event)">
@@ -1300,18 +1300,23 @@
             const signupForm = document.getElementById('signupForm');
             const tabLogin = document.getElementById('auth-tab-login');
             const tabSignup = document.getElementById('auth-tab-signup');
-            if (tab === 'login') {
+            const showLogin = tab === 'login';
+            if (showLogin) {
                 loginForm.classList.remove('hidden');
                 signupForm.classList.add('hidden');
-                tabLogin?.classList.add('active');
-                tabSignup?.classList.remove('active');
                 refreshLoginOtpPanel();
             } else {
                 loginForm.classList.add('hidden');
                 signupForm.classList.remove('hidden');
-                tabSignup?.classList.add('active');
-                tabLogin?.classList.remove('active');
                 refreshSignupOtpPanel();
+            }
+            if (tabLogin) {
+                tabLogin.classList.toggle('is-active', showLogin);
+                tabLogin.setAttribute('aria-selected', showLogin ? 'true' : 'false');
+            }
+            if (tabSignup) {
+                tabSignup.classList.toggle('is-active', !showLogin);
+                tabSignup.setAttribute('aria-selected', !showLogin ? 'true' : 'false');
             }
         }
 

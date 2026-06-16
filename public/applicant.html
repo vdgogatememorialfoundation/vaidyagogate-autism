@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/vgmf-mobile-portal.css">
     <link rel="stylesheet" href="/css/autism-dashboard.css?v=1">
-    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
+    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=3">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
     <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=3">
     <link rel="stylesheet" href="/css/ak-form-preview.css?v=20260615b">
@@ -125,9 +125,9 @@
         <div class="doctor-auth-card" style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:420px;box-shadow:0 24px 50px rgba(15,118,110,0.2);border:1px solid #99f6e4;">
             <div data-site-logo data-logo-height="44px" style="margin-bottom:12px;"></div>
             <h2 id="doctor-auth-title" style="color:#0284c7;margin-bottom:12px;font-size:1.5rem;">Welcome! Sign in</h2>
-            <div style="display:flex;gap:8px;margin-bottom:16px;">
-                <button type="button" id="doctor-auth-tab-login" class="btn-primary" style="flex:1;padding:10px;" onclick="DoctorAuthUi.switchDoctorAuthTab('login')">Sign in</button>
-                <button type="button" id="doctor-auth-tab-signup" class="btn-primary" style="flex:1;padding:10px;opacity:0.75;background:#64748b;" onclick="DoctorAuthUi.switchDoctorAuthTab('signup')">Create account</button>
+            <div class="ak-auth-tabs" role="tablist" aria-label="Account access">
+                <button type="button" id="doctor-auth-tab-login" class="ak-auth-tab is-active" role="tab" aria-selected="true" onclick="DoctorAuthUi.switchDoctorAuthTab('login')">Sign in</button>
+                <button type="button" id="doctor-auth-tab-signup" class="ak-auth-tab" role="tab" aria-selected="false" onclick="DoctorAuthUi.switchDoctorAuthTab('signup')">Create account</button>
             </div>
             <div id="doctor-auth-login-panel">
             <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Use your participant account to pre-register, compete, and get your e-ticket.</p>
@@ -914,7 +914,7 @@
     <script src="/js/portal-auth.js"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js?v=20260616a"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260617a"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism21"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>

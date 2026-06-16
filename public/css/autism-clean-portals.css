@@ -114,6 +114,47 @@ body.ak-portal-dash #doctor-auth-title {
     color: var(--ak-blue-dark) !important;
 }
 
+/* Segmented Sign in / Create account tabs */
+body.ak-portal .ak-auth-tabs,
+body.ak-portal-dash .ak-auth-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 4px;
+    background: #e2e8f0;
+    border-radius: 12px;
+}
+
+body.ak-portal .ak-auth-tab,
+body.ak-portal-dash .ak-auth-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    background: transparent;
+    color: #64748b;
+    box-shadow: none;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+body.ak-portal .ak-auth-tab.is-active,
+body.ak-portal-dash .ak-auth-tab.is-active {
+    background: #fff;
+    color: #1d4ed8;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+body.ak-portal-dash .ak-auth-tab.is-active {
+    color: var(--ak-blue-dark, #1d4ed8);
+}
+
 body.ak-portal-dash .form-group label {
     color: var(--ak-text) !important;
 }

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="icon" href="/favicon.ico" type="image/png" sizes="32x32">
+    <title>Pre-registration | Autism Awareness Programme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
+    <link rel="stylesheet" href="/css/ak-form-preview.css?v=20260615b">
+    <style>
+        :root {
+            --ak-blue: #2563eb;
+            --ak-blue-dark: #1d4ed8;
+            --ak-bg: #f0f9ff;
+            --ak-text: #1e3a8a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: linear-gradient(165deg, #eff6ff 0%, #f8fafc 45%, #ecfeff 100%);
+            color: var(--ak-text);
+            min-height: 100vh;
+        }
+        .hidden { display: none !important; }
+        .ak-pub-wrap {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
+        .ak-pub-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .ak-pub-header h1 {
+            font-family: Fredoka, sans-serif;
+            font-size: 1.65rem;
+            margin: 0 0 8px;
+            color: var(--ak-blue-dark);
+        }
+        .ak-pub-header p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .ak-pub-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #dbeafe;
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08);
+            padding: 24px 20px;
+        }
+        .ak-pub-event-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin: 0 0 16px;
+            padding: 10px 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            color: var(--ak-blue-dark);
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+            font-size: 0.95rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: 2px solid #93c5fd;
+            border-color: var(--ak-blue);
+        }
+        .ak-pub-hint {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin: 0 0 14px;
+            line-height: 1.45;
+        }
+        .ak-pub-note {
+            font-size: 0.82rem;
+            color: #0369a1;
+            background: #e0f2fe;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .ak-pub-wizard-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .ak-pub-wizard-nav button {
+            border: 1px solid #bfdbfe;
+            background: #fff;
+            color: #1e40af;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ak-pub-wizard-nav button.is-active {
+            background: var(--ak-blue);
+            color: #fff;
+            border-color: var(--ak-blue);
+        }
+        .ak-pub-wizard-nav button.is-done {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 10px;
+            background: var(--ak-blue);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: var(--ak-blue-dark); }
+        .btn-secondary {
+            background: #64748b;
+        }
+        .ak-pub-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .ak-pub-error {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            margin-bottom: 14px;
+        }
+        .ak-pub-success {
+            text-align: center;
+            padding: 12px 8px;
+        }
+        .ak-pub-success .ak-tracking-id {
+            font-family: Fredoka, sans-serif;
+            font-size: 1.5rem;
+            color: var(--ak-blue-dark);
+            margin: 12px 0;
+            letter-spacing: 0.04em;
+        }
+        .ak-pub-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+        .ak-pub-footer a { color: var(--ak-blue); }
+        .ak-honeypot {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="ak-pub-wrap">
+        <header class="ak-pub-header">
+            <h1>Pre-registration</h1>
+            <p>Fill this form in a few minutes — no account or password needed. We will email you updates.</p>
+        </header>
+
+        <div id="pub-prereg-loading" class="ak-pub-card" style="text-align:center;padding:32px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#2563eb;"></i>
+            <p style="margin-top:12px;color:#64748b;">Loading form…</p>
+        </div>
+
+        <div id="pub-prereg-unavailable" class="ak-pub-card hidden">
+            <p id="pub-prereg-unavailable-msg" class="ak-pub-error" style="margin:0;"></p>
+            <p class="ak-pub-hint" style="margin-top:12px;">You can also <a href="/dashboard">sign in to the applicant portal</a> if you already have an account.</p>
+        </div>
+
+        <div id="pub-prereg-form-wrap" class="ak-pub-card hidden">
+            <p id="pub-prereg-event-title" class="ak-pub-event-title hidden"></p>
+            <p class="ak-pub-note"><i class="fas fa-info-circle"></i> Already registered? Use the same email — we will link this to your existing application.</p>
+            <div id="pub-prereg-error" class="ak-pub-error hidden" role="alert"></div>
+
+            <form id="pub-prereg-form" novalidate>
+                <div class="ak-honeypot" aria-hidden="true">
+                    <label>Website<input type="text" name="website" id="pub-honeypot-website" tabindex="-1" autocomplete="off"></label>
+                </div>
+
+                <div id="pub-step-event" class="pub-step-panel hidden">
+                    <p class="ak-pub-hint">Choose the event you want to pre-register for.</p>
+                    <div class="form-group">
+                        <label for="pub-event-select">Event *</label>
+                        <select id="pub-event-select" required></select>
+                    </div>
+                </div>
+
+                <div id="pub-step-contact" class="pub-step-panel" data-step="0">
+                    <p class="ak-pub-hint">We need your email and mobile so we can send confirmation and status updates.</p>
+                    <div class="form-group">
+                        <label for="pub-contact-email">Email *</label>
+                        <input type="email" id="pub-contact-email" required autocomplete="email" placeholder="yourname@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="pub-contact-phone">Mobile (WhatsApp) *</label>
+                        <input type="tel" id="pub-contact-phone" required autocomplete="tel" inputmode="numeric" placeholder="10-digit mobile number">
+                    </div>
+                </div>
+
+                <nav id="pub-wizard-nav" class="ak-pub-wizard-nav hidden" aria-label="Form steps"></nav>
+                <div id="pub-form-fields"></div>
+
+                <div class="ak-pub-actions">
+                    <button type="button" id="pub-wizard-back" class="btn-primary btn-secondary hidden"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button type="button" id="pub-wizard-next" class="btn-primary">Next <i class="fas fa-arrow-right"></i></button>
+                    <button type="submit" id="pub-submit-btn" class="btn-primary hidden"><i class="fas fa-paper-plane"></i> Submit pre-registration</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="pub-prereg-success" class="ak-pub-card ak-pub-success hidden">
+            <i class="fas fa-check-circle" style="font-size:2.5rem;color:#16a34a;"></i>
+            <h2 style="font-family:Fredoka,sans-serif;margin:12px 0 8px;">Thank you!</h2>
+            <p id="pub-success-message" style="color:#475569;line-height:1.5;"></p>
+            <p class="ak-tracking-id" id="pub-success-tracking-id"></p>
+            <p class="ak-pub-hint">Save this tracking ID. We will also email you at the address you provided.</p>
+            <p class="ak-pub-hint"><a href="/dashboard">Applicant portal</a> — optional sign-in to track status and complete main registration later.</p>
+        </div>
+
+        <p class="ak-pub-footer">
+            <a href="/">← Back to programme home</a>
+        </p>
+    </div>
+
+    <script src="/js/contact-validation.js"></script>
+    <script src="/js/public-preregister.js?v=20260617a"></script>
+</body>
+</html>
