@@ -3356,6 +3356,7 @@ app.get('/api/auth/login-otp-required', withIntegrationSettingsLoaded, (req, res
 
 /** Signup/login: detect existing account (optional password match → suggest login). */
 app.post('/api/auth/account-check', (req, res) => {
+    const userRoles = require('./lib/user-roles');
     const emailNormRaw = authUsers.normalizeEmail((req.body && req.body.email) || '');
     const password = req.body && req.body.password != null ? String(req.body.password) : '';
     const phoneRaw = (req.body && req.body.phone) || '';
@@ -3375,6 +3376,8 @@ app.post('/api/auth/account-check', (req, res) => {
             });
         }
         const passwordMatch = !!(password && row.password === password);
+        const staffAccount =
+            userRoles.isStaffPortalAccount(row) || userRoles.isSuperAdminAccount(row);
         res.json({
             exists: true,
             available: false,
@@ -3382,9 +3385,12 @@ app.post('/api/auth/account-check', (req, res) => {
             needsLogin: true,
             phoneTaken: false,
             emailTaken: true,
-            message: passwordMatch
-                ? 'An account with this email already exists. Please sign in with your password.'
-                : 'This email is already registered. Please sign in or use Forgot password.'
+            staffAccount: !!staffAccount,
+            message: staffAccount
+                ? 'This email is for staff/admin access. Sign in at /admin or use a different email for a new applicant account.'
+                : passwordMatch
+                  ? 'An account with this email already exists. Please sign in with your password.'
+                  : 'This email is already registered. Please sign in or use Forgot password.'
         });
     }
 

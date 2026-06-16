@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/vgmf-mobile-portal.css">
     <link rel="stylesheet" href="/css/autism-dashboard.css?v=1">
-    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
+    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
     <link rel="stylesheet" href="/css/autism-portal-v2.css?v=3">
     <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=3">
     <link rel="stylesheet" href="/css/ak-form-preview.css?v=20260615b">
@@ -173,21 +173,26 @@
                     <input type="tel" id="doctor-signup-phone" placeholder="Phone (WhatsApp)" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
                     <div id="doctor-signup-otp-panel" style="display:none;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
                         <p style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">Verify email and WhatsApp before signup.</p>
-                        <div class="doctor-otp-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;">
-                            <span style="font-weight:700;">Email</span>
-                            <button type="button" id="doctor-signup-send-otp-email" style="padding:5px 10px;border-radius:8px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;">Send</button>
-                            <button type="button" id="doctor-signup-resend-otp-email" style="padding:5px 10px;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer;">Resend</button>
-                            <input type="text" id="doctor-signup-email-otp" placeholder="Code" style="max-width:72px;padding:6px;border-radius:8px;border:1px solid #cbd5e1;">
-                            <button type="button" id="doctor-signup-verify-otp-email" style="padding:5px 10px;border-radius:8px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;">OK</button>
-                            <span id="doctor-signup-email-otp-ok" style="font-size:0.78rem;color:#059669;"></span>
+                        <p id="doctor-signup-otp-hint" class="hidden" style="font-size:0.8rem;color:#b45309;margin-bottom:8px;font-weight:600;"></p>
+                        <div class="portal-otp-row doctor-otp-row" style="margin-bottom:8px;">
+                            <span class="portal-otp-label">Email</span>
+                            <div class="portal-otp-actions">
+                                <button type="button" id="doctor-signup-send-otp-email" class="portal-otp-btn">Send</button>
+                                <button type="button" id="doctor-signup-resend-otp-email" class="portal-otp-btn portal-otp-btn-muted">Resend</button>
+                            </div>
+                            <input type="text" id="doctor-signup-email-otp" class="portal-otp-code" placeholder="Code" inputmode="numeric" autocomplete="one-time-code">
+                            <button type="button" id="doctor-signup-verify-otp-email" class="portal-otp-btn">Verify</button>
+                            <span id="doctor-signup-email-otp-ok" class="portal-otp-ok"></span>
                         </div>
-                        <div class="doctor-otp-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-                            <span style="font-weight:700;">Phone</span>
-                            <button type="button" id="doctor-signup-send-otp-phone" style="padding:5px 10px;border-radius:8px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;">Send</button>
-                            <button type="button" id="doctor-signup-resend-otp-phone" style="padding:5px 10px;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer;">Resend</button>
-                            <input type="text" id="doctor-signup-phone-otp" placeholder="Code" style="max-width:72px;padding:6px;border-radius:8px;border:1px solid #cbd5e1;">
-                            <button type="button" id="doctor-signup-verify-otp-phone" style="padding:5px 10px;border-radius:8px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;">OK</button>
-                            <span id="doctor-signup-phone-otp-ok" style="font-size:0.78rem;color:#059669;"></span>
+                        <div class="portal-otp-row doctor-otp-row">
+                            <span class="portal-otp-label">Phone</span>
+                            <div class="portal-otp-actions">
+                                <button type="button" id="doctor-signup-send-otp-phone" class="portal-otp-btn">Send</button>
+                                <button type="button" id="doctor-signup-resend-otp-phone" class="portal-otp-btn portal-otp-btn-muted">Resend</button>
+                            </div>
+                            <input type="text" id="doctor-signup-phone-otp" class="portal-otp-code" placeholder="Code" inputmode="numeric" autocomplete="one-time-code">
+                            <button type="button" id="doctor-signup-verify-otp-phone" class="portal-otp-btn">Verify</button>
+                            <span id="doctor-signup-phone-otp-ok" class="portal-otp-ok"></span>
                         </div>
                     </div>
                     <input type="password" id="doctor-signup-password" placeholder="Password" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
@@ -909,7 +914,7 @@
     <script src="/js/portal-auth.js"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260616a"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism21"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>
@@ -917,6 +922,6 @@
     <script src="/js/autism-announcements.js?v=4"></script>
     <script src="/js/autism-applicant-live.js?v=20260615e"></script>
     <script src="/js/autism-theme.js?v=3"></script>
-    <script src="/js/autism-terminology.js?v=3"></script>
+    <script src="/js/autism-terminology.js?v=4"></script>
 </body>
 </html>

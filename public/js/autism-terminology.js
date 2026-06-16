@@ -173,6 +173,14 @@
         if (semH3 && /Active Seminars/i.test(semH3.textContent)) semH3.textContent = 'Active events';
     }
 
+    function syncApplicantAuthTitle() {
+        const authTitle = document.getElementById('doctor-auth-title');
+        if (!authTitle) return;
+        const signupPanel = document.getElementById('doctor-auth-signup-panel');
+        const onSignup = signupPanel && !signupPanel.classList.contains('hidden');
+        authTitle.textContent = onSignup ? 'Create your applicant account' : 'Welcome! Applicant sign in';
+    }
+
     function relabelApplicantDashboard() {
         const banner = document.getElementById('profile-complete-banner');
         if (banner) {
@@ -195,8 +203,7 @@
         if (statReg) statReg.textContent = 'Events joined';
         const caseStat = document.getElementById('stat-abstracts')?.closest('.stat-card');
         if (caseStat) caseStat.classList.add('hidden');
-        const authTitle = document.getElementById('doctor-auth-title');
-        if (authTitle) authTitle.textContent = 'Welcome! Applicant sign in';
+        syncApplicantAuthTitle();
     }
 
     function applyAll() {
@@ -221,7 +228,7 @@
         setTimeout(applyAll, 5000);
     }
 
-    global.AutismTerminology = { applyAll, replaceText };
+    global.AutismTerminology = { applyAll, replaceText, syncApplicantAuthTitle };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

@@ -1,5 +1,5 @@
 /**
- * Doctor portal — login & signup in-app (no redirect to public homepage).
+ * Applicant dashboard — login & signup in-app (no redirect to public homepage).
  */
 (function () {
     function isStandaloneDoctorApp() {
@@ -41,8 +41,22 @@
             btnUp.classList.toggle('btn-primary', !showLogin);
             btnUp.style.opacity = showLogin ? '0.7' : '1';
         }
+        syncApplicantAuthTitle(showLogin);
+        if (!showLogin) refreshSignupOtpPanel();
+    }
+
+    function syncApplicantAuthTitle(showLogin) {
+        if (global.AutismTerminology && typeof global.AutismTerminology.syncApplicantAuthTitle === 'function') {
+            global.AutismTerminology.syncApplicantAuthTitle();
+            return;
+        }
         const title = document.getElementById('doctor-auth-title');
-        if (title) title.textContent = showLogin ? "Doctor's Portal Sign In" : 'Create doctor account';
+        if (!title) return;
+        const onSignup =
+            showLogin === false ||
+            (document.getElementById('doctor-auth-signup-panel') &&
+                !document.getElementById('doctor-auth-signup-panel').classList.contains('hidden'));
+        title.textContent = onSignup ? 'Create your applicant account' : 'Welcome! Applicant sign in';
     }
 
     function signupOtpDest(channel) {
@@ -130,7 +144,13 @@
             }
             if (channel === 'email') signupEmailOtpToken = data.token;
             else signupPhoneOtpToken = data.token;
-            if (okEl) okEl.textContent = 'Verified';
+            if (okEl) okEl.textContent = 'Verified ✓';
+            const otpHint = document.getElementById('doctor-signup-otp-hint');
+            if (otpHint && signupPhoneOtpToken && signupEmailOtpToken) {
+                otpHint.textContent = 'Email and WhatsApp verified. You can create your account.';
+                otpHint.style.color = '#059669';
+                otpHint.classList.remove('hidden');
+            }
         } catch (err) {
             console.error(err);
             alert('Could not verify code. Check your connection and try again.');
@@ -205,6 +225,13 @@
                 switchDoctorAuthTab('login');
                 return;
             }
+            if (check.staffAccount) {
+                alert(
+                    check.message ||
+                        'This email is for staff/admin access. Sign in at /admin or use a different email.'
+                );
+                return;
+            }
             if (check.exists) {
                 if (check.passwordMatch) {
                     if (
@@ -232,10 +259,23 @@
 
         const body = { firstName, lastName, email, phone, password, role: 'doctor' };
         const otpPanel = document.getElementById('doctor-signup-otp-panel');
+        const otpHint = document.getElementById('doctor-signup-otp-hint');
         if (otpPanel && otpPanel.style.display !== 'none') {
             if (!signupPhoneOtpToken || !signupEmailOtpToken) {
-                return alert('Verify email and WhatsApp OTP before creating your account.');
+                const missing = [];
+                if (!signupEmailOtpToken) missing.push('email');
+                if (!signupPhoneOtpToken) missing.push('WhatsApp');
+                const msg =
+                    'Verify ' +
+                    missing.join(' and ') +
+                    ' before creating your account (Send → enter code → OK for each).';
+                if (otpHint) {
+                    otpHint.textContent = msg;
+                    otpHint.classList.remove('hidden');
+                }
+                return alert(msg);
             }
+            if (otpHint) otpHint.classList.add('hidden');
             body.phoneOtpToken = signupPhoneOtpToken;
             body.emailOtpToken = signupEmailOtpToken;
         }

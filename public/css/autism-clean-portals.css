@@ -125,6 +125,78 @@ body.ak-portal-dash .form-group textarea {
     background: var(--ak-white) !important;
 }
 
+/* Signup / login OTP rows — readable on desktop and mobile */
+#auth-overlay .portal-otp-row {
+    display: grid;
+    grid-template-columns: minmax(52px, auto) 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#auth-overlay .portal-otp-label {
+    font-weight: 700;
+    color: var(--ak-blue-dark, #1d4ed8);
+    font-size: 0.85rem;
+}
+
+#auth-overlay .portal-otp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    grid-column: 2 / -1;
+}
+
+#auth-overlay .portal-otp-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #99f6e4;
+    background: #f0fdfa;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #0f766e;
+    min-height: 40px;
+}
+
+#auth-overlay .portal-otp-btn-muted {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+}
+
+#auth-overlay .portal-otp-code {
+    max-width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 16px;
+    min-height: 40px;
+}
+
+#auth-overlay .portal-otp-ok {
+    font-size: 0.78rem;
+    color: #059669;
+    font-weight: 700;
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+    #auth-overlay .portal-otp-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    #auth-overlay .portal-otp-label {
+        grid-column: 1 / -1;
+    }
+    #auth-overlay .portal-otp-actions {
+        grid-column: 1 / -1;
+    }
+    #auth-overlay .portal-otp-code,
+    #auth-overlay .portal-otp-btn {
+        width: 100%;
+    }
+}
+
 /* —— Admin —— */
 body.ak-portal-admin,
 body.autism-admin.ak-portal-admin {
