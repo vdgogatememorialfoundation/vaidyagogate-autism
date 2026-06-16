@@ -2928,6 +2928,155 @@
         window.loadApplications.__akMainRegUiHook = true;
     }
 
+    function preregLookupStatus(msg, isError) {
+        const el = document.getElementById('reg-prereg-lookup-status');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.style.color = isError ? '#b91c1c' : '#047857';
+    }
+
+    function showMainRegPreregLookupPanel(seminarId) {
+        const panel = document.getElementById('reg-prereg-lookup-panel');
+        if (!panel) return;
+        const seminar =
+            (window.__akAllSeminars || []).find((x) => Number(x.id) === Number(seminarId)) ||
+            (window.activeSeminars || []).find((x) => Number(x.id) === Number(seminarId));
+        const flags = seminar ? seminarFlowFlags(seminar) : { preregistrationRequired: false };
+        if (!flags.preregistrationRequired) {
+            panel.classList.add('hidden');
+            return;
+        }
+        panel.classList.remove('hidden');
+        preregLookupStatus('');
+        const input = document.getElementById('reg-prereg-id-input');
+        const existing = window.__akPreregBySeminar && window.__akPreregBySeminar[Number(seminarId)];
+        if (input && existing && existing.application_no && !input.value) {
+            input.value = existing.application_no;
+        }
+    }
+
+    function hideMainRegPreregLookupPanel() {
+        document.getElementById('reg-prereg-lookup-panel')?.classList.add('hidden');
+        preregLookupStatus('');
+    }
+
+    function setRegFieldValue(key, val) {
+        if (val == null || String(val).trim() === '') return;
+        const mapped = {
+            fname: 'reg-fname',
+            mname: 'reg-mname',
+            lname: 'reg-lname',
+            email: 'reg-email',
+            phone: 'reg-phone',
+            dob: 'reg-dob',
+            address: 'reg-addr',
+            pin: 'reg-pin',
+            city: 'reg-city',
+            state: 'reg-state',
+            country: 'reg-country'
+        };
+        const id = mapped[key] || 'reg-field-' + key;
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.tagName === 'SELECT') {
+            const v = String(val).trim();
+            if (![...el.options].some((o) => o.value === v)) {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                el.appendChild(opt);
+            }
+            el.value = v;
+        } else if (el.type === 'checkbox') {
+            el.checked = val === true || val === '1' || val === 1 || String(val).toLowerCase() === 'yes';
+        } else if (String(el.value || '').trim() === '') {
+            el.value = String(val).trim();
+        }
+    }
+
+    function applyMainRegPrefillValues(prefill) {
+        if (!prefill || typeof prefill !== 'object') return;
+        Object.keys(prefill).forEach((k) => setRegFieldValue(k, prefill[k]));
+        window.__mainRegPrefillFromPrereg = true;
+    }
+
+    async function lookupPreregForMainReg() {
+        const input = document.getElementById('reg-prereg-id-input');
+        const applicationNo = String((input && input.value) || '').trim();
+        const seminarId = window.activeSeminarIdForReg;
+        const uid = currentUserId();
+        if (!applicationNo) {
+            preregLookupStatus('Enter your pre-registration ID.', true);
+            return;
+        }
+        if (!uid) {
+            preregLookupStatus('Sign in first to complete main registration.', true);
+            return;
+        }
+        if (!seminarId) {
+            preregLookupStatus('Select an event first.', true);
+            return;
+        }
+        preregLookupStatus('Looking up…');
+        const btn = document.getElementById('reg-prereg-lookup-btn');
+        if (btn) btn.disabled = true;
+        try {
+            const q =
+                '/api/preregistrations/lookup-for-main-reg?userId=' +
+                encodeURIComponent(uid) +
+                '&seminarId=' +
+                encodeURIComponent(seminarId) +
+                '&applicationNo=' +
+                encodeURIComponent(applicationNo);
+            const data = await fetchJson(q);
+            applyMainRegPrefillValues(data.prefill || {});
+            if (data.approved) {
+                preregLookupStatus(
+                    (data.message || 'Details loaded.') +
+                        (data.source === 'public' ? ' (Public form pre-registration)' : '')
+                );
+            } else {
+                preregLookupStatus(data.message || 'Pre-registration found.', true);
+            }
+        } catch (e) {
+            preregLookupStatus(e.message || 'Could not load pre-registration.', true);
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    window.lookupPreregForMainReg = lookupPreregForMainReg;
+
+    function wireMainRegPreregLookup() {
+        document.getElementById('reg-prereg-lookup-btn')?.addEventListener('click', lookupPreregForMainReg);
+        document.getElementById('reg-prereg-id-input')?.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                lookupPreregForMainReg();
+            }
+        });
+        if (typeof window.cancelRegistration === 'function' && !window.cancelRegistration.__akPreregLookupHook) {
+            const origCancel = window.cancelRegistration;
+            window.cancelRegistration = function () {
+                hideMainRegPreregLookupPanel();
+                return origCancel.apply(this, arguments);
+            };
+            window.cancelRegistration.__akPreregLookupHook = true;
+        }
+    }
+
+    function patchMainRegPreregLookupOnStart() {
+        if (typeof window.startRegistration !== 'function' || window.startRegistration.__akPreregLookupHook) return;
+        const orig = window.startRegistration;
+        window.startRegistration = async function (seminarId, opts) {
+            await orig.apply(this, arguments);
+            if (document.body.classList.contains('ak-portal-dash')) {
+                showMainRegPreregLookupPanel(seminarId);
+            }
+        };
+        window.startRegistration.__akPreregLookupHook = true;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
         separatePreregAndMainRegistration();
@@ -2939,6 +3088,8 @@
         patchSubmitApplicationSuccessBanner();
         patchLoadRegistrationFormConfig();
         patchLoadApplicationsForMainRegUi();
+        wireMainRegPreregLookup();
+        patchMainRegPreregLookupOnStart();
         applyBranding();
         const accountFields = document.getElementById('profile-account-fields');
         if (accountFields) {

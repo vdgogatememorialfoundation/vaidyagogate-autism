@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/css/vgmf-responsive.css?v=20260520d">
     <link rel="stylesheet" href="/css/autism-kids.css?v=8">
     <link rel="stylesheet" href="/css/autism-theme.css?v=5">
-    <link rel="stylesheet" href="/css/autism-redesign.css?v=5">
+    <link rel="stylesheet" href="/css/autism-redesign.css?v=6">
     <link rel="stylesheet" href="/css/ak-header-ticker.css?v=4">
     <link rel="stylesheet" href="/css/nexgen-ai.css?v=8">
     <script src="/js/autism-media-safe.js?v=3"></script>
@@ -113,6 +113,7 @@
                 <p class="nx-typing-wrap" aria-hidden="true"><i class="fas fa-sparkles"></i> <span id="nx-typing-line"></span></p>
                 <div class="ak-hero-v2-cta">
                     <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-bolt" aria-hidden="true"></i> Create free account</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost hidden" id="ak-hero-public-prereg-btn"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Pre-register (no sign-in)</button>
                     <button type="button" class="ak-btn-v2 ak-btn-v2-ghost" data-ak-goto-dashboard><i class="fas fa-chart-line" aria-hidden="true"></i> My dashboard</button>
                 </div>
                 <div class="ak-hero-chips">
@@ -132,6 +133,15 @@
                     <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-illustration.svg" alt="Children learning together in class" width="200" height="200" loading="lazy" decoding="async">
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section id="ak-public-prereg-section" class="ak-public-prereg-home hidden ak-reveal-v2" data-ak-home-only aria-labelledby="ak-public-prereg-title">
+        <div class="ak-public-prereg-inner">
+            <span class="nx-section-label">Quick pre-registration</span>
+            <h2 id="ak-public-prereg-title">Pre-register without creating an account</h2>
+            <p class="ak-public-prereg-lead">Use our simple public form — like Google Forms. No password needed. Later, sign in to complete main registration using your pre-registration ID.</p>
+            <div id="ak-public-prereg-events" class="ak-public-prereg-grid"></div>
         </div>
     </section>
 
@@ -170,7 +180,7 @@
             <article class="ak-step">
                 <div class="ak-step-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
                 <h3>2. Pre-register</h3>
-                <p>Tell us you are coming — open your dashboard after login.</p>
+                <p>Use the public form (no account) or pre-register from your dashboard after sign-in.</p>
             </article>
             <article class="ak-step">
                 <div class="ak-step-icon"><i class="fas fa-palette" aria-hidden="true"></i></div>
@@ -1942,5 +1952,6 @@
     <script src="/js/autism-public-ticker.js?v=6"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
+    <script src="/js/public-prereg-home.js?v=20260617b"></script>
 </body>
 </html>

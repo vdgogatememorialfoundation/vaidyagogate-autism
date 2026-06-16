@@ -588,3 +588,57 @@ body.autism-kids.ak-v2.ak-page-inner #contactSection .section-head,
 body.autism-kids.ak-v2.ak-page-inner #verifySection .section-head {
     margin-top: 0;
 }
+
+/* Public pre-registration promo (homepage) */
+.ak-public-prereg-home {
+    padding: 48px 20px 56px;
+    background: linear-gradient(165deg, #eff6ff 0%, #f8fafc 50%, #ecfeff 100%);
+    border-top: 1px solid #dbeafe;
+    border-bottom: 1px solid #dbeafe;
+}
+.ak-public-prereg-home.hidden { display: none !important; }
+.ak-public-prereg-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+}
+.ak-public-prereg-home h2 {
+    font-family: var(--ak-display, Fredoka, sans-serif);
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    color: #1e3a8a;
+    margin: 8px 0 12px;
+}
+.ak-public-prereg-lead {
+    color: #475569;
+    max-width: 52ch;
+    margin: 0 auto 28px;
+    line-height: 1.55;
+}
+.ak-public-prereg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    text-align: left;
+}
+.ak-public-prereg-card {
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+}
+.ak-public-prereg-card h3 {
+    font-size: 1.05rem;
+    color: #1d4ed8;
+    margin: 0 0 8px;
+}
+.ak-public-prereg-card p {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin: 0 0 14px;
+    line-height: 1.45;
+}
+.ak-public-prereg-card .ak-btn-v2 {
+    display: inline-flex;
+    text-decoration: none;
+}

@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
     <link rel="stylesheet" href="/css/autism-admin.css?v=5">
-    <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=1">
+    <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=2">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
     <style>
@@ -262,17 +262,19 @@
                         <div class="ak-prereg-stat stat-approved" data-filter="approved"><div class="num" id="ak-stat-approved">0</div><div class="lbl">Approved</div></div>
                         <div class="ak-prereg-stat stat-rejected" data-filter="rejected"><div class="num" id="ak-stat-rejected">0</div><div class="lbl">Rejected</div></div>
                         <div class="ak-prereg-stat" data-filter="revision_required"><div class="num" id="ak-stat-revision_required">0</div><div class="lbl">Revision</div></div>
+                        <div class="ak-prereg-stat stat-public" data-filter="public"><div class="num" id="ak-stat-public_form">0</div><div class="lbl">Public form</div></div>
                     </div>
                     <div class="card">
                         <div class="ak-prereg-toolbar">
                             <div><label for="ak-prereg-seminar">Event</label><select id="ak-prereg-seminar"><option value="">All events</option></select></div>
                             <div><label for="ak-prereg-status-filter">Status</label><select id="ak-prereg-status-filter"><option value="all">All</option><option value="submitted">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="revision_required">Revision required</option></select></div>
+                            <div><label for="ak-prereg-source-filter">Source</label><select id="ak-prereg-source-filter"><option value="all">All sources</option><option value="public">Public form only</option><option value="portal">Portal only</option></select></div>
                             <div style="flex:1;min-width:200px;"><label for="ak-prereg-search">Search</label><input type="search" id="ak-prereg-search" placeholder="Name, email, application no..."></div>
                             <button type="button" class="btn-primary" id="ak-prereg-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
                         </div>
                         <table class="data-table">
-                            <thead><tr><th>Barcode / ID</th><th>Participant</th><th>Event</th><th>Pre-reg</th><th>Registration</th><th>Submitted</th><th></th></tr></thead>
-                            <tbody id="ak-prereg-tbody"><tr><td colspan="7" style="text-align:center;">Open this tab to load...</td></tr></tbody>
+                            <thead><tr><th>Barcode / ID</th><th>Participant</th><th>Event</th><th>Pre-reg / Source</th><th>Registration</th><th>Submitted</th><th></th></tr></thead>
+                            <tbody id="ak-prereg-tbody"><tr><td colspan="8" style="text-align:center;">Open this tab to load...</td></tr></tbody>
                         </table>
                         <div id="ak-prereg-detail" class="ak-prereg-detail">
                             <h4 id="ak-prereg-detail-title">Details</h4>
@@ -2297,7 +2299,7 @@
                         <label style="font-weight:600;">Registration form override (this seminar)</label>
                         <p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Edit labels, on/off, required, and select options for this event. Use Additional fields for extra questions.</p>
                         <table class="data-table" style="font-size:0.88rem;">
-                            <thead><tr><th>Field</th><th>Label</th><th>On</th><th>Required</th><th>Options</th></tr></thead>
+                            <thead><tr><th>Field</th><th>Label</th><th>Type</th><th>Step</th><th>On</th><th>Required</th><th>Options</th></tr></thead>
                             <tbody id="seminar-reg-override-tbody"></tbody>
                         </table>
                         <div id="seminar-qual-options-wrap" style="margin-top:10px;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:none;">
@@ -2515,13 +2517,13 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260616b"></script>
+    <script src="/js/admin.js?v=20260617c"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
-    <script src="/js/admin-prereg-tracking.js?v=11"></script>
+    <script src="/js/admin-prereg-tracking.js?v=12"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism38"></script>
+    <script src="/js/admin-autism.js?v=autism40"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
     <script src="/js/portal-content-protection.js?v=2"></script>

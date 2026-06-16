@@ -7,6 +7,7 @@
     let preregRows = [];
     let selectedId = null;
     let statusFilter = 'all';
+    let sourceFilter = 'all';
     let cachedSeminars = [];
 
     function seminarFlowFlags(seminar) {
@@ -175,6 +176,8 @@
                 const el = document.getElementById('ak-stat-' + k);
                 if (el) el.textContent = map[k];
             });
+            const pubEl = document.getElementById('ak-stat-public_form');
+            if (pubEl) pubEl.textContent = stats.public_form != null ? stats.public_form : '0';
         } catch (e) {
             console.warn('prereg stats', e);
         }
@@ -187,6 +190,27 @@
         } catch (_) {
             return {};
         }
+    }
+
+    function preregSourceLabel(row) {
+        const fd = parseFormData(row && row.form_data);
+        if (fd._submitted_via === 'public_prereg_form') {
+            return { key: 'public', label: 'Public form', cls: 'ak-src-public' };
+        }
+        return { key: 'portal', label: 'Portal', cls: 'ak-src-portal' };
+    }
+
+    function sourceBadge(row) {
+        const s = preregSourceLabel(row);
+        return (
+            '<span class="ak-prereg-src ' +
+            s.cls +
+            '" title="' +
+            (s.key === 'public' ? 'Submitted without sign-in' : 'Submitted via applicant portal') +
+            '">' +
+            esc(s.label) +
+            '</span>'
+        );
     }
 
     const PREREG_FIELD_LABELS = {
@@ -232,6 +256,8 @@
         const q = (document.getElementById('ak-prereg-search')?.value || '').trim().toLowerCase();
         return preregRows.filter((r) => {
             if (statusFilter !== 'all' && String(r.status || '').toLowerCase() !== statusFilter) return false;
+            if (sourceFilter === 'public' && preregSourceLabel(r).key !== 'public') return false;
+            if (sourceFilter === 'portal' && preregSourceLabel(r).key !== 'portal') return false;
             if (!q) return true;
             const hay = [
                 r.application_no,
@@ -252,7 +278,7 @@
         if (!tbody) return;
         const rows = filteredRows();
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#64748b;">No pre-registrations match your filters.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">No pre-registrations match your filters.</td></tr>';
             return;
         }
         tbody.innerHTML = rows
@@ -280,6 +306,8 @@
                     '</td>' +
                     '<td>' +
                     badge(r.status) +
+                    '<br>' +
+                    sourceBadge(r) +
                     '</td>' +
                     '<td>' +
                     regStatusLabel(r) +
@@ -317,12 +345,14 @@
         const fd = parseFormData(row.form_data);
         const fieldsHtml = Object.keys(fd).length
             ? Object.entries(fd)
+                  .filter(([k]) => !String(k).startsWith('_') && k !== 'contact_email' && k !== 'contact_phone')
                   .map(([k, v]) => {
                       const label = PREREG_FIELD_LABELS[k] || k.replace(/_/g, ' ');
                       return '<dt>' + esc(label) + '</dt><dd>' + esc(v) + '</dd>';
                   })
                   .join('')
             : '<dt>Form data</dt><dd style="color:#64748b;">No extra fields submitted.</dd>';
+        const src = preregSourceLabel(row);
         document.getElementById('ak-prereg-detail-title').textContent = name + ' — ' + (row.seminar_title || 'Event');
         document.getElementById('ak-prereg-detail-body').innerHTML =
             '<dl>' +
@@ -330,6 +360,12 @@
             esc(row.application_no) +
             '</code><br>' +
             qrImgHtml(row.application_no, 96) +
+            '</dd>' +
+            '<dt>Source</dt><dd>' +
+            sourceBadge(row) +
+            (src.key === 'public'
+                ? ' <span style="color:#64748b;font-size:0.85rem;">— no sign-in at submission</span>'
+                : '') +
             '</dd>' +
             '<dt>Email / phone</dt><dd>' +
             esc(row.email) +
@@ -422,9 +458,24 @@
         document.querySelectorAll('.ak-prereg-stat[data-filter]').forEach((el) => {
             el.addEventListener('click', () => {
                 const f = el.dataset.filter || 'all';
+                if (f === 'public') {
+                    const srcSel = document.getElementById('ak-prereg-source-filter');
+                    if (srcSel) srcSel.value = 'public';
+                    sourceFilter = 'public';
+                    const stSel = document.getElementById('ak-prereg-status-filter');
+                    if (stSel) stSel.value = 'all';
+                    statusFilter = 'all';
+                    document.querySelectorAll('.ak-prereg-stat').forEach((s) => s.classList.remove('is-selected'));
+                    el.classList.add('is-selected');
+                    renderTable();
+                    return;
+                }
                 const sel = document.getElementById('ak-prereg-status-filter');
                 if (sel) sel.value = f;
                 statusFilter = f;
+                const srcSel = document.getElementById('ak-prereg-source-filter');
+                if (srcSel) srcSel.value = 'all';
+                sourceFilter = 'all';
                 document.querySelectorAll('.ak-prereg-stat').forEach((s) => s.classList.remove('is-selected'));
                 el.classList.add('is-selected');
                 renderTable();
@@ -442,6 +493,10 @@
         wireStatClicks();
         document.getElementById('ak-prereg-seminar')?.addEventListener('change', refresh);
         document.getElementById('ak-prereg-status-filter')?.addEventListener('change', refresh);
+        document.getElementById('ak-prereg-source-filter')?.addEventListener('change', () => {
+            sourceFilter = document.getElementById('ak-prereg-source-filter')?.value || 'all';
+            renderTable();
+        });
         document.getElementById('ak-prereg-search')?.addEventListener('input', renderTable);
         document.getElementById('ak-prereg-refresh')?.addEventListener('click', refresh);
         document.getElementById('ak-prereg-approve')?.addEventListener('click', () => setStatus('approved'));

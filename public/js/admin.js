@@ -7572,7 +7572,7 @@ function cmsFillSeminarExtraRows(items) {
 async function loadSeminarFormOverrideUi(overrideJson) {
     const tbody = document.getElementById('seminar-reg-override-tbody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7">Loading…</td></tr>';
     let globalFields = [];
     let globalBirthMin = null;
     let globalBirthMax = null;
@@ -7609,6 +7609,8 @@ async function loadSeminarFormOverrideUi(overrideJson) {
         const enabled = ov.enabled != null ? ov.enabled !== false : f.enabled !== false;
         const required = ov.required != null ? !!ov.required : !!f.required;
         const label = ov.label != null && String(ov.label).trim() ? ov.label : f.label || f.key;
+        const fieldType = ov.type != null && String(ov.type).trim() ? ov.type : f.type || 'text';
+        const fieldStep = ov.step != null ? parseInt(ov.step, 10) || 1 : parseInt(f.step, 10) || 1;
         const opts =
             ov.options != null && Array.isArray(ov.options)
                 ? ov.options
@@ -7617,13 +7619,17 @@ async function loadSeminarFormOverrideUi(overrideJson) {
         if (f.key === 'qual' && Array.isArray(opts)) {
             optCell =
                 '<span class="muted" style="font-size:0.78rem;">Use qualification checkboxes below</span>';
-        } else if (String(f.type || '').toLowerCase() === 'select') {
+        } else if (String(fieldType || f.type || '').toLowerCase() === 'select') {
             optCell = `<input type="text" class="sem-ov-options form-ov-input" data-idx="${idx}" value="${String(formatSelectOptionsInput(opts)).replace(/"/g, '&quot;')}" placeholder="option1, option2" oninput="updateSeminarPolicyPreviews()">`;
         }
+        const typeCell = `<select class="sem-ov-type" data-idx="${idx}" onchange="updateSeminarPolicyPreviews()">${adminRegFieldTypeOptions(fieldType)}</select>`;
+        const stepCell = `<input type="number" class="sem-ov-step" data-idx="${idx}" min="1" max="9" value="${fieldStep}" style="width:56px;" oninput="updateSeminarPolicyPreviews()">`;
         window.__seminarOverrideFieldKeys.push(f.key);
         tbody.innerHTML += `<tr>
             <td><code>${String(f.key).replace(/</g, '&lt;')}</code></td>
             <td><input type="text" class="sem-ov-label form-ov-input" data-idx="${idx}" value="${String(label).replace(/"/g, '&quot;')}" oninput="updateSeminarPolicyPreviews()"></td>
+            <td>${typeCell}</td>
+            <td>${stepCell}</td>
             <td><input type="checkbox" class="sem-ov-en" data-idx="${idx}" ${enabled ? 'checked' : ''} onchange="updateSeminarPolicyPreviews()"></td>
             <td><input type="checkbox" class="sem-ov-req" data-idx="${idx}" ${required ? 'checked' : ''} onchange="updateSeminarPolicyPreviews()"></td>
             <td>${optCell}</td>
@@ -7664,16 +7670,20 @@ function buildSeminarFormOverrideJsonFromUi() {
         const enEl = tbody.querySelector(`.sem-ov-en[data-idx="${idx}"]`);
         const reqEl = tbody.querySelector(`.sem-ov-req[data-idx="${idx}"]`);
         const g = globals.find((x) => x.key === key) || {};
+        const typeEl = tbody.querySelector(`.sem-ov-type[data-idx="${idx}"]`);
+        const stepEl = tbody.querySelector(`.sem-ov-step[data-idx="${idx}"]`);
         const row = {
             key,
             label: labelEl ? labelEl.value : key,
+            type: typeEl ? typeEl.value : g.type || 'text',
+            step: stepEl ? parseInt(stepEl.value, 10) || 1 : g.step != null ? parseInt(g.step, 10) || 1 : 1,
             enabled: !!(enEl && enEl.checked),
             required: !!(reqEl && reqEl.checked)
         };
         if (key === 'qual') {
             const qualOpts = collectQualOptionsFromContainer('seminar-qual-options');
             if (qualOpts.length) row.options = qualOpts;
-        } else if (String(g.type || '').toLowerCase() === 'select') {
+        } else if (String(row.type || g.type || '').toLowerCase() === 'select') {
             const optRaw = (tbody.querySelector(`.sem-ov-options[data-idx="${idx}"]`) || {}).value;
             const optParsed = parseSelectOptionsInput(optRaw);
             if (optParsed && optParsed.length) row.options = optParsed;
@@ -7705,6 +7715,14 @@ function buildSeminarFormOverrideJsonFromUi() {
         const g = globals.find((x) => x.key === f.key);
         return g && String(f.label || '') !== String(g.label || f.key);
     });
+    const anyTypeChange = fields.some((f) => {
+        const g = globals.find((x) => x.key === f.key);
+        return g && String(f.type || 'text') !== String(g.type || 'text');
+    });
+    const anyStepChange = fields.some((f) => {
+        const g = globals.find((x) => x.key === f.key);
+        return g && (parseInt(f.step, 10) || 1) !== (parseInt(g.step, 10) || 1);
+    });
     const qualOpts = collectQualOptionsFromContainer('seminar-qual-options');
     const gQual = globals.find((x) => x.key === 'qual');
     const gQualVals = (gQual && gQual.options ? gQual.options : ADMIN_QUAL_OPTION_DEFS).map((o) => o.value).sort().join('|');
@@ -7716,6 +7734,8 @@ function buildSeminarFormOverrideJsonFromUi() {
         !anyDisabled &&
         !anyRequiredChange &&
         !anyLabelChange &&
+        !anyTypeChange &&
+        !anyStepChange &&
         !qualChanged &&
         !birthChanged &&
         birthYearMin == null &&
@@ -8084,8 +8104,24 @@ async function saveSeminar(e) {
         });
         const result = await res.json();
         if (result.success) {
-            alert('Seminar saved successfully!');
-            document.getElementById('admin-seminar-modal').classList.add('hidden');
+            if (typeof window.__onSeminarSaved === 'function') {
+                try {
+                    window.__onSeminarSaved(result, id);
+                } catch (hookErr) {
+                    console.warn('[seminar-save]', hookErr);
+                }
+            }
+            const saveMsg =
+                typeof window.__akSeminarSaveSuccessMessage === 'function'
+                    ? window.__akSeminarSaveSuccessMessage(result, id)
+                    : 'Seminar saved successfully!';
+            alert(saveMsg);
+            const keepOpen =
+                typeof window.__akShouldKeepSeminarModalOpen === 'function' &&
+                window.__akShouldKeepSeminarModalOpen();
+            if (!keepOpen) {
+                document.getElementById('admin-seminar-modal').classList.add('hidden');
+            }
             loadSeminars();
         } else {
             alert('Error: ' + result.error);

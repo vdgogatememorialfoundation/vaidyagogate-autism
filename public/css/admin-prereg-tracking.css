@@ -104,3 +104,14 @@
 .ak-badge-rejected { background: #fee2e2; color: #b91c1c; }
 .ak-badge-revision_required { background: #ede9fe; color: #6d28d9; }
 .ak-reg-pill { font-size: 0.72rem; color: #475569; }
+.ak-prereg-src {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+.ak-src-public { background: #dbeafe; color: #1d4ed8; }
+.ak-src-portal { background: #f1f5f9; color: #475569; }
+.ak-prereg-stat.stat-public { border-color: #93c5fd; }
