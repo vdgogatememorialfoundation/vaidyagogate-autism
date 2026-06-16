@@ -8,6 +8,134 @@
     let wizardStep = 0;
     let showEventPicker = false;
     let __pinTimer = null;
+    let __countdownTimer = null;
+    let __closesTimer = null;
+    let __countdownOpensAt = null;
+    let __countdownSeminarId = null;
+
+    function clearCountdownTimers() {
+        if (__countdownTimer) {
+            clearInterval(__countdownTimer);
+            __countdownTimer = null;
+        }
+        if (__closesTimer) {
+            clearInterval(__closesTimer);
+            __closesTimer = null;
+        }
+    }
+
+    function formatOpensAtLabel(opensAtMs) {
+        if (!opensAtMs) return '';
+        try {
+            return (
+                'Opens ' +
+                new Date(opensAtMs).toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }) +
+                ' IST'
+            );
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function formatCountdownParts(targetMs) {
+        const diff = Math.max(0, targetMs - Date.now());
+        const sec = Math.floor(diff / 1000) % 60;
+        const min = Math.floor(diff / 60000) % 60;
+        const hr = Math.floor(diff / 3600000) % 24;
+        const day = Math.floor(diff / 86400000);
+        return { diff, day, hr, min, sec };
+    }
+
+    function formatCountdownShort(targetMs) {
+        const p = formatCountdownParts(targetMs);
+        if (p.diff <= 0) return 'now';
+        const parts = [];
+        if (p.day) parts.push(p.day + 'd');
+        if (p.day || p.hr) parts.push(p.hr + 'h');
+        parts.push(p.min + 'm');
+        parts.push(p.sec + 's');
+        return parts.join(' ');
+    }
+
+    function updateCountdownGrid(opensAt) {
+        const p = formatCountdownParts(opensAt);
+        const set = (id, val) => {
+            const el = qs(id);
+            if (el) el.textContent = String(val);
+        };
+        set('pub-cd-days', p.day);
+        set('pub-cd-hours', p.hr);
+        set('pub-cd-mins', p.min);
+        set('pub-cd-secs', p.sec);
+        return p.diff <= 0;
+    }
+
+    function showCountdownView(opts) {
+        clearCountdownTimers();
+        qs('pub-prereg-loading')?.classList.add('hidden');
+        qs('pub-prereg-form-wrap')?.classList.add('hidden');
+        qs('pub-prereg-unavailable')?.classList.add('hidden');
+        qs('pub-prereg-success')?.classList.add('hidden');
+        qs('pub-prereg-closes-wrap')?.classList.add('hidden');
+        const card = qs('pub-prereg-countdown');
+        if (!card) return;
+        __countdownOpensAt = Number(opts.opensAt);
+        __countdownSeminarId = opts.seminarId || seminarId;
+        const titleEl = qs('pub-countdown-event-title');
+        if (titleEl) titleEl.textContent = opts.title || seminarTitle || 'Event';
+        const labelEl = qs('pub-countdown-label');
+        if (labelEl) labelEl.textContent = opts.label || 'Pre-registration opens in';
+        const opensEl = qs('pub-countdown-opens-at');
+        if (opensEl) opensEl.textContent = formatOpensAtLabel(__countdownOpensAt);
+        card.classList.remove('hidden');
+        const tick = () => {
+            const done = updateCountdownGrid(__countdownOpensAt);
+            if (done) {
+                clearCountdownTimers();
+                card.classList.add('hidden');
+                const sid = __countdownSeminarId;
+                if (sid) {
+                    seminarId = sid;
+                    loadFormConfig(sid)
+                        .then((mode) => {
+                            if (mode === 'form') {
+                                qs('pub-prereg-form-wrap')?.classList.remove('hidden');
+                                wizardStep = showEventPicker ? 1 : 0;
+                                showPanels();
+                            }
+                        })
+                        .catch((e) => showUnavailable(e.message || 'Form not available yet.'));
+                }
+            }
+        };
+        tick();
+        __countdownTimer = setInterval(tick, 1000);
+    }
+
+    function startClosesCountdown(closesAt) {
+        const wrap = qs('pub-prereg-closes-wrap');
+        const el = qs('pub-prereg-closes-in');
+        if (!wrap || !el || !closesAt) return;
+        const target = Number(closesAt);
+        if (!Number.isFinite(target) || target <= Date.now()) return;
+        wrap.classList.remove('hidden');
+        const tick = () => {
+            if (Date.now() >= target) {
+                el.textContent = 'closed';
+                if (__closesTimer) clearInterval(__closesTimer);
+                __closesTimer = null;
+                return;
+            }
+            el.textContent = formatCountdownShort(target);
+        };
+        tick();
+        if (__closesTimer) clearInterval(__closesTimer);
+        __closesTimer = setInterval(tick, 1000);
+    }
 
     function qs(id) {
         return document.getElementById(id);
@@ -308,6 +436,20 @@
 
     async function loadFormConfig(id) {
         const data = await fetchJson('/api/public/preregistration/form-config?seminarId=' + encodeURIComponent(id));
+        if (data.upcoming && data.opensAt) {
+            seminarId = data.seminarId || id;
+            seminarTitle = data.seminarTitle || '';
+            showCountdownView({
+                seminarId: seminarId,
+                title: seminarTitle,
+                opensAt: data.opensAt,
+                label: 'Pre-registration opens in'
+            });
+            return 'countdown';
+        }
+        if (data.available === false) {
+            throw new Error('This pre-registration form is not available.');
+        }
         seminarId = data.seminarId || id;
         seminarTitle = data.seminarTitle || '';
         preregFields = data.fields || [];
@@ -316,7 +458,9 @@
             titleEl.textContent = seminarTitle;
             titleEl.classList.remove('hidden');
         }
+        if (data.closesAt) startClosesCountdown(data.closesAt);
         renderFormFields();
+        return 'form';
     }
 
     async function loadEventsList() {
@@ -333,9 +477,13 @@
             const o = document.createElement('option');
             o.value = String(ev.id);
             let label = ev.title || 'Event ' + ev.id;
-            if (!ev.preregOpen) label += ' (not open yet)';
+            if (ev.preregOpen) label += ' (open now)';
+            else if (ev.upcoming && ev.opensAt) label += ' (opens soon)';
+            else if (!ev.preregOpen) label += ' (not open yet)';
             o.textContent = label;
-            o.disabled = !ev.preregOpen;
+            o.disabled = !ev.preregOpen && !(ev.upcoming && ev.opensAt);
+            o.dataset.opensAt = ev.opensAt ? String(ev.opensAt) : '';
+            o.dataset.upcoming = ev.upcoming ? '1' : '0';
             sel.appendChild(o);
         });
         return events;
@@ -346,8 +494,15 @@
         const id = parseInt(sel?.value, 10);
         if (!Number.isInteger(id) || id < 1) return;
         showError('');
+        clearCountdownTimers();
+        qs('pub-prereg-countdown')?.classList.add('hidden');
         try {
-            await loadFormConfig(id);
+            const mode = await loadFormConfig(id);
+            if (mode === 'countdown') {
+                qs('pub-prereg-form-wrap')?.classList.add('hidden');
+                return;
+            }
+            qs('pub-prereg-form-wrap')?.classList.remove('hidden');
         } catch (e) {
             showError(e.message || 'Could not load form for this event.');
         }
@@ -355,22 +510,36 @@
 
     async function init() {
         seminarId = parseEventFromUrl();
+        clearCountdownTimers();
         try {
             if (seminarId) {
                 showEventPicker = false;
-                await loadFormConfig(seminarId);
+                const mode = await loadFormConfig(seminarId);
+                if (mode === 'countdown') return;
             } else {
                 const events = await loadEventsList();
-                if (!events.length) {
+                const actionable = events.filter((e) => e.preregOpen || (e.upcoming && e.opensAt));
+                if (!actionable.length) {
                     return showUnavailable('No public pre-registration forms are open right now.');
                 }
-                showEventPicker = true;
-                qs('pub-step-event')?.classList.remove('hidden');
+                const hasOpen = actionable.some((e) => e.preregOpen);
+                const hasUpcoming = actionable.some((e) => e.upcoming && e.opensAt);
+                if (!hasOpen && hasUpcoming && actionable.length === 1) {
+                    seminarId = actionable[0].id;
+                    showEventPicker = false;
+                    const mode = await loadFormConfig(seminarId);
+                    if (mode === 'countdown') return;
+                } else {
+                    showEventPicker = true;
+                    qs('pub-step-event')?.classList.remove('hidden');
+                }
             }
             qs('pub-prereg-loading')?.classList.add('hidden');
-            qs('pub-prereg-form-wrap')?.classList.remove('hidden');
-            wizardStep = 0;
-            showPanels();
+            if (!qs('pub-prereg-countdown') || qs('pub-prereg-countdown').classList.contains('hidden')) {
+                qs('pub-prereg-form-wrap')?.classList.remove('hidden');
+                wizardStep = 0;
+                showPanels();
+            }
         } catch (e) {
             showUnavailable(e.message || 'This pre-registration form is not available.');
         }
@@ -437,6 +606,9 @@
             if (!validateStep(wizardStep)) return;
             if (showEventPicker && wizardStep === 0) {
                 onEventSelected().then(() => {
+                    if (qs('pub-prereg-countdown') && !qs('pub-prereg-countdown').classList.contains('hidden')) {
+                        return;
+                    }
                     wizardStep++;
                     showPanels();
                 });

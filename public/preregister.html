@@ -183,6 +183,58 @@
             height: 1px;
             overflow: hidden;
         }
+        .ak-pub-countdown {
+            text-align: center;
+            padding: 8px 4px 4px;
+        }
+        .ak-pub-countdown h2 {
+            font-family: Fredoka, sans-serif;
+            font-size: 1.15rem;
+            margin: 0 0 6px;
+            color: var(--ak-blue-dark);
+        }
+        .ak-pub-countdown-label {
+            margin: 0 0 14px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0369a1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .ak-pub-countdown-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .ak-pub-countdown-grid .box {
+            min-width: 68px;
+            padding: 10px 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+        }
+        .ak-pub-countdown-grid h3 {
+            margin: 0;
+            font-family: Fredoka, sans-serif;
+            font-size: 1.45rem;
+            color: var(--ak-blue-dark);
+            line-height: 1.1;
+        }
+        .ak-pub-countdown-grid span {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .ak-pub-countdown-open {
+            font-size: 0.88rem;
+            color: #475569;
+            margin: 0 0 8px;
+        }
     </style>
 </head>
 <body>
@@ -200,6 +252,23 @@
         <div id="pub-prereg-unavailable" class="ak-pub-card hidden">
             <p id="pub-prereg-unavailable-msg" class="ak-pub-error" style="margin:0;"></p>
             <p class="ak-pub-hint" style="margin-top:12px;">You can also <a href="/dashboard">sign in to the applicant portal</a> if you already have an account.</p>
+        </div>
+
+        <div id="pub-prereg-countdown" class="ak-pub-card ak-pub-countdown hidden">
+            <p id="pub-countdown-event-title" class="ak-pub-event-title"></p>
+            <p id="pub-countdown-label" class="ak-pub-countdown-label">Pre-registration opens in</p>
+            <div class="ak-pub-countdown-grid" aria-live="polite">
+                <div class="box"><h3 id="pub-cd-days">0</h3><span>Days</span></div>
+                <div class="box"><h3 id="pub-cd-hours">0</h3><span>Hours</span></div>
+                <div class="box"><h3 id="pub-cd-mins">0</h3><span>Minutes</span></div>
+                <div class="box"><h3 id="pub-cd-secs">0</h3><span>Seconds</span></div>
+            </div>
+            <p id="pub-countdown-opens-at" class="ak-pub-countdown-open"></p>
+            <p class="ak-pub-hint">This page refreshes automatically when pre-registration opens.</p>
+        </div>
+
+        <div id="pub-prereg-closes-wrap" class="ak-pub-card hidden" style="text-align:center;padding:16px;margin-bottom:16px;border-left:4px solid #f59e0b;background:#fffbeb;">
+            <p style="margin:0;font-size:0.88rem;font-weight:600;color:#b45309;">Pre-registration closes in <span id="pub-prereg-closes-in">—</span></p>
         </div>
 
         <div id="pub-prereg-form-wrap" class="ak-pub-card hidden">
@@ -258,6 +327,6 @@
     </div>
 
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/public-preregister.js?v=20260617a"></script>
+    <script src="/js/public-preregister.js?v=20260617b"></script>
 </body>
 </html>
