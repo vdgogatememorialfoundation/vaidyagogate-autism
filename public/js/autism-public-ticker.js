@@ -89,6 +89,19 @@
             renderAutismTicker(window.__homeCms);
             return;
         }
+        try {
+            const r = await fetch('/api/public/announcements?t=' + Date.now(), { cache: 'no-store' });
+            if (r.ok) {
+                const data = await r.json().catch(() => ({}));
+                if (Array.isArray(data.scrollingAnnouncements) && data.scrollingAnnouncements.length) {
+                    renderAutismTicker({
+                        scrollingAnnouncements: data.scrollingAnnouncements,
+                        tickerText: data.ticker || ''
+                    });
+                    return;
+                }
+            }
+        } catch (_) {}
         document.addEventListener(
             'ak-cms-ready',
             (e) => {

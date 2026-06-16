@@ -1655,12 +1655,25 @@
         async function loadPublicCmsAndApply() {
             try {
                 const res = await fetch('/api/public/site-cms?fresh=1&t=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('site-cms ' + res.status);
                 const cms = await res.json();
                 if (typeof applySiteCms === 'function') applySiteCms(cms);
                 if (typeof renderAboutGallerySocial === 'function') renderAboutGallerySocial(cms);
                 window.__publicCmsVersion = Number(cms.cmsUpdatedAt) || 0;
             } catch (e) {
                 console.error(e);
+                try {
+                    const ar = await fetch('/api/public/announcements?t=' + Date.now(), { cache: 'no-store' });
+                    if (ar.ok) {
+                        const data = await ar.json();
+                        if (typeof applySiteCms === 'function') {
+                            applySiteCms({
+                                scrollingAnnouncements: data.scrollingAnnouncements || [],
+                                tickerText: data.ticker || ''
+                            });
+                        }
+                    }
+                } catch (_) {}
             }
         }
 
@@ -1949,7 +1962,7 @@
     <script src="/js/contact-validation.js"></script>
     <script src="/js/autism-kids.js?v=4"></script>
     <script src="/js/autism-public-ui.js?v=6"></script>
-    <script src="/js/autism-public-ticker.js?v=6"></script>
+    <script src="/js/autism-public-ticker.js?v=7"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
     <script src="/js/public-prereg-home.js?v=20260617c"></script>

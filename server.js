@@ -1835,21 +1835,46 @@ function isSeminarRegistrationOpen(row) {
 
 function isSeminarAnnouncableOnTicker(row) {
     if (!row || !Number(row.is_active)) return false;
+    if (portalProduct.FEATURES.productId === 'autism') {
+        return getAutismSeminarTickerState(row) != null;
+    }
     const rowTitle = String(row.title || '');
     if (/test seminar/i.test(rowTitle) || /introduction to ayurveda/i.test(rowTitle)) return false;
-    if (portalProduct.FEATURES.productId === 'autism') {
-        const flags = seminarRegFlow.seminarFlowFlagsFromRegistrationFormJson(row.registration_form_json);
-        if (flags.preregistrationRequired) {
-            const pre = seminarRegFlow.preregistrationWindowState(row, seminarDt);
-            if (pre.open) return true;
-        }
-        if (flags.mainRegistrationRequired) {
-            const main = seminarRegFlow.effectiveMainRegistrationWindowState(row, seminarDt, flags);
-            if (main.open) return true;
-        }
-        return false;
-    }
     return isSeminarRegistrationOpen(row);
+}
+
+function formatTickerOpensAt(ms) {
+    if (ms == null || !Number.isFinite(Number(ms))) return '';
+    try {
+        return seminarDt.formatSeminarDateTime(new Date(Number(ms)).toISOString());
+    } catch (_) {
+        return '';
+    }
+}
+
+function getAutismSeminarTickerState(row) {
+    if (!row || !Number(row.is_active)) return null;
+    const rowTitle = String(row.title || '');
+    if (/test seminar/i.test(rowTitle) || /introduction to ayurveda/i.test(rowTitle)) return null;
+    const flags = seminarRegFlow.seminarFlowFlagsFromRegistrationFormJson(row.registration_form_json);
+    if (flags.preregistrationRequired) {
+        const pre = seminarRegFlow.preregistrationWindowState(row, seminarDt);
+        if (pre.open) return { kind: 'open_prereg', flags, window: pre };
+        if (pre.reason === 'not_started' && pre.opensAt != null) {
+            return { kind: 'upcoming_prereg', flags, window: pre };
+        }
+        if (pre.reason === 'schedule_not_set' && flags.publicPreregEnabled) {
+            return { kind: 'scheduled_prereg', flags, window: pre };
+        }
+    }
+    if (flags.mainRegistrationRequired) {
+        const main = seminarRegFlow.effectiveMainRegistrationWindowState(row, seminarDt, flags);
+        if (main.open) return { kind: 'open_main', flags, window: main };
+        if (main.reason === 'not_started' && main.opensAt != null) {
+            return { kind: 'upcoming_main', flags, window: main };
+        }
+    }
+    return null;
 }
 
 function bustPublicAnnouncementsCache() {
@@ -1887,14 +1912,34 @@ function buildSeminarRegistrationAnnouncement(row) {
         ? ` Event: ${seminarDt.formatSeminarDateTime(row.event_date)}.`
         : '';
     if (portalProduct.FEATURES.productId === 'autism') {
-        const flags = seminarRegFlow.seminarFlowFlagsFromRegistrationFormJson(row.registration_form_json);
-        const preOpen =
-            flags.preregistrationRequired &&
-            seminarRegFlow.preregistrationWindowState(row, seminarDt).open;
-        if (preOpen) {
-            const link = flags.publicPreregEnabled
-                ? '/preregister?event=' + encodeURIComponent(String(row.id))
-                : '/applicant.html';
+        const state = getAutismSeminarTickerState(row);
+        const flags = state ? state.flags : seminarRegFlow.seminarFlowFlagsFromRegistrationFormJson(row.registration_form_json);
+        const publicLink = flags.publicPreregEnabled
+            ? '/preregister?event=' + encodeURIComponent(String(row.id))
+            : '/applicant.html';
+        if (state && state.kind === 'upcoming_prereg') {
+            const when = formatTickerOpensAt(state.window.opensAt);
+            const whenBit = when ? ` Opens ${when}.` : ' Opening soon.';
+            return {
+                title: `Pre-registration opens soon — ${title}`,
+                body: (flags.publicPreregEnabled
+                    ? 'Public pre-registration (no sign-in) starts then.'
+                    : 'Applicant portal pre-registration starts then.') + whenBit + eventBit,
+                date: new Date().toISOString().slice(0, 10),
+                autoFromSeminarId: row.id,
+                link: publicLink
+            };
+        }
+        if (state && state.kind === 'scheduled_prereg') {
+            return {
+                title: `${title} — pre-registration coming soon`,
+                body: 'Pre-registration dates will be posted shortly. Watch this ticker for updates.' + eventBit,
+                date: new Date().toISOString().slice(0, 10),
+                autoFromSeminarId: row.id,
+                link: publicLink
+            };
+        }
+        if (state && state.kind === 'open_prereg') {
             const via = flags.publicPreregEnabled
                 ? ' Pre-register online — no sign-in required.'
                 : ' Pre-register from the applicant portal.';
@@ -1903,7 +1948,18 @@ function buildSeminarRegistrationAnnouncement(row) {
                 body: via + eventBit,
                 date: new Date().toISOString().slice(0, 10),
                 autoFromSeminarId: row.id,
-                link
+                link: publicLink
+            };
+        }
+        if (state && state.kind === 'upcoming_main') {
+            const when = formatTickerOpensAt(state.window.opensAt);
+            const whenBit = when ? ` Opens ${when}.` : ' Opening soon.';
+            return {
+                title: `Registration opens soon — ${title}`,
+                body: 'Main registration on the applicant portal starts then.' + whenBit + eventBit,
+                date: new Date().toISOString().slice(0, 10),
+                autoFromSeminarId: row.id,
+                link: '/applicant.html'
             };
         }
         return {
@@ -4590,7 +4646,10 @@ function mergeScrollingAnnouncementsWithOpenSeminars(cms, cb) {
          ORDER BY COALESCE(preregistration_start, registration_start, event_date) DESC`,
         [],
         (err, rows) => {
-            if (err) return cb(err);
+            if (err) {
+                console.error('[cms] mergeScrollingAnnouncementsWithOpenSeminars:', err.message);
+                return cb(null, cms);
+            }
             const base = sanitizeScrollingAnnouncements(cms.scrollingAnnouncements || []);
             const manual = base.filter((a) => !a || a.autoFromSeminarId == null);
             const auto = [];
@@ -4612,14 +4671,14 @@ app.get('/api/public/announcements', (req, res) => {
         return res.json(cached);
     }
     loadPublicSiteCms((e, cms) => {
-        if (e) return res.status(500).json({ error: e.message });
-        mergeScrollingAnnouncementsWithOpenSeminars(cms, (e2, enriched) => {
-            if (e2) return res.status(500).json({ error: e2.message });
+        const baseCms = e ? { ...DEFAULT_PUBLIC_SITE_CMS } : cms;
+        mergeScrollingAnnouncementsWithOpenSeminars(baseCms, (e2, enriched) => {
+            const finalCms = e2 ? baseCms : enriched;
             const out = {
                 updatedAt: new Date().toISOString(),
-                ticker: enriched.ticker || null,
-                scrollingAnnouncements: enriched.scrollingAnnouncements || [],
-                publicNotices: enriched.publicNotices || [],
+                ticker: finalCms.ticker || finalCms.tickerText || null,
+                scrollingAnnouncements: finalCms.scrollingAnnouncements || [],
+                publicNotices: finalCms.publicNotices || [],
                 portalUrls: {
                     seminar: portalUrls.getPortalUrls().seminar,
                     wix: portalUrls.getPortalUrls().wix
@@ -4645,9 +4704,11 @@ app.get('/api/public/site-cms', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     loadPublicSiteCms((e, cms) => {
-        if (e) return res.status(500).json({ error: e.message });
-        mergeScrollingAnnouncementsWithOpenSeminars(cms, (e2, enriched) => {
-            if (e2) return res.status(500).json({ error: e2.message });
+        const baseCms = e ? { ...DEFAULT_PUBLIC_SITE_CMS } : cms;
+        mergeScrollingAnnouncementsWithOpenSeminars(baseCms, (e2, enriched) => {
+            if (e2) {
+                return res.status(500).json({ error: e2.message });
+            }
             enrichSiteCmsSpeakers(enriched, (e3, withSpeakers) => {
                 if (e3) return res.status(500).json({ error: e3.message });
                 res.json(withSpeakers);
