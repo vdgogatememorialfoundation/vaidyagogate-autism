@@ -90,7 +90,16 @@
         if (mainCard) {
             mainCard.id = 'seminar-main-form-card';
             const heading = mainCard.querySelector('label[style*="font-weight:600"]');
-            if (heading) heading.textContent = 'Main registration form (this seminar)';
+            if (heading) heading.textContent = 'Main registration form (this event)';
+            if (!mainCard.querySelector('p.ak-main-form-hint')) {
+                const hint = document.createElement('p');
+                hint.className = 'ak-main-form-hint';
+                hint.style.cssText = 'font-size:0.82rem;color:#64748b;margin:6px 0 10px;';
+                hint.textContent =
+                    'Edit labels, on/off, required, and select options for this event. Use Additional fields below for extra questions.';
+                const table = mainCard.querySelector('table');
+                if (table) mainCard.insertBefore(hint, table);
+            }
             if (!mainCard.querySelector('#seminar-main-add-extra-btn')) {
                 const addMainBtn = document.createElement('button');
                 addMainBtn.type = 'button';
@@ -121,7 +130,7 @@
         card.style.cssText = 'margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;';
         card.innerHTML =
             '<label style="font-weight:600;">Pre-registration form (this seminar)</label>' +
-            '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only.</p>' +
+            '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only. Edit labels, on/off, required, and select options (comma-separated).</p>' +
             '<table class="data-table" style="font-size:0.88rem;">' +
             '<thead><tr><th>Field</th><th>Label</th><th>On</th><th>Required</th><th>Options</th></tr></thead>' +
             '<tbody id="seminar-prereg-override-tbody"></tbody>' +
@@ -180,17 +189,19 @@
             .join('');
         const opts =
             field && Array.isArray(field.options)
-                ? field.options.map((o) => (o && o.value != null ? o.value : o)).filter(Boolean).join(', ')
-                : '';
+                ? formatSelectOptionsInput(field.options)
+                : field && field.options
+                  ? String(field.options)
+                  : '';
         const tr = document.createElement('tr');
         tr.innerHTML =
             `<td><input type="text" class="sem-pr-ex-key" value="${escapeHtml((field && field.key) || '')}" placeholder="field_key"></td>` +
-            `<td><input type="text" class="sem-pr-ex-label" value="${escapeHtml((field && field.label) || '')}" placeholder="Field label"></td>` +
+            `<td><input type="text" class="sem-pr-ex-label form-ov-input" value="${escapeHtml((field && field.label) || '')}" placeholder="Field label"></td>` +
             `<td><select class="sem-pr-ex-type">${types}</select></td>` +
             `<td><input type="number" class="sem-pr-ex-step" min="1" max="10" value="${(field && Number(field.step)) || 1}"></td>` +
             `<td><input type="checkbox" class="sem-pr-ex-en" ${(field ? field.enabled !== false : true) ? 'checked' : ''}></td>` +
             `<td><input type="checkbox" class="sem-pr-ex-req" ${(field && field.required) ? 'checked' : ''}></td>` +
-            `<td><input type="text" class="sem-pr-ex-options" value="${escapeHtml(opts)}" placeholder="a,b,c for select"></td>` +
+            `<td><input type="text" class="sem-pr-ex-options form-ov-input" value="${escapeHtml(opts)}" placeholder="a,b,c for select"></td>` +
             `<td><button type="button" class="btn-primary sem-pr-ex-del" style="padding:3px 8px;background:#b91c1c;">X</button></td>`;
         tbody.appendChild(tr);
         tr.querySelectorAll('input,select').forEach((el) => {
@@ -364,7 +375,55 @@
         }
     }
 
-    function escapeHtml(v) {
+    function injectFormEditorStyles() {
+        if (document.getElementById('ak-form-editor-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'ak-form-editor-styles';
+        style.textContent =
+            '#seminar-prereg-override-tbody .form-ov-input,' +
+            '#seminar-reg-override-tbody .form-ov-input,' +
+            '#seminar-prereg-extra-fields-tbody .form-ov-input,' +
+            '#seminar-extra-fields-tbody .form-ov-input,' +
+            '#ak-prereg-editor-tbody .form-ov-input,' +
+            '#admin-reg-fields-tbody .form-ov-input { min-width: 160px; width: 100%; box-sizing: border-box; padding: 6px 8px; }' +
+            '#seminar-prereg-override-tbody td:nth-child(2),' +
+            '#seminar-reg-override-tbody td:nth-child(2),' +
+            '#ak-prereg-editor-tbody td:nth-child(2),' +
+            '#admin-reg-fields-tbody td:nth-child(2) { min-width: 180px; }' +
+            '#seminar-prereg-override-tbody td:nth-child(5),' +
+            '#seminar-reg-override-tbody td:nth-child(5) { min-width: 200px; }' +
+            '#seminar-prereg-form-card .data-table,' +
+            '#seminar-main-form-card .data-table,' +
+            '#ak-prereg-form-editor-card .data-table { table-layout: auto; width: 100%; }';
+        document.head.appendChild(style);
+    }
+
+    function formatSelectOptionsInput(options) {
+        if (typeof window.formatSelectOptionsInput === 'function') {
+            return window.formatSelectOptionsInput(options);
+        }
+        if (!Array.isArray(options) || !options.length) return '';
+        return options
+            .map((o) => (o && (o.label || o.value)) || '')
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    function parseSelectOptionsInput(raw) {
+        if (typeof window.parseSelectOptionsInput === 'function') {
+            return window.parseSelectOptionsInput(raw);
+        }
+        const s = String(raw || '').trim();
+        if (!s) return null;
+        return s.split(',').map((x) => x.trim()).filter(Boolean).map((v) => ({ value: v, label: v }));
+    }
+
+    function selectOptionsEqual(a, b) {
+        if (typeof window.selectOptionsEqual === 'function') {
+            return window.selectOptionsEqual(a, b);
+        }
+        return JSON.stringify(a || []) === JSON.stringify(b || []);
+    }
         return String(v == null ? '' : v)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -423,12 +482,17 @@
             const required = ov.required != null ? !!ov.required : !!f.required;
             const label = ov.label != null && String(ov.label).trim() ? ov.label : f.label || f.key;
             window.__seminarPreregOverrideFieldKeys.push(f.key);
+            let optCell = '—';
+            if (String(f.type || '').toLowerCase() === 'select') {
+                const opts = ov.options != null && Array.isArray(ov.options) ? ov.options : f.options;
+                optCell = `<input type="text" class="sem-pr-ov-options form-ov-input" data-idx="${idx}" value="${escapeHtml(formatSelectOptionsInput(opts))}" placeholder="Male, Female">`;
+            }
             tbody.innerHTML += `<tr>
                 <td><code>${escapeHtml(f.key)}</code></td>
-                <td><input type="text" class="sem-pr-ov-label" data-idx="${idx}" value="${escapeHtml(label)}"></td>
+                <td><input type="text" class="sem-pr-ov-label form-ov-input" data-idx="${idx}" value="${escapeHtml(label)}"></td>
                 <td><input type="checkbox" class="sem-pr-ov-en" data-idx="${idx}" ${enabled ? 'checked' : ''}></td>
                 <td><input type="checkbox" class="sem-pr-ov-req" data-idx="${idx}" ${required ? 'checked' : ''}></td>
-                <td>—</td>
+                <td>${optCell}</td>
             </tr>`;
         });
         const minEl = document.getElementById('seminar-prereg-birth-year-min');
@@ -438,7 +502,7 @@
         extras.forEach((f) => addSeminarPreregExtraFieldRow(f));
         if (minEl) minEl.value = seminarBirthMin != null ? String(seminarBirthMin) : '';
         if (maxEl) maxEl.value = seminarBirthMax != null ? String(seminarBirthMax) : '';
-        ['.sem-pr-ov-label', '.sem-pr-ov-en', '.sem-pr-ov-req'].forEach((sel) => {
+        ['.sem-pr-ov-label', '.sem-pr-ov-en', '.sem-pr-ov-req', '.sem-pr-ov-options'].forEach((sel) => {
             tbody.querySelectorAll(sel).forEach((el) => {
                 el.addEventListener('input', updatePreregFormPreview);
                 el.addEventListener('change', updatePreregFormPreview);
@@ -499,12 +563,23 @@
         const keys = window.__seminarPreregOverrideFieldKeys || [];
         const globals = window.__seminarPreregGlobalFields || [];
         if (!tbody || !keys.length) return null;
-        const fields = keys.map((key, idx) => ({
-            key,
-            label: (tbody.querySelector(`.sem-pr-ov-label[data-idx="${idx}"]`) || {}).value || key,
-            enabled: !!(tbody.querySelector(`.sem-pr-ov-en[data-idx="${idx}"]`) || {}).checked,
-            required: !!(tbody.querySelector(`.sem-pr-ov-req[data-idx="${idx}"]`) || {}).checked
-        }));
+        const fields = keys.map((key, idx) => {
+            const g = globals.find((x) => x.key === key) || {};
+            const row = {
+                key,
+                label: (tbody.querySelector(`.sem-pr-ov-label[data-idx="${idx}"]`) || {}).value || key,
+                enabled: !!(tbody.querySelector(`.sem-pr-ov-en[data-idx="${idx}"]`) || {}).checked,
+                required: !!(tbody.querySelector(`.sem-pr-ov-req[data-idx="${idx}"]`) || {}).checked
+            };
+            if (String(g.type || '').toLowerCase() === 'select') {
+                const parsed = parseSelectOptionsInput(
+                    (tbody.querySelector(`.sem-pr-ov-options[data-idx="${idx}"]`) || {}).value
+                );
+                if (parsed && parsed.length) row.options = parsed;
+                else if (Array.isArray(g.options)) row.options = g.options;
+            }
+            return row;
+        });
         const extras = [];
         document.querySelectorAll('#seminar-prereg-extra-fields-tbody tr').forEach((tr) => {
             const key = String((tr.querySelector('.sem-pr-ex-key') || {}).value || '').trim();
@@ -519,10 +594,8 @@
                 required: !!(tr.querySelector('.sem-pr-ex-req') || {}).checked
             };
             if (type === 'select') {
-                const optsCsv = String((tr.querySelector('.sem-pr-ex-options') || {}).value || '').trim();
-                row.options = optsCsv
-                    ? optsCsv.split(',').map((x) => String(x || '').trim()).filter(Boolean).map((v) => ({ value: v, label: v }))
-                    : [];
+                const parsed = parseSelectOptionsInput((tr.querySelector('.sem-pr-ex-options') || {}).value);
+                row.options = parsed && parsed.length ? parsed : [];
             }
             extras.push(row);
         });
@@ -531,7 +604,8 @@
             return (
                 String(f.label || '') !== String(g.label || f.key) ||
                 !!f.enabled !== (g.enabled !== false) ||
-                !!f.required !== !!g.required
+                !!f.required !== !!g.required ||
+                !selectOptionsEqual(f.options, g.options)
             );
         });
         const minEl = document.getElementById('seminar-prereg-birth-year-min');
@@ -1579,13 +1653,13 @@
                 const labelSafe = String(f.label || f.key || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
                 return (
                     '<tr>' +
-                    `<td><input type="text" id="ak-prereg-key-${idx}" value="${keySafe}" style="margin:0;min-width:140px;"></td>` +
-                    `<td><input type="text" id="ak-prereg-label-${idx}" value="${labelSafe}" style="margin:0;min-width:180px;"></td>` +
+                    `<td><input type="text" id="ak-prereg-key-${idx}" value="${keySafe}" class="form-ov-input" style="margin:0;"></td>` +
+                    `<td><input type="text" id="ak-prereg-label-${idx}" value="${labelSafe}" class="form-ov-input" style="margin:0;"></td>` +
                     `<td><select id="ak-prereg-type-${idx}" style="margin:0;">${preregFieldTypeOptions(f.type)}</select></td>` +
                     `<td><input type="number" id="ak-prereg-step-${idx}" min="1" max="9" value="${parseInt(f.step, 10) || 1}" style="margin:0;width:64px;"></td>` +
                     `<td><input type="checkbox" id="ak-prereg-enabled-${idx}" ${f.enabled !== false ? 'checked' : ''}></td>` +
                     `<td><input type="checkbox" id="ak-prereg-required-${idx}" ${f.required ? 'checked' : ''}></td>` +
-                    `<td><input type="text" id="ak-prereg-options-${idx}" value="${safeOptions}" placeholder='[{"value":"Male","label":"Male"}]' style="margin:0;min-width:200px;"></td>` +
+                    `<td><input type="text" id="ak-prereg-options-${idx}" value="${safeOptions}" placeholder="Male, Female" class="form-ov-input" style="margin:0;"></td>` +
                     `<td><button type="button" class="btn-primary" style="padding:4px 8px;font-size:0.75rem;background:#64748b;" onclick="removeAdminPreregFieldRow(${idx})">Remove</button></td>` +
                     '</tr>'
                 );
@@ -1648,12 +1722,11 @@
             if (type === 'select') {
                 const raw = String((document.getElementById(`ak-prereg-options-${idx}`) || {}).value || '').trim();
                 if (raw) {
-                    try {
-                        const parsed = JSON.parse(raw);
-                        if (Array.isArray(parsed)) row.options = parsed;
-                    } catch (_) {
+                    const parsed = parseSelectOptionsInput(raw);
+                    if (parsed && parsed.length) row.options = parsed;
+                    else {
                         if (msg) {
-                            msg.textContent = `Invalid options JSON for field: ${key}`;
+                            msg.textContent = `Invalid options for field: ${key}`;
                             msg.style.color = '#b91c1c';
                         }
                         return;
@@ -1768,6 +1841,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        injectFormEditorStyles();
         fixLegacyAdminLoginPage();
         hideMenuItems();
         injectPreregFields();

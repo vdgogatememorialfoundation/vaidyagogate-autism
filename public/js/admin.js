@@ -7513,11 +7513,12 @@ function addSeminarExtraFieldRow(prefill) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td><input type="text" class="sem-ex-key" data-idx="${idx}" value="${String(key).replace(/"/g, '&quot;')}" style="width:100px;"></td>
-        <td><input type="text" class="sem-ex-label" data-idx="${idx}" value="${String(p.label || key).replace(/"/g, '&quot;')}" style="width:100%;"></td>
+        <td><input type="text" class="sem-ex-label form-ov-input" data-idx="${idx}" value="${String(p.label || key).replace(/"/g, '&quot;')}"></td>
         <td><select class="sem-ex-type" data-idx="${idx}">${seminarExtraFieldTypeOptions(p.type)}</select></td>
         <td><input type="number" class="sem-ex-step" data-idx="${idx}" min="1" max="9" value="${p.step != null ? p.step : 1}" style="width:48px;"></td>
         <td><input type="checkbox" class="sem-ex-en" data-idx="${idx}" ${p.enabled !== false ? 'checked' : ''}></td>
         <td><input type="checkbox" class="sem-ex-req" data-idx="${idx}" ${p.required !== false ? 'checked' : ''}></td>
+        <td><input type="text" class="sem-ex-options form-ov-input" data-idx="${idx}" value="${String(formatSelectOptionsInput(p.options)).replace(/"/g, '&quot;')}" placeholder="a, b, c for select"></td>
         <td><button type="button" class="btn-primary" style="padding:3px 8px;font-size:0.75rem;background:#64748b;" onclick="removeSeminarExtraFieldRow(${idx})">Remove</button></td>`;
     tbody.appendChild(tr);
 }
@@ -7541,14 +7542,22 @@ function collectSeminarExtraFieldsFromDom() {
     return rows.map((r, idx) => {
         const keyEl = tbody.querySelector(`.sem-ex-key[data-idx="${idx}"]`);
         const key = keyEl ? String(keyEl.value || '').trim() : r.key;
-        return {
+        const type = (tbody.querySelector(`.sem-ex-type[data-idx="${idx}"]`) || {}).value || 'text';
+        const row = {
             key: key || r.key,
             label: (tbody.querySelector(`.sem-ex-label[data-idx="${idx}"]`) || {}).value || key,
-            type: (tbody.querySelector(`.sem-ex-type[data-idx="${idx}"]`) || {}).value || 'text',
+            type,
             step: parseInt((tbody.querySelector(`.sem-ex-step[data-idx="${idx}"]`) || {}).value, 10) || 1,
             enabled: !!(tbody.querySelector(`.sem-ex-en[data-idx="${idx}"]`) || {}).checked,
             required: !!(tbody.querySelector(`.sem-ex-req[data-idx="${idx}"]`) || {}).checked
         };
+        if (String(type).toLowerCase() === 'select') {
+            const parsed = parseSelectOptionsInput(
+                (tbody.querySelector(`.sem-ex-options[data-idx="${idx}"]`) || {}).value
+            );
+            if (parsed && parsed.length) row.options = parsed;
+        }
+        return row;
     });
 }
 
@@ -7607,14 +7616,14 @@ async function loadSeminarFormOverrideUi(overrideJson) {
         let optCell = '—';
         if (f.key === 'qual' && Array.isArray(opts)) {
             optCell =
-                '<span class="muted" style="font-size:0.78rem;">' +
-                opts.map((o) => o.label || o.value).join(', ') +
-                '</span>';
+                '<span class="muted" style="font-size:0.78rem;">Use qualification checkboxes below</span>';
+        } else if (String(f.type || '').toLowerCase() === 'select') {
+            optCell = `<input type="text" class="sem-ov-options form-ov-input" data-idx="${idx}" value="${String(formatSelectOptionsInput(opts)).replace(/"/g, '&quot;')}" placeholder="option1, option2" oninput="updateSeminarPolicyPreviews()">`;
         }
         window.__seminarOverrideFieldKeys.push(f.key);
         tbody.innerHTML += `<tr>
             <td><code>${String(f.key).replace(/</g, '&lt;')}</code></td>
-            <td><input type="text" class="sem-ov-label" data-idx="${idx}" value="${String(label).replace(/"/g, '&quot;')}" oninput="updateSeminarPolicyPreviews()"></td>
+            <td><input type="text" class="sem-ov-label form-ov-input" data-idx="${idx}" value="${String(label).replace(/"/g, '&quot;')}" oninput="updateSeminarPolicyPreviews()"></td>
             <td><input type="checkbox" class="sem-ov-en" data-idx="${idx}" ${enabled ? 'checked' : ''} onchange="updateSeminarPolicyPreviews()"></td>
             <td><input type="checkbox" class="sem-ov-req" data-idx="${idx}" ${required ? 'checked' : ''} onchange="updateSeminarPolicyPreviews()"></td>
             <td>${optCell}</td>
@@ -7664,6 +7673,11 @@ function buildSeminarFormOverrideJsonFromUi() {
         if (key === 'qual') {
             const qualOpts = collectQualOptionsFromContainer('seminar-qual-options');
             if (qualOpts.length) row.options = qualOpts;
+        } else if (String(g.type || '').toLowerCase() === 'select') {
+            const optRaw = (tbody.querySelector(`.sem-ov-options[data-idx="${idx}"]`) || {}).value;
+            const optParsed = parseSelectOptionsInput(optRaw);
+            if (optParsed && optParsed.length) row.options = optParsed;
+            else if (Array.isArray(g.options)) row.options = g.options;
         }
         fields.push(row);
     });
@@ -9163,6 +9177,60 @@ const ADMIN_QUAL_OPTION_DEFS = [
     { value: 'PG', label: 'PG' }
 ];
 
+/** Comma-separated options for admin form editors (value or value|label). */
+function formatSelectOptionsInput(options) {
+    if (!Array.isArray(options) || !options.length) return '';
+    return options
+        .map((o) => {
+            if (!o) return '';
+            const v = String(o.value != null ? o.value : o.label || '').trim();
+            const l = String(o.label != null ? o.label : o.value || '').trim();
+            if (l && v && l !== v) return v + '|' + l;
+            return v || l;
+        })
+        .filter(Boolean)
+        .join(', ');
+}
+
+function parseSelectOptionsInput(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    if (s.startsWith('[')) {
+        try {
+            const p = JSON.parse(s);
+            if (Array.isArray(p)) {
+                return p
+                    .map((o) => {
+                        if (!o) return null;
+                        const v = String(o.value != null ? o.value : o.label || '').trim();
+                        const l = String(o.label != null ? o.label : o.value || '').trim();
+                        if (!v) return null;
+                        return { value: v, label: l || v };
+                    })
+                    .filter(Boolean);
+            }
+        } catch (_) {}
+    }
+    return s
+        .split(',')
+        .map((part) => {
+            const p = String(part || '').trim();
+            if (!p) return null;
+            const pipe = p.indexOf('|');
+            if (pipe > 0) {
+                const value = p.slice(0, pipe).trim();
+                const label = p.slice(pipe + 1).trim();
+                return value ? { value, label: label || value } : null;
+            }
+            return { value: p, label: p };
+        })
+        .filter(Boolean);
+}
+
+function selectOptionsEqual(a, b) {
+    return JSON.stringify(a || []) === JSON.stringify(b || []);
+}
+
 function renderQualOptionCheckboxes(containerId, selectedValues) {
     const root = document.getElementById(containerId);
     if (!root) return;
@@ -9223,11 +9291,12 @@ function adminAddRegistrationFieldRow(prefill) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td>${isNew ? `<input type="text" id="reg-field-key-${idx}" value="${String(key).replace(/"/g, '&quot;')}" style="margin:0;width:120px;" placeholder="field_key">` : `<code>${String(key).replace(/</g, '&lt;')}</code>`}</td>
-        <td><input type="text" id="reg-field-label-${idx}" value="${String(p.label || key).replace(/"/g, '&quot;')}" style="margin:0;"></td>
+        <td><input type="text" id="reg-field-label-${idx}" value="${String(p.label || key).replace(/"/g, '&quot;')}" class="form-ov-input" style="margin:0;"></td>
         <td><select id="reg-field-type-${idx}" style="margin:0;">${adminRegFieldTypeOptions(p.type)}</select></td>
         <td><input type="number" id="reg-field-step-${idx}" min="1" max="9" value="${p.step != null ? p.step : 1}" style="margin:0;width:56px;"></td>
         <td><input type="checkbox" id="reg-field-en-${idx}" ${p.enabled !== false ? 'checked' : ''}></td>
         <td><input type="checkbox" id="reg-field-req-${idx}" ${p.required !== false && p.enabled !== false ? 'checked' : ''}></td>
+        <td><input type="text" id="reg-field-options-${idx}" value="${String(formatSelectOptionsInput(p.options)).replace(/"/g, '&quot;')}" class="form-ov-input" placeholder="For select: a, b, c" style="margin:0;"></td>
         <td><button type="button" class="btn-primary" style="padding:4px 8px;font-size:0.75rem;background:#64748b;" onclick="adminRemoveRegistrationFieldRow(${idx})">Remove</button></td>`;
     tbody.appendChild(tr);
 }
@@ -9244,7 +9313,7 @@ async function loadAdminRegistrationFormConfig(skipFetch) {
     const tbody = document.getElementById('admin-reg-fields-tbody');
     if (!tbody) return;
     if (!skipFetch) {
-        tbody.innerHTML = '<tr><td colspan="7">Loading…</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
     }
     try {
         let fields;
@@ -9271,7 +9340,7 @@ async function loadAdminRegistrationFormConfig(skipFetch) {
         if (!fields.length) adminAddRegistrationFieldRow({ key: 'custom_field', label: 'Custom field' });
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="7">Failed to load</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">Failed to load</td></tr>';
     }
 }
 
@@ -9305,6 +9374,11 @@ async function saveAdminRegistrationFormConfig() {
         if (row.key === 'qual') {
             const qualOpts = collectQualOptionsFromContainer('admin-global-qual-options');
             if (qualOpts.length) row.options = qualOpts;
+        } else if (String(row.type).toLowerCase() === 'select') {
+            const parsed = parseSelectOptionsInput(
+                (document.getElementById(`reg-field-options-${idx}`) || {}).value
+            );
+            if (parsed && parsed.length) row.options = parsed;
         }
         return row;
     });
