@@ -115,3 +115,23 @@
 .ak-src-public { background: #dbeafe; color: #1d4ed8; }
 .ak-src-portal { background: #f1f5f9; color: #475569; }
 .ak-prereg-stat.stat-public { border-color: #93c5fd; }
+.ak-prereg-live-bar {
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e40af;
+}
+.ak-prereg-live-bar.hidden { display: none !important; }
+@keyframes ak-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+tr.ak-prereg-row-new {
+    animation: ak-prereg-row-flash 2.4s ease-out 1;
+    background: #dbeafe !important;
+}
+@keyframes ak-prereg-row-flash {
+    0% { background: #93c5fd !important; }
+    100% { background: #dbeafe !important; }
+}

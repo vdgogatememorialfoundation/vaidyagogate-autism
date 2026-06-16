@@ -589,6 +589,14 @@
             if (msg) msg.textContent = data.message || 'Your pre-registration was submitted successfully.';
             const tid = qs('pub-success-tracking-id');
             if (tid) tid.textContent = data.applicationNo || '';
+            const trackLink = qs('pub-success-track-link');
+            const emailVal = (emailEl?.value || '').trim();
+            if (trackLink && data.applicationNo) {
+                const u = new URL('/preregister/track', window.location.origin);
+                u.searchParams.set('id', data.applicationNo);
+                if (emailVal) u.searchParams.set('email', emailVal);
+                trackLink.href = u.pathname + '?' + u.searchParams.toString();
+            }
         } catch (e) {
             showError(e.message || 'Submission failed. Please try again.');
             if (submitBtn) submitBtn.disabled = false;

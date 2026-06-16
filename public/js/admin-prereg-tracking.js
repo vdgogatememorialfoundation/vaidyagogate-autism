@@ -9,6 +9,85 @@
     let statusFilter = 'all';
     let sourceFilter = 'all';
     let cachedSeminars = [];
+    const POLL_MS = 4000;
+    let pollTimer = null;
+    let lastRowFp = '';
+    let highlightIds = new Set();
+
+    function formatIstNow() {
+        return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+    }
+
+    function tabVisible() {
+        const el = document.getElementById('tab-prereg-tracking');
+        return el && !el.classList.contains('hidden');
+    }
+
+    function rowFingerprint(rows) {
+        return (rows || [])
+            .map((r) => {
+                const src = preregSourceLabel(r).key;
+                return [r.id, r.status, r.updated_at || r.created_at || '', r.application_no || '', src].join(':');
+            })
+            .join('|');
+    }
+
+    function updateLiveBar() {
+        const bar = document.getElementById('ak-prereg-live-bar');
+        if (!bar) return;
+        if (!tabVisible() || document.hidden) {
+            bar.classList.add('hidden');
+            return;
+        }
+        bar.classList.remove('hidden');
+        bar.innerHTML =
+            '<i class="fas fa-circle" style="color:#10b981;font-size:0.45rem;vertical-align:middle;animation:ak-pulse 1.2s infinite;"></i> Live · includes public (no sign-in) submissions · updated ' +
+            formatIstNow();
+    }
+
+    function flashPublicSubmission(row) {
+        const bar = document.getElementById('ak-prereg-live-bar');
+        if (!bar || !row) return;
+        const name = [row.first_name, row.last_name].filter(Boolean).join(' ') || 'New applicant';
+        bar.style.background = '#dbeafe';
+        bar.style.borderColor = '#93c5fd';
+        bar.innerHTML =
+            '<i class="fas fa-bolt" style="color:#2563eb;"></i> New public form submission: <strong>' +
+            esc(name) +
+            '</strong> · ' +
+            esc(row.application_no || '') +
+            ' · ' +
+            formatIstNow();
+        setTimeout(() => {
+            if (bar) {
+                bar.style.background = '';
+                bar.style.borderColor = '';
+                updateLiveBar();
+            }
+        }, 8000);
+    }
+
+    function stopPoll() {
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+    function startPoll() {
+        if (pollTimer) return;
+        pollTimer = setInterval(() => refresh({ silent: true }), POLL_MS);
+    }
+
+    function detectNewRows(prevRows, nextRows) {
+        const prevIds = new Set((prevRows || []).map((r) => r.id));
+        (nextRows || []).forEach((r) => {
+            if (!prevIds.has(r.id)) {
+                highlightIds.add(r.id);
+                if (preregSourceLabel(r).key === 'public') flashPublicSubmission(r);
+            }
+        });
+    }
 
     function seminarFlowFlags(seminar) {
         try {
@@ -285,11 +364,18 @@
             .map((r) => {
                 const name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
                 const sel = selectedId === r.id ? ' style="background:#eff6ff;"' : '';
+                const isNew = highlightIds.has(r.id);
+                const rowStyle =
+                    selectedId === r.id
+                        ? ' style="background:#eff6ff;"'
+                        : isNew
+                          ? ' class="ak-prereg-row-new"'
+                          : '';
                 return (
                     '<tr data-id="' +
                     r.id +
                     '"' +
-                    sel +
+                    rowStyle +
                     '>' +
                     '<td>' +
                     qrImgHtml(r.application_no, 44) +
@@ -435,7 +521,9 @@
         }
     }
 
-    async function refresh() {
+    async function refresh(opts) {
+        const silent = opts && opts.silent;
+        if (silent && !tabVisible()) return;
         const seminarId = document.getElementById('ak-prereg-seminar')?.value || '';
         const st = document.getElementById('ak-prereg-status-filter')?.value || 'all';
         statusFilter = st;
@@ -443,14 +531,29 @@
         if (seminarId) url += 'seminarId=' + encodeURIComponent(seminarId) + '&';
         if (st && st !== 'all') url += 'status=' + encodeURIComponent(st);
         const tbody = document.getElementById('ak-prereg-tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading…</td></tr>';
+        if (!silent && tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading…</td></tr>';
         try {
-            preregRows = await api(url);
+            const prevRows = preregRows.slice();
+            const nextRows = await api(url);
+            const fp = rowFingerprint(nextRows);
+            const fpChanged = fp !== lastRowFp;
+            if (silent && prevRows.length && fpChanged) {
+                detectNewRows(prevRows, nextRows);
+            }
+            lastRowFp = fp;
+            preregRows = nextRows;
             await loadStats();
             renderTable();
             updateMainRegOpenPanel();
+            if (selectedId && (!silent || fpChanged)) {
+                const still = preregRows.find((r) => r.id === selectedId);
+                if (still) openDetail(selectedId);
+            }
+            updateLiveBar();
         } catch (e) {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
+            if (!silent && tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
+            }
         }
     }
 
@@ -486,10 +589,15 @@
     window.initAdminPreregTracking = function initAdminPreregTracking() {
         if (window.__akPreregInit) {
             refresh();
+            startPoll();
+            updateLiveBar();
             return;
         }
         window.__akPreregInit = true;
-        loadSeminarsSelect().then(refresh);
+        loadSeminarsSelect().then(() => refresh()).then(() => {
+            startPoll();
+            updateLiveBar();
+        });
         wireStatClicks();
         document.getElementById('ak-prereg-seminar')?.addEventListener('change', refresh);
         document.getElementById('ak-prereg-status-filter')?.addEventListener('change', refresh);
@@ -513,6 +621,13 @@
         });
         document.getElementById('ak-open-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(true));
         document.getElementById('ak-close-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(false));
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopPoll();
+            else if (tabVisible()) {
+                startPoll();
+                refresh({ silent: true });
+            }
+        });
     };
 
     const origSwitch = window.switchTab;
@@ -521,6 +636,9 @@
             origSwitch.apply(this, arguments);
             if (tabId === 'tab-prereg-tracking' && typeof initAdminPreregTracking === 'function') {
                 initAdminPreregTracking();
+            } else {
+                stopPoll();
+                updateLiveBar();
             }
         };
         window.switchTab.__akPreregHook = true;
