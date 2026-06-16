@@ -8045,9 +8045,13 @@ async function saveSeminar(e) {
         registration_end: window.PortalDateTime
             ? window.PortalDateTime.fromRegistrationEndLocal(document.getElementById('seminar-reg-end').value)
             : document.getElementById('seminar-reg-end').value,
-        event_date: window.PortalDateTime
-            ? window.PortalDateTime.fromDatetimeLocal(document.getElementById('seminar-event-date').value)
-            : document.getElementById('seminar-event-date').value,
+        event_date: (() => {
+            const raw = (document.getElementById('seminar-event-date') || {}).value;
+            if (!raw || !String(raw).trim()) return null;
+            return window.PortalDateTime
+                ? window.PortalDateTime.fromDatetimeLocal(raw)
+                : raw;
+        })(),
         capacity: parseInt(document.getElementById('seminar-capacity').value) || 0,
         show_seats_public: document.getElementById('seminar-show-seats-public')?.checked === true,
         price: parseFloat(document.getElementById('seminar-price').value) || 0,
@@ -8063,7 +8067,10 @@ async function saveSeminar(e) {
         })(),
         public_list_enabled: document.getElementById('seminar-public-list-enabled')?.value === '1',
         cert_scans_required: parseInt(document.getElementById('seminar-cert-scans-required')?.value || '1', 10) === 2 ? 2 : 1,
-        location_url: document.getElementById('seminar-location-url').value || null,
+        location_url: (() => {
+            const v = String((document.getElementById('seminar-location-url') || {}).value || '').trim();
+            return v || null;
+        })(),
         terms_conditions: document.getElementById('seminar-terms').value || null,
         hero_image_path: (document.getElementById('seminar-hero-image') || {}).value || null,
         flyer_path: (document.getElementById('seminar-flyer') || {}).value || null,

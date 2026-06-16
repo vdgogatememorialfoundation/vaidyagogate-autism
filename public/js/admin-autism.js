@@ -65,6 +65,8 @@
         const regEnd = document.getElementById('seminar-reg-end');
         if (regStart) regStart.removeAttribute('required');
         if (regEnd) regEnd.removeAttribute('required');
+        const eventDate = document.getElementById('seminar-event-date');
+        if (eventDate) eventDate.removeAttribute('required');
         const flow = document.createElement('div');
         flow.style.cssText =
             'display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding:10px 12px;border:1px solid #d1fae5;border-radius:8px;background:#f0fdfa;';

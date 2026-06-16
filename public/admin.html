@@ -2252,7 +2252,7 @@
                     <div><label>Registration End <span style="font-weight:normal;color:#64748b;">(IST)</span></label><input type="datetime-local" id="seminar-reg-end"></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label>Event Date (Main) <span style="font-weight:normal;color:#64748b;">(IST)</span></label><input type="datetime-local" id="seminar-event-date" required></div>
+                    <div><label>Event Date (Main) <span style="font-weight:normal;color:#64748b;">(IST, optional — add later)</span></label><input type="datetime-local" id="seminar-event-date"></div>
                     <div><label>Portal year</label><input type="number" id="seminar-portal-year" min="2000" max="2100" placeholder="e.g. 2027"></div>
                     <div><label>Capacity</label><input type="number" id="seminar-capacity" required></div>
                     <div style="grid-column:1/-1;"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="seminar-show-seats-public" checked> Show seat count publicly on registration</label></div>
@@ -2261,7 +2261,7 @@
                     <div><label>Price (&#8377;)</label><input type="number" id="seminar-price" step="0.01" value="0" required></div>
                     <div><label>Is Active?</label><select id="seminar-active"><option value="1">Yes</option><option value="0">No</option></select></div>
                 </div>
-                <div><label>Google Maps Embed URL</label><input type="text" id="seminar-location-url" placeholder="https://www.google.com/maps/embed?..."></div>
+                <div><label>Google Maps Embed URL <span style="font-weight:normal;color:#64748b;">(optional — add later)</span></label><input type="text" id="seminar-location-url" placeholder="https://www.google.com/maps/embed?..."></div>
                 <div><label>Terms and Conditions</label><textarea id="seminar-terms" rows="3"></textarea></div>
                 <div style="background: #eff6ff; padding: 15px; border: 1px solid #bfdbfe; border-radius: 12px;">
                     <h4 style="margin-bottom: 10px; color:#1e40af;">Per-seminar links, policy &amp; form override</h4>
@@ -2517,13 +2517,13 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260617c"></script>
+    <script src="/js/admin.js?v=20260617d"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=12"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism42"></script>
+    <script src="/js/admin-autism.js?v=autism43"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
     <script src="/js/portal-content-protection.js?v=2"></script>
