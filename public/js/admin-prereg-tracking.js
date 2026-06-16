@@ -421,12 +421,28 @@
         });
     }
 
+    function closeDetail() {
+        const panel = document.getElementById('ak-prereg-detail');
+        const backdrop = document.getElementById('ak-prereg-detail-backdrop');
+        if (panel) {
+            panel.classList.remove('is-open');
+            panel.dataset.rowId = '';
+        }
+        if (backdrop) backdrop.classList.remove('is-open');
+        document.body.style.overflow = '';
+        selectedId = null;
+        renderTable();
+    }
+
     function openDetail(id) {
         selectedId = id;
         const row = preregRows.find((r) => r.id === id);
         const panel = document.getElementById('ak-prereg-detail');
+        const backdrop = document.getElementById('ak-prereg-detail-backdrop');
         if (!row || !panel) return;
         panel.classList.add('is-open');
+        if (backdrop) backdrop.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
         const name = [row.first_name, row.last_name].filter(Boolean).join(' ');
         const fd = parseFormData(row.form_data);
         const fieldsHtml = Object.keys(fd).length
@@ -481,12 +497,7 @@
             await api('/api/admin/preregistrations/' + encodeURIComponent(String(id)), {
                 method: 'DELETE'
             });
-            const panel = document.getElementById('ak-prereg-detail');
-            if (panel) {
-                panel.classList.remove('is-open');
-                panel.dataset.rowId = '';
-            }
-            selectedId = null;
+            closeDetail();
             await refresh();
         } catch (e) {
             alert(e.message || 'Delete failed');
@@ -548,6 +559,7 @@
             if (selectedId && (!silent || fpChanged)) {
                 const still = preregRows.find((r) => r.id === selectedId);
                 if (still) openDetail(selectedId);
+                else closeDetail();
             }
             updateLiveBar();
         } catch (e) {
@@ -621,6 +633,13 @@
         });
         document.getElementById('ak-open-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(true));
         document.getElementById('ak-close-main-reg')?.addEventListener('click', () => setMainRegistrationOpen(false));
+        document.getElementById('ak-prereg-close')?.addEventListener('click', closeDetail);
+        document.getElementById('ak-prereg-detail-backdrop')?.addEventListener('click', closeDetail);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('ak-prereg-detail')?.classList.contains('is-open')) {
+                closeDetail();
+            }
+        });
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) stopPoll();
             else if (tabVisible()) {
@@ -637,6 +656,7 @@
             if (tabId === 'tab-prereg-tracking' && typeof initAdminPreregTracking === 'function') {
                 initAdminPreregTracking();
             } else {
+                closeDetail();
                 stopPoll();
                 updateLiveBar();
             }
