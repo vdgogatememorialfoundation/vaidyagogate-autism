@@ -608,10 +608,17 @@
                                 <option value="all_doctors">All doctors</option>
                                 <option value="seminar_paid">Paid registrants ... seminar</option>
                                 <option value="seminar_all">All registrants ... seminar</option>
+                                <option value="seminar_single">Single registrant ... seminar</option>
                                 <option value="custom_emails">Custom email list</option>
                             </select>
                         </div>
                         <div id="mail-bulk-seminar-wrap"><label>Seminar</label><select id="mail-bulk-seminar" style="width:100%;padding:8px;"></select></div>
+                        <div id="mail-bulk-recipient-wrap" class="hidden">
+                            <label>Registrant</label>
+                            <select id="mail-bulk-recipient" style="width:100%;padding:8px;">
+                                <option value="">Select seminar first</option>
+                            </select>
+                        </div>
                         <div id="mail-bulk-emails-wrap" class="hidden" style="grid-column:1/-1;"><label>Emails</label><textarea id="mail-bulk-emails" rows="3" style="width:100%;padding:8px;"></textarea></div>
                         <div style="grid-column:1/-1;"><label>Subject</label><input type="text" id="mail-bulk-subject" style="width:100%;padding:8px;"></div>
                         <div style="grid-column:1/-1;"><label>Message</label><textarea id="mail-bulk-body" rows="6" style="width:100%;padding:8px;"></textarea></div>
@@ -2522,7 +2529,7 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260617d"></script>
+    <script src="/js/admin.js?v=20260617e"></script>
     <script src="/js/admin-etickets.js?v=1"></script>
     <script src="/js/admin-prereg-tracking.js?v=14"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>

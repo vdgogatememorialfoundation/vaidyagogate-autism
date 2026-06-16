@@ -8679,6 +8679,11 @@ async function sendContactInquiryEmail() {
 
 async function initAdminEmailComposeTab() {
     await fillAdminSeminarSelect('mail-bulk-seminar', false);
+    const semSel = document.getElementById('mail-bulk-seminar');
+    if (semSel && !semSel.dataset.bulkHooked) {
+        semSel.addEventListener('change', onMailBulkSeminarChange);
+        semSel.dataset.bulkHooked = '1';
+    }
     onMailBulkAudienceChange();
 }
 
@@ -8686,9 +8691,61 @@ function onMailBulkAudienceChange() {
     const aud = document.getElementById('mail-bulk-audience')?.value || '';
     const semWrap = document.getElementById('mail-bulk-seminar-wrap');
     const emWrap = document.getElementById('mail-bulk-emails-wrap');
-    const showSem = aud === 'seminar_paid' || aud === 'seminar_all';
+    const recWrap = document.getElementById('mail-bulk-recipient-wrap');
+    const showSem = aud === 'seminar_paid' || aud === 'seminar_all' || aud === 'seminar_single';
     if (semWrap) semWrap.style.display = showSem ? '' : 'none';
+    if (recWrap) recWrap.classList.toggle('hidden', aud !== 'seminar_single');
     if (emWrap) emWrap.classList.toggle('hidden', aud !== 'custom_emails');
+    if (aud === 'seminar_single') loadMailBulkSeminarRecipients();
+}
+
+async function onMailBulkSeminarChange() {
+    const aud = document.getElementById('mail-bulk-audience')?.value || '';
+    if (aud === 'seminar_single') {
+        await loadMailBulkSeminarRecipients();
+    }
+}
+
+async function loadMailBulkSeminarRecipients() {
+    const admin = getStoredAdminUser();
+    const seminarId = document.getElementById('mail-bulk-seminar')?.value || '';
+    const sel = document.getElementById('mail-bulk-recipient');
+    if (!sel) return;
+    if (!seminarId) {
+        sel.innerHTML = '<option value="">Select seminar first</option>';
+        return;
+    }
+    if (!admin?.id) {
+        sel.innerHTML = '<option value="">Admin session required</option>';
+        return;
+    }
+    sel.innerHTML = '<option value="">Loading registrants...</option>';
+    try {
+        const res = await fetch(
+            '/api/admin/email/seminar-recipients?actingAdminId=' +
+                encodeURIComponent(admin.id) +
+                '&seminarId=' +
+                encodeURIComponent(seminarId)
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not load registrants');
+        const rows = Array.isArray(data.recipients) ? data.recipients : [];
+        if (!rows.length) {
+            sel.innerHTML = '<option value="">No registrants with email</option>';
+            return;
+        }
+        sel.innerHTML = '<option value="">Select one registrant</option>';
+        rows.forEach((r) => {
+            const o = document.createElement('option');
+            o.value = String(r.userId);
+            const appNo = r.applicationNo ? ' · ' + r.applicationNo : '';
+            const email = r.email ? ' · ' + r.email : '';
+            o.textContent = (r.name || 'Registrant') + appNo + email;
+            sel.appendChild(o);
+        });
+    } catch (e) {
+        sel.innerHTML = '<option value="">' + escAdmin(e.message || 'Could not load registrants') + '</option>';
+    }
 }
 
 async function previewMailBulkCount() {
@@ -8696,14 +8753,19 @@ async function previewMailBulkCount() {
     const aud = document.getElementById('mail-bulk-audience')?.value || '';
     const sid = document.getElementById('mail-bulk-seminar')?.value || '';
     const emails = document.getElementById('mail-bulk-emails')?.value || '';
+    const recipientId = document.getElementById('mail-bulk-recipient')?.value || '';
     const el = document.getElementById('mail-bulk-count');
     if (!admin?.id) return alert('Admin session required');
     if (el) el.textContent = 'Counting…';
     try {
+        const countAudience = aud === 'seminar_single' ? 'user_ids' : aud;
         let url =
-            `/api/admin/email/recipient-count?actingAdminId=${admin.id}&audience=${encodeURIComponent(aud)}`;
-        if (sid && (aud === 'seminar_paid' || aud === 'seminar_all')) {
+            `/api/admin/email/recipient-count?actingAdminId=${admin.id}&audience=${encodeURIComponent(countAudience)}`;
+        if (sid && (aud === 'seminar_paid' || aud === 'seminar_all' || aud === 'seminar_single')) {
             url += `&seminarId=${encodeURIComponent(sid)}`;
+        }
+        if (aud === 'seminar_single' && recipientId) {
+            url += `&userIds=${encodeURIComponent(recipientId)}`;
         }
         if (aud === 'custom_emails' && emails) {
             url += `&emails=${encodeURIComponent(emails)}`;
@@ -8751,20 +8813,26 @@ async function sendAdminBulkEmail() {
     const audience = document.getElementById('mail-bulk-audience')?.value || '';
     const seminarId = document.getElementById('mail-bulk-seminar')?.value || '';
     const emailsRaw = document.getElementById('mail-bulk-emails')?.value || '';
+    const recipientId = document.getElementById('mail-bulk-recipient')?.value || '';
     const subject = document.getElementById('mail-bulk-subject')?.value || '';
     const body = document.getElementById('mail-bulk-body')?.value || '';
     const msgEl = document.getElementById('mail-bulk-msg');
     if (!subject.trim() || !body.trim()) return alert('Subject and message are required');
+    if (audience === 'seminar_single' && !seminarId) return alert('Select seminar.');
+    if (audience === 'seminar_single' && !recipientId) return alert('Select one registrant.');
     if (!confirm('Send bulk email to the selected audience?')) return;
     if (msgEl) msgEl.textContent = 'Queueing…';
     try {
+        const payloadAudience = audience === 'seminar_single' ? 'user_ids' : audience;
+        const payloadUserIds = audience === 'seminar_single' ? [parseInt(recipientId, 10)] : [];
         const res = await fetch('/api/admin/email/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 actingAdminId: admin.id,
-                audience,
+                audience: payloadAudience,
                 seminarId: seminarId ? parseInt(seminarId, 10) : null,
+                userIds: payloadUserIds,
                 emails: emailsRaw.split(/[,\s;]+/).filter(Boolean),
                 subject,
                 body

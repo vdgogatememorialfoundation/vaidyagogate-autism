@@ -11758,10 +11758,56 @@ app.get('/api/admin/email/recipient-count', (req, res) => {
         const audience = String(req.query.audience || '').trim();
         const seminarId = req.query.seminarId != null ? parseInt(req.query.seminarId, 10) : null;
         const emails = req.query.emails ? String(req.query.emails).split(/[,\s;]+/) : [];
-        adminComposeMail.countRecipients(db, { audience, seminarId, emails }, (err, out) => {
+        const userIds = req.query.userIds
+            ? String(req.query.userIds)
+                  .split(/[,\s;]+/)
+                  .map((x) => parseInt(x, 10))
+                  .filter((x) => Number.isInteger(x) && x > 0)
+            : [];
+        adminComposeMail.countRecipients(db, { audience, seminarId, emails, userIds }, (err, out) => {
             if (err) return res.status(400).json({ error: err.message });
             res.json({ success: true, count: out.count });
         });
+    });
+});
+
+app.get('/api/admin/email/seminar-recipients', (req, res) => {
+    const aid = parseInt(req.query.actingAdminId, 10);
+    const seminarId = parseInt(req.query.seminarId, 10);
+    if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId is required' });
+    if (!Number.isInteger(seminarId) || seminarId < 1) return res.status(400).json({ error: 'seminarId is required' });
+    assertAdminPortalActor(aid, (e) => {
+        if (e && e.message === 'BAD_ACTOR') return res.status(400).json({ error: 'actingAdminId is required' });
+        if (e && e.message === 'FORBIDDEN') return res.status(403).json({ error: 'Administrator access required' });
+        if (e) return res.status(500).json({ error: e.message });
+        db.all(
+            `SELECT DISTINCT u.id AS user_id, u.email, u.first_name, u.last_name, r.application_no, r.status
+             FROM registrations r
+             JOIN users u ON u.id = r.user_id
+             WHERE r.seminar_id = ?
+               AND r.status NOT IN ('rejected', 'cancelled')
+               AND u.email IS NOT NULL
+               AND trim(u.email) != ''
+             ORDER BY r.created_at DESC`,
+            [seminarId],
+            (err, rows) => {
+                if (err) return res.status(500).json({ error: err.message });
+                const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+                const recipients = (rows || [])
+                    .map((r) => {
+                        const email = String(r.email || '').trim().toLowerCase();
+                        return {
+                            userId: r.user_id,
+                            email,
+                            name: [r.first_name, r.last_name].filter(Boolean).join(' ').trim(),
+                            applicationNo: r.application_no || '',
+                            status: r.status || ''
+                        };
+                    })
+                    .filter((r) => EMAIL_RE.test(r.email));
+                res.json({ success: true, recipients });
+            }
+        );
     });
 });
 
