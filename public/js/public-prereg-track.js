@@ -21,6 +21,10 @@
 
     function formatWhen(iso) {
         if (!iso) return '';
+        if (window.PortalDateTime && window.PortalDateTime.formatLong) {
+            const s = window.PortalDateTime.formatLong(iso);
+            return s && !/\bIST\b/i.test(s) ? s + ' IST' : s;
+        }
         try {
             return new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
         } catch (_) {
@@ -29,6 +33,9 @@
     }
 
     function formatIstNow() {
+        if (window.PortalDateTime && window.PortalDateTime.format) {
+            return window.PortalDateTime.format(new Date().toISOString()) + ' IST';
+        }
         return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
     }
 
@@ -39,55 +46,138 @@
 
     function statusColors(st) {
         const s = String(st || '').toLowerCase();
-        if (s === 'approved' || s === 'e_ticket_issued') return { bg: '#d1fae5', fg: '#047857' };
+        if (s === 'approved') return { bg: '#d1fae5', fg: '#047857' };
         if (s === 'rejected') return { bg: '#fee2e2', fg: '#b91c1c' };
         if (s === 'revision_required') return { bg: '#ede9fe', fg: '#6d28d9' };
         return { bg: '#fef3c7', fg: '#92400e' };
     }
 
-    function renderSteps(steps) {
-        if (!Array.isArray(steps) || !steps.length) return '';
+    function renderSteps(stepDefs) {
+        const steps = stepDefs || [];
+        if (!steps.length) return '';
+
+        const html = steps
+            .map((s) => {
+                let cls = 'ak-track-v3-step';
+                if (s.state === 'completed') cls += ' is-done';
+                else if (s.state === 'active') cls += ' is-current';
+                else if (s.state === 'fail') cls += ' is-fail';
+                else cls += ' is-upcoming';
+
+                const icon =
+                    s.state === 'completed'
+                        ? 'fa-check'
+                        : s.state === 'active'
+                          ? 'fa-spinner fa-spin'
+                          : s.state === 'fail'
+                            ? 'fa-times'
+                            : 'fa-circle';
+
+                const when =
+                    s.at && (s.state === 'completed' || s.state === 'active')
+                        ? '<p class="ak-track-v3-when">' + esc(formatWhen(s.at)) + '</p>'
+                        : s.state === 'pending'
+                          ? '<p class="ak-track-v3-when" style="color:#94a3b8!important;">Upcoming</p>'
+                          : '';
+
+                return (
+                    '<div class="' +
+                    cls +
+                    '"><div class="ak-track-v3-icon"><i class="fas ' +
+                    icon +
+                    '"></i></div><div class="ak-track-v3-body"><strong>' +
+                    esc(s.title || s.key || '') +
+                    '</strong>' +
+                    (s.desc ? '<p>' + esc(s.desc) + '</p>' : '') +
+                    when +
+                    '</div></div>'
+                );
+            })
+            .join('');
+
+        let doneCount = 0;
+        let currentIdx = -1;
+        steps.forEach((s, i) => {
+            if (s.state === 'completed') doneCount = i + 1;
+            if (s.state === 'active') currentIdx = i;
+        });
+        if (currentIdx < 0 && doneCount < steps.length && doneCount > 0) currentIdx = doneCount;
+        const pct =
+            steps.length <= 1 ? 0 : Math.min(100, Math.round((Math.max(doneCount, currentIdx + 1) / steps.length) * 100));
+
         return (
-            '<div class="ak-track-v3-stepper">' +
-            steps
-                .map((s) => {
-                    const st = s.state || 'pending';
-                    let icon = 'fa-circle';
-                    if (st === 'completed') icon = 'fa-check';
-                    else if (st === 'active') icon = 'fa-spinner';
-                    else if (st === 'fail') icon = 'fa-times';
-                    return (
-                        '<div class="ak-track-v3-step ak-track-v3-step--' +
-                        esc(st) +
-                        '">' +
-                        '<div class="ak-track-v3-icon"><i class="fas ' +
-                        icon +
-                        '"></i></div>' +
-                        '<div class="ak-track-v3-body"><strong>' +
-                        esc(s.title || s.key || '') +
-                        '</strong>' +
-                        (s.desc ? '<p style="margin:4px 0 0;font-size:0.85rem;color:#64748b;">' + esc(s.desc) + '</p>' : '') +
-                        (s.at ? '<p class="ak-track-v3-when">' + esc(formatWhen(s.at)) + '</p>' : '') +
-                        '</div></div>'
-                    );
-                })
-                .join('') +
+            '<div class="ak-track-card-v3__progress-wrap"><div class="ak-track-card-v3__progress-label"><span>Progress</span><span>' +
+            pct +
+            '%</span></div><div class="ak-track-card-v3__progress-bar"><div class="ak-track-card-v3__progress-fill" style="width:' +
+            pct +
+            '%;"></div></div></div><div class="ak-track-v3-stepper">' +
+            html +
             '</div>'
         );
+    }
+
+    function qrBlock(code) {
+        const c = String(code || '').trim();
+        if (!c) return '';
+        return (
+            '<div class="ak-barcode-inline">' +
+            '<img src="/api/qrcode/' +
+            encodeURIComponent(c) +
+            '" alt="QR ' +
+            esc(c) +
+            '" width="72" height="72">' +
+            '<div><strong style="font-size:0.78rem;color:#64748b;">Scan at event</strong><br>' +
+            '<code style="font-size:0.95rem;letter-spacing:0.04em;">' +
+            esc(c) +
+            '</code></div></div>'
+        );
+    }
+
+    function renderFoot(data) {
+        const st = String(data.status || '').toLowerCase();
+        const parts = [];
+
+        if (data.registrationApplicationNo) {
+            parts.push(
+                '<p style="margin:0 0 10px;font-size:0.88rem;color:#475569;">Main registration ID: <code>' +
+                    esc(data.registrationApplicationNo) +
+                    '</code></p>'
+            );
+        }
+
+        if (st === 'approved') {
+            parts.push(
+                '<p class="ak-track-card-v3__msg" style="margin:0 0 12px;">Your pre-registration is approved. Sign in to the applicant portal when final registration opens.</p>' +
+                    '<div class="ak-track-card-v3__actions">' +
+                    '<a href="/dashboard" class="ak-pub-track-approved-cta"><i class="fas fa-right-to-bracket"></i> Sign in to applicant portal</a>' +
+                    '</div>'
+            );
+        } else if (st === 'revision_required') {
+            parts.push(
+                '<p class="ak-track-card-v3__msg" style="margin:0 0 12px;">Changes are needed on your application. Sign in to update and resubmit.</p>' +
+                    '<div class="ak-track-card-v3__actions">' +
+                    '<a href="/dashboard" class="ak-pub-track-approved-cta"><i class="fas fa-edit"></i> Sign in to update</a>' +
+                    '</div>'
+            );
+        } else if (st === 'submitted') {
+            parts.push(
+                '<p class="ak-track-card-v3__msg" style="margin:0;">This page updates automatically — keep it open or return anytime with your tracking ID and email.</p>'
+            );
+        }
+
+        if (!parts.length) return '';
+        return '<div class="ak-track-card-v3__foot">' + parts.join('') + '</div>';
     }
 
     function renderCard(data) {
         const colors = statusColors(data.status);
         const steps = (data.timeline && data.timeline.steps) || [];
-        const completed = steps.filter((s) => s.state === 'completed').length;
-        const pct = steps.length ? Math.round((completed / steps.length) * 100) : 0;
-        let foot = '';
-        if (data.registrationApplicationNo) {
-            foot =
-                '<p style="margin:0;font-size:0.88rem;color:#475569;">Main registration ID: <code>' +
-                esc(data.registrationApplicationNo) +
-                '</code></p>';
-        }
+        const eventDate = data.eventDate
+            ? '<div style="font-size:0.85rem;color:#64748b;margin-top:4px;"><i class="fas fa-calendar-day" style="margin-right:4px;"></i>' +
+              esc(data.eventDate) +
+              '</div>'
+            : '';
+
         return (
             '<article class="ak-track-card-v3 ak-track-card-v3--prereg">' +
             '<div class="ak-track-card-v3__bar"></div>' +
@@ -96,9 +186,12 @@
             '<div class="ak-track-card-v3__title">' +
             esc(data.seminarTitle || 'Event') +
             '</div>' +
+            eventDate +
             '<div class="ak-track-card-v3__code">Tracking ID: <strong>' +
             esc(data.applicationNo) +
-            '</strong></div></div>' +
+            '</strong></div>' +
+            qrBlock(data.applicationNo) +
+            '</div>' +
             '<span class="ak-track-card-v3__pill" style="background:' +
             colors.bg +
             ';color:' +
@@ -106,15 +199,8 @@
             ';">' +
             esc(statusLabel(data.status)) +
             '</span></div>' +
-            (steps.length
-                ? '<div class="ak-track-card-v3__progress-wrap"><div class="ak-track-card-v3__progress-label"><span>Progress</span><span>' +
-                  pct +
-                  '%</span></div><div class="ak-track-card-v3__progress-bar"><div class="ak-track-card-v3__progress-fill" style="width:' +
-                  pct +
-                  '%;"></div></div></div>' +
-                  renderSteps(steps)
-                : '') +
-            (foot ? '<div class="ak-track-card-v3__foot">' + foot + '</div>' : '') +
+            (steps.length ? renderSteps(steps) : '') +
+            renderFoot(data) +
             '</article>'
         );
     }
@@ -124,7 +210,7 @@
         if (!el) return;
         el.classList.remove('hidden');
         el.innerHTML =
-            '<i class="fas fa-circle" style="color:#10b981;font-size:0.45rem;vertical-align:middle;animation:ak-pulse 1.2s infinite;"></i> Live · updated ' +
+            '<i class="fas fa-circle" style="color:#10b981;font-size:0.45rem;vertical-align:middle;animation:ak-pulse 1.2s infinite;"></i> Live · updates every few seconds · ' +
             formatIstNow();
     }
 
@@ -146,7 +232,7 @@
         }
     }
 
-    async function fetchStatus(query, quiet) {
+    async function fetchStatus(query) {
         const params = new URLSearchParams({
             applicationNo: query.applicationNo,
             email: query.email
@@ -159,14 +245,11 @@
 
     async function loadAndRender(query, quiet) {
         if (!quiet) showError('');
-        const data = await fetchStatus(query, quiet);
-        const fp = fingerprint(data);
+        const data = await fetchStatus(query);
         qs('pub-track-card').innerHTML = renderCard(data);
         qs('pub-track-form-wrap')?.classList.add('hidden');
         qs('pub-track-result')?.classList.remove('hidden');
-        if (fp !== lastFp || !quiet) {
-            lastFp = fp;
-        }
+        lastFp = fingerprint(data);
         updateLiveBar();
         return data;
     }
@@ -184,7 +267,7 @@
         pollTimer = setInterval(async () => {
             if (document.hidden || !activeQuery) return;
             try {
-                const data = await fetchStatus(activeQuery, true);
+                const data = await fetchStatus(activeQuery);
                 const fp = fingerprint(data);
                 if (fp !== lastFp) {
                     lastFp = fp;

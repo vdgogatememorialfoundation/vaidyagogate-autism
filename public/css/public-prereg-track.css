@@ -1,0 +1,164 @@
+/* Public pre-registration status page */
+.ak-pub-track-page {
+    --ak-blue: #2563eb;
+    --ak-blue-dark: #1d4ed8;
+    --ak-teal: #0d9488;
+    --ak-text: #1e3a8a;
+}
+.ak-pub-track-page * { box-sizing: border-box; }
+.ak-pub-track-page {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: linear-gradient(165deg, #eff6ff 0%, #f8fafc 42%, #ecfeff 100%);
+    color: var(--ak-text);
+    min-height: 100vh;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.ak-pub-track-page input,
+.ak-pub-track-page textarea { -webkit-user-select: text; user-select: text; }
+.ak-pub-track-wrap { max-width: 760px; margin: 0 auto; padding: 28px 16px 56px; }
+.ak-pub-track-hero {
+    text-align: center;
+    margin-bottom: 28px;
+}
+.ak-pub-track-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+.ak-pub-track-hero h1 {
+    font-family: Fredoka, sans-serif;
+    font-size: clamp(1.5rem, 4vw, 1.85rem);
+    margin: 0 0 10px;
+    color: var(--ak-blue-dark);
+    line-height: 1.2;
+}
+.ak-pub-track-hero p {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.55;
+}
+.ak-pub-track-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #bfdbfe;
+    box-shadow: 0 16px 48px rgba(37, 99, 235, 0.1);
+    padding: 24px 22px;
+    margin-bottom: 20px;
+}
+.ak-pub-track-card h2 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.ak-pub-track-card .hint {
+    margin: 0 0 18px;
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+.ak-pub-track-field { margin-bottom: 16px; }
+.ak-pub-track-field label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.84rem;
+    margin-bottom: 6px;
+    color: #334155;
+}
+.ak-pub-track-field input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ak-pub-track-field input:focus {
+    outline: none;
+    border-color: var(--ak-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.ak-pub-track-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 22px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--ak-blue), var(--ak-blue-dark));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+.ak-pub-track-btn:disabled { opacity: 0.65; cursor: not-allowed; box-shadow: none; }
+.ak-pub-track-btn--muted { background: #475569; box-shadow: 0 6px 16px rgba(71, 85, 105, 0.2); }
+.ak-pub-track-error {
+    color: #b91c1c;
+    font-size: 0.9rem;
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: #fef2f2;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+}
+.ak-pub-track-live {
+    margin: 0 0 16px;
+    padding: 11px 15px;
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e40af;
+}
+.ak-pub-track-result-actions {
+    text-align: center;
+    margin-top: 18px;
+}
+.ak-pub-track-footer {
+    text-align: center;
+    font-size: 0.88rem;
+    margin-top: 28px;
+    color: #64748b;
+}
+.ak-pub-track-footer a {
+    color: var(--ak-blue);
+    font-weight: 700;
+    text-decoration: none;
+}
+.ak-pub-track-footer a:hover { text-decoration: underline; }
+#pub-track-card .ak-track-list { margin-top: 0; }
+.ak-pub-track-approved-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #0d9488;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none !important;
+}
+.ak-pub-track-approved-cta:hover { background: #0f766e; }
+@keyframes ak-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (max-width: 480px) {
+    .ak-pub-track-card { padding: 20px 16px; }
+    .ak-track-card-v3__head { flex-direction: column; }
+}

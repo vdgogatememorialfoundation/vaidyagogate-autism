@@ -10,102 +10,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
-    <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=3">
-    <style>
-        :root { --ak-blue: #2563eb; --ak-blue-dark: #1d4ed8; --ak-text: #1e3a8a; }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            background: linear-gradient(165deg, #eff6ff 0%, #f8fafc 45%, #ecfeff 100%);
-            color: var(--ak-text);
-            min-height: 100vh;
-        }
-        .hidden { display: none !important; }
-        .ak-pub-wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
-        .ak-pub-header { text-align: center; margin-bottom: 24px; }
-        .ak-pub-header h1 { font-family: Fredoka, sans-serif; font-size: 1.65rem; margin: 0 0 8px; color: var(--ak-blue-dark); }
-        .ak-pub-header p { margin: 0; font-size: 0.95rem; color: #475569; line-height: 1.5; }
-        .ak-pub-card {
-            background: #fff;
-            border-radius: 16px;
-            border: 1px solid #bfdbfe;
-            box-shadow: 0 12px 40px rgba(37, 99, 235, 0.08);
-            padding: 24px 20px;
-            margin-bottom: 20px;
-        }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; color: #334155; }
-        .form-group input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 1rem;
-        }
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            background: var(--ak-blue);
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.95rem;
-            cursor: pointer;
-        }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-        .ak-pub-error { color: #b91c1c; font-size: 0.9rem; margin-top: 12px; }
-        .ak-pub-live {
-            margin: 0 0 16px;
-            padding: 10px 14px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 12px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: #1e40af;
-        }
-        @keyframes ak-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-        .ak-pub-footer { text-align: center; font-size: 0.88rem; margin-top: 24px; }
-        .ak-pub-footer a { color: var(--ak-blue); font-weight: 600; text-decoration: none; }
-        #pub-track-result .ak-track-list { margin-top: 8px; }
-    </style>
+    <link rel="stylesheet" href="/css/ak-flipkart-tracker.css?v=4">
+    <link rel="stylesheet" href="/css/public-prereg-track.css?v=1">
 </head>
-<body>
-    <div class="ak-pub-wrap">
-        <header class="ak-pub-header">
-            <h1><i class="fas fa-route"></i> Track your pre-registration</h1>
-            <p>No sign-in needed — use the tracking ID from your confirmation email and the email address you submitted.</p>
+<body class="ak-pub-track-page">
+    <div class="ak-pub-track-wrap">
+        <header class="ak-pub-track-hero">
+            <div class="ak-pub-track-badge"><i class="fas fa-shield-heart"></i> Live status</div>
+            <h1>Track your pre-registration</h1>
+            <p>Use the tracking ID from your confirmation email and the same email address you submitted — no sign-in required.</p>
         </header>
 
-        <div id="pub-track-form-wrap" class="ak-pub-card">
+        <div id="pub-track-form-wrap" class="ak-pub-track-card">
+            <h2><i class="fas fa-search" style="color:#2563eb;margin-right:6px;"></i> Look up application</h2>
+            <p class="hint">We sent your tracking ID by email when you submitted the form.</p>
             <form id="pub-track-form" autocomplete="on">
-                <div class="form-group">
-                    <label for="pub-track-id">Tracking ID *</label>
-                    <input type="text" id="pub-track-id" required inputmode="numeric" placeholder="12-digit tracking ID" maxlength="32">
+                <div class="ak-pub-track-field">
+                    <label for="pub-track-id">Tracking ID</label>
+                    <input type="text" id="pub-track-id" required inputmode="numeric" placeholder="e.g. 773246701325" maxlength="32">
                 </div>
-                <div class="form-group">
-                    <label for="pub-track-email">Email *</label>
+                <div class="ak-pub-track-field">
+                    <label for="pub-track-email">Email</label>
                     <input type="email" id="pub-track-email" required autocomplete="email" placeholder="Same email as on the form">
                 </div>
-                <button type="submit" class="btn-primary" id="pub-track-submit"><i class="fas fa-search"></i> Check status</button>
-                <p id="pub-track-error" class="ak-pub-error hidden"></p>
+                <button type="submit" class="ak-pub-track-btn" id="pub-track-submit"><i class="fas fa-route"></i> Check status</button>
+                <p id="pub-track-error" class="ak-pub-track-error hidden"></p>
             </form>
         </div>
 
         <div id="pub-track-result" class="hidden">
-            <p id="pub-track-live" class="ak-pub-live hidden"></p>
+            <p id="pub-track-live" class="ak-pub-track-live hidden"></p>
             <div id="pub-track-card" class="ak-track-list"></div>
-            <p style="text-align:center;margin-top:16px;">
-                <button type="button" class="btn-primary" id="pub-track-change" style="background:#475569;"><i class="fas fa-edit"></i> Look up another ID</button>
-            </p>
+            <div class="ak-pub-track-result-actions">
+                <button type="button" class="ak-pub-track-btn ak-pub-track-btn--muted" id="pub-track-change"><i class="fas fa-edit"></i> Look up another ID</button>
+            </div>
         </div>
 
-        <p class="ak-pub-footer">
-            <a href="/preregister">← Pre-register for an event</a>
+        <p class="ak-pub-track-footer">
+            <a href="/preregister">Pre-register for an event</a>
             &nbsp;·&nbsp;
             <a href="/">Programme home</a>
             &nbsp;·&nbsp;
@@ -113,7 +55,8 @@
         </p>
     </div>
 
-    <script src="/js/public-prereg-track.js?v=20260617a"></script>
+    <script src="/js/portal-datetime.js?v=1"></script>
+    <script src="/js/public-prereg-track.js?v=20260617b"></script>
     <script src="/js/portal-content-protection.js?v=3"></script>
 </body>
 </html>
