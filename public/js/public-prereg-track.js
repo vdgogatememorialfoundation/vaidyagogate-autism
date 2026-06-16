@@ -116,23 +116,6 @@
         );
     }
 
-    function qrBlock(code) {
-        const c = String(code || '').trim();
-        if (!c) return '';
-        return (
-            '<div class="ak-barcode-inline">' +
-            '<img src="/api/qrcode/' +
-            encodeURIComponent(c) +
-            '" alt="QR ' +
-            esc(c) +
-            '" width="72" height="72">' +
-            '<div><strong style="font-size:0.78rem;color:#64748b;">Scan at event</strong><br>' +
-            '<code style="font-size:0.95rem;letter-spacing:0.04em;">' +
-            esc(c) +
-            '</code></div></div>'
-        );
-    }
-
     function renderFoot(data) {
         const st = String(data.status || '').toLowerCase();
         const parts = [];
@@ -190,7 +173,6 @@
             '<div class="ak-track-card-v3__code">Tracking ID: <strong>' +
             esc(data.applicationNo) +
             '</strong></div>' +
-            qrBlock(data.applicationNo) +
             '</div>' +
             '<span class="ak-track-card-v3__pill" style="background:' +
             colors.bg +
