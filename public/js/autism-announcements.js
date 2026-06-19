@@ -51,12 +51,18 @@
         return null;
     }
 
+    let announceLoadAttempts = 0;
+
     async function loadApplicantAnnouncements() {
         const box = document.getElementById('doctor-updates-list');
         if (!box) return;
         const uid = resolveApplicantUserId();
         if (!uid) {
-            box.innerHTML = '<li style="color:#64748b;">Loading updates…</li>';
+            announceLoadAttempts++;
+            box.innerHTML =
+                announceLoadAttempts > 4
+                    ? '<li style="color:#64748b;">Sign in to see personalised updates.</li>'
+                    : '<li style="color:#64748b;">Loading updates…</li>';
             return;
         }
         try {
@@ -131,6 +137,10 @@
         }, 120000);
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) loadApplicantAnnouncements();
+        });
+        document.addEventListener('ak-applicant-ready', () => {
+            announceLoadAttempts = 0;
+            loadApplicantAnnouncements();
         });
     }
 

@@ -756,6 +756,13 @@
                     body: JSON.stringify({ email, returnTo: '/dashboard' })
                 });
                 const data = await res.json();
+                if (!res.ok) {
+                    if (st) {
+                        st.style.color = '#b91c1c';
+                        st.textContent = data.error || 'Could not send reset link.';
+                    }
+                    return;
+                }
                 if (st) { st.style.color = '#059669'; st.textContent = data.message || 'Check your email and WhatsApp.'; }
             } catch (_) {
                 if (st) { st.style.color = '#b91c1c'; st.textContent = 'Could not send.'; }
@@ -894,7 +901,7 @@
             const r = String(user.role || '').toLowerCase();
             const staff = ['co_admin', 'judge_user', 'scanner_portal_user', 'reviewer'];
             if (staff.includes(ur) || r === 'admin') return false;
-            return ur === 'doctor' || r === 'doctor';
+            return ur === 'doctor' || r === 'doctor' || ur === 'event_attendee' || ur === 'applicant';
         }
 
         function portalHintForUser(user) {
@@ -1046,16 +1053,16 @@
         function verifyStatusLabel(st) {
             const s = String(st || '').toLowerCase();
             if (s === 'checked_in') return 'Checked in';
-            if (s === 'completed') return 'Admitted (paid)';
-            if (s === 'approved_pending_payment') return 'Verified — payment received';
+            if (s === 'completed' || s === 'e_ticket_issued') return 'Admitted';
+            if (s === 'approved_pending_payment' || s === 'pending_approval') return 'Under review';
             return st || '—';
         }
 
         function verifyStatusIcon(st) {
             const s = String(st || '').toLowerCase();
             if (s === 'checked_in') return '<i class="fas fa-user-check verify-ico verify-ico-ok" title="Checked in"></i>';
-            if (s === 'completed') return '<i class="fas fa-certificate verify-ico verify-ico-ok" title="Admitted"></i>';
-            if (s === 'approved_pending_payment') return '<i class="fas fa-check-circle verify-ico verify-ico-warn" title="Verified"></i>';
+            if (s === 'completed' || s === 'e_ticket_issued') return '<i class="fas fa-certificate verify-ico verify-ico-ok" title="Admitted"></i>';
+            if (s === 'approved_pending_payment' || s === 'pending_approval') return '<i class="fas fa-check-circle verify-ico verify-ico-warn" title="Under review"></i>';
             return '<i class="fas fa-circle verify-ico verify-ico-muted" title="Status"></i>';
         }
 

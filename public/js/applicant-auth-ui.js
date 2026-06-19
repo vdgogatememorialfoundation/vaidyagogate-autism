@@ -418,6 +418,13 @@
             } else {
                 data = await res.json();
             }
+            if (!res.ok) {
+                if (st) {
+                    st.style.color = '#b91c1c';
+                    st.textContent = data.error || 'Could not send reset link.';
+                }
+                return;
+            }
             if (st) {
                 st.style.color = '#059669';
                 st.textContent = data.message || 'Check your email and WhatsApp.';

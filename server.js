@@ -1680,7 +1680,10 @@ function autismApplicantFormFields(fields) {
 
 function registrationFormFieldsForPortal(fields) {
     if (portalProduct.FEATURES.productId !== 'autism') return fields || [];
-    return autismApplicantFormFields(fields);
+    return autismApplicantFormFields(fields).map((f) => {
+        if (!f || !f.verifyOtp) return f;
+        return Object.assign({}, f, { verifyOtp: false });
+    });
 }
 
 function loadGlobalRegistrationFormConfig(callback) {
@@ -4454,7 +4457,8 @@ app.get('/api/registration-form-config', (req, res) => {
                     [sid],
                     (e2, row) => {
                     if (e2) return res.status(500).json({ error: e2.message });
-                    const otpOn = !!(row && Number(row.otp_on_application) === 1);
+                    const otpOn =
+                        !portalProduct.FEATURES.noFees && !!(row && Number(row.otp_on_application) === 1);
                     const otpStep1 = otpOn && row && Number(row.otp_on_step1) !== 0;
                     const otpSubmit = otpOn && row && Number(row.otp_on_submit) !== 0;
                     res.json({
@@ -5315,7 +5319,8 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                     }
 
                     const sidNum = parseInt(seminarId, 10);
-                    const otpApp = !!(sem && Number(sem.otp_on_application) === 1);
+                    const otpApp =
+                        !portalProduct.FEATURES.noFees && !!(sem && Number(sem.otp_on_application) === 1);
                     const otpStep1 = otpApp && sem && Number(sem.otp_on_step1) !== 0;
                     const otpSubmit = otpApp && sem && Number(sem.otp_on_submit) !== 0;
                     const skipFieldKeys = ['email', 'phone'];
@@ -5673,7 +5678,7 @@ app.put('/api/applications/:applicationId', withCertificateUpload, (req, res) =>
                 }
 
                 const sidNum = parseInt(row.seminar_id, 10);
-                const otpApp = !!Number(row.otp_on_application);
+                const otpApp = !portalProduct.FEATURES.noFees && !!Number(row.otp_on_application);
                 const skipFieldKeys = ['email', 'phone'];
 
                 function persistUpdate() {
@@ -8225,9 +8230,6 @@ app.post('/api/admin/applications/status', (req, res) => {
     let newSt = String(status || '').toLowerCase();
     if (portalProduct.FEATURES.noFees && newSt === 'approved_pending_payment') {
         newSt = 'pending_approval';
-    }
-    if (portalProduct.FEATURES.noFees && newSt === 'pending_approval') {
-        newSt = 'e_ticket_issued';
     }
     if (!ALLOWED_REGISTRATION_STATUSES.has(newSt)) {
         return res.status(400).json({ error: 'Invalid application status.' });

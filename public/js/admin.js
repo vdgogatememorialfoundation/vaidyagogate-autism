@@ -11,8 +11,6 @@ const ADMIN_REGISTRATION_STATUSES = [
     { value: 'submitted', label: 'Submitted' },
     { value: 'pending_approval', label: 'Under review' },
     { value: 'revision_required', label: 'Documents need re-upload' },
-    { value: 'approved_pending_payment', label: 'Approved — payment due' },
-    { value: 'completed', label: 'Payment completed' },
     { value: 'e_ticket_issued', label: 'E-ticket issued' },
     { value: 'certificate_issued', label: 'Certificate issued' },
     { value: 'checked_in', label: 'Checked in' },
@@ -35,6 +33,7 @@ function getStoredAdminUser() {
         return {};
     }
 }
+window.getStoredAdminUser = getStoredAdminUser;
 
 function hasValidAdminSession() {
     try {

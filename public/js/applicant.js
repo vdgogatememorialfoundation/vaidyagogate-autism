@@ -1137,6 +1137,10 @@ function initDoctorMobileNav() {
 
 function bootDoctorDashboard(user) {
     currentUser = user;
+    window.currentUser = user;
+    try {
+        document.dispatchEvent(new CustomEvent('ak-applicant-ready', { detail: { user } }));
+    } catch (_) {}
     applyDoctorModuleAccessFromUser(currentUser);
     fetch('/api/public/portal-urls')
         .then((r) => r.json())
