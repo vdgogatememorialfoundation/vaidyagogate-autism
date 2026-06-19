@@ -753,7 +753,7 @@
             try {
                 const res = await fetch('/api/auth/forgot-password', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, returnTo: 'index.html' })
+                    body: JSON.stringify({ email, returnTo: '/dashboard' })
                 });
                 const data = await res.json();
                 if (st) { st.style.color = '#059669'; st.textContent = data.message || 'Check your email and WhatsApp.'; }
@@ -1003,7 +1003,10 @@
         window.addEventListener('load', () => {
             const params = new URLSearchParams(window.location.search);
             const rt = params.get('resetToken');
-            if (rt) openResetPasswordModal(rt);
+            if (rt) {
+                window.location.replace('/dashboard?resetToken=' + encodeURIComponent(rt));
+                return;
+            }
             const user = localStorage.getItem('seminar_doctor_user');
             if (user) {
                 currentUserId = JSON.parse(user).id;

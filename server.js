@@ -3074,6 +3074,7 @@ app.get('/api/admin/integrations', withIntegrationSettingsLoaded, (req, res) => 
                     masked.whatsapp_template_check_hint = metaDbg.hint || '';
                 }
             } catch (_) {}
+            masked.whatsapp_webhook_url = integrationSettings.getWhatsAppWebhookUrl();
             res.json(masked);
         }
     );
@@ -6255,8 +6256,10 @@ app.post('/api/auth/forgot-password', withIntegrationSettingsLoaded, withAuxilia
     if (!forgotEmailV.valid) return res.status(400).json({ error: forgotEmailV.message });
     const emailNorm = forgotEmailV.cleanedEmail;
     const respond = () => res.json({ success: true, message: 'If an account exists, reset instructions were sent.' });
-    let returnTo = String((req.body && req.body.returnTo) || 'index.html').trim();
-    if (!returnTo) returnTo = 'index.html';
+    const portalProduct = require('./lib/portal-product');
+    const defaultReturnTo = portalProduct.FEATURES.applicantPortal ? '/dashboard' : 'index.html';
+    let returnTo = String((req.body && req.body.returnTo) || defaultReturnTo).trim();
+    if (!returnTo) returnTo = defaultReturnTo;
     authUsers.findUserByEmail(db, emailNorm, (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!user) return respond();
@@ -6268,7 +6271,10 @@ app.post('/api/auth/forgot-password', withIntegrationSettingsLoaded, withAuxilia
                 `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
                 [user.id, tokenHash, expiresAt],
                 (ierr) => {
-                    if (ierr) return respond();
+                    if (ierr) {
+                        console.error('[forgot-password] token insert failed:', ierr.message || ierr);
+                        return res.status(500).json({ error: 'Could not create reset link. Try again.' });
+                    }
                     const link = notifEngine.buildForgotPasswordLink(returnTo, token);
                     notifEngine.sendForgotPasswordEmail(db, user.id, link, (nErr, result) => {
                         if (nErr) console.error('[forgot-password] send failed:', nErr.message || nErr);
@@ -6371,8 +6377,7 @@ app.get('/api/admin/integrations/whatsapp-webhook-status', withIntegrationSettin
     const candidates = integrationSettings.getWhatsAppVerifyCandidates();
     const primary = candidates[0] || '';
     const probe = String((req.query && req.query.probe) || '').trim();
-    const base = integrationSettings.getPublicBaseUrl() || '';
-    const webhookUrl = (base.replace(/\/$/, '') || 'https://seminar.vaidyagogate.org') + '/api/webhooks/whatsapp';
+    const webhookUrl = integrationSettings.getWhatsAppWebhookUrl();
     let probeMatch = null;
     let probeHint = '';
     if (probe) {

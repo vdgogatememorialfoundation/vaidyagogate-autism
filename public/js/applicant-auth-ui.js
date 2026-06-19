@@ -363,11 +363,27 @@
         if (overlay) overlay.style.display = 'none';
     }
 
+    function stripResetTokenFromUrl() {
+        try {
+            const u = new URL(window.location.href);
+            if (!u.searchParams.has('resetToken')) return;
+            u.searchParams.delete('resetToken');
+            const qs = u.searchParams.toString();
+            window.history.replaceState({}, '', u.pathname + (qs ? '?' + qs : '') + u.hash);
+        } catch (_) {}
+    }
+
     function openDoctorResetPasswordModal(token) {
         const overlay = document.getElementById('doctor-reset-password-overlay');
         const t = document.getElementById('doctor-reset-token');
         if (t) t.value = token || '';
+        const authOverlay = document.getElementById('auth-overlay');
+        const dash = document.getElementById('dashboard-main');
+        if (authOverlay) authOverlay.classList.remove('hidden');
+        if (dash) dash.classList.add('hidden');
+        switchDoctorAuthTab('login');
         if (overlay) overlay.style.display = 'flex';
+        stripResetTokenFromUrl();
     }
 
     function closeDoctorResetPasswordModal() {
@@ -448,6 +464,7 @@
             setTimeout(() => {
                 closeDoctorResetPasswordModal();
                 switchDoctorAuthTab('login');
+                stripResetTokenFromUrl();
             }, 1200);
         } catch (err) {
             if (st) {

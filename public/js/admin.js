@@ -6179,14 +6179,8 @@ async function loadIntegrationSettings() {
         }
         const waHook = document.getElementById('int-wa-webhook-url');
         if (waHook) {
-            let base = (s.public_base_url || '').trim().replace(/\/$/, '');
-            if (!base && s.seminar_host) {
-                base = 'https://' + String(s.seminar_host).replace(/^https?:\/\//, '').replace(/\/$/, '');
-            }
-            if (!base || /inar\.vaidyagogate/i.test(base)) {
-                base = 'https://seminar.vaidyagogate.org';
-            }
-            waHook.textContent = base + '/api/webhooks/whatsapp';
+            waHook.textContent =
+                (s.whatsapp_webhook_url || '').trim() || 'https://seminar.vaidyagogate.org/api/webhooks/whatsapp';
         }
         const line = document.getElementById('int-status-line');
         if (line) {
