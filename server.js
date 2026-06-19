@@ -4415,7 +4415,11 @@ app.get('/api/seminars', (req, res) => {
         }
         db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-            const payload = { portalYear: activeYear, bucket, seminars: rows || [] };
+            const seminarDisplay = require('./lib/seminar-display');
+            const seminars = seminarDisplay.filterSeminarsForApplicantPortal(rows || [], {
+                productId: portalProduct.FEATURES.productId
+            });
+            const payload = { portalYear: activeYear, bucket, seminars };
             setReadApiCache(cacheKey, payload, 60000);
             setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
             res.json(payload);

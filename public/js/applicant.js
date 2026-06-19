@@ -1165,7 +1165,10 @@ function bootDoctorDashboard(user) {
         loadProfile();
     loadDoctorPaymentOptions().then(() => {
         loadDoctorPortalYear().then(() => {
-            if (!__doctorAllowedTabs || __doctorAllowedTabs.has('tab-seminars')) loadSeminarsGrid();
+            const onAutismDash = document.body.classList.contains('ak-portal-dash');
+            if (!onAutismDash && (!__doctorAllowedTabs || __doctorAllowedTabs.has('tab-seminars'))) {
+                loadSeminarsGrid();
+            }
             if (!__doctorAllowedTabs || __doctorAllowedTabs.has('tab-applications')) loadApplications();
         });
     });

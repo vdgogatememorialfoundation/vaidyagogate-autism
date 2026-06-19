@@ -4,6 +4,15 @@
 (function () {
     'use strict';
 
+    window.PORTAL_IS_AUTISM = true;
+
+    let _seminarsFetchPromise = null;
+    let _seminarsCache = null;
+    let _seminarsCacheAt = 0;
+    const SEMINARS_CACHE_MS = 20000;
+    const _lastGridFp = { prereg: '', main: '' };
+    let _loadPreregSeminarsPromise = null;
+
     const HIDDEN_TABS = [
         'tab-abstract',
         'tab-case-track',
@@ -15,6 +24,12 @@
 
     function separatePreregAndMainRegistration() {
         document.querySelectorAll('[data-tab="tab-seminars"]').forEach((el) => el.remove());
+        const legacyApps = document.getElementById('tab-applications');
+        if (legacyApps) {
+            legacyApps.classList.add('hidden');
+            legacyApps.style.display = 'none';
+            legacyApps.setAttribute('aria-hidden', 'true');
+        }
         setupAutismHubNavigation();
         mountMainRegFormOnEventTab();
         const tabApps = document.getElementById('tab-applications');
@@ -1559,9 +1574,48 @@
         });
     }
 
+    function seminarsGridFingerprint(rawSeminars, preregBySeminar, gridMode) {
+        const preregFp = Object.keys(preregBySeminar || {})
+            .sort()
+            .map((k) => k + ':' + String((preregBySeminar[k] && preregBySeminar[k].status) || ''))
+            .join(',');
+        const semFp = (rawSeminars || [])
+            .map((s) => [s.id, s.title || '', s.registration_start || '', s.registration_end || '', s.preregistration_start || '', s.preregistration_end || ''].join('|'))
+            .join(';');
+        return String(gridMode || '') + '::' + semFp + '::' + preregFp;
+    }
+
+    async function fetchApplicantSeminars(force) {
+        if (force) {
+            _seminarsCache = null;
+            _seminarsCacheAt = 0;
+        }
+        if (!force && _seminarsCache && Date.now() - _seminarsCacheAt < SEMINARS_CACHE_MS) {
+            return _seminarsCache;
+        }
+        if (_seminarsFetchPromise) return _seminarsFetchPromise;
+        _seminarsFetchPromise = fetchJson('/api/seminars?bucket=current')
+            .then((list) => {
+                const raw = Array.isArray(list) ? list : list.seminars || [];
+                _seminarsCache = raw;
+                _seminarsCacheAt = Date.now();
+                return raw;
+            })
+            .finally(() => {
+                _seminarsFetchPromise = null;
+            });
+        return _seminarsFetchPromise;
+    }
+
     function paintAutismEventsGrid(gridId, rawSeminars, preregBySeminar, gridMode) {
         const grid = document.getElementById(gridId);
         if (!grid) return;
+        const fp = seminarsGridFingerprint(rawSeminars, preregBySeminar, gridMode);
+        if (_lastGridFp[gridMode] === fp && grid.childElementCount > 0) {
+            startPreregGridCountdownTimer();
+            return;
+        }
+        _lastGridFp[gridMode] = fp;
         clearPreregGridCountdownTimer();
         const rows = (Array.isArray(rawSeminars) ? rawSeminars : [])
             .map((s) => buildAutismEventGridCard(s, preregBySeminar || {}, gridMode))
@@ -1670,8 +1724,10 @@
                 }
             });
             if (needReload) {
-                loadPreregSeminars();
-                loadMainRegEvents();
+                _lastGridFp.prereg = '';
+                _lastGridFp.main = '';
+                loadPreregSeminars(true);
+                loadMainRegEvents(true);
             }
             if (!hasUpcoming) clearPreregGridCountdownTimer();
         };
@@ -1679,9 +1735,11 @@
         preregGridCountdownTimer = setInterval(tick, 1000);
     }
 
-    async function loadPreregSeminars() {
+    async function loadPreregSeminars(force) {
         const sel = document.getElementById('prereg-seminar-select');
         if (!sel) return;
+        if (_loadPreregSeminarsPromise && !force) return _loadPreregSeminarsPromise;
+        _loadPreregSeminarsPromise = (async () => {
         function renderMainOnlyHint(mainOnlySeminars) {
             const formGroup = sel.closest('.form-group');
             if (!formGroup) return;
@@ -1722,8 +1780,7 @@
             }
         }
         try {
-            const list = await fetchJson('/api/seminars');
-            const raw = Array.isArray(list) ? list : list.seminars || [];
+            const raw = await fetchApplicantSeminars(!!force);
             window.__akAllSeminars = raw;
             preregSeminars = raw.filter((s) => seminarFlowFlags(s).preregistrationRequired);
             const mainOnlySeminars = raw.filter((s) => {
@@ -1756,12 +1813,13 @@
             clearPreregGridCountdownTimer();
             sel.innerHTML = '<option value="">Could not load events</option>';
         }
+        })();
+        return _loadPreregSeminarsPromise;
     }
 
-    async function loadMainRegEvents() {
+    async function loadMainRegEvents(force) {
         try {
-            const list = await fetchJson('/api/seminars');
-            const raw = Array.isArray(list) ? list : list.seminars || [];
+            const raw = await fetchApplicantSeminars(!!force);
             window.__akAllSeminars = raw;
             const uid = currentUserId();
             const preregRows = uid ? await fetchJson('/api/preregistrations/' + encodeURIComponent(uid)).catch(() => []) : [];
@@ -2915,15 +2973,6 @@
         window.loadApplications = async function () {
             await orig.apply(this, arguments);
             syncMainRegStartCard();
-            const mainGrid = document.getElementById('ak-main-events-grid');
-            if (mainGrid && window.__akAllSeminars && window.__akPreregBySeminar) {
-                paintAutismEventsGrid(
-                    'ak-main-events-grid',
-                    window.__akAllSeminars,
-                    window.__akPreregBySeminar,
-                    'main'
-                );
-            }
         };
         window.loadApplications.__akMainRegUiHook = true;
     }
