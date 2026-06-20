@@ -4547,11 +4547,25 @@ async function submitApplication() {
                     title: 'Main registration submitted',
                     message:
                         result.message ||
-                        'Your main registration was received successfully.',
+                        'Your main registration was received successfully. Open Main reg tracking for status.',
                     applicationNo: result.applicationNo,
                     onClose: function () {
                         cancelRegistration();
-                        loadApplications();
+                        if (typeof window.showMainRegTrackView === 'function') {
+                            window.showMainRegTrackView();
+                            if (
+                                typeof window.showHubSuccessBanner === 'function' &&
+                                typeof window.formatMainRegSubmitSuccessHtml === 'function'
+                            ) {
+                                window.showHubSuccessBanner(
+                                    'tab-main-reg-track',
+                                    'ak-main-reg-track-banner',
+                                    window.formatMainRegSubmitSuccessHtml(result)
+                                );
+                            }
+                        } else if (typeof loadApplications === 'function') {
+                            loadApplications();
+                        }
                     }
                 });
             } else {
@@ -6083,9 +6097,13 @@ async function loadDoctorEventTickets() {
             const attendeesCount = Number(t.attendees_count);
             const entryPassLine =
                 window.PORTAL_IS_AUTISM && Number.isInteger(attendeesCount) && attendeesCount >= 1
-                    ? `<p style="margin:4px 0;font-size:0.9rem;color:#0f766e;font-weight:700;">${
+                    ? `<p style="margin:4px 0;font-size:0.85rem;color:#0f766e;font-weight:700;">${
                           attendeesCount === 1 ? 'Valid for 1 person' : 'Valid for ' + attendeesCount + ' people'
                       }</p>`
+                    : '';
+            const freeLine =
+                window.PORTAL_IS_AUTISM && !invalid && !t.is_scanned
+                    ? '<p style="margin:4px 0;font-size:0.82rem;font-weight:800;letter-spacing:0.08em;color:#047857;">FREE</p>'
                     : '';
             const statusLine = invalid
                 ? `<p style="margin:8px 0 0;font-size:0.9rem;color:#b91c1c;font-weight:600;">Invalid — registration ${regSt === 'cancelled' ? 'cancelled' : regSt === 'rejected' ? 'rejected' : 'no longer active'}. Do not use this QR for entry.</p>`
@@ -6101,6 +6119,7 @@ async function loadDoctorEventTickets() {
                             ? ' · <strong>Entry:</strong> <span style="color:#047857;font-weight:700;">FREE</span>'
                             : ' · <strong>Payment:</strong> ' + escapeHtml(t.order_status || '—')
                     }</p>
+                    ${freeLine}
                     ${entryPassLine}
                     ${statusLine}
                     ${

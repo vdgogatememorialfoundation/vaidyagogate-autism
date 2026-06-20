@@ -41,11 +41,11 @@
     }
 
     function shouldPollPrereg() {
-        return tabVisible('tab-prereg-hub') || tabVisible('tab-prereg') || tabVisible('tab-applications');
+        return tabVisible('tab-prereg-track') || tabVisible('tab-prereg') || tabVisible('tab-applications');
     }
 
     function shouldPollMainReg() {
-        return tabVisible('tab-main-reg-hub') || tabVisible('tab-applications');
+        return tabVisible('tab-main-reg-track') || tabVisible('tab-applications');
     }
 
     let compTimer = null;
@@ -176,13 +176,13 @@
             if (
                 tabId === 'tab-applications' ||
                 tabId === 'tab-prereg' ||
-                tabId === 'tab-prereg-hub' ||
-                tabId === 'tab-main-reg-hub' ||
+                tabId === 'tab-prereg-track' ||
+                tabId === 'tab-main-reg-track' ||
                 tabId === 'tab-competition' ||
                 tabId === 'tab-comp-track'
             ) {
-                if (tabId === 'tab-prereg-hub' || tabId === 'tab-prereg') pollPrereg();
-                if (tabId === 'tab-main-reg-hub' || tabId === 'tab-applications') pollMainReg();
+                if (tabId === 'tab-prereg-track' || tabId === 'tab-prereg') pollPrereg();
+                if (tabId === 'tab-main-reg-track' || tabId === 'tab-applications') pollMainReg();
             }
         };
         window.switchTab.__akLiveHook = true;

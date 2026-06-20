@@ -309,6 +309,30 @@
             if (data.success) {
                 signupPhoneOtpToken = null;
                 signupEmailOtpToken = null;
+                try {
+                    const loginRes = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, portal: 'doctor' })
+                    });
+                    let loginData = {};
+                    if (window.HttpJson) {
+                        const parsed = await window.HttpJson.readJsonResponse(loginRes);
+                        loginData = parsed.data || {};
+                    } else {
+                        loginData = await loginRes.json().catch(() => ({}));
+                    }
+                    if (loginRes.ok && loginData.success && loginData.user) {
+                        if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', loginData.user);
+                        window.currentUser = loginData.user;
+                        if (typeof bootDoctorDashboard === 'function') {
+                            bootDoctorDashboard(loginData.user);
+                            return;
+                        }
+                    }
+                } catch (loginErr) {
+                    console.warn('[signup] auto-login', loginErr);
+                }
                 alert(data.message || 'Account created. Please sign in.');
                 switchDoctorAuthTab('login');
                 const le = document.getElementById('doctor-login-email');

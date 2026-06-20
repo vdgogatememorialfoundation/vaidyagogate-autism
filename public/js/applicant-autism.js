@@ -32,6 +32,7 @@
         }
         setupAutismHubNavigation();
         mountMainRegFormOnEventTab();
+        ensureApplicantTrackingTabs();
         const tabApps = document.getElementById('tab-applications');
         if (tabApps) {
             document.getElementById('ak-main-reg-start')?.remove();
@@ -167,7 +168,9 @@
         menu.querySelectorAll('[data-tab="tab-prereg"], [data-tab="tab-applications"], [data-tab="tab-competition"]').forEach((el) => el.remove());
         const hubItems = [
             { tab: 'tab-prereg-hub', icon: 'fa-clipboard-list', label: 'Pre-registration' },
+            { tab: 'tab-prereg-track', icon: 'fa-route', label: 'Pre-reg tracking' },
             { tab: 'tab-main-reg-hub', icon: 'fa-file-signature', label: 'Main registration' },
+            { tab: 'tab-main-reg-track', icon: 'fa-tasks', label: 'Main reg tracking' },
             { tab: 'tab-comp-register', icon: 'fa-cloud-upload-alt', label: 'Register Competition' },
             { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' }
         ];
@@ -182,6 +185,75 @@
             else menu.appendChild(btn);
         });
         wrapAutismRegisterTrackSections();
+    }
+
+    function ensureApplicantTrackingTabs() {
+        if (document.getElementById('tab-prereg-track')) return;
+
+        const preregTrack = document.createElement('div');
+        preregTrack.id = 'tab-prereg-track';
+        preregTrack.className = 'tab-pane hidden';
+        preregTrack.innerHTML =
+            '<div class="ak-track-page">' +
+            '<div class="ak-track-page-head">' +
+            '<h3><i class="fas fa-route" style="color:#0f766e;margin-right:8px;"></i> Pre-registration tracking</h3>' +
+            '<p>Status, timeline, and your pre-registration tracking IDs.</p>' +
+            '</div>' +
+            '<section class="ak-track-section">' +
+            '<p id="prereg-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#0f766e;margin-bottom:12px;"></p>' +
+            '<div id="prereg-list" class="ak-track-list"><p style="color:#64748b;">Loading…</p></div>' +
+            '</section></div>';
+
+        const mainTrack = document.createElement('div');
+        mainTrack.id = 'tab-main-reg-track';
+        mainTrack.className = 'tab-pane hidden';
+        mainTrack.innerHTML =
+            '<div class="ak-track-page">' +
+            '<div class="ak-track-page-head">' +
+            '<h3><i class="fas fa-tasks" style="color:#1a237e;margin-right:8px;"></i> Main registration tracking</h3>' +
+            '<p>Application status, timeline, and your main registration tracking ID.</p>' +
+            '</div>' +
+            '<section class="ak-track-section">' +
+            '<p id="seminar-track-live" class="hidden" style="font-size:0.88rem;font-weight:600;color:#1e40af;margin-bottom:12px;"></p>' +
+            '<div id="applications-tracker-container" class="ak-track-list"><p style="color:#64748b;">Loading trackers…</p></div>' +
+            '<div class="card" style="margin-top:16px;">' +
+            '<h3 style="margin-bottom:12px;color:#0f766e;">Application list</h3>' +
+            '<table class="data-table">' +
+            '<thead><tr><th>Application #</th><th>Status</th><th>Actions</th></tr></thead>' +
+            '<tbody id="applications-list"><tr><td colspan="3" style="text-align:center;color:#64748b;">Loading…</td></tr></tbody>' +
+            '</table></div></section></div>';
+
+        const preregHub = document.getElementById('tab-prereg-hub');
+        const mainHub = document.getElementById('tab-main-reg-hub');
+        const anchor = document.getElementById('tab-comp-register') || document.getElementById('tab-feedback');
+        const parent = (preregHub && preregHub.parentNode) || (mainHub && mainHub.parentNode);
+        if (!parent) return;
+
+        const existingPreregList = document.getElementById('prereg-list');
+        if (existingPreregList && !existingPreregList.closest('#tab-prereg-track')) {
+            const slot = preregTrack.querySelector('#prereg-list');
+            if (slot) slot.replaceWith(existingPreregList);
+        }
+        const existingTracker = document.getElementById('applications-tracker-container');
+        if (existingTracker && !existingTracker.closest('#tab-main-reg-track')) {
+            const slot = mainTrack.querySelector('#applications-tracker-container');
+            if (slot) slot.replaceWith(existingTracker);
+        }
+        const legacyAppsTab = document.getElementById('tab-applications');
+        if (legacyAppsTab) {
+            legacyAppsTab.querySelectorAll('.card').forEach((card) => {
+                if (card.querySelector('#applications-list') && !mainTrack.querySelector('#applications-list')) {
+                    mainTrack.querySelector('.ak-track-section')?.appendChild(card);
+                }
+            });
+            legacyAppsTab.classList.add('hidden');
+        }
+
+        parent.insertBefore(preregTrack, anchor);
+        parent.insertBefore(mainTrack, anchor);
+
+        preregHub?.querySelector('.ak-prereg-submissions')?.remove();
+        mainHub?.querySelector('#ak-main-reg-submissions')?.remove();
     }
 
     function wrapAutismRegisterTrackSections() {
@@ -324,6 +396,17 @@
             }
             compPane.replaceWith(regPane, trackPane);
         }
+        ensureApplicantTrackingTabs();
+    }
+
+    function showPreregTrackView() {
+        if (typeof switchTab === 'function') switchTab('tab-prereg-track');
+        loadPreregList();
+    }
+
+    function showMainRegTrackView() {
+        if (typeof switchTab === 'function') switchTab('tab-main-reg-track');
+        if (typeof loadApplications === 'function') loadApplications(true);
     }
 
     function preregListEl() {
@@ -338,15 +421,16 @@
         if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
         hideEventRegisterForms();
         loadPreregSeminars();
-        loadPreregList();
     }
 
     function showMainRegHubView() {
         if (typeof switchTab === 'function') switchTab('tab-main-reg-hub');
         hideEventRegisterForms();
         loadMainRegEvents();
-        if (typeof loadApplications === 'function') loadApplications(true);
     }
+
+    window.showPreregTrackView = showPreregTrackView;
+    window.showMainRegTrackView = showMainRegTrackView;
 
     window.showEventRegisterView = showPreregHubView;
     window.showEventTrackView = showMainRegHubView;
@@ -1006,13 +1090,20 @@
         if (titleEl) titleEl.textContent = title;
         if (msgEl) msgEl.textContent = message;
         if (trackEl) {
-            if (code) {
-                trackEl.textContent = code;
-                trackEl.classList.remove('hidden');
-            } else {
-                trackEl.textContent = '';
-                trackEl.classList.add('hidden');
-            }
+            trackEl.textContent = '';
+            trackEl.classList.add('hidden');
+        }
+        const noteEl = document.getElementById('ak-success-note');
+        if (noteEl) {
+            noteEl.textContent =
+                opts.kind === 'main'
+                    ? 'Open Main reg tracking from the menu to see your application status and tracking ID.'
+                    : 'Open Pre-reg tracking from the menu to see your application status and tracking ID.';
+        }
+        const okBtn = document.getElementById('ak-success-ok-btn');
+        if (okBtn) {
+            okBtn.textContent =
+                opts.kind === 'main' ? 'Open main reg tracking' : 'Open pre-reg tracking';
         }
         if (logoEl) logoEl.classList.add('hidden');
         successModalOnClose = typeof opts.onClose === 'function' ? opts.onClose : null;
@@ -1029,7 +1120,9 @@
             } catch (_) {}
         }
     }
-    window.showSubmissionSuccessModal = showSubmissionSuccessModal;
+    window.formatMainRegSubmitSuccessHtml = formatMainRegSubmitSuccessHtml;
+    window.formatPreregSubmitSuccessHtml = formatPreregSubmitSuccessHtml;
+    window.showHubSuccessBanner = showHubSuccessBanner;
     window.closeSubmissionSuccessModal = closeSubmissionSuccessModal;
 
     function formatPreregSubmitSuccessHtml(result) {
@@ -1039,16 +1132,11 @@
         const followUp =
             st === 'approved'
                 ? 'When final registration opens, use the <strong>Main registration</strong> tab.'
-                : 'Track your application below. We will email you when there is an update.';
+                : 'Open <strong>Pre-reg tracking</strong> from the menu for status updates.';
         return (
             '<p style="margin:0 0 6px;"><i class="fas fa-check-circle"></i> ' +
             msg +
             '</p>' +
-            (appNo
-                ? '<p style="margin:0;font-size:0.92rem;font-weight:700;">Tracking ID: <code style="background:#fff;padding:2px 8px;border-radius:6px;">' +
-                  appNo +
-                  '</code></p>'
-                : '') +
             '<p style="margin:8px 0 0;font-size:0.88rem;font-weight:500;">' +
             followUp +
             '</p>'
@@ -1056,7 +1144,6 @@
     }
 
     function formatMainRegSubmitSuccessHtml(result) {
-        const appNo = result && result.applicationNo ? escapeAkHtml(String(result.applicationNo)) : '';
         const msg =
             result && result.message
                 ? escapeAkHtml(result.message)
@@ -1065,12 +1152,7 @@
             '<p style="margin:0 0 6px;"><i class="fas fa-check-circle"></i> ' +
             msg +
             '</p>' +
-            (appNo
-                ? '<p style="margin:0;font-size:0.92rem;font-weight:700;">Application number: <code style="background:#fff;padding:2px 8px;border-radius:6px;">' +
-                  appNo +
-                  '</code></p>'
-                : '') +
-            '<p style="margin:8px 0 0;font-size:0.88rem;font-weight:500;">Track status below and check your email for confirmation.</p>'
+            '<p style="margin:8px 0 0;font-size:0.88rem;font-weight:500;">Open <strong>Main reg tracking</strong> from the menu for your status and tracking ID.</p>'
         );
     }
 
@@ -1252,19 +1334,13 @@
 
     function alreadyRegisteredMainActionBlock() {
         return (
-            '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Already registered</button>'
+            '<button type="button" class="btn-primary" style="width:100%;background:#475569;" onclick="showMainRegTrackView()">Open tracking</button>'
         );
     }
 
     function alreadyRegisteredMainStatusHtml() {
-        const apps =
-            typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
-        const app = apps[0];
-        const idPart = app && app.application_no ? ' (ID: ' + akEscapeHtml(app.application_no) + ')' : '';
         return (
-            '<p style="font-size:0.85rem;color:#15803d;margin-bottom:10px;"><i class="fas fa-check-circle"></i> Already registered' +
-            idPart +
-            '</p>'
+            '<p style="font-size:0.85rem;color:#15803d;margin-bottom:10px;"><i class="fas fa-check-circle"></i> Already registered — see Main reg tracking</p>'
         );
     }
 
@@ -1288,14 +1364,8 @@
         const apps =
             typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
         const app = apps[0];
-        const idPart =
-            app && app.application_no
-                ? ' — Tracking ID: <strong>' + escapeAkHtml(String(app.application_no)) + '</strong>'
-                : '';
         card.innerHTML =
-            '<p style="margin:0 0 10px;font-size:0.92rem;color:#15803d;"><i class="fas fa-check-circle"></i> Already registered' +
-            idPart +
-            '.</p>' +
+            '<p style="margin:0 0 10px;font-size:0.92rem;color:#15803d;"><i class="fas fa-check-circle"></i> Already registered. Open <strong>Main reg tracking</strong> for status.</p>' +
             alreadyRegisteredMainActionBlock();
     }
 
@@ -1434,7 +1504,7 @@
         } else if (flags.preregistrationRequired && (st === 'submitted' || st === 'pending_approval')) {
             statusBlock +=
                 '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration submitted</p>' +
-                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Application under review — track status below.</p>';
+                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Application under review — open Pre-reg tracking for updates.</p>';
             actionBlock =
                 '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Under review</button>';
         } else if (flags.preregistrationRequired && st === 'revision_required') {
@@ -1924,10 +1994,10 @@
                     form_data: formData
                 });
                 const afterPreregSuccess = function () {
-                    if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+                    showPreregTrackView();
                     showHubSuccessBanner(
-                        'tab-prereg-hub',
-                        'ak-prereg-hub-banner',
+                        'tab-prereg-track',
+                        'ak-prereg-track-banner',
                         formatPreregSubmitSuccessHtml(
                             Object.assign({}, resubmitResult, {
                                 applicationNo:
@@ -1936,7 +2006,6 @@
                             })
                         )
                     );
-                    loadPreregList();
                     loadPreregSeminars(true);
                 };
                 await showSubmissionSuccessModal({
@@ -1945,10 +2014,6 @@
                     message:
                         (resubmitResult && resubmitResult.message) ||
                         'Pre-registration updated and sent for review again.',
-                    applicationNo:
-                        (resubmitResult && resubmitResult.applicationNo) ||
-                        window.__akLastPreregApplicationNo ||
-                        '',
                     onClose: afterPreregSuccess
                 });
                 return;
@@ -1973,23 +2038,21 @@
             });
             const preregPendingReview = String(submitResult.status || 'submitted').toLowerCase() === 'submitted';
             const afterPreregSuccess = function () {
-                if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
+                showPreregTrackView();
                 showHubSuccessBanner(
-                    'tab-prereg-hub',
-                    'ak-prereg-hub-banner',
+                    'tab-prereg-track',
+                    'ak-prereg-track-banner',
                     formatPreregSubmitSuccessHtml(submitResult)
                 );
-                loadPreregList();
                 loadPreregSeminars(true);
             };
             await showSubmissionSuccessModal({
                 kind: 'prereg',
                 title: preregPendingReview ? 'Pre-registration submitted' : 'Pre-registration accepted',
                 message: preregPendingReview
-                    ? 'Your pre-registration was received and is under review. Track status below — we will email you when it is approved.'
+                    ? 'Your pre-registration was received and is under review. Open Pre-reg tracking for status.'
                     : submitResult.message ||
                       'Your pre-registration was received successfully.',
-                applicationNo: submitResult && submitResult.applicationNo,
                 onClose: afterPreregSuccess
             });
         } catch (e) {
@@ -2795,8 +2858,10 @@
         hub.innerHTML =
             '<h3 style="color:#0f766e;margin-bottom:14px;"><i class="fas fa-compass"></i> Registration hub</h3>' +
             '<div class="ak-hub-actions">' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="prereg-hub"><i class="fas fa-clipboard-list"></i><span>Pre-registration</span><small>Apply &amp; submissions</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-hub"><i class="fas fa-file-signature"></i><span>Main registration</span><small>Form &amp; applications</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="prereg-hub"><i class="fas fa-clipboard-list"></i><span>Pre-registration</span><small>Apply for events</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="prereg-track"><i class="fas fa-route"></i><span>Pre-reg tracking</span><small>Status &amp; tracking IDs</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-hub"><i class="fas fa-file-signature"></i><span>Main registration</span><small>Complete registration</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-track"><i class="fas fa-tasks"></i><span>Main reg tracking</span><small>Application status</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload entry files</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry review status</small></button>' +
             '</div>';
@@ -2806,7 +2871,9 @@
             btn.addEventListener('click', () => {
                 const k = btn.dataset.akHub;
                 if (k === 'prereg-hub' || k === 'event-register') showPreregHubView();
+                else if (k === 'prereg-track') showPreregTrackView();
                 else if (k === 'main-reg-hub' || k === 'event-main-register' || k === 'event-track') showMainRegHubView();
+                else if (k === 'main-reg-track') showMainRegTrackView();
                 else if (k === 'comp-register') showCompRegisterView();
                 else if (k === 'comp-track') showCompTrackView();
             });
@@ -2985,10 +3052,13 @@
             if (tabId === 'tab-prereg-hub') {
                 hideEventRegisterForms();
                 loadPreregSeminars();
+            } else if (tabId === 'tab-prereg-track') {
                 loadPreregList();
             } else if (tabId === 'tab-main-reg-hub') {
                 hideEventRegisterForms();
                 loadMainRegEvents();
+            } else if (tabId === 'tab-main-reg-track') {
+                if (typeof loadApplications === 'function') loadApplications(true);
             } else if (tabId === 'tab-comp-register') {
                 loadPreregSeminars().then(() => {
                     const compSel = document.getElementById('comp-seminar-select');
