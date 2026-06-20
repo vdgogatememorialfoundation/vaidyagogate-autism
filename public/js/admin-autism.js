@@ -1208,10 +1208,25 @@
         if (openQueue) openQueue.style.display = 'none';
     }
 
+    function openAdminPortalAuthSettings() {
+        if (typeof switchTab === 'function') switchTab('tab-site-cms');
+        if (typeof loadAdminSiteCms === 'function') loadAdminSiteCms();
+        setTimeout(() => {
+            const card = document.getElementById('ak-portal-auth-card');
+            if (card) {
+                card.style.display = '';
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (typeof loadPortalAuthAdminForm === 'function') loadPortalAuthAdminForm().catch(console.error);
+        }, 120);
+    }
+    window.openAdminPortalAuthSettings = openAdminPortalAuthSettings;
+
     function reorderAutismHomepageCms() {
         const tab = document.getElementById('tab-site-cms');
         const main = document.getElementById('ak-main-cms-card');
         const guide = document.getElementById('ak-homepage-cms-guide');
+        const authCard = document.getElementById('ak-portal-auth-card');
         const aboutCard = document.getElementById('ak-cms-about-card');
         const headerCard = document.getElementById('cms-header-footer-card');
         const contactCard = document.getElementById('cms-contact-card');
@@ -1220,8 +1235,9 @@
 
         tab.insertBefore(main, tab.firstElementChild);
         if (guide) tab.insertBefore(guide, main);
+        if (authCard) tab.insertBefore(authCard, guide ? guide.nextSibling : main.nextSibling);
 
-        if (aboutCard) tab.insertBefore(aboutCard, guide ? guide.nextSibling : main.nextSibling);
+        if (aboutCard) tab.insertBefore(aboutCard, authCard ? authCard.nextSibling : guide ? guide.nextSibling : main.nextSibling);
 
         if (headerCard) tab.insertBefore(headerCard, main.nextSibling);
         if (contactCard) {
@@ -1253,7 +1269,9 @@
         tab.querySelectorAll('.ak-cms-advanced').forEach((el) => {
             el.style.display = 'none';
         });
-        tab.querySelectorAll('.ak-cms-homepage, #ak-main-cms-card, #ak-homepage-cms-guide, #ak-cms-about-card').forEach((el) => {
+        tab.querySelectorAll(
+            '.ak-cms-homepage, #ak-main-cms-card, #ak-homepage-cms-guide, #ak-cms-about-card, #ak-portal-auth-card, .ak-cms-portal-auth'
+        ).forEach((el) => {
             el.style.display = '';
         });
         const intro = tab.querySelector(':scope > p');

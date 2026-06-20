@@ -166,6 +166,15 @@
         const loginPhoneRow = document.getElementById('doctor-login-phone-otp-row');
         if (loginPhoneRow) loginPhoneRow.style.display = loginChannels.whatsapp ? '' : 'none';
         const loginLead = document.getElementById('doctor-login-otp-lead');
+        const loginPanel = document.getElementById('doctor-login-otp-panel');
+        const signupPanel = document.getElementById('doctor-signup-otp-panel');
+        if (loginPanel) {
+            loginPanel.style.display =
+                passwordless || cfg.applicantLoginOtpRequired || cfg.requireLoginOtp ? 'block' : loginPanel.style.display;
+        }
+        if (signupPanel && cfg.requireSignupOtp !== false) {
+            signupPanel.style.display = 'block';
+        }
         if (loginLead) {
             if (passwordless) {
                 loginLead.textContent = loginChannels.email

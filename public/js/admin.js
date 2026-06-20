@@ -1251,6 +1251,7 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-behalf-reg', 'Doctor applications'],
     ['tab-reg-form', 'Registration form fields'],
     ['tab-site-cms', 'Website & doctor updates'],
+    ['tab-portal-auth', 'Portal sign-in'],
     ['tab-admin-payments', 'Payments'],
     ['tab-certificates', 'Certificate management'],
     ['tab-volunteers', 'Volunteers'],
