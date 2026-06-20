@@ -33,6 +33,21 @@
         return true;
     }
 
+    const LOGIN_AUTH_UI_VERSION = 'phone-v2';
+
+    const PHONE_LOGIN_FORM_INNER =
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>' +
+        '<input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>' +
+        '<div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +
+        '<input type="text" id="doctor-phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">' +
+        '<button type="button" id="doctor-send-otp-phone" class="ak-otp-action-btn" style="padding:10px 14px;border-radius:10px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;color:#0f766e;white-space:nowrap;">Send OTP</button>' +
+        '<button type="button" id="doctor-resend-otp-phone" class="ak-otp-action-btn" style="padding:10px 14px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-weight:700;color:#475569;white-space:nowrap;">Resend</button>' +
+        '</div>' +
+        '<p id="doctor-login-otp-status" style="font-size:0.82rem;color:#64748b;margin:0 0 10px;min-height:1.2em;"></p>' +
+        '<p id="doctor-login-err" class="hidden" style="color:#b91c1c;font-size:0.85rem;margin-top:10px;font-weight:600;"></p>' +
+        '<button type="submit" id="doctor-login-submit" class="btn-primary" style="width:100%;margin-top:8px;">Sign in</button>';
+
     function applyStandaloneUi() {
         if (!isStandaloneDoctorApp()) return;
         document.body.classList.add('doctor-standalone-app');
@@ -41,22 +56,47 @@
         });
     }
 
-    /** Mobile WebView often caches old sign-in HTML — force one reload when legacy email login is detected. */
-    function ensureFreshMobileAuthPage() {
+    /** Replace cached legacy sign-in (email + email/phone OTP rows) with phone-only UI. */
+    function ensurePhoneLoginMarkup() {
         if (!document.body || !document.body.classList.contains('ak-portal-dash')) return false;
-        const hasNewPhoneLogin = !!document.getElementById('doctor-login-submit');
-        const hasLegacyEmailLogin = !!document.getElementById('doctor-login-email');
-        if (hasNewPhoneLogin || !hasLegacyEmailLogin) return false;
+        const panel = document.getElementById('doctor-auth-login-panel');
+        const form = document.getElementById('doctor-login-form');
+        if (!panel || !form) return false;
+        const legacyPanel = document.getElementById('doctor-login-otp-panel');
+        const legacyEmail = document.getElementById('doctor-login-email');
+        const isCurrent = form.getAttribute('data-auth-ui') === LOGIN_AUTH_UI_VERSION && !legacyPanel && !legacyEmail;
+        if (isCurrent) return false;
+
+        const intro = panel.querySelector('p');
+        if (intro) {
+            intro.textContent = 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.';
+        }
+        if (legacyPanel) legacyPanel.remove();
+        form.setAttribute('data-auth-ui', LOGIN_AUTH_UI_VERSION);
+        form.innerHTML = PHONE_LOGIN_FORM_INNER;
+        phoneLoginWired = false;
+        return true;
+    }
+
+    /** Force one network reload if WebView still serves stale HTML after in-place repair. */
+    function ensureFreshMobileAuthPage() {
+        if (ensurePhoneLoginMarkup()) return false;
+        const form = document.getElementById('doctor-login-form');
+        if (!form || form.getAttribute('data-auth-ui') === LOGIN_AUTH_UI_VERSION) return false;
         try {
-            const u = new URL(window.location.href);
-            if (u.searchParams.get('authv') === '3') return false;
-            u.searchParams.set('authv', '3');
-            if (u.searchParams.get('app') !== '1' && isStandaloneDoctorApp()) {
-                u.searchParams.set('app', '1');
+            const key = 'ak-auth-ui-reload-v2';
+            if (sessionStorage.getItem(key) === '1') {
+                ensurePhoneLoginMarkup();
+                return false;
             }
+            sessionStorage.setItem(key, '1');
+            const u = new URL(window.location.href);
+            u.searchParams.set('authv', String(Date.now()));
+            if (isStandaloneDoctorApp()) u.searchParams.set('app', '1');
             window.location.replace(u.toString());
             return true;
         } catch (_) {
+            ensurePhoneLoginMarkup();
             return false;
         }
     }
@@ -835,6 +875,7 @@
         wireApplicantPhoneLogin,
         init: function () {
             if (ensureFreshMobileAuthPage()) return;
+            ensurePhoneLoginMarkup();
             applyStandaloneUi();
             blockHomepageNavigation();
             if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {

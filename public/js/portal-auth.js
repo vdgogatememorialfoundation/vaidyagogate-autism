@@ -139,7 +139,10 @@
             whatsapp: cfg.loginOtpWhatsapp !== false,
             email: cfg.loginOtpEmail === true
         };
-        const phoneOnlyLoginUi = !!document.getElementById('doctor-login-submit');
+        const phoneOnlyLoginUi =
+            !!document.getElementById('doctor-login-submit') ||
+            (document.getElementById('doctor-login-form') &&
+                document.getElementById('doctor-login-form').getAttribute('data-auth-ui') === 'phone-v2');
 
         ['doctor-login-password-wrap', 'doctor-signup-password-wrap'].forEach((id) => {
             const el = document.getElementById(id);
@@ -164,14 +167,20 @@
 
         if (phoneOnlyLoginUi) {
             const legacyPanel = document.getElementById('doctor-login-otp-panel');
-            if (legacyPanel) legacyPanel.style.display = 'none';
+            if (legacyPanel) legacyPanel.remove();
             const legacyEmail = document.getElementById('doctor-login-email');
             if (legacyEmail) {
                 const emailLabel = legacyEmail.previousElementSibling;
-                if (emailLabel && emailLabel.tagName === 'LABEL') emailLabel.style.display = 'none';
-                legacyEmail.style.display = 'none';
-                legacyEmail.required = false;
+                if (emailLabel && emailLabel.tagName === 'LABEL') emailLabel.remove();
+                legacyEmail.remove();
             }
+            ['doctor-login-email-otp-row', 'doctor-login-phone-otp-row', 'doctor-verify-otp-phone', 'doctor-verify-otp-email'].forEach(
+                (id) => {
+                    const el = document.getElementById(id);
+                    if (el && el.closest('#doctor-login-otp-panel')) return;
+                    if (el && el.closest('#doctor-auth-login-panel')) el.remove();
+                }
+            );
         } else {
             const loginEmailRow = document.getElementById('doctor-login-email-otp-row');
             if (loginEmailRow) loginEmailRow.style.display = loginChannels.email ? '' : 'none';

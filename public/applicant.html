@@ -134,7 +134,7 @@
             </div>
             <div id="doctor-auth-login-panel">
             <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
-            <form id="doctor-login-form">
+            <form id="doctor-login-form" data-auth-ui="phone-v2">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
                 <input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>
@@ -175,7 +175,7 @@
                     <div id="doctor-signup-otp-panel" style="display:none;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
                         <p id="doctor-signup-otp-lead" style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">Verify WhatsApp before signup.</p>
                         <p id="doctor-signup-otp-hint" class="hidden" style="font-size:0.8rem;color:#b45309;margin-bottom:8px;font-weight:600;"></p>
-                        <div id="doctor-signup-email-otp-row" class="portal-otp-row doctor-otp-row" style="margin-bottom:8px;">
+                        <div id="doctor-signup-email-otp-row" class="portal-otp-row doctor-otp-row hidden" style="display:none;margin-bottom:8px;">
                             <span class="portal-otp-label">Email</span>
                             <div class="portal-otp-actions">
                                 <button type="button" id="doctor-signup-send-otp-email" class="portal-otp-btn">Send</button>
@@ -927,14 +927,14 @@
     <script src="/js/site-seo.js?v=20260529b"></script>
     <script src="/js/portal-datetime.js?v=20260525b"></script>
     <script src="/js/site-branding.js?v=20260529b"></script>
-    <script src="/js/otp-ui.js?v=20260621a"></script>
+    <script src="/js/otp-ui.js?v=20260621b"></script>
     <script src="/js/http-json.js"></script>
-    <script src="/js/portal-auth.js?v=20260621a"></script>
+    <script src="/js/portal-auth.js?v=20260621b"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js?v=20260621a"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260621b"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism32"></script>
+    <script src="/js/applicant.js?v=autism33"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>
     <script src="/js/applicant-autism.js?v=autism46"></script>
     <script src="/js/autism-announcements.js?v=5"></script>

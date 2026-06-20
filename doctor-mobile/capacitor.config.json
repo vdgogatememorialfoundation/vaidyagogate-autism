@@ -3,7 +3,7 @@
   "appName": "Autism Applicant",
   "webDir": "www",
   "server": {
-    "url": "https://autism.vaidyagogate.org/dashboard?app=1&authv=3",
+    "url": "https://autism.vaidyagogate.org/dashboard?app=1&authv=4",
     "hostname": "autism.vaidyagogate.org",
     "cleartext": false,
     "androidScheme": "https",
