@@ -119,12 +119,60 @@
         /* Off-screen — source for PDF only; must not stack on the iframe */
         #prev-qrcode { position: absolute; left: -9999px; width: 128px; height: 128px; opacity: 0; pointer-events: none; }
         #seminar-track-live, #case-track-live { font-size: 0.82rem; color: #0f766e; font-weight: 700; margin-bottom: 10px; }
+        body.ak-portal-dash #doctor-login-otp-panel,
+        body.ak-portal-dash #doctor-login-email,
+        body.ak-portal-dash #doctor-login-email-otp-row,
+        body.ak-portal-dash #doctor-login-phone-otp-row,
+        body.ak-portal-dash #doctor-signup-email-otp-row {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="portal-bright autism-dashboard ak-portal-dash" data-portal-theme="doctor">
 
     <!-- Participant login -->
     <div id="auth-overlay">
+        <script>
+        (function () {
+            var UI = 'phone-v2';
+            function phoneLoginHtml() {
+                return (
+                    '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>' +
+                    '<input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+                    '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>' +
+                    '<div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +
+                    '<input type="text" id="doctor-phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">' +
+                    '<button type="button" id="doctor-send-otp-phone" style="padding:10px 14px;border-radius:10px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;color:#0f766e;white-space:nowrap;">Send OTP</button>' +
+                    '<button type="button" id="doctor-resend-otp-phone" style="padding:10px 14px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-weight:700;color:#475569;white-space:nowrap;">Resend</button>' +
+                    '</div>' +
+                    '<p id="doctor-login-otp-status" style="font-size:0.82rem;color:#64748b;margin:0 0 10px;min-height:1.2em;"></p>' +
+                    '<p id="doctor-login-err" class="hidden" style="color:#b91c1c;font-size:0.85rem;margin-top:10px;font-weight:600;"></p>' +
+                    '<button type="submit" id="doctor-login-submit" class="btn-primary" style="width:100%;margin-top:8px;">Sign in</button>'
+                );
+            }
+            function fixAuthUi() {
+                var legacyPanel = document.getElementById('doctor-login-otp-panel');
+                if (legacyPanel) legacyPanel.remove();
+                var legacyEmail = document.getElementById('doctor-login-email');
+                if (legacyEmail) {
+                    var lb = legacyEmail.previousElementSibling;
+                    if (lb && lb.tagName === 'LABEL') lb.remove();
+                    legacyEmail.remove();
+                }
+                var signupEmailOtp = document.getElementById('doctor-signup-email-otp-row');
+                if (signupEmailOtp) signupEmailOtp.remove();
+                var form = document.getElementById('doctor-login-form');
+                if (form && form.getAttribute('data-auth-ui') !== UI) {
+                    form.setAttribute('data-auth-ui', UI);
+                    if (!document.getElementById('doctor-login-submit')) form.innerHTML = phoneLoginHtml();
+                }
+                var intro = document.querySelector('#doctor-auth-login-panel > p');
+                if (intro) intro.textContent = 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.';
+            }
+            fixAuthUi();
+            document.addEventListener('DOMContentLoaded', fixAuthUi);
+        })();
+        </script>
         <div class="doctor-auth-card" style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:420px;box-shadow:0 24px 50px rgba(15,118,110,0.2);border:1px solid #99f6e4;">
             <div data-site-logo data-logo-height="44px" style="margin-bottom:12px;"></div>
             <h2 id="doctor-auth-title" style="color:#0284c7;margin-bottom:12px;font-size:1.5rem;">Welcome! Sign in</h2>
@@ -172,26 +220,16 @@
                     <input type="email" id="doctor-signup-email" placeholder="you@example.com" required autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
                     <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
                     <input type="tel" id="doctor-signup-phone" placeholder="10-digit mobile number" required autocomplete="tel" inputmode="tel" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
-                    <div id="doctor-signup-otp-panel" style="display:none;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
+                    <div id="doctor-signup-otp-panel" style="display:block;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
                         <p id="doctor-signup-otp-lead" style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">Verify WhatsApp before signup.</p>
                         <p id="doctor-signup-otp-hint" class="hidden" style="font-size:0.8rem;color:#b45309;margin-bottom:8px;font-weight:600;"></p>
-                        <div id="doctor-signup-email-otp-row" class="portal-otp-row doctor-otp-row hidden" style="display:none;margin-bottom:8px;">
-                            <span class="portal-otp-label">Email</span>
-                            <div class="portal-otp-actions">
-                                <button type="button" id="doctor-signup-send-otp-email" class="portal-otp-btn">Send</button>
-                                <button type="button" id="doctor-signup-resend-otp-email" class="portal-otp-btn portal-otp-btn-muted">Resend</button>
-                            </div>
-                            <input type="text" id="doctor-signup-email-otp" class="portal-otp-code" placeholder="Code" inputmode="numeric" autocomplete="one-time-code">
-                            <button type="button" id="doctor-signup-verify-otp-email" class="portal-otp-btn">Verify</button>
-                            <span id="doctor-signup-email-otp-ok" class="portal-otp-ok"></span>
+                        <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>
+                        <div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
+                            <input type="text" id="doctor-signup-phone-otp" class="portal-otp-code" placeholder="Enter code" inputmode="numeric" autocomplete="one-time-code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                            <button type="button" id="doctor-signup-send-otp-phone" class="portal-otp-btn">Send OTP</button>
+                            <button type="button" id="doctor-signup-resend-otp-phone" class="portal-otp-btn portal-otp-btn-muted">Resend</button>
                         </div>
-                        <div id="doctor-signup-phone-otp-row" class="portal-otp-row doctor-otp-row">
-                            <span class="portal-otp-label">Phone</span>
-                            <div class="portal-otp-actions">
-                                <button type="button" id="doctor-signup-send-otp-phone" class="portal-otp-btn">Send</button>
-                                <button type="button" id="doctor-signup-resend-otp-phone" class="portal-otp-btn portal-otp-btn-muted">Resend</button>
-                            </div>
-                            <input type="text" id="doctor-signup-phone-otp" class="portal-otp-code" placeholder="Code" inputmode="numeric" autocomplete="one-time-code">
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                             <button type="button" id="doctor-signup-verify-otp-phone" class="portal-otp-btn">Verify</button>
                             <span id="doctor-signup-phone-otp-ok" class="portal-otp-ok"></span>
                         </div>
@@ -927,14 +965,14 @@
     <script src="/js/site-seo.js?v=20260529b"></script>
     <script src="/js/portal-datetime.js?v=20260525b"></script>
     <script src="/js/site-branding.js?v=20260529b"></script>
-    <script src="/js/otp-ui.js?v=20260621b"></script>
+    <script src="/js/otp-ui.js?v=20260622"></script>
     <script src="/js/http-json.js"></script>
-    <script src="/js/portal-auth.js?v=20260621b"></script>
+    <script src="/js/portal-auth.js?v=20260622"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js?v=20260621b"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260622"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism33"></script>
+    <script src="/js/applicant.js?v=autism34"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>
     <script src="/js/applicant-autism.js?v=autism46"></script>
     <script src="/js/autism-announcements.js?v=5"></script>

@@ -22,7 +22,7 @@ const AUTISM_SCANNER_ALLOW = [AUTISM, 'https://autism-flax.vercel.app'];
 const APPS = [
     { dir: 'admin-mobile', url: `${SEMINAR}/admin.html`, title: 'VGMF Admin', hostname: 'seminar.vaidyagogate.org', allow: SEMINAR_ALLOW },
     { dir: 'judge-mobile', url: `${SEMINAR}/judge.html`, title: 'VGMF Judge', hostname: 'seminar.vaidyagogate.org', allow: SEMINAR_ALLOW },
-    { dir: 'doctor-mobile', url: `${AUTISM}/dashboard?app=1&authv=4`, title: 'Autism Applicant', hostname: 'autism.vaidyagogate.org', allow: [AUTISM, 'https://autism-flax.vercel.app'], appId: 'org.vaidyagogate.autism.applicant' },
+    { dir: 'doctor-mobile', url: `${AUTISM}/dashboard?app=1&authv=5`, title: 'Autism Applicant', hostname: 'autism.vaidyagogate.org', allow: [AUTISM, 'https://autism-flax.vercel.app'], appId: 'org.vaidyagogate.autism.applicant' },
     {
         dir: 'scanner-mobile',
         url: `${AUTISM}/scanner.html`,

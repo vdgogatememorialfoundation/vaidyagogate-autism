@@ -20,10 +20,12 @@
 
     function signupOtpChannels(cfg) {
         cfg = cfg || signupAuthConfig || global.__portalAuth || {};
-        if (cfg.channels && typeof cfg.channels === 'object') return cfg.channels;
+        if (cfg.channels && typeof cfg.channels === 'object') {
+            return { whatsapp: cfg.channels.whatsapp !== false, email: false };
+        }
         return {
             whatsapp: cfg.signupOtpWhatsapp !== false,
-            email: cfg.signupOtpEmail === true
+            email: false
         };
     }
 
@@ -306,17 +308,19 @@
     async function refreshSignupOtpPanel() {
         const panel = document.getElementById('doctor-signup-otp-panel');
         if (!panel) return;
+        var signupEmailOtp = document.getElementById('doctor-signup-email-otp-row');
+        if (signupEmailOtp) signupEmailOtp.remove();
         try {
             const res = await fetch('/api/auth/signup-otp-required');
             const d = await res.json();
             signupAuthConfig = d;
-            panel.style.display = d.required ? 'block' : 'none';
+            panel.style.display = d.required !== false ? 'block' : 'none';
             if (global.PortalAuth && typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
                 global.PortalAuth.applyApplicantAuthUi(
                     Object.assign({}, global.__portalAuth || {}, {
                         requireSignupOtp: d.required,
                         signupOtpWhatsapp: d.whatsapp !== false,
-                        signupOtpEmail: d.email === true
+                        signupOtpEmail: false
                     })
                 );
             }
@@ -525,7 +529,7 @@
     }
 
     function wireSignupOtpButtons() {
-        ['email', 'phone'].forEach((ch) => {
+        ['phone'].forEach((ch) => {
             const send = document.getElementById('doctor-signup-send-otp-' + ch);
             const resend = document.getElementById('doctor-signup-resend-otp-' + ch);
             const verify = document.getElementById('doctor-signup-verify-otp-' + ch);

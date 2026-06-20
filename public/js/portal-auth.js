@@ -155,7 +155,13 @@
         if (forgotBtn) forgotBtn.style.display = passwordless ? 'none' : '';
 
         const signupEmailRow = document.getElementById('doctor-signup-email-otp-row');
-        if (signupEmailRow) signupEmailRow.style.display = signupChannels.email ? '' : 'none';
+        if (signupEmailRow) {
+            if (document.body.classList.contains('ak-portal-dash') || !signupChannels.email) {
+                signupEmailRow.remove();
+            } else {
+                signupEmailRow.style.display = '';
+            }
+        }
         const signupPhoneRow = document.getElementById('doctor-signup-phone-otp-row');
         if (signupPhoneRow) signupPhoneRow.style.display = signupChannels.whatsapp ? '' : 'none';
         const signupLead = document.getElementById('doctor-signup-otp-lead');
