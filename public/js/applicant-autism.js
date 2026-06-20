@@ -1028,6 +1028,11 @@
     function formatPreregSubmitSuccessHtml(result) {
         const appNo = result && result.applicationNo ? escapeAkHtml(String(result.applicationNo)) : '';
         const msg = result && result.message ? escapeAkHtml(result.message) : 'Application submitted successfully.';
+        const st = String((result && result.status) || 'submitted').toLowerCase();
+        const followUp =
+            st === 'approved'
+                ? 'When final registration opens, use the <strong>Main registration</strong> tab.'
+                : 'Track your application below. We will email you when there is an update.';
         return (
             '<p style="margin:0 0 6px;"><i class="fas fa-check-circle"></i> ' +
             msg +
@@ -1036,7 +1041,10 @@
                 ? '<p style="margin:0;font-size:0.92rem;font-weight:700;">Tracking ID: <code style="background:#fff;padding:2px 8px;border-radius:6px;">' +
                   appNo +
                   '</code></p>'
-                : '')
+                : '') +
+            '<p style="margin:8px 0 0;font-size:0.88rem;font-weight:500;">' +
+            followUp +
+            '</p>'
         );
     }
 
@@ -1071,6 +1079,21 @@
 
     function isPreregApprovedForSeminar(seminarId) {
         return preregStatusForSeminar(seminarId) === 'approved';
+    }
+
+    function updatePreregCacheForSeminar(seminarId, patch) {
+        const sid = Number(seminarId);
+        if (!Number.isFinite(sid) || sid < 1) return;
+        if (!window.__akPreregBySeminar) window.__akPreregBySeminar = {};
+        const prev = window.__akPreregBySeminar[sid] || {};
+        window.__akPreregBySeminar[sid] = Object.assign({}, prev, patch, { seminar_id: sid });
+        _lastGridFp.prereg = '';
+        _lastGridFp.main = '';
+        const raw = window.__akAllSeminars || [];
+        if (raw.length) {
+            paintAutismEventsGrid('ak-prereg-events-grid', raw, window.__akPreregBySeminar, 'prereg');
+            paintAutismEventsGrid('ak-main-events-grid', raw, window.__akPreregBySeminar, 'main');
+        }
     }
 
     function openMainRegistrationForSeminar(seminarId) {
@@ -1401,10 +1424,10 @@
                     s.id +
                     '" style="width:100%;">Register now</button>';
             }
-        } else if (flags.preregistrationRequired && st === 'submitted') {
+        } else if (flags.preregistrationRequired && (st === 'submitted' || st === 'pending_approval')) {
             statusBlock +=
-                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration enabled</p>' +
-                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Application under review</p>';
+                '<p style="font-size:0.85rem;color:#0f766e;margin-bottom:8px;"><i class="fas fa-clipboard-check"></i> Pre-registration submitted</p>' +
+                '<p style="font-size:0.85rem;color:#64748b;margin-bottom:10px;">Application under review — track status below.</p>';
             actionBlock =
                 '<button type="button" disabled class="btn-primary" style="width:100%;opacity:0.55;">Under review</button>';
         } else if (flags.preregistrationRequired && st === 'revision_required') {
@@ -1536,6 +1559,17 @@
                 if (mode === 'revise') {
                     const row = preregBySeminar[Number(sid)];
                     if (row) window.beginPreregRevision(row);
+                    return;
+                }
+                const existingPrereg = preregBySeminar[Number(sid)];
+                const existingSt = String((existingPrereg && existingPrereg.status) || '').toLowerCase();
+                if (
+                    existingSt === 'submitted' ||
+                    existingSt === 'approved' ||
+                    existingSt === 'revision_required' ||
+                    existingSt === 'pending_approval'
+                ) {
+                    alert('You have already submitted pre-registration for this event. Track status in your submissions list below.');
                     return;
                 }
                 const seminar = byId[Number(sid)];
@@ -1876,6 +1910,12 @@
                 resetPreregWizard();
                 document.getElementById('prereg-form')?.reset();
                 hidePreregFormPanel();
+                updatePreregCacheForSeminar(sid, {
+                    status: resubmitResult.status || 'submitted',
+                    application_no:
+                        (resubmitResult && resubmitResult.applicationNo) || window.__akLastPreregApplicationNo || '',
+                    form_data: formData
+                });
                 const afterPreregSuccess = function () {
                     if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
                     showHubSuccessBanner(
@@ -1890,6 +1930,7 @@
                         )
                     );
                     loadPreregList();
+                    loadPreregSeminars(true);
                 };
                 await showSubmissionSuccessModal({
                     kind: 'prereg',
@@ -1918,6 +1959,12 @@
             const countryEl = document.getElementById('prereg-field-country');
             if (countryEl) countryEl.value = 'India';
             hidePreregFormPanel();
+            updatePreregCacheForSeminar(sid, {
+                status: submitResult.status || 'submitted',
+                application_no: submitResult.applicationNo,
+                form_data: formData
+            });
+            const preregPendingReview = String(submitResult.status || 'submitted').toLowerCase() === 'submitted';
             const afterPreregSuccess = function () {
                 if (typeof switchTab === 'function') switchTab('tab-prereg-hub');
                 showHubSuccessBanner(
@@ -1926,14 +1973,15 @@
                     formatPreregSubmitSuccessHtml(submitResult)
                 );
                 loadPreregList();
-                loadPreregSeminars();
+                loadPreregSeminars(true);
             };
             await showSubmissionSuccessModal({
                 kind: 'prereg',
-                title: 'Pre-registration submitted',
-                message:
-                    (submitResult && submitResult.message) ||
-                    'Your pre-registration was received successfully.',
+                title: preregPendingReview ? 'Pre-registration submitted' : 'Pre-registration accepted',
+                message: preregPendingReview
+                    ? 'Your pre-registration was received and is under review. Track status below — we will email you when it is approved.'
+                    : submitResult.message ||
+                      'Your pre-registration was received successfully.',
                 applicationNo: submitResult && submitResult.applicationNo,
                 onClose: afterPreregSuccess
             });
@@ -2853,6 +2901,10 @@
             fg.appendChild(input);
             container.appendChild(fg);
         });
+        if (window.__akPendingMainRegPrefill) {
+            applyMainRegPrefillValues(window.__akPendingMainRegPrefill);
+            window.__akPendingMainRegPrefill = null;
+        }
     }
 
     window.renderAutismMainRegistrationFields = renderMainRegExtraFields;
@@ -3004,12 +3056,56 @@
         }
     }
 
+    async function autoLoadMainRegPrefillFromPrereg(seminarId) {
+        const sid = Number(seminarId);
+        const uid = currentUserId();
+        if (!uid || !Number.isFinite(sid) || sid < 1) return null;
+        const seminar =
+            (window.__akAllSeminars || []).find((x) => Number(x.id) === sid) ||
+            (window.activeSeminars || []).find((x) => Number(x.id) === sid);
+        const flags = seminar ? seminarFlowFlags(seminar) : { preregistrationRequired: false };
+        if (!flags.preregistrationRequired) {
+            hideMainRegPreregLookupPanel();
+            return null;
+        }
+        try {
+            const q =
+                '/api/preregistrations/lookup-for-main-reg?userId=' +
+                encodeURIComponent(uid) +
+                '&seminarId=' +
+                encodeURIComponent(sid);
+            const data = await fetchJson(q);
+            window.__akPendingMainRegPrefill = data.prefill || {};
+            applyMainRegPrefillValues(window.__akPendingMainRegPrefill);
+            window.__akPendingMainRegPrefill = null;
+            if (data.applicationNo) {
+                const input = document.getElementById('reg-prereg-id-input');
+                if (input) input.value = data.applicationNo;
+            }
+            if (data.source === 'portal') {
+                hideMainRegPreregLookupPanel();
+            } else {
+                showMainRegPreregLookupPanel(sid);
+            }
+            if (data.approved) {
+                preregLookupStatus(data.message || 'Details loaded from your pre-registration.');
+            } else if (data.source !== 'portal') {
+                preregLookupStatus(data.message || 'Enter your pre-registration ID if details did not load.', true);
+            }
+            return data;
+        } catch (e) {
+            showMainRegPreregLookupPanel(sid);
+            preregLookupStatus('');
+            return null;
+        }
+    }
+
     function hideMainRegPreregLookupPanel() {
         document.getElementById('reg-prereg-lookup-panel')?.classList.add('hidden');
         preregLookupStatus('');
     }
 
-    function setRegFieldValue(key, val) {
+    function setRegFieldValue(key, val, force) {
         if (val == null || String(val).trim() === '') return;
         const mapped = {
             fname: 'reg-fname',
@@ -3038,14 +3134,14 @@
             el.value = v;
         } else if (el.type === 'checkbox') {
             el.checked = val === true || val === '1' || val === 1 || String(val).toLowerCase() === 'yes';
-        } else if (String(el.value || '').trim() === '') {
+        } else if (force || String(el.value || '').trim() === '') {
             el.value = String(val).trim();
         }
     }
 
     function applyMainRegPrefillValues(prefill) {
         if (!prefill || typeof prefill !== 'object') return;
-        Object.keys(prefill).forEach((k) => setRegFieldValue(k, prefill[k]));
+        Object.keys(prefill).forEach((k) => setRegFieldValue(k, prefill[k], true));
         window.__mainRegPrefillFromPrereg = true;
     }
 
@@ -3054,10 +3150,6 @@
         const applicationNo = String((input && input.value) || '').trim();
         const seminarId = window.activeSeminarIdForReg;
         const uid = currentUserId();
-        if (!applicationNo) {
-            preregLookupStatus('Enter your pre-registration ID.', true);
-            return;
-        }
         if (!uid) {
             preregLookupStatus('Sign in first to complete main registration.', true);
             return;
@@ -3070,15 +3162,16 @@
         const btn = document.getElementById('reg-prereg-lookup-btn');
         if (btn) btn.disabled = true;
         try {
-            const q =
+            let q =
                 '/api/preregistrations/lookup-for-main-reg?userId=' +
                 encodeURIComponent(uid) +
                 '&seminarId=' +
-                encodeURIComponent(seminarId) +
-                '&applicationNo=' +
-                encodeURIComponent(applicationNo);
+                encodeURIComponent(seminarId);
+            if (applicationNo) q += '&applicationNo=' + encodeURIComponent(applicationNo);
             const data = await fetchJson(q);
-            applyMainRegPrefillValues(data.prefill || {});
+            window.__akPendingMainRegPrefill = data.prefill || {};
+            applyMainRegPrefillValues(window.__akPendingMainRegPrefill);
+            window.__akPendingMainRegPrefill = null;
             if (data.approved) {
                 preregLookupStatus(
                     (data.message || 'Details loaded.') +
@@ -3120,7 +3213,7 @@
         window.startRegistration = async function (seminarId, opts) {
             await orig.apply(this, arguments);
             if (document.body.classList.contains('ak-portal-dash')) {
-                showMainRegPreregLookupPanel(seminarId);
+                await autoLoadMainRegPrefillFromPrereg(seminarId);
             }
         };
         window.startRegistration.__akPreregLookupHook = true;
