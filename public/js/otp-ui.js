@@ -17,6 +17,17 @@
      */
     function notifyOtpSent(channel, data, options) {
         const opts = options || {};
+        if (opts.inlineEl) {
+            let msg = opts.customMessage;
+            if (!msg) {
+                msg = 'Code sent to your ' + channelLabel(channel) + '.';
+            }
+            if (data && data.warning) msg = data.warning + ' ' + msg;
+            opts.inlineEl.textContent = msg;
+            opts.inlineEl.style.color = opts.inlineColor || '#059669';
+            return;
+        }
+        if (opts.silent) return;
         let msg = opts.customMessage;
         if (!msg) {
             if (opts.both) {

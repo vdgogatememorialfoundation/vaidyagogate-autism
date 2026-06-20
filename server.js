@@ -3854,6 +3854,80 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
     );
 });
 
+/** Phone + OTP code → sign in (one step for passwordless applicant portal). */
+app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
+    const { phone, code } = req.body || {};
+    const phoneV = contactValidation.validatePhone(phone);
+    if (!phoneV.valid) return res.status(400).json({ error: phoneV.message });
+    const codeStr = String(code || '').trim();
+    if (!codeStr) return res.status(400).json({ error: 'OTP code is required.' });
+
+    const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
+    authUsers.findUserByPhone(db, phoneV.cleanedPhone, (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) {
+            return res.status(401).json({
+                error: 'No account found with this phone number. Please create an account first.',
+                needsSignup: true
+            });
+        }
+        if (Number(row.is_banned) === 1) {
+            return res.status(403).json({
+                error: 'Your account has been banned. Please contact the foundation office.',
+                accountBanned: true
+            });
+        }
+        if (Number(row.is_disabled) === 1) {
+            return res.status(403).json({ error: 'Your account has been disabled. Please contact support.' });
+        }
+        const userRoles = require('./lib/user-roles');
+        if (userRoles.isStaffPortalAccount(row) || String(row.role || '').toLowerCase() === 'admin') {
+            return res.status(403).json({
+                error: 'This phone number is linked to a staff account. Use the admin portal to sign in.'
+            });
+        }
+        if (!userRoles.isDoctorPortalAccount(row)) {
+            return res.status(403).json({ error: 'This account cannot sign in to the applicant portal.' });
+        }
+        const dest = authUsers.loginOtpDestination('phone', row);
+        if (!dest) return res.status(400).json({ error: 'No phone on file for this account.' });
+        otpLib.verifyOtp(
+            db,
+            {
+                channel: 'phone',
+                destination: dest,
+                purpose: 'login',
+                code: codeStr,
+                meta: { userId: row.id },
+                userId: row.id,
+                seminarId: null
+            },
+            (verr, result) => {
+                if (verr) return res.status(500).json({ error: verr.message });
+                if (!result || !result.ok) {
+                    return res.status(400).json({ error: (result && result.error) || 'Invalid or expired OTP.' });
+                }
+                recordUserLogin(row.id, (eLogin, times) => {
+                    if (!eLogin && times) {
+                        row.previous_login_at = times.previousLoginAt || null;
+                        row.login_at = times.loginAt;
+                        row.last_login_at = times.loginAt;
+                    }
+                    activityLog.logFromRequest(db, req, {
+                        user_id: row.id,
+                        user_role: row.role || row.user_role,
+                        action: 'auth.login',
+                        meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
+                    });
+                    delete row.password;
+                    normalizeAuthUserRow(row);
+                    res.json({ success: true, user: row });
+                });
+            }
+        );
+    });
+});
+
 // OTP: send & verify (used by homepage signup + doctor registration)
 app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { channel, destination, purpose, seminarId, fieldKey, userId } = req.body || {};
@@ -9959,6 +10033,7 @@ app.post('/api/admin/portal-auth-config', (req, res) => {
         }
         upsertGlobalSetting(portalAuthPolicy.KEY, JSON.stringify(merged), (err) => {
             if (err) return res.status(500).json({ error: err.message });
+            portalAuthPolicy.invalidatePortalAuthConfigCache();
             portalAuthPolicy.loadPortalAuthConfig(db, () => {
                 res.json({ success: true, config: portalAuthPolicy.getPortalAuthConfig() });
             });

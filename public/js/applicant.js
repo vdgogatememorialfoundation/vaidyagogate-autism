@@ -1220,25 +1220,13 @@ window.onload = () => {
         bootDoctorDashboard(existing);
         return;
     }
-    const form = document.getElementById('doctor-login-form');
-    if (form && typeof PortalAuth !== 'undefined') {
-        PortalAuth.bindLoginForm({
-            portal: 'doctor',
-            formId: 'doctor-login-form',
-            otpPanelId: 'doctor-login-otp-panel',
-            phoneInputId: 'doctor-login-phone',
-            passwordInputId: 'doctor-login-password',
-            otpPrefix: 'doctor',
-            phoneOnlyLogin: true,
-            resendPhoneBtnId: 'doctor-resend-otp-phone',
-            onSuccess: bootDoctorDashboard,
-            onError: (msg) => {
-                const el = document.getElementById('doctor-login-err');
-                if (el) {
-                    el.textContent = msg;
-                    el.classList.remove('hidden');
-                } else alert(msg);
-            }
+    if (typeof DoctorAuthUi !== 'undefined' && typeof DoctorAuthUi.bindPhoneLogin === 'function') {
+        DoctorAuthUi.bindPhoneLogin(bootDoctorDashboard, (msg) => {
+            const el = document.getElementById('doctor-login-err');
+            if (el) {
+                el.textContent = msg;
+                el.classList.remove('hidden');
+            } else alert(msg);
         });
     }
 };

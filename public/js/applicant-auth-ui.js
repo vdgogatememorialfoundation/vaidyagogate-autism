@@ -108,24 +108,68 @@
         }
         const dest = signupOtpDest(channel);
         if (!dest) return alert(channel === 'email' ? 'Enter email first.' : 'Enter phone first.');
-        const res = await fetch('/api/otp/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channel, destination: dest, purpose: 'signup' })
-        });
-        const readJson = window.HttpJson ? window.HttpJson.readJsonResponse : null;
-        const errMsg = window.HttpJson ? window.HttpJson.apiErrorMessage : null;
-        const parsed = readJson ? await readJson(res) : { data: await res.json(), parseFailed: false };
-        const data = parsed.data;
-        if (parsed.parseFailed || !res.ok) {
-            return alert(
-                errMsg ? errMsg(res, data, parsed.parseFailed) : data.error || 'Could not send code.'
-            );
+        const sendBtn = document.getElementById('doctor-signup-send-otp-' + channel);
+        const statusEl = document.getElementById('doctor-signup-otp-hint');
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending…';
         }
-        if (window.OtpUi) window.OtpUi.notifyOtpSent(channel, data);
-        else alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
-        if (window.OtpUi && window.OtpUi.cooldownSignupChannel) {
-            window.OtpUi.cooldownSignupChannel(channel, 'doctor-signup', 60);
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.style.color = '#64748b';
+            statusEl.textContent = 'Sending OTP…';
+        }
+        try {
+            const res = await fetch('/api/otp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channel, destination: dest, purpose: 'signup' })
+            });
+            const readJson = window.HttpJson ? window.HttpJson.readJsonResponse : null;
+            const errMsg = window.HttpJson ? window.HttpJson.apiErrorMessage : null;
+            const parsed = readJson ? await readJson(res) : { data: await res.json(), parseFailed: false };
+            const data = parsed.data;
+            if (parsed.parseFailed || !res.ok) {
+                const msg = errMsg ? errMsg(res, data, parsed.parseFailed) : data.error || 'Could not send code.';
+                if (statusEl) {
+                    statusEl.style.color = '#b91c1c';
+                    statusEl.textContent = msg;
+                } else alert(msg);
+                return;
+            }
+            if (window.OtpUi) {
+                window.OtpUi.cooldownSignupChannel(channel, 'doctor-signup', 60);
+                if (statusEl) {
+                    window.OtpUi.notifyOtpSent(channel, data, {
+                        silent: true,
+                        inlineEl: statusEl,
+                        customMessage:
+                            channel === 'phone'
+                                ? 'Code sent to WhatsApp. Enter it below, then create your account.'
+                                : 'Code sent to your email. Enter it below.'
+                    });
+                } else {
+                    window.OtpUi.notifyOtpSent(channel, data);
+                }
+            } else if (statusEl) {
+                statusEl.style.color = '#059669';
+                statusEl.textContent = 'OTP sent. Enter the code below.';
+            }
+            const codeEl = document.getElementById(
+                channel === 'email' ? 'doctor-signup-email-otp' : 'doctor-signup-phone-otp'
+            );
+            if (codeEl) codeEl.focus();
+        } catch (err) {
+            console.error(err);
+            if (statusEl) {
+                statusEl.style.color = '#b91c1c';
+                statusEl.textContent = 'Could not send OTP. Try again.';
+            }
+        } finally {
+            if (sendBtn && sendBtn.textContent === 'Sending…') {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
         }
     }
 
@@ -418,6 +462,167 @@
         });
     }
 
+    function validatedLoginPhoneValue() {
+        const raw = String((document.getElementById('doctor-login-phone') || {}).value || '').trim();
+        if (typeof validatePhoneClient === 'function') {
+            return validatePhoneClient(raw, 'Phone');
+        }
+        const digits = raw.replace(/\D/g, '');
+        return digits.length >= 10
+            ? { valid: true, cleanedPhone: digits.slice(-10) }
+            : { valid: false, message: 'Enter your 10-digit WhatsApp number.' };
+    }
+
+    function bindPhoneLogin(onSuccess, onError) {
+        const form = document.getElementById('doctor-login-form');
+        const sendBtn = document.getElementById('doctor-send-otp-phone');
+        const resendBtn = document.getElementById('doctor-resend-otp-phone');
+        const submitBtn = document.getElementById('doctor-login-submit');
+        const statusEl = document.getElementById('doctor-login-otp-status');
+        const errEl = document.getElementById('doctor-login-err');
+        if (!form) return;
+
+        function showErr(msg) {
+            if (errEl) {
+                errEl.textContent = msg;
+                errEl.classList.remove('hidden');
+            } else if (onError) onError(msg);
+            else alert(msg);
+        }
+
+        function clearErr() {
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.classList.add('hidden');
+            }
+        }
+
+        function setStatus(msg, color) {
+            if (!statusEl) return;
+            statusEl.textContent = msg || '';
+            statusEl.style.color = color || '#64748b';
+        }
+
+        async function readApiJson(res) {
+            if (global.HttpJson) {
+                const { data, parseFailed } = await global.HttpJson.readJsonResponse(res);
+                return { data, parseFailed };
+            }
+            try {
+                return { data: await res.json(), parseFailed: false };
+            } catch (_) {
+                return { data: {}, parseFailed: true };
+            }
+        }
+
+        async function sendLoginOtp() {
+            clearErr();
+            const pv = validatedLoginPhoneValue();
+            if (!pv.valid) return showErr(pv.message);
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending…';
+            }
+            setStatus('Sending OTP to WhatsApp…', '#64748b');
+            try {
+                const res = await fetch('/api/auth/login-otp/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: pv.cleanedPhone, channel: 'phone' })
+                });
+                const { data, parseFailed } = await readApiJson(res);
+                if (parseFailed || !res.ok) {
+                    if (data.needsSignup) {
+                        switchDoctorAuthTab('signup');
+                        const sp = document.getElementById('doctor-signup-phone');
+                        if (sp) sp.value = pv.cleanedPhone;
+                        return showErr(
+                            (data.error || 'No account with this number.') + ' Switch to Create account.'
+                        );
+                    }
+                    const msg =
+                        parseFailed && global.HttpJson
+                            ? global.HttpJson.apiErrorMessage(res, data, true)
+                            : data.error || 'Could not send OTP.';
+                    setStatus('', '#64748b');
+                    return showErr(msg);
+                }
+                if (global.OtpUi) {
+                    global.OtpUi.cooldownLoginChannel('phone', 'doctor', 'doctor-resend-otp-phone', 60);
+                    global.OtpUi.notifyOtpSent('phone', data, {
+                        silent: true,
+                        inlineEl: statusEl,
+                        customMessage: 'Code sent to WhatsApp. Enter it above and tap Sign in.'
+                    });
+                } else {
+                    setStatus('Code sent to WhatsApp.', '#059669');
+                }
+                const codeEl = document.getElementById('doctor-phone-otp');
+                if (codeEl) codeEl.focus();
+            } catch (err) {
+                console.error(err);
+                setStatus('', '#64748b');
+                showErr('Could not reach the server.');
+            } finally {
+                if (sendBtn && sendBtn.textContent === 'Sending…') {
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Send OTP';
+                }
+            }
+        }
+
+        if (sendBtn) sendBtn.addEventListener('click', () => sendLoginOtp().catch(console.error));
+        if (resendBtn) resendBtn.addEventListener('click', () => sendLoginOtp().catch(console.error));
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErr();
+            const pv = validatedLoginPhoneValue();
+            if (!pv.valid) return showErr(pv.message);
+            const code = String((document.getElementById('doctor-phone-otp') || {}).value || '').trim();
+            if (!code) return showErr('Enter the OTP code from WhatsApp.');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Signing in…';
+            }
+            setStatus('Verifying and signing you in…', '#64748b');
+            try {
+                const res = await fetch('/api/auth/login-phone-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: pv.cleanedPhone, code, portal: 'doctor' })
+                });
+                const { data, parseFailed } = await readApiJson(res);
+                if (!res.ok || !data.success) {
+                    if (data.needsSignup) {
+                        switchDoctorAuthTab('signup');
+                        const sp = document.getElementById('doctor-signup-phone');
+                        if (sp) sp.value = pv.cleanedPhone;
+                    }
+                    const msg =
+                        parseFailed && global.HttpJson
+                            ? global.HttpJson.apiErrorMessage(res, data, true)
+                            : data.error || 'Sign in failed.';
+                    setStatus('', '#64748b');
+                    return showErr(msg);
+                }
+                if (global.PortalAuth) global.PortalAuth.setUser('doctor', data.user);
+                window.currentUser = data.user;
+                setStatus('', '#64748b');
+                if (typeof onSuccess === 'function') onSuccess(data.user);
+            } catch (err) {
+                console.error(err);
+                setStatus('', '#64748b');
+                showErr('Could not reach the server.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign in';
+                }
+            }
+        });
+    }
+
     function doctorReturnToPage() {
         const q = new URLSearchParams(window.location.search);
         return q.get('app') === '1' ? '/dashboard?app=1' : '/dashboard';
@@ -593,6 +798,7 @@
     window.DoctorAuthUi = {
         isStandaloneDoctorApp,
         switchDoctorAuthTab,
+        bindPhoneLogin,
         init: function () {
             applyStandaloneUi();
             blockHomepageNavigation();
