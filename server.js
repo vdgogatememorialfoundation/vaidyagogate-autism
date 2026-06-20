@@ -2367,27 +2367,24 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
     const sendTemplateNotify = opts.sendTemplateNotify;
     const drainImmediate = opts.drainImmediate;
     db.get(
-        `SELECT r.seminar_id, r.application_no, t.qr_code_data, t.ticket_id_string, t.is_scanned, t.scan_time,
+        `SELECT r.seminar_id, r.application_no, r.form_data, t.qr_code_data, t.ticket_id_string, t.is_scanned, t.scan_time,
                 IFNULL(t.is_valid, 1) AS is_valid, o.status AS payment_status,
                 s.title AS seminar_title, s.event_date, s.location_url, s.portal_year,
-                u.first_name, u.last_name
+                u.first_name, u.last_name,
+                p.form_data AS prereg_form_data
          FROM registrations r
          JOIN tickets t ON t.order_id IN (SELECT id FROM orders WHERE registration_id = r.id)
          JOIN orders o ON o.id = t.order_id
          JOIN seminars s ON s.id = r.seminar_id
          JOIN users u ON u.id = r.user_id
+         LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id
          WHERE r.id = ? AND TRIM(t.ticket_id_string) = TRIM(?)`,
         [registrationId, String(ticketId)],
         (e, row) => {
             if (e) return;
             const seminarId = row && row.seminar_id;
             const base = notifEngine.publicBaseUrl();
-            const pdfUrl =
-                base +
-                '/api/doctor/ticket-document/' +
-                encodeURIComponent(String(ticketId)) +
-                '?userId=' +
-                encodeURIComponent(String(userId));
+            const pdfUrl = base + ticketAttendees.ticketDocumentApiPath(String(ticketId), userId);
             const vars = {
                 ticket_id: ticketId,
                 qr_code_url: base + '/doctor.html#tab-tickets',
@@ -2410,6 +2407,10 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                 );
             }
             if (row && row.qr_code_data) {
+                const attendeesCount = ticketAttendees.resolveAttendeesCount({
+                    form_data: row.form_data,
+                    prereg_form_data: row.prereg_form_data
+                });
                 ticketHtml
                     .buildTicketHtmlFromRow(
                         {
@@ -2424,7 +2425,10 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                             payment_status: row.payment_status || 'success',
                             is_scanned: row.is_scanned,
                             scan_time: row.scan_time,
-                            is_valid: row.is_valid
+                            is_valid: row.is_valid,
+                            form_data: row.form_data,
+                            prereg_form_data: row.prereg_form_data,
+                            attendees_count: attendeesCount
                         },
                         db
                     )
@@ -6224,18 +6228,23 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
     db.all(
         `SELECT t.id as ticket_row_id, t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
                 o.order_id_string, o.amount, o.status as order_status, o.payment_date,
-                r.application_no, r.status as registration_status, r.form_data, s.title as seminar_title, s.id as seminar_id
+                r.application_no, r.status as registration_status, r.form_data, s.title as seminar_title, s.id as seminar_id,
+                p.form_data AS prereg_form_data
          FROM tickets t
          JOIN orders o ON t.order_id = o.id
          JOIN registrations r ON o.registration_id = r.id
          LEFT JOIN seminars s ON r.seminar_id = s.id
+         LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id
          WHERE r.user_id = ?
          ORDER BY t.id DESC`,
         [uid],
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             const out = (rows || []).map((row) => {
-                const attendeesCount = ticketAttendees.attendeesCountFromFormData(row.form_data);
+                const attendeesCount = ticketAttendees.resolveAttendeesCount({
+                    form_data: row.form_data,
+                    prereg_form_data: row.prereg_form_data
+                });
                 const copy = Object.assign({}, row);
                 if (attendeesCount != null) copy.attendees_count = attendeesCount;
                 delete copy.form_data;
@@ -6246,7 +6255,7 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
     );
 });
 
-app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
+function sendTicketDocumentHtml(req, res) {
     const ticketId = String(req.params.ticketId || '').trim();
     const uid = parseInt(req.query.userId, 10);
     if (!ticketId) return res.status(400).send('Ticket id required');
@@ -6257,14 +6266,16 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
     const params = internalRowId ? [ticketId, internalRowId] : [ticketId];
     db.get(
         `SELECT t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
-                r.application_no, r.user_id, r.form_data, o.status AS payment_status,
+                r.application_no, r.user_id, r.seminar_id, r.form_data, o.status AS payment_status,
                 s.title AS seminar_title, s.event_date, s.location_url, s.portal_year,
-                u.first_name, u.last_name
+                u.first_name, u.last_name,
+                p.form_data AS prereg_form_data
          FROM tickets t
          JOIN orders o ON t.order_id = o.id
          JOIN registrations r ON o.registration_id = r.id
          JOIN seminars s ON r.seminar_id = s.id
          JOIN users u ON u.id = r.user_id
+         LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id
          ${whereClause}`,
         params,
         (err, row) => {
@@ -6273,6 +6284,10 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
             if (Number.isInteger(uid) && uid > 0 && Number(row.user_id) !== uid) {
                 return res.status(403).send('Not your ticket');
             }
+            const attendeesCount = ticketAttendees.resolveAttendeesCount({
+                form_data: row.form_data,
+                prereg_form_data: row.prereg_form_data
+            });
             ticketHtml
                 .buildTicketHtmlFromRow(
                     {
@@ -6289,7 +6304,8 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
                         payment_status: row.payment_status,
                         is_valid: row.is_valid,
                         form_data: row.form_data,
-                        attendees_count: ticketAttendees.attendeesCountFromFormData(row.form_data)
+                        prereg_form_data: row.prereg_form_data,
+                        attendees_count: attendeesCount
                     },
                     db
                 )
@@ -6301,7 +6317,10 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
                 .catch((e) => res.status(500).send(e.message));
         }
     );
-});
+}
+
+app.get('/api/applicant/ticket-document/:ticketId', sendTicketDocumentHtml);
+app.get('/api/doctor/ticket-document/:ticketId', sendTicketDocumentHtml);
 
 // Change password (doctor portal)
 app.post('/api/auth/change-password', (req, res) => {
@@ -12453,10 +12472,12 @@ const ADMIN_ETICKET_LOOKUP_SQL = `
                s.id AS seminar_id, s.title AS seminar_title, s.price AS seminar_price,
                o.id AS order_db_id, o.order_id_string, o.status AS payment_status, o.payment_date,
                t.id AS ticket_row_id, t.ticket_id_string, t.is_scanned, IFNULL(t.scan_count, 0) AS scan_count,
-               t.scan_time, IFNULL(t.is_valid, 1) AS is_valid, t.qr_code_data
+               t.scan_time, IFNULL(t.is_valid, 1) AS is_valid, t.qr_code_data,
+               p.form_data AS prereg_form_data
         FROM registrations r
         JOIN users u ON u.id = r.user_id
         JOIN seminars s ON s.id = r.seminar_id
+        LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id
         LEFT JOIN orders o ON o.id = (
             SELECT o2.id FROM orders o2
             WHERE o2.registration_id = r.id AND LOWER(TRIM(o2.status)) = 'success'
@@ -12560,7 +12581,10 @@ app.get('/api/admin/e-tickets/lookup', (req, res) => {
                 else if (score >= 70) matchKind = 'email';
                 else if (score >= 50) matchKind = 'phone';
                 const qrPayload = adminEticketQrScanPayload(row);
-                const attendeesCount = ticketAttendees.attendeesCountFromFormData(row.form_data);
+                const attendeesCount = ticketAttendees.resolveAttendeesCount({
+                    form_data: row.form_data,
+                    prereg_form_data: row.prereg_form_data
+                });
                 return {
                     registrationId: row.registration_id,
                     applicationNo: row.application_no,
@@ -12588,7 +12612,7 @@ app.get('/api/admin/e-tickets/lookup', (req, res) => {
                     qrImageUrl: qrPayload ? `${base}/api/qrcode/${encodeURIComponent(qrPayload)}` : null,
                     ticketPreviewUrl:
                         row.ticket_id_string && row.user_id
-                            ? `${base}/api/doctor/ticket-document/${encodeURIComponent(row.ticket_id_string)}?userId=${encodeURIComponent(String(row.user_id))}`
+                            ? base + ticketAttendees.ticketDocumentApiPath(row.ticket_id_string, row.user_id)
                             : null
                 };
             });

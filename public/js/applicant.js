@@ -6124,7 +6124,7 @@ async function loadDoctorEventTickets() {
                     ${statusLine}
                     ${
                         !invalid && t.ticket_id_string
-                            ? `<p style="margin:12px 0 0;"><a href="/api/doctor/ticket-document/${encodeURIComponent(t.ticket_id_string)}?userId=${encodeURIComponent(String(uid))}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-block;padding:8px 14px;text-decoration:none;font-size:0.88rem;">Download / print e-ticket (PDF)</a></p>`
+                            ? `<p style="margin:12px 0 0;"><a href="/api/applicant/ticket-document/${encodeURIComponent(t.ticket_id_string)}?userId=${encodeURIComponent(String(uid))}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-block;padding:8px 14px;text-decoration:none;font-size:0.88rem;">Download / print e-ticket (PDF)</a></p>`
                             : ''
                     }
                 </div>
