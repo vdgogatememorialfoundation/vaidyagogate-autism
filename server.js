@@ -29,6 +29,7 @@ const pincodeLookup = require('./lib/pincode-lookup');
 const countriesList = require('./lib/countries');
 const designatedNotify = require('./lib/designated-notify');
 const ticketHtml = require('./lib/ticket-html');
+const ticketAttendees = require('./lib/ticket-attendees');
 const {
     validateDynamicForm,
     normalizeFields,
@@ -6223,7 +6224,7 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
     db.all(
         `SELECT t.id as ticket_row_id, t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
                 o.order_id_string, o.amount, o.status as order_status, o.payment_date,
-                r.application_no, r.status as registration_status, s.title as seminar_title, s.id as seminar_id
+                r.application_no, r.status as registration_status, r.form_data, s.title as seminar_title, s.id as seminar_id
          FROM tickets t
          JOIN orders o ON t.order_id = o.id
          JOIN registrations r ON o.registration_id = r.id
@@ -6233,7 +6234,14 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
         [uid],
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json(rows || []);
+            const out = (rows || []).map((row) => {
+                const attendeesCount = ticketAttendees.attendeesCountFromFormData(row.form_data);
+                const copy = Object.assign({}, row);
+                if (attendeesCount != null) copy.attendees_count = attendeesCount;
+                delete copy.form_data;
+                return copy;
+            });
+            res.json(out);
         }
     );
 });
@@ -6249,7 +6257,7 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
     const params = internalRowId ? [ticketId, internalRowId] : [ticketId];
     db.get(
         `SELECT t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
-                r.application_no, r.user_id, o.status AS payment_status,
+                r.application_no, r.user_id, r.form_data, o.status AS payment_status,
                 s.title AS seminar_title, s.event_date, s.location_url, s.portal_year,
                 u.first_name, u.last_name
          FROM tickets t
@@ -6279,7 +6287,9 @@ app.get('/api/doctor/ticket-document/:ticketId', (req, res) => {
                         is_scanned: row.is_scanned,
                         scan_time: row.scan_time,
                         payment_status: row.payment_status,
-                        is_valid: row.is_valid
+                        is_valid: row.is_valid,
+                        form_data: row.form_data,
+                        attendees_count: ticketAttendees.attendeesCountFromFormData(row.form_data)
                     },
                     db
                 )
@@ -12438,7 +12448,7 @@ app.post('/api/support-ticket/:ticketId/reply', (req, res) => {
 // ==================== ADMIN E-TICKETS (lookup / generate / send) ====================
 
 const ADMIN_ETICKET_LOOKUP_SQL = `
-        SELECT r.id AS registration_id, r.application_no, r.status AS registration_status,
+        SELECT r.id AS registration_id, r.application_no, r.status AS registration_status, r.form_data,
                u.id AS user_id, u.first_name, u.last_name, u.email, u.phone,
                s.id AS seminar_id, s.title AS seminar_title, s.price AS seminar_price,
                o.id AS order_db_id, o.order_id_string, o.status AS payment_status, o.payment_date,
@@ -12550,6 +12560,7 @@ app.get('/api/admin/e-tickets/lookup', (req, res) => {
                 else if (score >= 70) matchKind = 'email';
                 else if (score >= 50) matchKind = 'phone';
                 const qrPayload = adminEticketQrScanPayload(row);
+                const attendeesCount = ticketAttendees.attendeesCountFromFormData(row.form_data);
                 return {
                     registrationId: row.registration_id,
                     applicationNo: row.application_no,
@@ -12569,6 +12580,9 @@ app.get('/api/admin/e-tickets/lookup', (req, res) => {
                     scanTime: row.scan_time,
                     isValid: row.is_valid !== 0 && row.is_valid !== false,
                     hasTicket: !!row.ticket_id_string,
+                    attendeesCount,
+                    attendeesLabel:
+                        attendeesCount != null ? ticketAttendees.attendeesValidityLabel(attendeesCount) : '',
                     matchKind,
                     matchScore: score,
                     qrImageUrl: qrPayload ? `${base}/api/qrcode/${encodeURIComponent(qrPayload)}` : null,
@@ -12583,6 +12597,40 @@ app.get('/api/admin/e-tickets/lookup', (req, res) => {
                 list.length === 1 ||
                 (list.length > 1 && topScore >= 90 && list.filter((r) => r.matchScore === topScore).length === 1);
             res.json({ success: true, results: list, autoSelect });
+        });
+    });
+});
+
+app.post('/api/admin/registrations/:registrationId/attendees-count', (req, res) => {
+    const registrationId = parseInt(req.params.registrationId, 10);
+    const actingAdminId = parseInt((req.body && req.body.actingAdminId) || '', 10);
+    const countRaw = (req.body && req.body.attendeesCount) != null ? req.body.attendeesCount : req.body.count;
+    const count = parseInt(countRaw, 10);
+    if (!Number.isInteger(registrationId) || registrationId < 1) {
+        return res.status(400).json({ error: 'Invalid registration id.' });
+    }
+    if (!Number.isInteger(count) || count < 1 || count > 20) {
+        return res.status(400).json({ error: 'Enter the number of people (1–20).' });
+    }
+    assertAdminPortalActor(actingAdminId, (eAct) => {
+        if (eAct) return res.status(eAct.message === 'FORBIDDEN' ? 403 : 500).json({ error: 'Admin access required' });
+        db.get(`SELECT id, form_data FROM registrations WHERE id = ?`, [registrationId], (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!row) return res.status(404).json({ error: 'Registration not found.' });
+            let formData = ticketAttendees.parseFormData(row.form_data);
+            formData.attendees_count = count;
+            db.run(
+                `UPDATE registrations SET form_data = ? WHERE id = ?`,
+                [JSON.stringify(sanitizeFormDataForStorage(formData)), registrationId],
+                (uErr) => {
+                    if (uErr) return res.status(500).json({ error: uErr.message });
+                    res.json({
+                        success: true,
+                        attendeesCount: count,
+                        attendeesLabel: ticketAttendees.attendeesValidityLabel(count)
+                    });
+                }
+            );
         });
     });
 });

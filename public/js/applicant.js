@@ -6080,6 +6080,13 @@ async function loadDoctorEventTickets() {
             const scanned = t.is_scanned
                 ? `Checked in · ${t.scan_time ? formatScanDateTime(t.scan_time) : 'venue'}`
                 : 'Not scanned yet — show this QR at entry';
+            const attendeesCount = Number(t.attendees_count);
+            const entryPassLine =
+                window.PORTAL_IS_AUTISM && Number.isInteger(attendeesCount) && attendeesCount >= 1
+                    ? `<p style="margin:4px 0;font-size:0.9rem;color:#0f766e;font-weight:700;">${
+                          attendeesCount === 1 ? 'Valid for 1 person' : 'Valid for ' + attendeesCount + ' people'
+                      }</p>`
+                    : '';
             const statusLine = invalid
                 ? `<p style="margin:8px 0 0;font-size:0.9rem;color:#b91c1c;font-weight:600;">Invalid — registration ${regSt === 'cancelled' ? 'cancelled' : regSt === 'rejected' ? 'rejected' : 'no longer active'}. Do not use this QR for entry.</p>`
                 : `<p style="margin:8px 0 0;font-size:0.85rem;color:#64748b;">${escapeHtml(scanned)}</p>`;
@@ -6094,6 +6101,7 @@ async function loadDoctorEventTickets() {
                             ? ' · <strong>Entry:</strong> <span style="color:#047857;font-weight:700;">FREE</span>'
                             : ' · <strong>Payment:</strong> ' + escapeHtml(t.order_status || '—')
                     }</p>
+                    ${entryPassLine}
                     ${statusLine}
                     ${
                         !invalid && t.ticket_id_string

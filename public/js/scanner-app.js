@@ -2,6 +2,8 @@
     const AUTISM_PRODUCT_ID = 'autism';
     /** Autism check-in: no certificate panel on scanner (certificates are online only). */
     const SCANNER_SHOW_CERTIFICATE = false;
+    /** Do not show scan progress or entry-pass size on scanner (admin/applicant ticket only). */
+    const SCANNER_SHOW_SCAN_PROGRESS = false;
     const ALLOWED_PORTAL_HOSTS = new Set([
         'autism.vaidyagogate.org',
         'autism-flax.vercel.app',
@@ -429,7 +431,9 @@
                 playTone('success');
                 stats.ok++;
                 const scanNote =
-                    result.scanCount != null && result.scansRequired != null
+                    SCANNER_SHOW_SCAN_PROGRESS &&
+                    result.scanCount != null &&
+                    result.scansRequired != null
                         ? '<p style="margin-top:8px;font-size:0.85rem;">Scans: <strong>' +
                           result.scanCount +
                           '/' +

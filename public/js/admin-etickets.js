@@ -172,7 +172,25 @@
             '<dt>Entry scan</dt><dd>' +
             scanHtml +
             '</dd>' +
-            '</dl></div></div>';
+            (row.attendeesCount != null
+                ? '<dt>Entry pass size</dt><dd><strong>' +
+                  esc(row.attendeesLabel || 'Valid for ' + row.attendeesCount + ' people') +
+                  '</strong></dd>'
+                : '') +
+            '</dl>' +
+            (row.attendeesCount != null
+                ? '<div class="ak-eticket-attendees-edit" style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;">' +
+                  '<label for="eticket-attendees-count" style="display:block;font-size:0.82rem;font-weight:700;color:#475569;margin-bottom:6px;">People on this ticket (admin only)</label>' +
+                  '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+                  '<input type="number" id="eticket-attendees-count" min="1" max="20" step="1" value="' +
+                  esc(String(row.attendeesCount)) +
+                  '" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">' +
+                  '<button type="button" class="btn-primary" style="padding:8px 14px;font-size:0.88rem;" onclick="adminEticketSaveAttendeesCount()">Save count</button>' +
+                  '</div>' +
+                  '<p style="margin:8px 0 0;font-size:0.78rem;color:#64748b;">Shown on the applicant e-ticket only — not on the scanner app.</p>' +
+                  '</div>'
+                : '') +
+            '</div></div>';
 
         if (preview) {
             if (row.ticketPreviewUrl) {
@@ -244,6 +262,42 @@
         } catch (e) {
             console.error(e);
             setStatus(e.message || 'Lookup failed.', '#b91c1c');
+        }
+    };
+
+    window.adminEticketSaveAttendeesCount = async function adminEticketSaveAttendeesCount() {
+        const user = adm();
+        if (!user || !user.id) return alert('Not logged in.');
+        const row = selection;
+        if (!row || !row.registrationId) return alert('Select a registration first.');
+        const input = document.getElementById('eticket-attendees-count');
+        const count = parseInt(input && input.value, 10);
+        if (!Number.isInteger(count) || count < 1 || count > 20) {
+            return alert('Enter the number of people (1–20).');
+        }
+        const actSt = document.getElementById('eticket-action-status');
+        if (actSt) {
+            actSt.style.color = '#64748b';
+            actSt.textContent = 'Saving entry pass size…';
+        }
+        try {
+            const data = await api('/api/admin/registrations/' + row.registrationId + '/attendees-count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ actingAdminId: user.id, attendeesCount: count })
+            });
+            row.attendeesCount = data.attendeesCount;
+            row.attendeesLabel = data.attendeesLabel;
+            if (actSt) {
+                actSt.style.color = '#059669';
+                actSt.textContent = data.attendeesLabel || 'Entry pass size updated.';
+            }
+            selectRow(row, true);
+        } catch (e) {
+            if (actSt) {
+                actSt.style.color = '#b91c1c';
+                actSt.textContent = e.message || 'Could not save entry pass size.';
+            }
         }
     };
 
