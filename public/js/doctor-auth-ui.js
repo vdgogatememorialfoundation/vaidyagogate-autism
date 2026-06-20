@@ -87,6 +87,9 @@
         }
         if (window.OtpUi) window.OtpUi.notifyOtpSent(channel, data);
         else alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
+        if (window.OtpUi && window.OtpUi.cooldownSignupChannel) {
+            window.OtpUi.cooldownSignupChannel(channel, 'doctor-signup', 60);
+        }
     }
 
     async function verifySignupOtp(channel) {

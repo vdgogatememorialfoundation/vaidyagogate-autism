@@ -452,16 +452,16 @@
                             <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Verify email and WhatsApp before creating your account (both required).</p>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
                                 <span style="font-weight:600;min-width:48px;">Email</span>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Send</button>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Resend</button>
+                                <button type="button" id="signup-send-otp-email" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Send</button>
+                                <button type="button" id="signup-resend-otp-email" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Resend</button>
                                 <input type="text" id="signup_email_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
                                 <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifySignupOtp('email')">Verify</button>
                                 <span id="signup_email_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
                             </div>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                                 <span style="font-weight:600;min-width:48px;">Phone</span>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Send</button>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Resend</button>
+                                <button type="button" id="signup-send-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Send</button>
+                                <button type="button" id="signup-resend-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Resend</button>
                                 <input type="text" id="signup_phone_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
                                 <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifySignupOtp('phone')">Verify</button>
                                 <span id="signup_phone_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
@@ -581,7 +581,7 @@
     <script src="/js/autism-announcements.js?v=3"></script>
     <script src="/js/vgmf-home-stats.js?v=4"></script>
     <script src="/js/vgmf-marketing.js"></script>
-    <script src="/js/otp-ui.js"></script>
+    <script src="/js/otp-ui.js?v=20260619a"></script>
     <script src="/js/http-json.js"></script>
     <script>
         let currentUserId = null;
@@ -974,6 +974,7 @@
                 }
                 if (data.debugCode) console.info('Signup OTP debug:', data.debugCode);
                 OtpUi.notifyOtpSent(channel, data);
+                if (OtpUi.cooldownSignupChannel) OtpUi.cooldownSignupChannel(channel, 'signup', 60);
             } catch (e) {
                 console.error(e);
                 alert('Network error.');

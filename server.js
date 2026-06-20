@@ -1995,6 +1995,16 @@ function upsertSeminarScrollingAnnouncement(cms, row, cb) {
     });
 }
 
+function removeSeminarNotices(seminarId, cb) {
+    const sid = parseInt(seminarId, 10);
+    if (Number.isNaN(sid)) return cb && cb(null);
+    db.run(`DELETE FROM notices WHERE seminar_id = ?`, [sid], (err) => {
+        if (err) return cb && cb(err);
+        READ_API_CACHE.delete('api:notices:public');
+        cb && cb(null);
+    });
+}
+
 function removeSeminarScrollingAnnouncement(seminarId, cb) {
     const sid = parseInt(seminarId, 10);
     if (Number.isNaN(sid)) return cb && cb(null);
@@ -6482,7 +6492,13 @@ app.get('/api/notices', (req, res) => {
         setEdgeReadCacheHeaders(res, { sMaxage: 60, staleWhileRevalidate: 30 });
         return res.json(cached);
     }
-    db.all(`SELECT * FROM notices ORDER BY created_at DESC`, [], (err, rows) => {
+    db.all(
+        `SELECT n.* FROM notices n
+         LEFT JOIN seminars s ON s.id = n.seminar_id
+         WHERE n.seminar_id IS NULL OR (s.id IS NOT NULL AND COALESCE(s.is_active, 0) = 1)
+         ORDER BY n.created_at DESC`,
+        [],
+        (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const payload = rows || [];
         setReadApiCache(cacheKey, payload, 60000);
@@ -7603,7 +7619,9 @@ app.put('/api/admin/seminars/:id', (req, res) => {
             function (err) {
             if (err) return res.status(500).json({ error: err.message });
                 if (!is_active) {
-                    removeSeminarScrollingAnnouncement(parseInt(req.params.id, 10), () => {});
+                    const sidOff = parseInt(req.params.id, 10);
+                    removeSeminarScrollingAnnouncement(sidOff, () => {});
+                    removeSeminarNotices(sidOff, () => {});
                 } else {
                     syncSeminarTickerAnnouncement(parseInt(req.params.id, 10), () => {});
                 }
@@ -7676,6 +7694,7 @@ app.delete('/api/admin/seminars/:id', (req, res) => {
                 if (e1) return res.status(500).json({ error: e1.message });
                 if (!this.changes) return res.status(404).json({ error: 'Seminar not found' });
                 removeSeminarScrollingAnnouncement(sid, () => {});
+                removeSeminarNotices(sid, () => {});
                 res.json({
                     success: true,
                     deactivated: true,
@@ -7690,6 +7709,7 @@ app.delete('/api/admin/seminars/:id', (req, res) => {
                 if (eDel) return res.status(500).json({ error: eDel.message });
                 if (!this.changes) return res.status(404).json({ error: 'Seminar not found' });
                 removeSeminarScrollingAnnouncement(sid, () => {});
+                removeSeminarNotices(sid, () => {});
                 res.json({ success: true, deleted: true });
             });
         };
