@@ -243,6 +243,17 @@ function bootstrapApp(done) {
     persistScrollingAnnouncementsSanitizeIfNeeded(() => {});
 
     const finish = () => {
+        integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
+            portalAuthPolicy.loadPortalAuthConfig(db, () => {});
+            if (pgDb && typeof pgDb.ensureAuxiliaryTables === 'function') {
+                pgDb
+                    .ensureAuxiliaryTables()
+                    .then(() => {
+                        auxiliaryTablesReady = true;
+                    })
+                    .catch((e) => console.warn('[bootstrap] aux tables:', e.message));
+            }
+        });
         if (done) done();
     };
 
@@ -3036,15 +3047,24 @@ function withIntegrationSettingsLoaded(req, res, next) {
     });
 }
 
+let auxiliaryTablesReady = false;
+let auxiliaryTablesPromise = null;
+
 function withAuxiliaryTables(req, res, next) {
+    if (auxiliaryTablesReady) return next();
     if (pgDb && typeof pgDb.ensureAuxiliaryTables === 'function') {
-        return pgDb
-            .ensureAuxiliaryTables()
-            .then(() => next())
-            .catch((e) => {
-                console.warn('[aux-tables]', e.message);
-                next();
-            });
+        if (!auxiliaryTablesPromise) {
+            auxiliaryTablesPromise = pgDb
+                .ensureAuxiliaryTables()
+                .then(() => {
+                    auxiliaryTablesReady = true;
+                })
+                .catch((e) => {
+                    console.warn('[aux-tables]', e.message);
+                    auxiliaryTablesPromise = null;
+                });
+        }
+        return auxiliaryTablesPromise.then(() => next()).catch(() => next());
     }
     next();
 }
@@ -3921,21 +3941,15 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
                 if (!result || !result.ok) {
                     return res.status(400).json({ error: (result && result.error) || 'Invalid or expired OTP.' });
                 }
-                recordUserLogin(row.id, (eLogin, times) => {
-                    if (!eLogin && times) {
-                        row.previous_login_at = times.previousLoginAt || null;
-                        row.login_at = times.loginAt;
-                        row.last_login_at = times.loginAt;
-                    }
-                    activityLog.logFromRequest(db, req, {
-                        user_id: row.id,
-                        user_role: row.role || row.user_role,
-                        action: 'auth.login',
-                        meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
-                    });
-                    delete row.password;
-                    normalizeAuthUserRow(row);
-                    res.json({ success: true, user: row });
+                delete row.password;
+                normalizeAuthUserRow(row);
+                res.json({ success: true, user: row });
+                recordUserLogin(row.id, () => {});
+                activityLog.logFromRequest(db, req, {
+                    user_id: row.id,
+                    user_role: row.role || row.user_role,
+                    action: 'auth.login',
+                    meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
                 });
             }
         );
