@@ -61,6 +61,15 @@
         if (!showLogin) refreshSignupOtpPanel();
     }
 
+    function prefillLoginForm(email, phone, password) {
+        const le = document.getElementById('doctor-login-email');
+        const lph = document.getElementById('doctor-login-phone');
+        const lp = document.getElementById('doctor-login-password');
+        if (le && email) le.value = email;
+        if (lph && phone) lph.value = phone;
+        if (lp && password) lp.value = password;
+    }
+
     function syncApplicantAuthTitle(showLogin) {
         if (global.AutismTerminology && typeof global.AutismTerminology.syncApplicantAuthTitle === 'function') {
             global.AutismTerminology.syncApplicantAuthTitle();
@@ -279,17 +288,13 @@
                         )
                     ) {
                         switchDoctorAuthTab('login');
-                        const le = document.getElementById('doctor-login-email');
-                        const lp = document.getElementById('doctor-login-password');
-                        if (le) le.value = email;
-                        if (lp) lp.value = password;
+                        prefillLoginForm(email, phone, password);
                     }
                     return;
                 }
                 alert(check.message || 'Email already registered. Please sign in.');
                 switchDoctorAuthTab('login');
-                const le = document.getElementById('doctor-login-email');
-                if (le) le.value = email;
+                prefillLoginForm(email, phone, '');
                 return;
             }
         } catch (_) {
@@ -355,7 +360,7 @@
                     }
                 }
                 try {
-                    const loginBody = { email, portal: 'doctor' };
+                    const loginBody = { email, phone, portal: 'doctor' };
                     if (!passwordless) loginBody.password = password;
                     if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
                     const loginRes = await fetch('/api/auth/login', {
@@ -383,10 +388,7 @@
                 }
                 alert(data.message || 'Account created. Please sign in.');
                 switchDoctorAuthTab('login');
-                const le = document.getElementById('doctor-login-email');
-                const lp = document.getElementById('doctor-login-password');
-                if (le) le.value = email;
-                if (lp) lp.value = password;
+                prefillLoginForm(email, phone, password);
                 return;
             }
             if (data.needsLogin) {

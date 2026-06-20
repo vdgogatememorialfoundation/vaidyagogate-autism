@@ -257,6 +257,29 @@
                 : { valid: false, message: 'Enter your email first.' };
         }
 
+        function validatedLoginPhone() {
+            const phoneInputId = opts.phoneInputId || prefix + '-login-phone';
+            const id =
+                document.getElementById(phoneInputId) ||
+                document.getElementById('doctor-login-phone') ||
+                document.getElementById(prefix + '-phone');
+            const raw = String((id || {}).value || '').trim();
+            if (typeof validatePhoneClient === 'function') {
+                return validatePhoneClient(raw, 'Phone');
+            }
+            const digits = raw.replace(/\D/g, '');
+            return digits.length >= 10
+                ? { valid: true, cleanedPhone: digits.slice(-10) }
+                : { valid: false, message: 'Enter your WhatsApp phone number.' };
+        }
+
+        function loginOtpPayload(email) {
+            const pv = validatedLoginPhone();
+            const payload = { email };
+            if (pv.valid) payload.phone = pv.cleanedPhone;
+            return { payload, phoneValid: pv };
+        }
+
         async function readApiJson(res) {
             if (global.HttpJson) {
                 const { data, parseFailed } = await global.HttpJson.readJsonResponse(res);
@@ -283,6 +306,8 @@
             const ev = validatedLoginEmail();
             if (!ev.valid) return alert(ev.message);
             const email = ev.cleanedEmail;
+            const phonePack = loginOtpPayload(email);
+            if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const pc = await precheckEmail(email);
             if (pc.needsSignup) {
                 return alert(pc.message || 'No account with this email. Please create an account first.');
@@ -290,7 +315,7 @@
             const res = await fetch('/api/auth/login-otp/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, channel })
+                body: JSON.stringify(Object.assign({ channel }, phonePack.payload))
             });
             const { data, parseFailed } = await readApiJson(res);
             if (parseFailed || !res.ok) {
@@ -311,6 +336,8 @@
             const ev = validatedLoginEmail();
             if (!ev.valid) return alert(ev.message);
             const email = ev.cleanedEmail;
+            const phonePack = loginOtpPayload(email);
+            if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const pc = await precheckEmail(email);
             if (pc.needsSignup) {
                 return alert(pc.message || 'No account with this email. Please create an account first.');
@@ -318,7 +345,7 @@
             const res = await fetch('/api/auth/login-otp/send-both', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify(phonePack.payload)
             });
             const { data, parseFailed } = await readApiJson(res);
             if (parseFailed || !res.ok) {
@@ -335,6 +362,8 @@
             const ev = validatedLoginEmail();
             if (!ev.valid) return alert(ev.message);
             const email = ev.cleanedEmail;
+            const phonePack = loginOtpPayload(email);
+            if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const codeEl = document.getElementById(
                 channel === 'email' ? prefix + '-email-otp' : prefix + '-phone-otp'
             );
@@ -342,11 +371,11 @@
                 channel === 'email' ? prefix + '-email-otp-ok' : prefix + '-phone-otp-ok'
             );
             const code = String((codeEl || {}).value || '').trim();
-            if (!email || !code) return alert('Enter email and the code.');
+            if (!email || !code) return alert('Enter email, phone, and the code.');
             const res = await fetch('/api/auth/login-otp/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, channel, code })
+                body: JSON.stringify(Object.assign({ channel, code }, phonePack.payload))
             });
             const { data, parseFailed } = await readApiJson(res);
             if (parseFailed || !res.ok) {
@@ -375,6 +404,8 @@
             const ev = validatedLoginEmail();
             if (!ev.valid) return alert(ev.message);
             const email = ev.cleanedEmail;
+            const phonePack = loginOtpPayload(email);
+            if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const password = (document.getElementById(opts.passwordInputId) || {}).value;
             const cfg = global.__portalAuth || {};
             const passwordless = !!cfg.passwordlessLogin;
@@ -382,7 +413,7 @@
                 whatsapp: cfg.loginOtpWhatsapp !== false,
                 email: cfg.loginOtpEmail === true
             };
-            const body = { email, portal: portal === 'doctor' ? 'doctor' : portal };
+            const body = Object.assign({ portal: portal === 'doctor' ? 'doctor' : portal }, phonePack.payload);
             if (!passwordless) body.password = password;
             const otpActive =
                 otpPanel &&

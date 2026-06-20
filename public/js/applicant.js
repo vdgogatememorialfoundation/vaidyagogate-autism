@@ -1227,6 +1227,7 @@ window.onload = () => {
             formId: 'doctor-login-form',
             otpPanelId: 'doctor-login-otp-panel',
             emailInputId: 'doctor-login-email',
+            phoneInputId: 'doctor-login-phone',
             passwordInputId: 'doctor-login-password',
             otpPrefix: 'doctor',
             resendEmailBtnId: 'doctor-resend-otp-email',

@@ -130,10 +130,12 @@
                 <button type="button" id="doctor-auth-tab-signup" class="ak-auth-tab" role="tab" aria-selected="false" onclick="DoctorAuthUi.switchDoctorAuthTab('signup')">Create account</button>
             </div>
             <div id="doctor-auth-login-panel">
-            <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Use your participant account to pre-register, compete, and get your e-ticket.</p>
+            <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Enter email and phone, verify WhatsApp OTP, then sign in.</p>
             <form id="doctor-login-form">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:10px 0 6px;">Email</label>
                 <input type="email" id="doctor-login-email" required autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:12px 0 6px;">Phone (WhatsApp)</label>
+                <input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
                 <div id="doctor-login-password-wrap">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:12px 0 6px;">Password</label>
                 <input type="password" id="doctor-login-password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
@@ -165,14 +167,22 @@
             </form>
             </div>
             <div id="doctor-auth-signup-panel" class="hidden">
-                <p style="color:#64748b;font-size:0.95rem;margin-bottom:12px;">Create your free participant account for the Autism Awareness Programme.</p>
+                <p style="color:#64748b;font-size:0.95rem;margin-bottom:12px;">Enter your details, verify WhatsApp OTP, then create your account.</p>
                 <form id="doctor-signup-form">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-                        <input type="text" id="doctor-signup-firstname" placeholder="First name" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
-                        <input type="text" id="doctor-signup-lastname" placeholder="Last name" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                        <div>
+                            <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">First name</label>
+                            <input type="text" id="doctor-signup-firstname" placeholder="First name" required autocomplete="given-name" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Last name</label>
+                            <input type="text" id="doctor-signup-lastname" placeholder="Last name" required autocomplete="family-name" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                        </div>
                     </div>
-                    <input type="email" id="doctor-signup-email" placeholder="Email" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
-                    <input type="tel" id="doctor-signup-phone" placeholder="Phone (WhatsApp)" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
+                    <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email</label>
+                    <input type="email" id="doctor-signup-email" placeholder="you@example.com" required autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
+                    <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
+                    <input type="tel" id="doctor-signup-phone" placeholder="10-digit mobile number" required autocomplete="tel" inputmode="tel" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
                     <div id="doctor-signup-otp-panel" style="display:none;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
                         <p id="doctor-signup-otp-lead" style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">Verify WhatsApp before signup.</p>
                         <p id="doctor-signup-otp-hint" class="hidden" style="font-size:0.8rem;color:#b45309;margin-bottom:8px;font-weight:600;"></p>
@@ -930,12 +940,12 @@
     <script src="/js/site-branding.js?v=20260529b"></script>
     <script src="/js/otp-ui.js?v=20260619a"></script>
     <script src="/js/http-json.js"></script>
-    <script src="/js/portal-auth.js?v=20260620c"></script>
+    <script src="/js/portal-auth.js?v=20260620e"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js?v=20260620b"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260620e"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
-    <script src="/js/applicant.js?v=autism27"></script>
+    <script src="/js/applicant.js?v=autism29"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>
     <script src="/js/applicant-autism.js?v=autism46"></script>
     <script src="/js/autism-announcements.js?v=5"></script>

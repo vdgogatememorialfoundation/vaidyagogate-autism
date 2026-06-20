@@ -3633,6 +3633,7 @@ app.post('/api/auth/login-otp/precheck', (req, res) => {
 
 function resolveLoginUserForOtp(email, password, cb, options) {
     const requirePassword = options && options.requirePassword === true;
+    const phoneRaw = options && options.phone;
     const loginOtpEmailV = contactValidation.validateEmail(email);
     if (!loginOtpEmailV.valid) {
         return cb(null, { status: 400, error: loginOtpEmailV.message });
@@ -3657,16 +3658,39 @@ function resolveLoginUserForOtp(email, password, cb, options) {
                 });
             }
         }
+        if (!portalAuthPolicy.isStaffPortalAccount(row)) {
+            const phoneCheck = verifyApplicantLoginPhone(row, phoneRaw);
+            if (!phoneCheck.ok) {
+                return cb(null, { status: phoneCheck.status || 400, error: phoneCheck.error });
+            }
+        }
         cb(null, { status: 200, row });
     });
 }
 
+function verifyApplicantLoginPhone(row, phoneRaw) {
+    if (phoneRaw == null || String(phoneRaw).trim() === '') {
+        return { ok: false, status: 400, error: 'Phone (WhatsApp) is required.' };
+    }
+    const phoneV = contactValidation.validatePhone(phoneRaw);
+    if (!phoneV.valid) return { ok: false, status: 400, error: phoneV.message };
+    const stored = String((row && row.phone) || '').replace(/\D/g, '').slice(-10);
+    const entered = String(phoneV.cleanedPhone || '').replace(/\D/g, '').slice(-10);
+    if (stored.length < 10 || stored !== entered) {
+        return { ok: false, status: 400, error: 'Phone number does not match this account.' };
+    }
+    return { ok: true };
+}
+
 /** Find account by email and send login OTP to registered email + WhatsApp. */
 app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
-    const { email, password } = req.body || {};
+    const { email, password, phone } = req.body || {};
     if (!email) return res.status(400).json({ error: 'Email is required' });
     const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
-    resolveLoginUserForOtp(email, password, (err, out) => {
+    resolveLoginUserForOtp(
+        email,
+        password,
+        (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
         if (out.status !== 200) {
             return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
@@ -3687,12 +3711,14 @@ app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAux
             }
             res.json({ success: true, ttlMinutes: result.ttlMinutes, channels: result.results });
         });
-    });
+    },
+        { requirePassword, phone }
+    );
 });
 
 /** Send login OTP to one channel (email or phone) for the account matching email. */
 app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
-    const { email, password, channel } = req.body || {};
+    const { email, password, channel, phone } = req.body || {};
     if (!email || !channel) return res.status(400).json({ error: 'email and channel are required' });
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
@@ -3705,7 +3731,10 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         return res.status(400).json({ error: 'Email login OTP is disabled.' });
     }
     const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
-    resolveLoginUserForOtp(email, password, (err, out) => {
+    resolveLoginUserForOtp(
+        email,
+        password,
+        (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
         if (out.status !== 200) {
             return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
@@ -3726,18 +3755,24 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
             if (result.warning) payload.warning = result.warning;
             res.json(payload);
         });
-    });
+    },
+        { requirePassword, phone }
+    );
 });
 
 app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
-    const { email, password, channel, code } = req.body || {};
+    const { email, password, channel, code, phone } = req.body || {};
     if (!email || !channel || !code) {
         return res.status(400).json({ error: 'email, channel, and code are required' });
     }
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
-    resolveLoginUserForOtp(email, password, (err, out) => {
+    const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
+    resolveLoginUserForOtp(
+        email,
+        password,
+        (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
         if (out.status !== 200) {
             return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
@@ -3765,7 +3800,9 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
                 res.json({ success: true, token: result.token });
             }
         );
-    });
+    },
+        { requirePassword, phone }
+    );
 });
 
 // OTP: send & verify (used by homepage signup + doctor registration)
@@ -4218,7 +4255,7 @@ app.post('/api/auth/signup', (req, res) => {
 
 // 2. Auth: Login (optional phone + email OTP when messaging is configured)
 app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
-    const { email, password, phoneOtpToken, emailOtpToken } = req.body;
+    const { email, password, phone, phoneOtpToken, emailOtpToken } = req.body;
     const passwordless = portalAuthPolicy.passwordlessLoginEnabled();
     if (!email) {
         return res.status(400).json({ error: 'Email is required' });
@@ -4300,6 +4337,17 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 }
                 if (Number(row.is_disabled) === 1) {
                     return res.status(403).json({ error: 'Your account has been disabled. Please contact support.' });
+                }
+
+                if (
+                    !portalAuthPolicy.isStaffPortalAccount(row) &&
+                    loginPortal !== 'admin' &&
+                    loginPortal !== 'staff'
+                ) {
+                    const phoneCheck = verifyApplicantLoginPhone(row, phone);
+                    if (!phoneCheck.ok) {
+                        return res.status(phoneCheck.status || 400).json({ error: phoneCheck.error });
+                    }
                 }
 
                 const userRoles = require('./lib/user-roles');
