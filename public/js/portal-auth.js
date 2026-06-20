@@ -131,13 +131,14 @@
     function applyApplicantAuthUi(cfg) {
         cfg = cfg || global.__portalAuth || {};
         const passwordless = !!cfg.passwordlessLogin;
+        const isAutismDash = document.body && document.body.classList.contains('ak-portal-dash');
         const signupChannels = {
             whatsapp: cfg.signupOtpWhatsapp !== false,
-            email: cfg.signupOtpEmail === true
+            email: isAutismDash ? false : cfg.signupOtpEmail === true
         };
         const loginChannels = {
             whatsapp: cfg.loginOtpWhatsapp !== false,
-            email: cfg.loginOtpEmail === true
+            email: isAutismDash ? false : cfg.loginOtpEmail === true
         };
         const phoneOnlyLoginUi =
             !!document.getElementById('doctor-login-submit') ||

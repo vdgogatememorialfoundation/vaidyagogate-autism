@@ -413,30 +413,17 @@
                 </div>
                 <div id="loginForm">
                     <form onsubmit="handleLogin(event)">
-                        <div class="form-group"><label>Email</label><input type="email" id="login_email" required autocomplete="email"></div>
-                        <div class="form-group"><label>Password</label><input type="password" id="login_password" required autocomplete="current-password"></div>
-                        <p id="login_email_hint" style="font-size:0.82rem;color:var(--muted);margin:-4px 0 8px;display:none;"></p>
-                        <p style="margin:0 0 12px;"><button type="button" class="btn-ghost" style="padding:0;font-size:0.85rem;border:none;color:var(--brand);" onclick="openForgotPasswordModal()">Forgot password?</button></p>
-                        <div id="login_otp_panel" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
-                            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Enter your email, then send codes to your registered email and WhatsApp (both required).</p>
-                            <button type="button" class="btn-ghost" style="padding:6px 14px;font-size:0.8rem;margin-bottom:10px;border-color:var(--line);color:var(--ink);" onclick="sendLoginOtpBoth()">Send codes to email &amp; WhatsApp</button>
-                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
-                                <span style="font-weight:700;min-width:48px;">Email</span>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendLoginOtp('email')">Send</button>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendLoginOtp('email')">Resend</button>
-                                <input type="text" id="login_email_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifyLoginOtp('email')">Verify</button>
-                                <span id="login_email_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
-                            </div>
+                        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
+                        <div class="form-group"><label>Phone (WhatsApp)</label><input type="tel" id="login_phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number"></div>
+                        <div class="form-group">
+                            <label>WhatsApp OTP</label>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                                <span style="font-weight:700;min-width:48px;">WhatsApp</span>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendLoginOtp('phone')">Send</button>
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendLoginOtp('phone')">Resend</button>
-                                <input type="text" id="login_phone_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifyLoginOtp('phone')">Verify</button>
-                                <span id="login_phone_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
+                                <input type="text" id="login_phone_otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:100px;padding:8px;border-radius:8px;border:1px solid var(--line);">
+                                <button type="button" id="index-send-login-otp" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendIndexLoginOtp()">Send OTP</button>
+                                <button type="button" id="index-resend-login-otp" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendIndexLoginOtp()">Resend</button>
                             </div>
                         </div>
+                        <p id="login_otp_status" style="font-size:0.82rem;color:var(--muted);margin:0 0 8px;min-height:1.2em;"></p>
                         <button type="submit" class="btn-primary" style="width:100%;margin-top:12px;border:none;cursor:pointer;">Sign in</button>
                     </form>
                 </div>
@@ -449,17 +436,9 @@
                         <div class="form-group"><input type="email" id="signup_email" placeholder="Email" required></div>
                         <div class="form-group"><input type="tel" id="signup_phone" placeholder="Phone" required></div>
                         <div id="signup_otp_panel" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
-                            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Verify email and WhatsApp before creating your account (both required).</p>
-                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
-                                <span style="font-weight:600;min-width:48px;">Email</span>
-                                <button type="button" id="signup-send-otp-email" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Send</button>
-                                <button type="button" id="signup-resend-otp-email" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('email')">Resend</button>
-                                <input type="text" id="signup_email_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
-                                <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifySignupOtp('email')">Verify</button>
-                                <span id="signup_email_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
-                            </div>
+                            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Verify WhatsApp before creating your account.</p>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                                <span style="font-weight:600;min-width:48px;">Phone</span>
+                                <span style="font-weight:600;min-width:48px;">WhatsApp</span>
                                 <button type="button" id="signup-send-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Send</button>
                                 <button type="button" id="signup-resend-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Resend</button>
                                 <input type="text" id="signup_phone_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
@@ -467,7 +446,7 @@
                                 <span id="signup_phone_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
                             </div>
                         </div>
-                        <div class="form-group"><input type="password" id="signup_password" placeholder="Password" required></div>
+                        <div class="form-group hidden" id="signup_password_wrap"><input type="password" id="signup_password" placeholder="Password"></div>
                         <button type="submit" class="btn-primary" style="width:100%;border:none;cursor:pointer;">Create account</button>
                     </form>
                 </div>
@@ -596,7 +575,7 @@
                 const res = await fetch('/api/public/portal-auth');
                 const d = await res.json();
                 window.__portalAuth = Object.assign(
-                    { showSignup: true, showLogin: true, requireEmailVerification: false },
+                    { showSignup: true, showLogin: true, requireEmailVerification: false, passwordlessLogin: true },
                     d || {}
                 );
                 document.querySelectorAll('[data-portal-auth="signup"]').forEach((el) => {
@@ -620,6 +599,8 @@
                 const tabSignup = document.getElementById('auth-tab-signup');
                 if (tabLogin) tabLogin.style.display = window.__portalAuth.showLogin !== false ? '' : 'none';
                 if (tabSignup) tabSignup.style.display = window.__portalAuth.showSignup !== false ? '' : 'none';
+                const pwdWrap = document.getElementById('signup_password_wrap');
+                if (pwdWrap) pwdWrap.classList.toggle('hidden', window.__portalAuth.passwordlessLogin !== false);
                 applyWebsiteMenuVisibility();
             } catch (_) {}
         }
@@ -676,15 +657,61 @@
             }
         }
 
-        async function refreshLoginOtpPanel() {
-            const panel = document.getElementById('login_otp_panel');
-            if (!panel) return;
+        async function refreshLoginOtpPanel() {}
+
+        function validatedIndexLoginPhone() {
+            const raw = String((document.getElementById('login_phone') || {}).value || '').trim();
+            if (typeof validatePhoneClient === 'function') {
+                return validatePhoneClient(raw, 'Phone');
+            }
+            const digits = raw.replace(/\D/g, '');
+            if (digits.length >= 10) return { valid: true, cleanedPhone: digits.slice(-10) };
+            return { valid: false, message: 'Enter your 10-digit WhatsApp number.' };
+        }
+
+        async function sendIndexLoginOtp() {
+            const pv = validatedIndexLoginPhone();
+            if (!pv.valid) return alert(pv.message);
+            const sendBtn = document.getElementById('index-send-login-otp');
+            const statusEl = document.getElementById('login_otp_status');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending…';
+            }
+            if (statusEl) statusEl.textContent = 'Sending OTP to WhatsApp…';
             try {
-                const res = await fetch('/api/auth/login-otp-required');
-                const d = await res.json();
-                setOtpPanelVisible(panel, !!d.required);
-            } catch (_) {
-                setOtpPanelVisible(panel, false);
+                const res = await fetch('/api/auth/login-otp/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: pv.cleanedPhone, channel: 'phone' })
+                });
+                const { data, parseFailed } = await readIndexApiJson(res);
+                if (parseFailed || !res.ok) {
+                    if (data.needsSignup) {
+                        switchAuthTab('signup');
+                        const sp = document.getElementById('signup_phone');
+                        if (sp) sp.value = pv.cleanedPhone;
+                        return alert((data.error || 'No account with this number.') + ' Switch to Create account.');
+                    }
+                    return alert(indexApiError(res, data, parseFailed));
+                }
+                if (OtpUi.cooldownLoginChannel) OtpUi.cooldownLoginChannel('phone', 'index', 'index-resend-login-otp', 60);
+                OtpUi.notifyOtpSent('phone', data, {
+                    silent: true,
+                    inlineEl: statusEl,
+                    customMessage: 'Code sent to WhatsApp. Enter it above and tap Sign in.'
+                });
+                const codeEl = document.getElementById('login_phone_otp');
+                if (codeEl) codeEl.focus();
+            } catch (e) {
+                console.error(e);
+                if (statusEl) statusEl.textContent = '';
+                alert('Network error.');
+            } finally {
+                if (sendBtn && sendBtn.textContent === 'Sending…') {
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Send OTP';
+                }
             }
         }
 
@@ -1384,60 +1411,40 @@
             return { ok: res.ok, ...data };
         }
 
-        function redirectToLoginTab(email, password, message) {
+        function redirectToLoginTab(phone, message) {
             if (message && !confirm(message + '\n\nSwitch to Sign in now?')) return;
             switchAuthTab('login');
-            const le = document.getElementById('login_email');
-            const lp = document.getElementById('login_password');
-            if (le && email) le.value = email;
-            if (lp && password) lp.value = password;
+            const lp = document.getElementById('login_phone');
+            if (lp && phone) lp.value = phone;
             openAuthModal('login');
         }
 
         async function handleLogin(e) {
             e.preventDefault();
-            const ev = loginEmailValidated();
-            if (!ev.valid) return alert(ev.message);
-            const email = ev.cleanedEmail;
-            const password = document.getElementById('login_password').value;
-            const body = { email, password };
-            const lo = document.getElementById('login_otp_panel');
-            if (isOtpPanelActive(lo)) {
-                if (!loginPhoneOtpToken || !loginEmailOtpToken) {
-                    return alert(
-                        'Please verify both your email and WhatsApp with the codes sent to you before signing in.'
-                    );
-                }
-                body.phoneOtpToken = loginPhoneOtpToken;
-                body.emailOtpToken = loginEmailOtpToken;
-            }
-            const res = await fetch('/api/auth/login', {
+            const pv = validatedIndexLoginPhone();
+            if (!pv.valid) return alert(pv.message);
+            const code = String((document.getElementById('login_phone_otp') || {}).value || '').trim();
+            if (!code) return alert('Enter the OTP code from WhatsApp.');
+            const statusEl = document.getElementById('login_otp_status');
+            if (statusEl) statusEl.textContent = 'Signing you in…';
+            const res = await fetch('/api/auth/login-phone-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ phone: pv.cleanedPhone, code })
             });
             const { data, parseFailed } = await readIndexApiJson(res);
-            if (res.status === 403 && data.needsEmailVerification) {
-                alert(
-                    data.error ||
-                        'Verify your email with the Email OTP above (Send → enter code → Verify), then sign in again.'
-                );
-                return;
-            }
+            if (statusEl) statusEl.textContent = '';
             if (data.success) {
-                loginPhoneOtpToken = null;
-                loginEmailOtpToken = null;
                 routeUserAfterLogin(data.user);
             } else if (data.needsSignup) {
                 if (
                     confirm(
-                        (data.error || 'No account found with this email.') +
-                            '\n\nOpen Create account?'
+                        (data.error || 'No account with this number.') + '\n\nOpen Create account?'
                     )
                 ) {
                     switchAuthTab('signup');
-                    const se = document.getElementById('signup_email');
-                    if (se) se.value = email;
+                    const sp = document.getElementById('signup_phone');
+                    if (sp) sp.value = pv.cleanedPhone;
                     openAuthModal('signup');
                 }
             } else {
@@ -1469,18 +1476,15 @@
                 if (!pv.valid) return alert(pv.message);
                 phone = pv.cleanedPhone;
             }
-            const password = document.getElementById('signup_password').value;
+            const password = (document.getElementById('signup_password') || {}).value || '';
             
             const body = { firstName, lastName, email, phone, password, role: 'doctor' };
             const otpPanel = document.getElementById('signup_otp_panel');
             if (isOtpPanelActive(otpPanel)) {
-                if (!signupPhoneOtpToken || !signupEmailOtpToken) {
-                    return alert(
-                        'Please verify both your email and phone with OTP before creating your account.'
-                    );
+                if (!signupPhoneOtpToken) {
+                    return alert('Please verify WhatsApp OTP before creating your account.');
                 }
                 body.phoneOtpToken = signupPhoneOtpToken;
-                body.emailOtpToken = signupEmailOtpToken;
             }
 
             try {
@@ -1492,22 +1496,15 @@
                             'This mobile number is already registered. Sign in with that account or use a different number.'
                     );
                     switchAuthTab('login');
+                    const lp = document.getElementById('login_phone');
+                    if (lp) lp.value = phone;
                     return;
                 }
                 if (check.exists) {
-                    if (check.passwordMatch) {
-                        redirectToLoginTab(
-                            email,
-                            password,
-                            check.message ||
-                                'An account with this email already exists. Sign in with your password.'
-                        );
-                        return;
-                    }
-                    alert(check.message || 'This email is already registered. Please sign in.');
+                    alert(check.message || 'This email is already registered. Please sign in with your WhatsApp number.');
                     switchAuthTab('login');
-                    const le = document.getElementById('login_email');
-                    if (le) le.value = email;
+                    const lp = document.getElementById('login_phone');
+                    if (lp && phone) lp.value = phone;
                     openAuthModal('login');
                     return;
                 }
@@ -1539,21 +1536,15 @@
                 signupPhoneOtpToken = null;
                 signupEmailOtpToken = null;
                 document.getElementById('signupForm')?.querySelector('form')?.reset();
-                ['signup_email_otp_ok', 'signup_phone_otp_ok'].forEach((id) => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = '';
-                });
+                const okEl = document.getElementById('signup_phone_otp_ok');
+                if (okEl) okEl.textContent = '';
                 showSignupSuccessModal(data, email);
             } else if (data.needsLogin) {
-                if (data.passwordMatch) {
-                    redirectToLoginTab(email, password, data.error);
-                } else {
-                    alert(data.error || 'Email already registered. Please sign in.');
+                alert(data.error || 'Email already registered. Please sign in with your WhatsApp number.');
                 switchAuthTab('login');
-                    const le = document.getElementById('login_email');
-                    if (le) le.value = email;
-                    openAuthModal('login');
-                }
+                const lp = document.getElementById('login_phone');
+                if (lp && phone) lp.value = phone;
+                openAuthModal('login');
             } else {
                 alert(data.error || HttpJson.apiErrorMessage(res, data, false));
             }
