@@ -115,6 +115,72 @@
         localStorage.removeItem(KEYS[portal]);
     }
 
+    async function loadPublicPortalAuth() {
+        if (global.__portalAuth && global.__portalAuthLoaded) return global.__portalAuth;
+        try {
+            const res = await fetch('/api/public/portal-auth', { cache: 'no-store' });
+            const data = await res.json();
+            global.__portalAuth = data || {};
+            global.__portalAuthLoaded = true;
+            return global.__portalAuth;
+        } catch (_) {
+            return global.__portalAuth || {};
+        }
+    }
+
+    function applyApplicantAuthUi(cfg) {
+        cfg = cfg || global.__portalAuth || {};
+        const passwordless = !!cfg.passwordlessLogin;
+        const signupChannels = {
+            whatsapp: cfg.signupOtpWhatsapp !== false,
+            email: cfg.signupOtpEmail === true
+        };
+        const loginChannels = {
+            whatsapp: cfg.loginOtpWhatsapp !== false,
+            email: cfg.loginOtpEmail === true
+        };
+
+        ['doctor-login-password-wrap', 'doctor-signup-password-wrap'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = passwordless ? 'none' : '';
+            const input = el.querySelector('input[type="password"]');
+            if (input) input.required = !passwordless;
+        });
+        const forgotBtn = document.getElementById('doctor-forgot-password-btn');
+        if (forgotBtn) forgotBtn.style.display = passwordless ? 'none' : '';
+
+        const signupEmailRow = document.getElementById('doctor-signup-email-otp-row');
+        if (signupEmailRow) signupEmailRow.style.display = signupChannels.email ? '' : 'none';
+        const signupPhoneRow = document.getElementById('doctor-signup-phone-otp-row');
+        if (signupPhoneRow) signupPhoneRow.style.display = signupChannels.whatsapp ? '' : 'none';
+        const signupLead = document.getElementById('doctor-signup-otp-lead');
+        if (signupLead) {
+            signupLead.textContent = signupChannels.email
+                ? 'Verify email and WhatsApp before signup.'
+                : 'Verify WhatsApp before signup.';
+        }
+
+        const loginEmailRow = document.getElementById('doctor-login-email-otp-row');
+        if (loginEmailRow) loginEmailRow.style.display = loginChannels.email ? '' : 'none';
+        const loginPhoneRow = document.getElementById('doctor-login-phone-otp-row');
+        if (loginPhoneRow) loginPhoneRow.style.display = loginChannels.whatsapp ? '' : 'none';
+        const loginLead = document.getElementById('doctor-login-otp-lead');
+        if (loginLead) {
+            if (passwordless) {
+                loginLead.textContent = loginChannels.email
+                    ? 'Sign in with email and WhatsApp OTP (no password).'
+                    : 'Sign in with your email and WhatsApp OTP (no password).';
+            } else if (loginChannels.email && loginChannels.whatsapp) {
+                loginLead.textContent = 'Verify email and WhatsApp (both required).';
+            } else if (loginChannels.whatsapp) {
+                loginLead.textContent = 'Verify WhatsApp OTP to sign in.';
+            } else {
+                loginLead.textContent = 'Verify email OTP to sign in.';
+            }
+        }
+    }
+
     async function refreshLoginOtpPanel(panelEl, portal) {
         if (!panelEl) return;
         if (portal === 'judge' || portal === 'scanner' || portal === 'admin') {
@@ -122,10 +188,12 @@
             return;
         }
         try {
+            const cfg = await loadPublicPortalAuth();
+            applyApplicantAuthUi(cfg);
             const q = portal ? '?portal=' + encodeURIComponent(portal) : '';
             const res = await fetch('/api/auth/login-otp-required' + q);
             const d = await res.json();
-            panelEl.style.display = d.required ? 'block' : 'none';
+            panelEl.style.display = d.required || d.passwordless ? 'block' : 'none';
         } catch (_) {
             panelEl.style.display = 'none';
         }
@@ -299,10 +367,37 @@
             if (!ev.valid) return alert(ev.message);
             const email = ev.cleanedEmail;
             const password = (document.getElementById(opts.passwordInputId) || {}).value;
-            const body = { email, password, portal: portal === 'doctor' ? 'doctor' : portal };
-            if (otpPanel && otpPanel.style.display === 'block') {
-                body.phoneOtpToken = phoneOtpToken;
-                body.emailOtpToken = emailOtpToken;
+            const cfg = global.__portalAuth || {};
+            const passwordless = !!cfg.passwordlessLogin;
+            const loginChannels = {
+                whatsapp: cfg.loginOtpWhatsapp !== false,
+                email: cfg.loginOtpEmail === true
+            };
+            const body = { email, portal: portal === 'doctor' ? 'doctor' : portal };
+            if (!passwordless) body.password = password;
+            const otpActive =
+                otpPanel &&
+                (otpPanel.style.display === 'block' ||
+                    passwordless ||
+                    cfg.applicantLoginOtpRequired ||
+                    cfg.requireLoginOtp);
+            if (otpActive) {
+                if (loginChannels.whatsapp && !phoneOtpToken) {
+                    const msg = passwordless
+                        ? 'Verify WhatsApp OTP before signing in.'
+                        : 'Verify WhatsApp OTP before signing in (Send → code → Verify).';
+                    if (opts.onError) opts.onError(msg);
+                    else alert(msg);
+                    return;
+                }
+                if (loginChannels.email && !emailOtpToken) {
+                    const msg = 'Verify email OTP before signing in.';
+                    if (opts.onError) opts.onError(msg);
+                    else alert(msg);
+                    return;
+                }
+                if (loginChannels.whatsapp) body.phoneOtpToken = phoneOtpToken;
+                if (loginChannels.email) body.emailOtpToken = emailOtpToken;
             }
             try {
                 const res = await fetch('/api/auth/login', {
@@ -384,6 +479,8 @@
         isAdminPortalUser,
         wrongPortalHint,
         refreshLoginOtpPanel,
+        loadPublicPortalAuth,
+        applyApplicantAuthUi,
         bindLoginForm,
         formatLoginTime,
         loginTimeLabel,

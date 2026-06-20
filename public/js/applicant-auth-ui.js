@@ -16,6 +16,22 @@
 
     let signupPhoneOtpToken = null;
     let signupEmailOtpToken = null;
+    let signupAuthConfig = null;
+
+    function signupOtpChannels(cfg) {
+        cfg = cfg || signupAuthConfig || global.__portalAuth || {};
+        if (cfg.channels && typeof cfg.channels === 'object') return cfg.channels;
+        return {
+            whatsapp: cfg.signupOtpWhatsapp !== false,
+            email: cfg.signupOtpEmail === true
+        };
+    }
+
+    function signupTokensReady(channels) {
+        if (channels.email && !signupEmailOtpToken) return false;
+        if (channels.whatsapp && !signupPhoneOtpToken) return false;
+        return true;
+    }
 
     function applyStandaloneUi() {
         if (!isStandaloneDoctorApp()) return;
@@ -149,8 +165,11 @@
             else signupPhoneOtpToken = data.token;
             if (okEl) okEl.textContent = 'Verified ✓';
             const otpHint = document.getElementById('doctor-signup-otp-hint');
-            if (otpHint && signupPhoneOtpToken && signupEmailOtpToken) {
-                otpHint.textContent = 'Email and WhatsApp verified. You can create your account.';
+            const channels = signupOtpChannels();
+            if (otpHint && signupTokensReady(channels)) {
+                otpHint.textContent = channels.email
+                    ? 'Email and WhatsApp verified. You can create your account.'
+                    : 'WhatsApp verified. You can create your account.';
                 otpHint.style.color = '#059669';
                 otpHint.classList.remove('hidden');
             }
@@ -166,7 +185,17 @@
         try {
             const res = await fetch('/api/auth/signup-otp-required');
             const d = await res.json();
+            signupAuthConfig = d;
             panel.style.display = d.required ? 'block' : 'none';
+            if (global.PortalAuth && typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
+                global.PortalAuth.applyApplicantAuthUi(
+                    Object.assign({}, global.__portalAuth || {}, {
+                        requireSignupOtp: d.required,
+                        signupOtpWhatsapp: d.whatsapp !== false,
+                        signupOtpEmail: d.email === true
+                    })
+                );
+            }
         } catch (_) {
             panel.style.display = 'none';
         }
@@ -208,7 +237,14 @@
             if (!pv.valid) return alert(pv.message);
             phone = pv.cleanedPhone;
         }
-        const password = (document.getElementById('doctor-signup-password') || {}).value;
+        const passwordEl = document.getElementById('doctor-signup-password');
+        const password = passwordEl ? passwordEl.value : '';
+        const passwordless =
+            (global.__portalAuth && global.__portalAuth.passwordlessLogin) ||
+            (global.PortalAuth && global.__portalAuth && global.__portalAuth.passwordlessLogin);
+        if (!passwordless && !String(password || '').trim()) {
+            return alert('Enter a password.');
+        }
         const errEl = document.getElementById('doctor-signup-err');
 
         if (typeof validatePersonNameClient === 'function') {
@@ -264,14 +300,15 @@
         const otpPanel = document.getElementById('doctor-signup-otp-panel');
         const otpHint = document.getElementById('doctor-signup-otp-hint');
         if (otpPanel && otpPanel.style.display !== 'none') {
-            if (!signupPhoneOtpToken || !signupEmailOtpToken) {
+            const channels = signupOtpChannels();
+            if (!signupTokensReady(channels)) {
                 const missing = [];
-                if (!signupEmailOtpToken) missing.push('email');
-                if (!signupPhoneOtpToken) missing.push('WhatsApp');
+                if (channels.email && !signupEmailOtpToken) missing.push('email');
+                if (channels.whatsapp && !signupPhoneOtpToken) missing.push('WhatsApp');
                 const msg =
                     'Verify ' +
                     missing.join(' and ') +
-                    ' before creating your account (Send → enter code → OK for each).';
+                    ' before creating your account (Send → enter code → Verify).';
                 if (otpHint) {
                     otpHint.textContent = msg;
                     otpHint.classList.remove('hidden');
@@ -279,8 +316,8 @@
                 return alert(msg);
             }
             if (otpHint) otpHint.classList.add('hidden');
-            body.phoneOtpToken = signupPhoneOtpToken;
-            body.emailOtpToken = signupEmailOtpToken;
+            if (channels.whatsapp) body.phoneOtpToken = signupPhoneOtpToken;
+            if (channels.email) body.emailOtpToken = signupEmailOtpToken;
         }
 
         try {
@@ -309,11 +346,22 @@
             if (data.success) {
                 signupPhoneOtpToken = null;
                 signupEmailOtpToken = null;
+                if (data.user && data.autoLogin) {
+                    if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', data.user);
+                    window.currentUser = data.user;
+                    if (typeof bootDoctorDashboard === 'function') {
+                        bootDoctorDashboard(data.user);
+                        return;
+                    }
+                }
                 try {
+                    const loginBody = { email, portal: 'doctor' };
+                    if (!passwordless) loginBody.password = password;
+                    if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
                     const loginRes = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, portal: 'doctor' })
+                        body: JSON.stringify(loginBody)
                     });
                     let loginData = {};
                     if (window.HttpJson) {
@@ -550,6 +598,13 @@
         init: function () {
             applyStandaloneUi();
             blockHomepageNavigation();
+            if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {
+                global.PortalAuth.loadPublicPortalAuth().then((cfg) => {
+                    if (typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
+                        global.PortalAuth.applyApplicantAuthUi(cfg);
+                    }
+                });
+            }
             refreshSignupOtpPanel();
             wireSignupOtpButtons();
             wireForgotPasswordUi();

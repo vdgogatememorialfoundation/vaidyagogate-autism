@@ -11314,7 +11314,12 @@ async function loadPortalAuthAdminForm() {
         setChk('pa-show-signup', d.config.showSignup);
         setChk('pa-show-login', d.config.showLogin);
         setChk('pa-req-signup-otp', d.config.requireSignupOtp);
+        setChk('pa-signup-otp-whatsapp', d.config.signupOtpWhatsapp !== false);
+        setChk('pa-signup-otp-email', d.config.signupOtpEmail === true);
+        setChk('pa-passwordless-login', d.config.passwordlessLogin === true);
         setChk('pa-req-login-otp', d.config.requireLoginOtp);
+        setChk('pa-login-otp-whatsapp', d.config.loginOtpWhatsapp !== false);
+        setChk('pa-login-otp-email', d.config.loginOtpEmail === true);
         setChk('pa-req-email-verify', d.config.requireEmailVerification);
         setChk('pa-req-admin-sensitive-otp', d.config.requireAdminOtpForSensitive);
         setChk('pa-req-behalf-applicant-otp', d.config.requireBehalfApplicantOtp !== false);
@@ -11324,7 +11329,8 @@ async function loadPortalAuthAdminForm() {
         renderAdminGlobalPagesCheckboxes();
         renderWebsiteMenuPagesCheckboxes();
         if (eff) {
-            eff.textContent = `Effective signup OTP: ${d.signupOtpEffective ? 'on' : 'off'} · Effective login OTP: ${d.loginOtpEffective ? 'on' : 'off'} (environment variables can still override).`;
+            eff.textContent =
+                `Effective signup OTP: ${d.signupOtpEffective ? 'on' : 'off'} · Login OTP: ${d.loginOtpEffective ? 'on' : 'off'} · Passwordless login: ${d.passwordlessLoginEffective ? 'on' : 'off'} (environment variables can still override signup/login OTP).`;
         }
     } catch (_) {
         if (eff) eff.textContent = '';
@@ -11392,7 +11398,12 @@ async function savePortalAuthAdminConfig() {
         showSignup: gv('pa-show-signup'),
         showLogin: gv('pa-show-login'),
         requireSignupOtp: gv('pa-req-signup-otp'),
+        signupOtpWhatsapp: gv('pa-signup-otp-whatsapp'),
+        signupOtpEmail: gv('pa-signup-otp-email'),
+        passwordlessLogin: gv('pa-passwordless-login'),
         requireLoginOtp: gv('pa-req-login-otp'),
+        loginOtpWhatsapp: gv('pa-login-otp-whatsapp'),
+        loginOtpEmail: gv('pa-login-otp-email'),
         requireEmailVerification: gv('pa-req-email-verify'),
         requireAdminOtpForSensitive: gv('pa-req-admin-sensitive-otp'),
         requireBehalfApplicantOtp: gv('pa-req-behalf-applicant-otp')

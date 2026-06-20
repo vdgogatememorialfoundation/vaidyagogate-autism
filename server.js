@@ -3505,13 +3505,25 @@ function sanitizeDoctorModulesInput(raw) {
 }
 
 app.get('/api/auth/signup-otp-required', withIntegrationSettingsLoaded, (req, res) => {
-    res.json({ required: signupOtpRequired() });
+    const channels = portalAuthPolicy.signupOtpChannels();
+    res.json({
+        required: signupOtpRequired(),
+        whatsapp: channels.whatsapp,
+        email: channels.email,
+        channels
+    });
 });
 
 app.get('/api/auth/login-otp-required', withIntegrationSettingsLoaded, (req, res) => {
     const portal = portalAuthPolicy.normalizeLoginPortal(req.query && req.query.portal);
+    const channels = portalAuthPolicy.loginOtpChannels();
+    const passwordless = portalAuthPolicy.passwordlessLoginEnabled() && !portalAuthPolicy.isStaffPortal(portal);
     res.json({
-        required: loginOtpRequired(portal),
+        required: portalAuthPolicy.applicantLoginOtpRequired(portal),
+        passwordless,
+        whatsapp: channels.whatsapp,
+        email: channels.email,
+        channels,
         portal,
         staffPortal: portalAuthPolicy.isStaffPortal(portal)
     });
@@ -3653,6 +3665,7 @@ function resolveLoginUserForOtp(email, password, cb, options) {
 app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { email, password } = req.body || {};
     if (!email) return res.status(400).json({ error: 'Email is required' });
+    const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
     resolveLoginUserForOtp(email, password, (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
         if (out.status !== 200) {
@@ -3684,6 +3697,14 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
+    const loginChannels = portalAuthPolicy.loginOtpChannels();
+    if (channel === 'phone' && !loginChannels.whatsapp) {
+        return res.status(400).json({ error: 'WhatsApp login OTP is disabled.' });
+    }
+    if (channel === 'email' && !loginChannels.email) {
+        return res.status(400).json({ error: 'Email login OTP is disabled.' });
+    }
+    const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
     resolveLoginUserForOtp(email, password, (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
         if (out.status !== 200) {
@@ -4068,9 +4089,16 @@ app.post('/api/auth/signup', (req, res) => {
     const userRole = role || 'doctor';
     const cleanFirstName = firstNameValidation.cleanedName;
     const cleanLastName = lastNameValidation.cleanedName;
+            let finalPassword = password != null ? String(password) : '';
+            if (!finalPassword.trim() && portalAuthPolicy.passwordlessLoginEnabled()) {
+                finalPassword = crypto.randomBytes(16).toString('hex');
+            }
+            if (!finalPassword.trim()) {
+                return res.status(400).json({ error: 'Password is required.' });
+            }
             db.run(
                 `INSERT INTO users (user_id_string, first_name, last_name, email, phone, password, role, user_role, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [userIdStr, cleanFirstName, cleanLastName, emailNorm, phoneNorm, password, userRole, userRole, evFlag],
+                [userIdStr, cleanFirstName, cleanLastName, emailNorm, phoneNorm, finalPassword, userRole, userRole, evFlag],
         function (err) {
             if (err) {
                         if (err.message.includes('UNIQUE constraint failed') || /unique|duplicate key/i.test(err.message)) {
@@ -4085,7 +4113,7 @@ app.post('/api/auth/signup', (req, res) => {
                     notifEngine.notifyAccountCreatedWithCredentials(
                         db,
                         newUserId,
-                        String(password || ''),
+                        portalAuthPolicy.passwordlessLoginEnabled() ? '' : String(finalPassword || ''),
                         () => {
                             flushNotificationQueue();
                         }
@@ -4093,7 +4121,12 @@ app.post('/api/auth/signup', (req, res) => {
                     designatedNotify.notifyDesignatedAccountCreated(
                         db,
                         newUserId,
-                        { source: 'public signup', temporary_password: String(password || '') },
+                        {
+                            source: 'public signup',
+                            temporary_password: portalAuthPolicy.passwordlessLoginEnabled()
+                                ? ''
+                                : String(finalPassword || '')
+                        },
                         () => {
                             flushNotificationQueue();
                         }
@@ -4109,25 +4142,58 @@ app.post('/api/auth/signup', (req, res) => {
                     if (evFlag === 1) {
                         userAccountLifecycle.stampAccountActivated(db, newUserId, () => {});
                     }
-                    res.json({
-                        success: true,
-                        userId: newUserId,
-                        user_id_string: userIdStr,
-                        needsEmailVerification: evFlag === 0,
-                        message:
-                            evFlag === 0
-                                ? 'Signup successful! Check your email to verify your address, then sign in.'
-                                : 'Signup successful! Please create your profile before applying.'
-                    });
+                    const finishSignup = (userRow) => {
+                        const payload = {
+                            success: true,
+                            userId: newUserId,
+                            user_id_string: userIdStr,
+                            needsEmailVerification: evFlag === 0,
+                            message:
+                                evFlag === 0
+                                    ? 'Signup successful! Check your email to verify your address, then sign in.'
+                                    : portalAuthPolicy.passwordlessLoginEnabled()
+                                      ? 'Account created. You are signed in.'
+                                      : 'Signup successful! Please create your profile before applying.'
+                        };
+                        if (userRow) {
+                            delete userRow.password;
+                            normalizeAuthUserRow(userRow);
+                            payload.user = userRow;
+                            payload.autoLogin = true;
+                        }
+                        res.json(payload);
+                    };
+                    if (portalAuthPolicy.passwordlessLoginEnabled()) {
+                        authUsers.findUserByEmail(db, emailNorm, (uErr, userRow) => {
+                            if (uErr || !userRow) return finishSignup(null);
+                            recordUserLogin(userRow.id, () => {
+                                finishSignup(userRow);
+                            });
+                        });
+                        return;
+                    }
+                    finishSignup(null);
                 }
             );
         }
 
         if (signupOtpRequired()) {
-            if (!phoneOtpToken || !emailOtpToken) {
-                return res.status(400).json({ error: 'Phone and email OTP verification is required before signup.' });
+            const signupChannels = portalAuthPolicy.signupOtpChannels();
+            if (signupChannels.whatsapp && !phoneOtpToken) {
+                return res.status(400).json({ error: 'WhatsApp OTP verification is required before signup.' });
             }
-            otpLib.validateSignupOtpTokens(db, { phoneToken: phoneOtpToken, emailToken: emailOtpToken }, (verr, vr) => {
+            if (signupChannels.email && !emailOtpToken) {
+                return res.status(400).json({ error: 'Email OTP verification is required before signup.' });
+            }
+            otpLib.validateSignupOtpTokensFlexible(
+                db,
+                {
+                    phoneToken: phoneOtpToken,
+                    emailToken: emailOtpToken,
+                    needPhone: signupChannels.whatsapp,
+                    needEmail: signupChannels.email
+                },
+                (verr, vr) => {
                 if (verr) return res.status(500).json({ error: verr.message });
                 if (!vr || !vr.ok) return res.status(400).json({ error: (vr && vr.error) || 'Invalid OTP verification' });
                 insertUser();
@@ -4153,8 +4219,12 @@ app.post('/api/auth/signup', (req, res) => {
 // 2. Auth: Login (optional phone + email OTP when messaging is configured)
 app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
     const { email, password, phoneOtpToken, emailOtpToken } = req.body;
-    if (!email || password === undefined || password === null) {
-        return res.status(400).json({ error: 'Email or portal user ID and password are required' });
+    const passwordless = portalAuthPolicy.passwordlessLoginEnabled();
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    if (!passwordless && (password === undefined || password === null)) {
+        return res.status(400).json({ error: 'Email and password are required' });
     }
     const usersEmailPolicy = require('./lib/users-email-policy');
     const portalIdLogin = usersEmailPolicy.isPortalIdLogin(email);
@@ -4170,9 +4240,13 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         const loginPortal = portalAuthPolicy.normalizeLoginPortal(
             (req.body && req.body.portal) || 'public'
         );
+        const applicantPasswordless =
+            passwordless && loginPortal !== 'admin' && loginPortal !== 'staff';
+        const loginChannels = portalAuthPolicy.loginOtpChannels();
+        const lookupPassword = applicantPasswordless ? '' : password;
         usersEmailPolicy.findUserForLogin(
             db,
-            { identifier: email, password, portal: loginPortal },
+            { identifier: email, password: lookupPassword, portal: loginPortal, skipPassword: applicantPasswordless },
             (err, row, extra) => {
         if (err) return res.status(500).json({ error: err.message });
                 if (extra && extra.ambiguous) {
@@ -4309,13 +4383,21 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 }
 
                 if (loginOtpRequired(loginPortal) && !portalAuthPolicy.isStaffPortalAccount(row)) {
-                    if (!phoneOtpToken || !emailOtpToken) {
-                        return res.status(400).json({ error: 'Phone and email OTP verification is required to log in.' });
+                    if (loginChannels.whatsapp && !phoneOtpToken) {
+                        return res.status(400).json({ error: 'WhatsApp OTP verification is required to log in.' });
                     }
-                    otpLib.validateLoginOtpTokens(
+                    if (loginChannels.email && !emailOtpToken) {
+                        return res.status(400).json({ error: 'Email OTP verification is required to log in.' });
+                    }
+                    otpLib.validateLoginOtpTokensFlexible(
                         db,
                         row.id,
-                        { phoneToken: phoneOtpToken, emailToken: emailOtpToken },
+                        {
+                            phoneToken: phoneOtpToken,
+                            emailToken: emailOtpToken,
+                            needPhone: loginChannels.whatsapp,
+                            needEmail: loginChannels.email
+                        },
                         (verr, vr) => {
                             if (verr) return res.status(500).json({ error: verr.message });
                             if (!vr || !vr.ok) {
@@ -9515,7 +9597,8 @@ app.get('/api/admin/portal-auth-config', (req, res) => {
                 success: true,
                 config: portalAuthPolicy.getPortalAuthConfig(),
                 signupOtpEffective: portalAuthPolicy.signupOtpRequired(),
-                loginOtpEffective: portalAuthPolicy.loginOtpRequired()
+                loginOtpEffective: portalAuthPolicy.applicantLoginOtpRequired('public'),
+                passwordlessLoginEffective: portalAuthPolicy.passwordlessLoginEnabled()
             });
         });
     });
