@@ -397,9 +397,12 @@
     }
 
     function currentUserId() {
-        if (window.currentUser && window.currentUser.id != null) {
-            const n = Number(window.currentUser.id);
-            return Number.isInteger(n) && n > 0 ? n : null;
+        if (window.currentUser) {
+            const raw = window.currentUser.id != null ? window.currentUser.id : window.currentUser.user_id;
+            if (raw != null) {
+                const n = Number(raw);
+                if (Number.isInteger(n) && n > 0) return n;
+            }
         }
         if (typeof doctorNumericUserId === 'function') {
             const n = doctorNumericUserId();
@@ -408,9 +411,12 @@
         try {
             if (typeof PortalAuth !== 'undefined') {
                 const u = PortalAuth.getUser('doctor');
-                if (u && u.id != null) {
-                    const n = Number(u.id);
-                    if (Number.isInteger(n) && n > 0) return n;
+                if (u) {
+                    const raw = u.id != null ? u.id : u.user_id;
+                    if (raw != null) {
+                        const n = Number(raw);
+                        if (Number.isInteger(n) && n > 0) return n;
+                    }
                 }
             }
             const keys = ['seminar_doctor_user', 'portalUser', 'doctorUser', 'seminar_user'];
@@ -418,8 +424,9 @@
                 const raw = localStorage.getItem(keys[i]);
                 if (!raw) continue;
                 const u = JSON.parse(raw);
-                if (u && u.id != null) {
-                    const n = Number(u.id);
+                const idRaw = u && (u.id != null ? u.id : u.user_id);
+                if (idRaw != null) {
+                    const n = Number(idRaw);
                     if (Number.isInteger(n) && n > 0) return n;
                 }
             }
@@ -3279,6 +3286,22 @@
         requestAnimationFrame(reapplyStoredMainRegPrefill);
     }
 
+    function applyMainRegPrefillFromCachedPrereg(seminarId) {
+        const sid = Number(seminarId);
+        const row = window.__akPreregBySeminar && window.__akPreregBySeminar[sid];
+        if (!row || !row.form_data) return false;
+        const prefill = clientMapPreregFormToMain(row.form_data);
+        if (!Object.keys(prefill).length) return false;
+        applyPreregPrefillToMainReg({
+            prefill,
+            applicationNo: row.application_no,
+            status: row.status,
+            message:
+                'Details loaded from your pre-registration on this account. Review and complete any remaining fields below.'
+        });
+        return true;
+    }
+
     function showMainRegPreregLookupPanel(seminarId) {
         const panel = document.getElementById('reg-prereg-lookup-panel');
         if (!panel) return;
@@ -3291,10 +3314,15 @@
             panel.classList.add('hidden');
             return;
         }
+        const existing = window.__akPreregBySeminar && window.__akPreregBySeminar[Number(seminarId)];
+        if (existing && existing.form_data) {
+            panel.classList.add('hidden');
+            preregLookupStatus('');
+            return;
+        }
         panel.classList.remove('hidden');
         preregLookupStatus('');
         const input = document.getElementById('reg-prereg-id-input');
-        const existing = window.__akPreregBySeminar && window.__akPreregBySeminar[Number(seminarId)];
         if (input && existing && existing.application_no && !input.value) {
             input.value = existing.application_no;
         }
@@ -3326,7 +3354,13 @@
             window.__akPendingMainRegPrefill = null;
             return data;
         } catch (e) {
+            if (applyMainRegPrefillFromCachedPrereg(sid)) return { fromCache: true };
             hideMainRegPrefillBanner();
+            const cached = window.__akPreregBySeminar && window.__akPreregBySeminar[sid];
+            if (cached) {
+                hideMainRegPreregLookupPanel();
+                return null;
+            }
             showMainRegPreregLookupPanel(sid);
             preregLookupStatus(
                 (e && e.message) || 'Could not load pre-registration automatically. Enter your ID below if you used the public form.',
