@@ -144,8 +144,8 @@
         if (desc) {
             desc.textContent =
                 (flags.mainRegistrationOpen
-                    ? 'Final registration is open for "' + title + '". Approved participants can register in their dashboard.'
-                    : 'Final registration is closed for "' + title + '". Pre-registration stays live; open final registration when you are ready.') +
+                    ? 'Main registration is open for "' + title + '". Approved participants can register in their dashboard.'
+                    : 'Main registration is closed for "' + title + '". Pre-registration stays live; open main registration when you are ready.') +
                 ' You can also change this in event settings.';
         }
         if (openBtn) openBtn.disabled = !!flags.mainRegistrationOpen;
@@ -182,7 +182,7 @@
             }
             updateMainRegOpenPanel();
             if (msg) {
-                msg.textContent = data.message || (open ? 'Final registration opened.' : 'Final registration closed.');
+                msg.textContent = data.message || (open ? 'Main registration opened.' : 'Main registration closed.');
                 msg.style.color = '#047857';
             }
         } catch (e) {
@@ -477,7 +477,7 @@
             '<dt>Pre-reg status</dt><dd>' +
             badge(row.status) +
             '</dd>' +
-            '<dt>Final registration</dt><dd>' +
+            '<dt>Main registration</dt><dd>' +
             regStatusLabel(row) +
             '</dd>' +
             fieldsHtml +

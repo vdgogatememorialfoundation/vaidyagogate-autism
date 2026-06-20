@@ -1186,17 +1186,26 @@
 
     function patchApplicationsMenu() {
         document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
-            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-folder-open"></i> Registration queue';
+            el.classList.add('hidden');
+            el.style.display = 'none';
         });
         document.querySelectorAll('[data-admin-module="tab-final-tracking"]').forEach((el) => {
-            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Final registration tracking';
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Main registration';
         });
         document.querySelectorAll('[data-admin-module="tab-competition-tracking"]').forEach((el) => {
             if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-palette"></i> Competition management';
         });
         document.querySelectorAll('[data-admin-module="tab-prereg-tracking"]').forEach((el) => {
-            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-clipboard-check"></i> Pre-registration tracking';
+            if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-clipboard-check"></i> Pre-registration';
         });
+        const preregTitle = document.querySelector('#tab-prereg-tracking > .ak-prereg-wrap > h2');
+        if (preregTitle) preregTitle.textContent = 'Pre-registration';
+        const mainTitle = document.querySelector('#tab-final-tracking > .ak-prereg-wrap > h2');
+        if (mainTitle) mainTitle.textContent = 'Main registration';
+        const gotoMain = document.getElementById('ak-prereg-goto-reg');
+        if (gotoMain) gotoMain.innerHTML = '<i class="fas fa-arrow-right"></i> Open main registration';
+        const openQueue = document.getElementById('ak-final-open-queue');
+        if (openQueue) openQueue.style.display = 'none';
     }
 
     function reorderAutismHomepageCms() {
@@ -1456,7 +1465,7 @@
                 const st = String(status || '').toLowerCase();
                 if (st === 'approved_pending_payment' || st === 'completed') {
                     return alert(
-                        'Payment is not used on the autism portal. Approve the application, then issue the e-ticket from Final registration tracking.'
+                        'Payment is not used on the autism portal. Approve the application, then issue the e-ticket from Main registration.'
                     );
                 }
                 return origUpdate(appId, status);
@@ -1636,7 +1645,7 @@
                 }
                 const actions =
                     a._kind === 'prereg'
-                        ? `<button type="button" class="btn-primary" onclick="switchTab('tab-prereg-tracking')">Open pre-reg tab</button>`
+                        ? `<button type="button" class="btn-primary" onclick="switchTab('tab-prereg-tracking')">Open pre-registration</button>`
                         : `<button class="btn-primary" onclick="viewFullApplication(${index})">View</button>
                         <button type="button" class="btn-primary" style="margin-left:6px;background:#b91c1c;padding:4px 8px;font-size:0.8rem;" onclick="deleteAdminRegistration(${a.id}, '${String(a.application_no || '').replace(/'/g, "\\'")}')">Delete</button>`;
                 tbody.innerHTML += `

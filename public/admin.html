@@ -136,10 +136,10 @@
                 <a class="menu-item" data-admin-module="tab-seminars" onclick="switchTab('tab-seminars')"><i class="fas fa-calendar-alt"></i> Event management</a>
                 <a class="menu-item" data-admin-module="tab-event-schedules" onclick="switchTab('tab-event-schedules'); loadEventSchedules();"><i class="fas fa-clock"></i> Event Schedules</a>
                 <a class="menu-item" data-admin-module="tab-announcements" onclick="switchTab('tab-announcements')"><i class="fas fa-bullhorn"></i> Announcements</a>
-                <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration tracking</a>
-                <a class="menu-item" data-admin-module="tab-final-tracking" onclick="switchTab('tab-final-tracking')"><i class="fas fa-file-signature"></i> Final registration tracking</a>
+                <a class="menu-item" data-admin-module="tab-prereg-tracking" onclick="switchTab('tab-prereg-tracking')"><i class="fas fa-clipboard-check"></i> Pre-registration</a>
+                <a class="menu-item" data-admin-module="tab-final-tracking" onclick="switchTab('tab-final-tracking')"><i class="fas fa-file-signature"></i> Main registration</a>
                 <a class="menu-item" data-admin-module="tab-competition-tracking" onclick="switchTab('tab-competition-tracking'); if(typeof initAdminCompetitionTracking==='function') initAdminCompetitionTracking();"><i class="fas fa-palette"></i> Competition management</a>
-                <a class="menu-item" data-admin-module="tab-applications" onclick="switchTab('tab-applications')"><i class="fas fa-folder-open"></i> Registration queue</a>
+                <a class="menu-item hidden" data-admin-module="tab-applications" onclick="switchTab('tab-applications')" style="display:none;"><i class="fas fa-folder-open"></i> Registration queue</a>
                 <a class="menu-item" data-admin-module="tab-feedback" onclick="switchTab('tab-feedback')"><i class="fas fa-comments"></i> Event feedback</a>
                 <a class="menu-item" data-admin-module="tab-support-tickets" onclick="switchTab('tab-support-tickets')"><i class="fas fa-ticket-alt"></i> Support Tickets</a>
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
@@ -235,18 +235,18 @@
                 </div>
             </div>
 
-            <!-- Pre-registration tracking -->
+            <!-- Pre-registration -->
             <div id="tab-prereg-tracking" class="tab-pane hidden">
                 <div class="ak-prereg-wrap">
-                    <h2 style="margin-bottom: 8px;">Pre-registration tracking</h2>
+                    <h2 style="margin-bottom: 8px;">Pre-registration</h2>
                     <p id="ak-prereg-live-bar" class="ak-prereg-live-bar hidden"></p>
-                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review pre-registrations first. When you <strong>approve</strong>, participants can complete <strong>final registration</strong> after you enable it below (or in the event settings). Use <em>Final registration</em> in the menu for the main application queue.</p>
+                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review pre-registrations first. When you <strong>approve</strong>, participants can complete <strong>main registration</strong> after you enable it below (or in the event settings). Use <em>Main registration</em> in the menu for the application queue.</p>
                     <div id="ak-main-reg-open-panel" class="card" style="display:none;margin-bottom:16px;border-left:4px solid #0f766e;padding:14px 16px;">
-                        <h3 style="margin:0 0 6px;font-size:1rem;">Final registration for selected event</h3>
-                        <p id="ak-main-reg-open-desc" style="margin:0 0 12px;font-size:0.88rem;color:#64748b;">Turn on main registration when you are ready for approved participants to complete final registration.</p>
+                        <h3 style="margin:0 0 6px;font-size:1rem;">Main registration for selected event</h3>
+                        <p id="ak-main-reg-open-desc" style="margin:0 0 12px;font-size:0.88rem;color:#64748b;">Turn on main registration when you are ready for approved participants to complete it.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                            <button type="button" class="btn-success" id="ak-open-main-reg"><i class="fas fa-door-open"></i> Open final registration</button>
-                            <button type="button" class="btn-primary" style="background:#475569;" id="ak-close-main-reg"><i class="fas fa-door-closed"></i> Close final registration</button>
+                            <button type="button" class="btn-success" id="ak-open-main-reg"><i class="fas fa-door-open"></i> Open main registration</button>
+                            <button type="button" class="btn-primary" style="background:#475569;" id="ak-close-main-reg"><i class="fas fa-door-closed"></i> Close main registration</button>
                         </div>
                         <p id="ak-main-reg-open-msg" style="margin:10px 0 0;font-size:0.85rem;"></p>
                     </div>
@@ -254,7 +254,7 @@
                         <span>Participant journey</span>
                         <div class="step is-active"><strong>Step 1</strong> Pre-register</div>
                         <div class="step is-active"><strong>Step 2</strong> Admin approval</div>
-                        <div class="step"><strong>Step 3</strong> Final registration</div>
+                        <div class="step"><strong>Step 3</strong> Main registration</div>
                         <div class="step"><strong>Step 4</strong> E-ticket</div>
                     </div>
                     <div class="ak-prereg-stats">
@@ -289,7 +289,7 @@
                                 <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-prereg-revision"><i class="fas fa-edit"></i> Request revision</button>
                                 <button type="button" class="btn-danger" id="ak-prereg-reject"><i class="fas fa-times"></i> Reject</button>
                                 <button type="button" class="btn-primary" style="background:#b91c1c;" id="ak-prereg-delete"><i class="fas fa-trash"></i> Delete pre-reg</button>
-                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open final registration tracking</button>
+                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-prereg-goto-reg"><i class="fas fa-arrow-right"></i> Open main registration</button>
                             </div>
                             <p id="ak-prereg-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
                         </div>
@@ -297,11 +297,11 @@
                 </div>
             </div>
 
-            <!-- Final registration tracking -->
+            <!-- Main registration -->
             <div id="tab-final-tracking" class="tab-pane hidden">
                 <div class="ak-prereg-wrap">
-                    <h2 style="margin-bottom: 8px;">Final registration tracking</h2>
-                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Track main registrations after pre-registration is approved. Request revisions, issue e-tickets, and review application details.</p>
+                    <h2 style="margin-bottom: 8px;">Main registration</h2>
+                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review main registrations after pre-registration is approved. Request revisions, issue e-tickets, and review application details.</p>
                     <div class="ak-prereg-stats">
                         <div class="ak-final-stat ak-prereg-stat" data-filter="all"><div class="num" id="ak-final-stat-total">0</div><div class="lbl">Total</div></div>
                         <div class="ak-final-stat ak-prereg-stat stat-pending" data-filter="pending_approval"><div class="num" id="ak-final-stat-pending_approval">0</div><div class="lbl">Pending</div></div>
@@ -329,7 +329,6 @@
                                 <button type="button" class="btn-primary" style="background:#7c3aed;" id="ak-final-revision"><i class="fas fa-edit"></i> Request revision</button>
                                 <button type="button" class="btn-danger" id="ak-final-reject"><i class="fas fa-times"></i> Reject</button>
                                 <button type="button" class="btn-primary" style="background:#b91c1c;" id="ak-final-delete"><i class="fas fa-trash"></i> Delete registration</button>
-                                <button type="button" class="btn-primary" style="background:#475569;" id="ak-final-open-queue"><i class="fas fa-folder-open"></i> Open registration queue</button>
                             </div>
                             <p id="ak-final-action-msg" style="margin-top:12px;font-size:0.88rem;"></p>
                         </div>
@@ -2529,9 +2528,9 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260619b"></script>
+    <script src="/js/admin.js?v=20260620a"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
-    <script src="/js/admin-prereg-tracking.js?v=14"></script>
+    <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
     <script src="/js/admin-competition.js?v=4"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
