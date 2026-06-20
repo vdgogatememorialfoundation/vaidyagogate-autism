@@ -2504,6 +2504,7 @@ async function startRegistration(seminarId, opts) {
         return;
     }
     activeSeminarIdForReg = seminarId;
+    window.activeSeminarIdForReg = seminarId;
     const termsRaw = s && s.terms_conditions && String(s.terms_conditions).trim();
     window.__seminarTermsText = termsRaw || '';
     window.__seminarCancellationSummary = s ? summaryCancellationPolicy(s.cancellation_policy_json) : '';
@@ -2565,6 +2566,7 @@ async function startRegistrationVolunteerFlow(seminarId) {
 
 function cancelRegistration() {
     activeSeminarIdForReg = null;
+    window.activeSeminarIdForReg = null;
     window.__draftApplicationNo = null;
     window.__fieldOtpTokens = {};
     window.__regPhoneOtpToken = null;
