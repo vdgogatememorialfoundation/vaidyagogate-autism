@@ -121,11 +121,32 @@
         });
     }
 
+    function loginOtpButtonIds(prefix, channel, resendId) {
+        const p = prefix || 'doctor';
+        const ch = channel === 'phone' ? 'phone' : 'email';
+        return {
+            sendIds: [p + '-send-otp-' + ch],
+            resendIds: [resendId || p + '-resend-otp-' + ch]
+        };
+    }
+
+    function cooldownLoginChannel(channel, prefix, resendId, seconds) {
+        const ids = loginOtpButtonIds(prefix, channel, resendId);
+        startResendCooldown({
+            sendIds: ids.sendIds,
+            resendIds: ids.resendIds,
+            seconds: seconds != null ? seconds : 60,
+            key: 'login-' + (prefix || 'doctor') + '-' + channel
+        });
+    }
+
     global.OtpUi = {
         channelLabel,
         notifyOtpSent,
         startResendCooldown,
         signupOtpButtonIds,
-        cooldownSignupChannel
+        cooldownSignupChannel,
+        loginOtpButtonIds,
+        cooldownLoginChannel
     };
 })(typeof window !== 'undefined' ? window : global);

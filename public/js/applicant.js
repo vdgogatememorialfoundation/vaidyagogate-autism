@@ -1226,11 +1226,10 @@ window.onload = () => {
             portal: 'doctor',
             formId: 'doctor-login-form',
             otpPanelId: 'doctor-login-otp-panel',
-            emailInputId: 'doctor-login-email',
             phoneInputId: 'doctor-login-phone',
             passwordInputId: 'doctor-login-password',
             otpPrefix: 'doctor',
-            resendEmailBtnId: 'doctor-resend-otp-email',
+            phoneOnlyLogin: true,
             resendPhoneBtnId: 'doctor-resend-otp-phone',
             onSuccess: bootDoctorDashboard,
             onError: (msg) => {

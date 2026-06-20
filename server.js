@@ -3608,9 +3608,25 @@ app.get('/api/auth/email-available', (req, res) => {
     });
 });
 
-/** Check whether an email is registered before login OTP (no password). */
+/** Check whether an email or phone is registered before login OTP (no password). */
 app.post('/api/auth/login-otp/precheck', (req, res) => {
-    const precheckEmailV = contactValidation.validateEmail((req.body && req.body.email) || '');
+    const body = req.body || {};
+    if (body.phone && !body.email) {
+        const phoneV = contactValidation.validatePhone(body.phone);
+        if (!phoneV.valid) return res.status(400).json({ error: phoneV.message });
+        return authUsers.findUserByPhone(db, phoneV.cleanedPhone, (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!row) {
+                return res.json({
+                    exists: false,
+                    needsSignup: true,
+                    message: 'No account found with this phone number. Please create an account first.'
+                });
+            }
+            return res.json({ exists: true, needsSignup: false, disabled: false });
+        });
+    }
+    const precheckEmailV = contactValidation.validateEmail(body.email || '');
     if (!precheckEmailV.valid) return res.status(400).json({ error: precheckEmailV.message });
     const emailNorm = precheckEmailV.cleanedEmail;
     authUsers.findUserByEmail(db, emailNorm, (err, row) => {
@@ -3634,6 +3650,34 @@ app.post('/api/auth/login-otp/precheck', (req, res) => {
 function resolveLoginUserForOtp(email, password, cb, options) {
     const requirePassword = options && options.requirePassword === true;
     const phoneRaw = options && options.phone;
+    const phoneOnly = !!(options && options.phoneOnly);
+
+    if (phoneOnly) {
+        const phoneV = contactValidation.validatePhone(phoneRaw);
+        if (!phoneV.valid) return cb(null, { status: 400, error: phoneV.message });
+        return authUsers.findUserByPhone(db, phoneV.cleanedPhone, (err, row) => {
+            if (err) return cb(err);
+            if (!row) {
+                return cb(null, {
+                    status: 401,
+                    error: 'No account found with this phone number. Please create an account first.',
+                    needsSignup: true
+                });
+            }
+            if (requirePassword) {
+                const pw = password != null && password !== undefined ? String(password) : '';
+                if (!pw || row.password !== pw) {
+                    return cb(null, {
+                        status: 401,
+                        error: 'Invalid password. Use Forgot password or check your password.',
+                        needsSignup: false
+                    });
+                }
+            }
+            cb(null, { status: 200, row });
+        });
+    }
+
     const loginOtpEmailV = contactValidation.validateEmail(email);
     if (!loginOtpEmailV.valid) {
         return cb(null, { status: 400, error: loginOtpEmailV.message });
@@ -3685,10 +3729,11 @@ function verifyApplicantLoginPhone(row, phoneRaw) {
 /** Find account by email and send login OTP to registered email + WhatsApp. */
 app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { email, password, phone } = req.body || {};
-    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const phoneOnly = !email && !!phone;
+    if (!phoneOnly && !email) return res.status(400).json({ error: 'Email is required' });
     const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
     resolveLoginUserForOtp(
-        email,
+        email || null,
         password,
         (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -3712,14 +3757,16 @@ app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAux
             res.json({ success: true, ttlMinutes: result.ttlMinutes, channels: result.results });
         });
     },
-        { requirePassword, phone }
+        { requirePassword, phone, phoneOnly }
     );
 });
 
 /** Send login OTP to one channel (email or phone) for the account matching email. */
 app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { email, password, channel, phone } = req.body || {};
-    if (!email || !channel) return res.status(400).json({ error: 'email and channel are required' });
+    const phoneOnly = !email && !!phone;
+    if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
+    if (!channel) return res.status(400).json({ error: 'channel is required' });
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
@@ -3732,7 +3779,7 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
     }
     const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
     resolveLoginUserForOtp(
-        email,
+        email || null,
         password,
         (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -3756,21 +3803,23 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
             res.json(payload);
         });
     },
-        { requirePassword, phone }
+        { requirePassword, phone, phoneOnly }
     );
 });
 
 app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
     const { email, password, channel, code, phone } = req.body || {};
-    if (!email || !channel || !code) {
-        return res.status(400).json({ error: 'email, channel, and code are required' });
+    const phoneOnly = !email && !!phone;
+    if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
+    if (!channel || !code) {
+        return res.status(400).json({ error: 'channel and code are required' });
     }
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
     const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
     resolveLoginUserForOtp(
-        email,
+        email || null,
         password,
         (err, out) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -3801,7 +3850,7 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
             }
         );
     },
-        { requirePassword, phone }
+        { requirePassword, phone, phoneOnly }
     );
 });
 
@@ -4257,21 +4306,7 @@ app.post('/api/auth/signup', (req, res) => {
 app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
     const { email, password, phone, phoneOtpToken, emailOtpToken } = req.body;
     const passwordless = portalAuthPolicy.passwordlessLoginEnabled();
-    if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-    }
-    if (!passwordless && (password === undefined || password === null)) {
-        return res.status(400).json({ error: 'Email and password are required' });
-    }
     const usersEmailPolicy = require('./lib/users-email-policy');
-    const portalIdLogin = usersEmailPolicy.isPortalIdLogin(email);
-    let loginEmailV = { valid: true, cleanedEmail: '' };
-    if (!portalIdLogin) {
-        loginEmailV = contactValidation.validateEmail(email);
-        if (!loginEmailV.valid) {
-            return res.status(400).json({ error: loginEmailV.message });
-        }
-    }
     portalAuthPolicy.loadPortalAuthConfig(db, (ePol) => {
         if (ePol) console.warn('[portal-auth-policy] login', ePol.message);
         const loginPortal = portalAuthPolicy.normalizeLoginPortal(
@@ -4279,12 +4314,30 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         );
         const applicantPasswordless =
             passwordless && loginPortal !== 'admin' && loginPortal !== 'staff';
+        const phoneOnlyLogin = applicantPasswordless && !email && phone;
+        let phoneNorm = null;
+        if (phoneOnlyLogin) {
+            const phoneV = contactValidation.validatePhone(phone);
+            if (!phoneV.valid) return res.status(400).json({ error: phoneV.message });
+            phoneNorm = phoneV.cleanedPhone;
+        } else if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        if (!passwordless && !phoneOnlyLogin && (password === undefined || password === null)) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+        const portalIdLogin = email ? usersEmailPolicy.isPortalIdLogin(email) : false;
+        let loginEmailV = { valid: true, cleanedEmail: '' };
+        if (email && !portalIdLogin) {
+            loginEmailV = contactValidation.validateEmail(email);
+            if (!loginEmailV.valid) {
+                return res.status(400).json({ error: loginEmailV.message });
+            }
+        }
         const loginChannels = portalAuthPolicy.loginOtpChannels();
         const lookupPassword = applicantPasswordless ? '' : password;
-        usersEmailPolicy.findUserForLogin(
-            db,
-            { identifier: email, password: lookupPassword, portal: loginPortal, skipPassword: applicantPasswordless },
-            (err, row, extra) => {
+
+        function processLoginRow(err, row, extra) {
         if (err) return res.status(500).json({ error: err.message });
                 if (extra && extra.ambiguous) {
                     return res.status(400).json({
@@ -4292,6 +4345,12 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     });
                 }
                 if (!row) {
+                    if (phoneOnlyLogin) {
+                        return res.status(401).json({
+                            error: 'No account found with this phone number. Please create an account first.',
+                            needsSignup: true
+                        });
+                    }
                     if (portalIdLogin) {
                         return res.status(401).json({
                             error: 'No account found with this portal user ID, or password is wrong.',
@@ -4340,6 +4399,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 }
 
                 if (
+                    !phoneOnlyLogin &&
                     !portalAuthPolicy.isStaffPortalAccount(row) &&
                     loginPortal !== 'admin' &&
                     loginPortal !== 'staff'
@@ -4463,6 +4523,14 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 if (block) return block;
                 sendUser();
         }
+
+        if (phoneOnlyLogin) {
+            return authUsers.findUserByPhone(db, phoneNorm, (err, row) => processLoginRow(err, row, null));
+        }
+        usersEmailPolicy.findUserForLogin(
+            db,
+            { identifier: email, password: lookupPassword, portal: loginPortal, skipPassword: applicantPasswordless },
+            processLoginRow
         );
     });
 });

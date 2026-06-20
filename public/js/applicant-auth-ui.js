@@ -61,11 +61,9 @@
         if (!showLogin) refreshSignupOtpPanel();
     }
 
-    function prefillLoginForm(email, phone, password) {
-        const le = document.getElementById('doctor-login-email');
+    function prefillLoginForm(_email, phone, password) {
         const lph = document.getElementById('doctor-login-phone');
         const lp = document.getElementById('doctor-login-password');
-        if (le && email) le.value = email;
         if (lph && phone) lph.value = phone;
         if (lp && password) lp.value = password;
     }
@@ -360,7 +358,7 @@
                     }
                 }
                 try {
-                    const loginBody = { email, phone, portal: 'doctor' };
+                    const loginBody = { phone, portal: 'doctor' };
                     if (!passwordless) loginBody.password = password;
                     if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
                     const loginRes = await fetch('/api/auth/login', {
@@ -428,9 +426,7 @@
     function openDoctorForgotPasswordModal() {
         const overlay = document.getElementById('doctor-forgot-password-overlay');
         const fe = document.getElementById('doctor-forgot-email');
-        const le = document.getElementById('doctor-login-email');
         const st = document.getElementById('doctor-forgot-status');
-        if (fe && le && le.value) fe.value = le.value.trim();
         if (st) st.textContent = '';
         if (overlay) overlay.style.display = 'flex';
     }

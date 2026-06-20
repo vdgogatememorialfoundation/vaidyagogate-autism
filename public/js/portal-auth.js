@@ -178,8 +178,8 @@
         if (loginLead) {
             if (passwordless) {
                 loginLead.textContent = loginChannels.email
-                    ? 'Sign in with email and WhatsApp OTP (no password).'
-                    : 'Sign in with your email and WhatsApp OTP (no password).';
+                    ? 'Sign in with WhatsApp OTP (no password).'
+                    : 'Enter your WhatsApp number, send OTP, verify, then sign in.';
             } else if (loginChannels.email && loginChannels.whatsapp) {
                 loginLead.textContent = 'Verify email and WhatsApp (both required).';
             } else if (loginChannels.whatsapp) {
@@ -240,6 +240,7 @@
         refreshLoginOtpPanel(otpPanel, otpPortal);
 
         const prefix = opts.otpPrefix || portal;
+        const phoneOnlyLogin = !!opts.phoneOnlyLogin;
         const sendBtnEmail = document.getElementById(prefix + '-send-otp-email');
         const sendBtnPhone = document.getElementById(prefix + '-send-otp-phone');
         const resendBtnEmail = opts.resendEmailBtnId ? document.getElementById(opts.resendEmailBtnId) : null;
@@ -248,6 +249,9 @@
         const verifyBtnPhone = document.getElementById(prefix + '-verify-otp-phone');
 
         function validatedLoginEmail() {
+            if (phoneOnlyLogin) {
+                return { valid: true, cleanedEmail: '' };
+            }
             const raw = String((document.getElementById(opts.emailInputId) || {}).value || '').trim();
             if (typeof validateEmailClient === 'function') {
                 return validateEmailClient(raw, 'Email');
@@ -275,9 +279,24 @@
 
         function loginOtpPayload(email) {
             const pv = validatedLoginPhone();
+            if (phoneOnlyLogin) {
+                return pv.valid
+                    ? { payload: { phone: pv.cleanedPhone }, phoneValid: pv }
+                    : { payload: {}, phoneValid: pv };
+            }
             const payload = { email };
             if (pv.valid) payload.phone = pv.cleanedPhone;
             return { payload, phoneValid: pv };
+        }
+
+        function startLoginOtpCooldown(channel) {
+            if (!global.OtpUi || typeof global.OtpUi.cooldownLoginChannel !== 'function') return;
+            global.OtpUi.cooldownLoginChannel(
+                channel,
+                prefix,
+                channel === 'phone' ? opts.resendPhoneBtnId : opts.resendEmailBtnId,
+                60
+            );
         }
 
         async function readApiJson(res) {
@@ -292,25 +311,31 @@
             }
         }
 
-        async function precheckEmail(email) {
+        async function precheckLogin(payload) {
             const res = await fetch('/api/auth/login-otp/precheck', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify(payload)
             });
             const { data } = await readApiJson(res);
             return data;
         }
 
         async function sendOtp(channel) {
+            const pv = validatedLoginPhone();
+            if (!pv.valid) return alert(pv.message);
             const ev = validatedLoginEmail();
-            if (!ev.valid) return alert(ev.message);
-            const email = ev.cleanedEmail;
-            const phonePack = loginOtpPayload(email);
+            if (!phoneOnlyLogin && !ev.valid) return alert(ev.message);
+            const phonePack = loginOtpPayload(ev.cleanedEmail);
             if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
-            const pc = await precheckEmail(email);
+            const pc = await precheckLogin(phonePack.payload);
             if (pc.needsSignup) {
-                return alert(pc.message || 'No account with this email. Please create an account first.');
+                return alert(
+                    pc.message ||
+                        (phoneOnlyLogin
+                            ? 'No account with this phone number. Please create an account first.'
+                            : 'No account with this email. Please create an account first.')
+                );
             }
             const res = await fetch('/api/auth/login-otp/send', {
                 method: 'POST',
@@ -328,17 +353,19 @@
                 return alert(msg);
             }
             if (data.debugCode) console.info('Login OTP debug:', data.debugCode);
+            startLoginOtpCooldown(channel);
             if (global.OtpUi) global.OtpUi.notifyOtpSent(channel, data);
             else alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
         }
 
         async function sendBothOtps() {
+            const pv = validatedLoginPhone();
+            if (!pv.valid) return alert(pv.message);
             const ev = validatedLoginEmail();
             if (!ev.valid) return alert(ev.message);
-            const email = ev.cleanedEmail;
-            const phonePack = loginOtpPayload(email);
+            const phonePack = loginOtpPayload(ev.cleanedEmail);
             if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
-            const pc = await precheckEmail(email);
+            const pc = await precheckLogin(phonePack.payload);
             if (pc.needsSignup) {
                 return alert(pc.message || 'No account with this email. Please create an account first.');
             }
@@ -354,15 +381,18 @@
                     : data.error || 'Could not send codes.';
                 return alert(msg);
             }
+            startLoginOtpCooldown('email');
+            startLoginOtpCooldown('phone');
             if (global.OtpUi) global.OtpUi.notifyOtpSent(null, data, { both: true });
             else alert('OTP sent successfully to your email and WhatsApp.');
         }
 
         async function verifyOtp(channel) {
+            const pv = validatedLoginPhone();
+            if (!pv.valid) return alert(pv.message);
             const ev = validatedLoginEmail();
-            if (!ev.valid) return alert(ev.message);
-            const email = ev.cleanedEmail;
-            const phonePack = loginOtpPayload(email);
+            if (!phoneOnlyLogin && !ev.valid) return alert(ev.message);
+            const phonePack = loginOtpPayload(ev.cleanedEmail);
             if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const codeEl = document.getElementById(
                 channel === 'email' ? prefix + '-email-otp' : prefix + '-phone-otp'
@@ -371,7 +401,7 @@
                 channel === 'email' ? prefix + '-email-otp-ok' : prefix + '-phone-otp-ok'
             );
             const code = String((codeEl || {}).value || '').trim();
-            if (!email || !code) return alert('Enter email, phone, and the code.');
+            if (!code) return alert('Enter the OTP code.');
             const res = await fetch('/api/auth/login-otp/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -401,10 +431,11 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const pv = validatedLoginPhone();
+            if (!pv.valid) return alert(pv.message);
             const ev = validatedLoginEmail();
-            if (!ev.valid) return alert(ev.message);
-            const email = ev.cleanedEmail;
-            const phonePack = loginOtpPayload(email);
+            if (!phoneOnlyLogin && !ev.valid) return alert(ev.message);
+            const phonePack = loginOtpPayload(ev.cleanedEmail);
             if (!phonePack.phoneValid.valid) return alert(phonePack.phoneValid.message);
             const password = (document.getElementById(opts.passwordInputId) || {}).value;
             const cfg = global.__portalAuth || {};
@@ -458,14 +489,21 @@
                 }
                 if (!res.ok || !data.success) {
                     if (data.needsSignup) {
-                        const msg = data.error || 'No account found with this email.';
+                        const msg =
+                            data.error ||
+                            (phoneOnlyLogin
+                                ? 'No account found with this phone number.'
+                                : 'No account found with this email.');
                         if (
                             portal === 'doctor' &&
-                            /doctor\.html/i.test(String(global.location.pathname || '')) &&
                             global.DoctorAuthUi &&
                             typeof global.DoctorAuthUi.switchDoctorAuthTab === 'function'
                         ) {
                             global.DoctorAuthUi.switchDoctorAuthTab('signup');
+                            if (phoneOnlyLogin && phonePack.payload.phone) {
+                                const sp = document.getElementById('doctor-signup-phone');
+                                if (sp) sp.value = phonePack.payload.phone;
+                            }
                             if (opts.onError) opts.onError(msg + ' Use Create account to register.');
                             else alert(msg + ' Switch to Create account and register.');
                             return;
