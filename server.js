@@ -243,18 +243,8 @@ function bootstrapApp(done) {
     persistScrollingAnnouncementsSanitizeIfNeeded(() => {});
 
     const finish = () => {
-        integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
-            portalAuthPolicy.loadPortalAuthConfig(db, () => {});
-            if (pgDb && typeof pgDb.ensureAuxiliaryTables === 'function') {
-                pgDb
-                    .ensureAuxiliaryTables()
-                    .then(() => {
-                        auxiliaryTablesReady = true;
-                    })
-                    .catch((e) => console.warn('[bootstrap] aux tables:', e.message));
-            }
-        });
         if (done) done();
+        setImmediate(() => warmOtpAndAuthCaches());
     };
 
     const runFullMigrations = () => {
@@ -3037,6 +3027,8 @@ function upsertGlobalSetting(key, value, cb) {
 siteMarketing.registerSiteMarketingRoutes(app, db, upload, upsertGlobalSetting);
 registerNotificationRoutes(app, db);
 
+let auxiliaryTablesReady = false;
+
 function withIntegrationSettingsLoaded(req, res, next) {
     integrationSettings.ensureIntegrationSettingsLoaded(db, (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -3047,25 +3039,40 @@ function withIntegrationSettingsLoaded(req, res, next) {
     });
 }
 
-let auxiliaryTablesReady = false;
-let auxiliaryTablesPromise = null;
+/** Preload integration keys + portal auth policy so first OTP send is fast (Render). */
+function warmOtpAndAuthCaches() {
+    integrationSettings.ensureIntegrationSettingsLoaded(db, (err) => {
+        if (err) console.warn('[warmup] integrations:', err.message);
+        portalAuthPolicy.loadPortalAuthConfig(db, (e2) => {
+            if (e2) console.warn('[warmup] portal-auth:', e2.message);
+            if (pgDb && pgDb.ensureAuxiliaryTables) {
+                pgDb
+                    .ensureAuxiliaryTables()
+                    .then(() => {
+                        auxiliaryTablesReady = true;
+                        console.log('[warmup] auth/otp caches ready');
+                    })
+                    .catch((e) => console.warn('[warmup] auxiliary tables:', e.message));
+            }
+        });
+    });
+}
 
 function withAuxiliaryTables(req, res, next) {
     if (auxiliaryTablesReady) return next();
     if (pgDb && typeof pgDb.ensureAuxiliaryTables === 'function') {
-        if (!auxiliaryTablesPromise) {
-            auxiliaryTablesPromise = pgDb
-                .ensureAuxiliaryTables()
-                .then(() => {
-                    auxiliaryTablesReady = true;
-                })
-                .catch((e) => {
-                    console.warn('[aux-tables]', e.message);
-                    auxiliaryTablesPromise = null;
-                });
-        }
-        return auxiliaryTablesPromise.then(() => next()).catch(() => next());
+        return pgDb
+            .ensureAuxiliaryTables()
+            .then(() => {
+                auxiliaryTablesReady = true;
+                next();
+            })
+            .catch((e) => {
+                console.warn('[aux-tables]', e.message);
+                next();
+            });
     }
+    auxiliaryTablesReady = true;
     next();
 }
 
