@@ -1,17 +1,15 @@
 {
-  "appId": "org.vaidyagogate.doctor",
-  "appName": "VGMF Doctor",
+  "appId": "org.vaidyagogate.autism.applicant",
+  "appName": "Autism Applicant",
   "webDir": "www",
   "server": {
-    "url": "https://seminar.vaidyagogate.org/doctor.html?app=1",
-    "hostname": "seminar.vaidyagogate.org",
+    "url": "https://autism.vaidyagogate.org/dashboard?app=1&authv=3",
+    "hostname": "autism.vaidyagogate.org",
     "cleartext": false,
     "androidScheme": "https",
     "allowNavigation": [
-      "https://seminar.vaidyagogate.org",
-      "https://admin.vaidyagogate.org",
-      "https://judge.vaidyagogate.org",
-      "https://vaidyagogate-seminar.vercel.app"
+      "https://autism.vaidyagogate.org",
+      "https://autism-flax.vercel.app"
     ]
   },
   "android": {

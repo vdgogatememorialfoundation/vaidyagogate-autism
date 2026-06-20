@@ -139,6 +139,7 @@
             whatsapp: cfg.loginOtpWhatsapp !== false,
             email: cfg.loginOtpEmail === true
         };
+        const phoneOnlyLoginUi = !!document.getElementById('doctor-login-submit');
 
         ['doctor-login-password-wrap', 'doctor-signup-password-wrap'].forEach((id) => {
             const el = document.getElementById(id);
@@ -161,32 +162,46 @@
                 : 'Verify WhatsApp before signup.';
         }
 
-        const loginEmailRow = document.getElementById('doctor-login-email-otp-row');
-        if (loginEmailRow) loginEmailRow.style.display = loginChannels.email ? '' : 'none';
-        const loginPhoneRow = document.getElementById('doctor-login-phone-otp-row');
-        if (loginPhoneRow) loginPhoneRow.style.display = loginChannels.whatsapp ? '' : 'none';
-        const loginLead = document.getElementById('doctor-login-otp-lead');
-        const loginPanel = document.getElementById('doctor-login-otp-panel');
-        const signupPanel = document.getElementById('doctor-signup-otp-panel');
-        if (loginPanel) {
-            loginPanel.style.display =
-                passwordless || cfg.applicantLoginOtpRequired || cfg.requireLoginOtp ? 'block' : loginPanel.style.display;
+        if (phoneOnlyLoginUi) {
+            const legacyPanel = document.getElementById('doctor-login-otp-panel');
+            if (legacyPanel) legacyPanel.style.display = 'none';
+            const legacyEmail = document.getElementById('doctor-login-email');
+            if (legacyEmail) {
+                const emailLabel = legacyEmail.previousElementSibling;
+                if (emailLabel && emailLabel.tagName === 'LABEL') emailLabel.style.display = 'none';
+                legacyEmail.style.display = 'none';
+                legacyEmail.required = false;
+            }
+        } else {
+            const loginEmailRow = document.getElementById('doctor-login-email-otp-row');
+            if (loginEmailRow) loginEmailRow.style.display = loginChannels.email ? '' : 'none';
+            const loginPhoneRow = document.getElementById('doctor-login-phone-otp-row');
+            if (loginPhoneRow) loginPhoneRow.style.display = loginChannels.whatsapp ? '' : 'none';
+            const loginLead = document.getElementById('doctor-login-otp-lead');
+            const loginPanel = document.getElementById('doctor-login-otp-panel');
+            if (loginPanel) {
+                loginPanel.style.display =
+                    passwordless || cfg.applicantLoginOtpRequired || cfg.requireLoginOtp
+                        ? 'block'
+                        : loginPanel.style.display;
+            }
+            if (loginLead) {
+                if (passwordless) {
+                    loginLead.textContent = loginChannels.email
+                        ? 'Sign in with WhatsApp OTP (no password).'
+                        : 'Enter your WhatsApp number, send OTP, verify, then sign in.';
+                } else if (loginChannels.email && loginChannels.whatsapp) {
+                    loginLead.textContent = 'Verify email and WhatsApp (both required).';
+                } else if (loginChannels.whatsapp) {
+                    loginLead.textContent = 'Verify WhatsApp OTP to sign in.';
+                } else {
+                    loginLead.textContent = 'Verify email OTP to sign in.';
+                }
+            }
         }
+        const signupPanel = document.getElementById('doctor-signup-otp-panel');
         if (signupPanel && cfg.requireSignupOtp !== false) {
             signupPanel.style.display = 'block';
-        }
-        if (loginLead) {
-            if (passwordless) {
-                loginLead.textContent = loginChannels.email
-                    ? 'Sign in with WhatsApp OTP (no password).'
-                    : 'Enter your WhatsApp number, send OTP, verify, then sign in.';
-            } else if (loginChannels.email && loginChannels.whatsapp) {
-                loginLead.textContent = 'Verify email and WhatsApp (both required).';
-            } else if (loginChannels.whatsapp) {
-                loginLead.textContent = 'Verify WhatsApp OTP to sign in.';
-            } else {
-                loginLead.textContent = 'Verify email OTP to sign in.';
-            }
         }
     }
 

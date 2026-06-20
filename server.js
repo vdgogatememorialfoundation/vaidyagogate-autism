@@ -581,6 +581,20 @@ app.use(siteKillSwitch.createSiteKillSwitchMiddleware(db));
 
 app.use(subdomainPortalMiddleware);
 
+/** Applicant auth assets must not stick in mobile WebView cache. */
+app.use((req, res, next) => {
+    const p = String(req.path || '');
+    if (
+        /^\/js\/(applicant-auth-ui|portal-auth|applicant|otp-ui|doctor-auth-ui|doctor)\.js/i.test(p) ||
+        p === '/dashboard' ||
+        p.startsWith('/dashboard/')
+    ) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.setHeader('Pragma', 'no-cache');
+    }
+    next();
+});
+
 app.get('/scan', (req, res) => {
     res.redirect(302, portalUrls.getPortalUrls().scanner);
 });

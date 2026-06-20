@@ -1220,8 +1220,8 @@ window.onload = () => {
         bootDoctorDashboard(existing);
         return;
     }
-    if (typeof DoctorAuthUi !== 'undefined' && typeof DoctorAuthUi.bindPhoneLogin === 'function') {
-        DoctorAuthUi.bindPhoneLogin(bootDoctorDashboard, (msg) => {
+    if (typeof DoctorAuthUi !== 'undefined' && typeof DoctorAuthUi.wireApplicantPhoneLogin === 'function') {
+        DoctorAuthUi.wireApplicantPhoneLogin(bootDoctorDashboard, (msg) => {
             const el = document.getElementById('doctor-login-err');
             if (el) {
                 el.textContent = msg;

@@ -41,6 +41,39 @@
         });
     }
 
+    /** Mobile WebView often caches old sign-in HTML — force one reload when legacy email login is detected. */
+    function ensureFreshMobileAuthPage() {
+        if (!document.body || !document.body.classList.contains('ak-portal-dash')) return false;
+        const hasNewPhoneLogin = !!document.getElementById('doctor-login-submit');
+        const hasLegacyEmailLogin = !!document.getElementById('doctor-login-email');
+        if (hasNewPhoneLogin || !hasLegacyEmailLogin) return false;
+        try {
+            const u = new URL(window.location.href);
+            if (u.searchParams.get('authv') === '3') return false;
+            u.searchParams.set('authv', '3');
+            if (u.searchParams.get('app') !== '1' && isStandaloneDoctorApp()) {
+                u.searchParams.set('app', '1');
+            }
+            window.location.replace(u.toString());
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    let phoneLoginWired = false;
+
+    function wireApplicantPhoneLogin(onSuccess, onError) {
+        if (phoneLoginWired || typeof bindPhoneLogin !== 'function') return;
+        if (!document.getElementById('doctor-login-form')) return;
+        const existing = global.PortalAuth && typeof global.PortalAuth.getUser === 'function'
+            ? global.PortalAuth.getUser('doctor')
+            : null;
+        if (existing) return;
+        phoneLoginWired = true;
+        bindPhoneLogin(onSuccess, onError);
+    }
+
     function switchDoctorAuthTab(tab) {
         const login = document.getElementById('doctor-auth-login-panel');
         const signup = document.getElementById('doctor-auth-signup-panel');
@@ -799,7 +832,9 @@
         isStandaloneDoctorApp,
         switchDoctorAuthTab,
         bindPhoneLogin,
+        wireApplicantPhoneLogin,
         init: function () {
+            if (ensureFreshMobileAuthPage()) return;
             applyStandaloneUi();
             blockHomepageNavigation();
             if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {
@@ -814,6 +849,16 @@
             wireForgotPasswordUi();
             const signupForm = document.getElementById('doctor-signup-form');
             if (signupForm) signupForm.addEventListener('submit', handleDoctorSignup);
+            wireApplicantPhoneLogin(
+                typeof bootDoctorDashboard === 'function' ? bootDoctorDashboard : null,
+                (msg) => {
+                    const el = document.getElementById('doctor-login-err');
+                    if (el) {
+                        el.textContent = msg;
+                        el.classList.remove('hidden');
+                    } else alert(msg);
+                }
+            );
             if (isStandaloneDoctorApp()) switchDoctorAuthTab('login');
             const params = new URLSearchParams(window.location.search);
             if (params.get('register') === '1' || params.get('signup') === '1') {
