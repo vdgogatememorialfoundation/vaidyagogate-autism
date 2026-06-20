@@ -2904,10 +2904,24 @@
         if (window.__akPendingMainRegPrefill) {
             applyPreregPrefillToMainReg({ prefill: window.__akPendingMainRegPrefill });
             window.__akPendingMainRegPrefill = null;
+        } else if (window.__akLastMainRegPrefillPayload) {
+            reapplyStoredMainRegPrefill();
         }
     }
 
     window.renderAutismMainRegistrationFields = renderMainRegExtraFields;
+
+    function patchNextStepForPreregPrefill() {
+        if (typeof nextStep !== 'function' || nextStep.__akPrefillHook) return;
+        const orig = nextStep;
+        window.nextStep = async function (step) {
+            await orig.apply(this, arguments);
+            if (document.body.classList.contains('ak-portal-dash') && Number(step) === 1) {
+                reapplyStoredMainRegPrefill();
+            }
+        };
+        window.nextStep.__akPrefillHook = true;
+    }
 
     function patchAutismRegistrationFlow() {
         if (typeof hideAutismRegistrationQualUi === 'function') hideAutismRegistrationQualUi();
@@ -3059,13 +3073,132 @@
         if (val == null || String(val).trim() === '') return '';
         const s = String(val).trim();
         if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-        const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        const isoPrefix = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (isoPrefix) return isoPrefix[1];
+        const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
         if (dmy) {
             return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
         }
-        const dt = new Date(s);
-        if (!Number.isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
         return s;
+    }
+
+    function parsePreregFormDataClient(raw) {
+        if (raw == null || raw === '') return {};
+        if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+        if (typeof raw === 'string') {
+            try {
+                let parsed = JSON.parse(raw);
+                if (typeof parsed === 'string') {
+                    try {
+                        parsed = JSON.parse(parsed);
+                    } catch (_) {}
+                }
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+            } catch (_) {
+                return {};
+            }
+        }
+        return {};
+    }
+
+    const MAIN_REG_PREFILL_ALIASES = {
+        dob: ['dob', 'parent_dob'],
+        parent_dob: ['parent_dob', 'dob'],
+        child_dob: ['child_dob'],
+        parent_gender: ['parent_gender', 'gender'],
+        gender: ['gender', 'parent_gender'],
+        child_name: ['child_name'],
+        child_gender: ['child_gender'],
+        attendees_count: ['attendees_count'],
+        child_health: ['child_health'],
+        diet: ['diet'],
+        financial_planning: ['financial_planning']
+    };
+
+    function clientMapPreregFormToMain(rawFormData) {
+        const src = parsePreregFormDataClient(rawFormData);
+        const direct = {
+            address: 'address',
+            pin: 'pin',
+            pincode: 'pin',
+            city: 'city',
+            state: 'state',
+            country: 'country',
+            parent_dob: 'dob',
+            child_name: 'child_name',
+            child_dob: 'child_dob',
+            child_gender: 'child_gender',
+            parent_gender: 'parent_gender',
+            attendees_count: 'attendees_count',
+            child_health: 'child_health',
+            diet: 'diet',
+            financial_planning: 'financial_planning',
+            contact_email: 'email',
+            contact_phone: 'phone',
+            email: 'email',
+            phone: 'phone'
+        };
+        const hasVal = (k) => {
+            if (!src || src[k] == null) return false;
+            if (typeof src[k] === 'boolean') return true;
+            if (typeof src[k] === 'number') return !Number.isNaN(src[k]);
+            return String(src[k]).trim() !== '';
+        };
+        const out = {};
+        Object.keys(src).forEach((k) => {
+            if (k.startsWith('_')) return;
+            if (!hasVal(k)) return;
+            let val = src[k];
+            if (String(k).endsWith('_dob') || k === 'dob') val = normalizeRegDateValue(val);
+            else if (typeof val !== 'boolean' && typeof val !== 'number') val = String(val).trim();
+            out[k] = val;
+        });
+        Object.keys(direct).forEach((fromKey) => {
+            if (!hasVal(fromKey)) return;
+            const toKey = direct[fromKey];
+            let val = src[fromKey];
+            if (String(fromKey).endsWith('_dob') || toKey === 'dob') val = normalizeRegDateValue(val);
+            else if (typeof val !== 'boolean' && typeof val !== 'number') val = String(val).trim();
+            out[toKey] = val;
+            if (fromKey !== toKey) out[fromKey] = val;
+        });
+        if (hasVal('parent_name')) {
+            const parts = String(src.parent_name).trim().split(/\s+/).filter(Boolean);
+            if (parts.length) out.fname = parts[0];
+            if (parts.length > 1) out.lname = parts.slice(1).join(' ');
+            out.parent_name = String(src.parent_name).trim();
+        }
+        return out;
+    }
+
+    function mergePrefillObjects(a, b) {
+        const out = Object.assign({}, a || {});
+        [b, a].forEach((src) => {
+            Object.keys(src || {}).forEach((k) => {
+                const v = src[k];
+                if (v == null) return;
+                if (typeof v === 'boolean' || typeof v === 'number') {
+                    out[k] = v;
+                    return;
+                }
+                if (String(v).trim() !== '') out[k] = v;
+            });
+        });
+        return out;
+    }
+
+    function enrichPrefillFromCachedPrereg(seminarId, prefill) {
+        const sid = Number(seminarId);
+        const row = window.__akPreregBySeminar && window.__akPreregBySeminar[sid];
+        if (!row) return prefill || {};
+        const local = clientMapPreregFormToMain(row.form_data);
+        return mergePrefillObjects(local, prefill);
+    }
+
+    function reapplyStoredMainRegPrefill() {
+        const payload = window.__akLastMainRegPrefillPayload;
+        if (!payload || !payload.prefill) return;
+        applyMainRegPrefillValues(payload.prefill, true);
     }
 
     function hideMainRegPrefillBanner() {
@@ -3103,21 +3236,38 @@
     }
 
     function clearMainRegFormForPreregPrefill() {
-        ['fname', 'mname', 'lname', 'email', 'phone', 'dob', 'address', 'pin', 'city', 'state', 'country'].forEach(
-            clearMainRegFieldValue
-        );
+        const keys = new Set([
+            'fname',
+            'mname',
+            'lname',
+            'email',
+            'phone',
+            'dob',
+            'address',
+            'pin',
+            'city',
+            'state',
+            'country'
+        ]);
+        const payload = window.__akLastMainRegPrefillPayload && window.__akLastMainRegPrefillPayload.prefill;
+        if (payload) Object.keys(payload).forEach((k) => keys.add(k));
+        keys.forEach(clearMainRegFieldValue);
         const extras =
             typeof getAutismMainRegExtraFields === 'function' ? getAutismMainRegExtraFields() : [];
         extras.forEach((f) => {
-            if (f && f.key) clearMainRegFieldValue(f.key);
+            if (f && f.key) keys.add(f.key);
         });
+        keys.forEach(clearMainRegFieldValue);
     }
 
     function applyPreregPrefillToMainReg(data) {
         data = data || {};
+        const sid = resolveMainRegSeminarId();
+        const mergedPrefill = enrichPrefillFromCachedPrereg(sid, data.prefill || {});
+        window.__akLastMainRegPrefillPayload = Object.assign({}, data, { prefill: mergedPrefill });
         clearMainRegFormForPreregPrefill();
-        applyMainRegPrefillValues(data.prefill || {});
-        const prefill = data.prefill || {};
+        applyMainRegPrefillValues(mergedPrefill, true);
+        const prefill = mergedPrefill;
         const u = window.currentUser;
         if (!prefill.email && u && u.email) setRegFieldValue('email', u.email, true);
         if (!prefill.phone && u && u.phone) setRegFieldValue('phone', u.phone, true);
@@ -3126,6 +3276,7 @@
             data.message ||
             'Fields you already submitted in pre-registration are filled in. Complete any remaining fields below.';
         showMainRegPrefillBanner(msg);
+        requestAnimationFrame(reapplyStoredMainRegPrefill);
     }
 
     function showMainRegPreregLookupPanel(seminarId) {
@@ -3191,7 +3342,7 @@
     }
 
     function setRegFieldValue(key, val, force) {
-        if (val == null || String(val).trim() === '') return;
+        if (val == null) return;
         const mapped = {
             fname: 'reg-fname',
             mname: 'reg-mname',
@@ -3208,9 +3359,32 @@
         const id = mapped[key] || 'reg-field-' + key;
         const el = document.getElementById(id);
         if (!el) return;
+        if (el.type === 'checkbox') {
+            el.checked =
+                val === true ||
+                val === '1' ||
+                val === 1 ||
+                String(val).toLowerCase() === 'yes' ||
+                String(val).toLowerCase() === 'true';
+            return;
+        }
+        if (typeof val === 'number') {
+            el.value = String(val);
+            return;
+        }
+        if (typeof val === 'boolean') {
+            if (el.type === 'checkbox') el.checked = val;
+            return;
+        }
         let v = String(val).trim();
+        if (!v) return;
         if (el.type === 'date' || key === 'dob' || String(key).endsWith('_dob')) {
             v = normalizeRegDateValue(v);
+        }
+        if (!v) return;
+        if (el.type === 'date' && force && v) {
+            el.removeAttribute('min');
+            el.removeAttribute('max');
         }
         if (el.tagName === 'SELECT') {
             if (![...el.options].some((o) => o.value === v)) {
@@ -3220,16 +3394,19 @@
                 el.appendChild(opt);
             }
             el.value = v;
-        } else if (el.type === 'checkbox') {
-            el.checked = v === true || v === '1' || v === 1 || String(v).toLowerCase() === 'yes';
         } else if (force || String(el.value || '').trim() === '') {
             el.value = v;
         }
     }
 
-    function applyMainRegPrefillValues(prefill) {
+    function applyMainRegPrefillValues(prefill, skipStore) {
         if (!prefill || typeof prefill !== 'object') return;
-        Object.keys(prefill).forEach((k) => setRegFieldValue(k, prefill[k], true));
+        Object.keys(prefill).forEach((k) => {
+            const val = prefill[k];
+            const targets = MAIN_REG_PREFILL_ALIASES[k] || [k];
+            targets.forEach((tk) => setRegFieldValue(tk, val, true));
+        });
+        if (!skipStore) window.__akLastMainRegPrefillPayload = { prefill: prefill };
         window.__mainRegPrefillFromPrereg = true;
     }
 
@@ -3283,6 +3460,7 @@
                 hideMainRegPreregLookupPanel();
                 hideMainRegPrefillBanner();
                 window.__akMainRegSeminarId = null;
+                window.__akLastMainRegPrefillPayload = null;
                 return origCancel.apply(this, arguments);
             };
             window.cancelRegistration.__akPreregLookupHook = true;
@@ -3308,6 +3486,7 @@
         setupDashboardHub();
         patchSwitchTabForHub();
         patchAutismRegistrationFlow();
+        patchNextStepForPreregPrefill();
         patchMainRegistrationOnEventTab();
         patchSubmitApplicationSuccessBanner();
         patchLoadRegistrationFormConfig();

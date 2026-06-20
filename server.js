@@ -70,6 +70,7 @@ const regPaymentStatus = require('./lib/registration-payment-status');
 const userAccountLifecycle = require('./lib/user-account-lifecycle');
 const portalProduct = require('./lib/portal-product');
 const autismPortal = require('./lib/autism-portal');
+const preregMainPrefill = require('./lib/prereg-main-prefill');
 
 function volunteerTicketDeps() {
     return {
@@ -4450,6 +4451,24 @@ function registrationOtpChannelFlags(cb) {
     });
 }
 
+function mergeAutismMainRegFieldsWithPrereg(seminarId, mainFields, callback) {
+    if (!portalProduct.FEATURES.hasPreregistration || !seminarId) {
+        return callback(null, mainFields);
+    }
+    db.get(`SELECT registration_form_json FROM seminars WHERE id = ?`, [seminarId], (e, sem) => {
+        if (e) return callback(e);
+        const flags = seminarFlowFlagsFromJson(sem && sem.registration_form_json);
+        if (!flags.preregistrationRequired) return callback(null, mainFields);
+        autismPortal.loadPreregFormConfig(db, seminarId, (pErr, pCfg) => {
+            if (pErr) return callback(pErr);
+            callback(
+                null,
+                preregMainPrefill.mergePreregFieldsIntoMainRegForm(mainFields, (pCfg && pCfg.fields) || [])
+            );
+        });
+    });
+}
+
 app.get('/api/registration-form-config', (req, res) => {
     const raw = req.query && req.query.seminarId;
     const sid = raw != null && String(raw).trim() !== '' ? parseInt(raw, 10) : null;
@@ -4457,38 +4476,43 @@ app.get('/api/registration-form-config', (req, res) => {
         if (e) return res.status(500).json({ error: e.message });
         registrationOtpChannelFlags((eFlags, flags) => {
             if (eFlags) return res.status(500).json({ error: eFlags.message });
-            const base = {
-                fields: registrationFormFieldsForPortal((cfg && cfg.fields) || []),
-                birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
-                birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
-                otpOnApplication: false,
-                submitOtpRequired: false,
-                ...flags
-            };
-            if (sid != null && !Number.isNaN(sid)) {
-                db.get(
-                    `SELECT otp_on_application, otp_on_step1, otp_on_submit FROM seminars WHERE id = ?`,
-                    [sid],
-                    (e2, row) => {
-                    if (e2) return res.status(500).json({ error: e2.message });
-                    const otpOn =
-                        !portalProduct.FEATURES.noFees && !!(row && Number(row.otp_on_application) === 1);
-                    const otpStep1 = otpOn && row && Number(row.otp_on_step1) !== 0;
-                    const otpSubmit = otpOn && row && Number(row.otp_on_submit) !== 0;
-                    res.json({
-                        ...base,
-                        otpOnApplication: otpOn,
-                        otpOnStep1: otpStep1,
-                        otpOnSubmit: otpSubmit,
-                        submitOtpRequired: otpSubmit,
-                        otpRequiresEmail: (otpStep1 || otpSubmit) && flags.otpRequiresEmail,
-                        otpRequiresPhone: (otpStep1 || otpSubmit) && flags.otpRequiresPhone
-                    });
+            const sidNum = sid != null && !Number.isNaN(sid) ? sid : null;
+            const baseFields = registrationFormFieldsForPortal((cfg && cfg.fields) || []);
+            mergeAutismMainRegFieldsWithPrereg(sidNum, baseFields, (mergeErr, mergedFields) => {
+                if (mergeErr) return res.status(500).json({ error: mergeErr.message });
+                const base = {
+                    fields: mergedFields,
+                    birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
+                    birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
+                    otpOnApplication: false,
+                    submitOtpRequired: false,
+                    ...flags
+                };
+                if (sidNum != null) {
+                    db.get(
+                        `SELECT otp_on_application, otp_on_step1, otp_on_submit FROM seminars WHERE id = ?`,
+                        [sidNum],
+                        (e2, row) => {
+                            if (e2) return res.status(500).json({ error: e2.message });
+                            const otpOn =
+                                !portalProduct.FEATURES.noFees && !!(row && Number(row.otp_on_application) === 1);
+                            const otpStep1 = otpOn && row && Number(row.otp_on_step1) !== 0;
+                            const otpSubmit = otpOn && row && Number(row.otp_on_submit) !== 0;
+                            res.json({
+                                ...base,
+                                otpOnApplication: otpOn,
+                                otpOnStep1: otpStep1,
+                                otpOnSubmit: otpSubmit,
+                                submitOtpRequired: otpSubmit,
+                                otpRequiresEmail: (otpStep1 || otpSubmit) && flags.otpRequiresEmail,
+                                otpRequiresPhone: (otpStep1 || otpSubmit) && flags.otpRequiresPhone
+                            });
+                        }
+                    );
+                    return;
                 }
-                );
-                return;
-            }
-            res.json(base);
+                res.json(base);
+            });
         });
     });
 });
@@ -5318,6 +5342,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
 
                 loadRegistrationFormConfig(seminarId, (cfgErr, regCfg) => {
                     if (cfgErr) return res.status(500).json({ error: cfgErr.message });
+                    const applyValidationAndSubmit = () => {
                     const list = registrationFormFieldsForPortal((regCfg && regCfg.fields) || []);
                     const hasCertFile =
                         !!req.file || !!(formData && formData.certificate_path);
@@ -5615,6 +5640,22 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                         return;
                     }
                     runFieldOtpsThenInsert();
+                    };
+
+                    if (!portalProduct.FEATURES.hasPreregistration) {
+                        return applyValidationAndSubmit();
+                    }
+                    db.get(
+                        `SELECT form_data FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
+                        [userId, seminarId],
+                        (preFdErr, preFdRow) => {
+                            if (!preFdErr && preFdRow && preFdRow.form_data) {
+                                const prefill = preregMainPrefill.mapPreregFormDataToMainReg(preFdRow.form_data);
+                                formData = preregMainPrefill.mergeMainRegSubmitWithPreregPrefill(formData, prefill);
+                            }
+                            applyValidationAndSubmit();
+                        }
+                    );
                 });
             });
                 });
