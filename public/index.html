@@ -1099,6 +1099,11 @@
                 });
                 const { data, parseFailed } = await HttpJson.readJsonResponse(res);
                 if (parseFailed || !res.ok) {
+                    if (data && data.alreadyRegistered) {
+                        switchAuthTab('login');
+                        const lp = document.getElementById('login_phone');
+                        if (lp) lp.value = dest;
+                    }
                     return alert(HttpJson.apiErrorMessage(res, data, parseFailed));
                 }
                 if (data.debugCode) console.info('Signup OTP debug:', data.debugCode);

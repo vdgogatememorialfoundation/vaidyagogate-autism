@@ -275,6 +275,12 @@
             const data = parsed.data;
             if (parsed.parseFailed || !res.ok) {
                 const msg = errMsg ? errMsg(res, data, parsed.parseFailed) : data.error || 'Could not send code.';
+                if (data && data.alreadyRegistered && typeof switchDoctorAuthTab === 'function') {
+                    switchDoctorAuthTab('login');
+                    const lp = document.getElementById('doctor-login-phone');
+                    const sp = document.getElementById('doctor-signup-phone');
+                    if (lp && sp) lp.value = sp.value;
+                }
                 if (statusEl) {
                     statusEl.style.color = '#b91c1c';
                     statusEl.textContent = msg;

@@ -4023,15 +4023,23 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
         function rejectAfterSignupCodeCheck() {
             const tryDest = destAlt || dest;
             const codeNorm = otpLib.sanitizeOtpCode(codeStr);
-            const signupExpected = otpLib.generateOtpForDestination('phone', tryDest, 'signup', {});
-            if (codeNorm && codeNorm === signupExpected) {
-                return res.status(400).json({
-                    error:
-                        'That WhatsApp code is for Create account (registration), not sign-in. Tap Send OTP on Sign in to get a sign-in code.'
-                });
-            }
-            logVerifyFail({});
-            return res.status(400).json({ error: 'Invalid or expired code' });
+            const nowIso = new Date().toISOString();
+            db.get(
+                `SELECT meta FROM otp_codes WHERE channel = 'phone' AND destination = ? AND purpose = 'signup' AND consumed = 0 AND expires_at > ? ORDER BY id DESC LIMIT 1`,
+                [tryDest, nowIso],
+                (lookupErr, signupRow) => {
+                    if (lookupErr) return res.status(500).json({ error: lookupErr.message });
+                    const signupCode = otpLib.readOtpFromMeta(signupRow && signupRow.meta);
+                    if (codeNorm && signupCode && codeNorm === signupCode) {
+                        return res.status(400).json({
+                            error:
+                                'That WhatsApp code is for Create account (registration), not sign-in. Tap Send OTP on Sign in to get a sign-in code.'
+                        });
+                    }
+                    logVerifyFail({});
+                    return res.status(400).json({ error: 'Invalid or expired code' });
+                }
+            );
         }
 
         tryVerifyDestination(dest, (err, result) => {
@@ -4101,6 +4109,7 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
         meta.certId = certId;
     }
 
+    function continueOtpSend() {
     otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code, id, codeReused) => {
             if (serr) {
                 const st = serr.status === 429 ? 429 : 500;
@@ -4164,6 +4173,22 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
             }
             finishPhoneOtpSend(true);
         });
+    }
+
+    if (purpose === 'signup' && channel === 'phone') {
+        return authUsers.findUserByPhone(db, dest, (phErr, existing) => {
+            if (phErr) return res.status(500).json({ error: phErr.message });
+            if (existing) {
+                return res.status(400).json({
+                    error:
+                        'This phone number is already registered. Switch to Sign in — you cannot request a registration code for an existing account.',
+                    alreadyRegistered: true
+                });
+            }
+            continueOtpSend();
+        });
+    }
+    continueOtpSend();
 });
 
 app.post('/api/otp/verify', withAuxiliaryTables, (req, res) => {
