@@ -8094,6 +8094,10 @@ async function saveSeminar(e) {
         if (!ok) return;
     }
 
+    if (typeof window.__akPrepareSeminarSaveData === 'function') {
+        window.__akPrepareSeminarSaveData(data);
+    }
+
     const url = id ? '/api/admin/seminars/' + id : '/api/admin/seminars';
     const method = id ? 'PUT' : 'POST';
 

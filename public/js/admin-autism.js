@@ -348,23 +348,43 @@
         };
     }
 
+    function parseSeminarRegistrationFormJson(raw) {
+        if (!raw) return {};
+        if (typeof raw === 'object') return raw;
+        if (typeof raw === 'string' && raw.trim()) {
+            try {
+                return JSON.parse(raw);
+            } catch (_) {
+                return {};
+            }
+        }
+        return {};
+    }
+
     function mergeSeminarRegistrationFormJsonForSave(regFormOverride) {
         let regCfg = {};
-        try {
-            if (regFormOverride && String(regFormOverride).trim()) {
-                regCfg = JSON.parse(regFormOverride);
-            } else {
-                const existing = existingSeminarFromForm();
-                if (existing && existing.registration_form_json) {
-                    regCfg = JSON.parse(existing.registration_form_json);
-                }
+        if (regFormOverride && String(regFormOverride).trim()) {
+            regCfg = parseSeminarRegistrationFormJson(regFormOverride);
+        } else {
+            const existing = existingSeminarFromForm();
+            if (existing && existing.registration_form_json) {
+                regCfg = parseSeminarRegistrationFormJson(existing.registration_form_json);
             }
-        } catch (_) {
-            regCfg = {};
         }
         regCfg.flow = { ...(regCfg.flow || {}), ...buildSeminarFlowFlagsFromUi() };
         return JSON.stringify(regCfg);
     }
+
+    function prepareSeminarSaveData(data) {
+        if (!data || typeof data !== 'object') return data;
+        data.price = 0;
+        syncSeminarScheduleFieldsToPayload(data);
+        data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(data.registration_form_json);
+        data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
+        return data;
+    }
+
+    window.__akPrepareSeminarSaveData = prepareSeminarSaveData;
 
     function syncSeminarFlowFormSections() {
         const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
@@ -561,6 +581,26 @@
         const idEl = document.getElementById('seminar-id');
         if (idEl) idEl.value = String(sid);
         window.__akEditingSeminarId = Number(sid) || sid;
+        const mergedJson = mergeSeminarRegistrationFormJsonForSave(null);
+        const seminars = window.globalSeminars || [];
+        const gi = seminars.findIndex((x) => String(x.id) === String(sid));
+        if (gi >= 0) {
+            seminars[gi].registration_form_json = mergedJson;
+            if (idEl && idEl.value) {
+                const ps = document.getElementById('seminar-prereg-start');
+                const pe = document.getElementById('seminar-prereg-end');
+                if (ps && ps.value) {
+                    seminars[gi].preregistration_start = window.PortalDateTime
+                        ? window.PortalDateTime.fromDatetimeLocal(ps.value)
+                        : ps.value;
+                }
+                if (pe && pe.value) {
+                    seminars[gi].preregistration_end = window.PortalDateTime
+                        ? window.PortalDateTime.fromRegistrationEndLocal(pe.value)
+                        : pe.value;
+                }
+            }
+        }
         syncPublicPreregLinkUi();
     };
 
@@ -881,7 +921,7 @@
 
     function parseSeminarFlowFlags(registrationFormJson) {
         try {
-            const parsed = registrationFormJson ? JSON.parse(registrationFormJson) : {};
+            const parsed = parseSeminarRegistrationFormJson(registrationFormJson);
             const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
             const hasFlow =
                 Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
@@ -950,12 +990,7 @@
             ) {
                 try {
                     const data = JSON.parse(opts.body);
-                    data.price = 0;
-                    syncSeminarScheduleFieldsToPayload(data);
-                    data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(
-                        data.registration_form_json
-                    );
-                    data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
+                    prepareSeminarSaveData(data);
                     nextOpts = { ...opts, body: JSON.stringify(data) };
                 } catch (_) {}
             }
