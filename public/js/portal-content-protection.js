@@ -3,6 +3,11 @@
  * Not a security boundary — determined users can still access assets.
  */
 (function () {
+    const path = String(location.pathname || '').toLowerCase();
+    if (/admin(?:-[^/]*)?\.html$/i.test(path) || path.includes('/admin')) {
+        return;
+    }
+
     function isFormField(el) {
         if (!el || !el.closest) return false;
         return !!el.closest('input, textarea, select, [contenteditable="true"], label');
