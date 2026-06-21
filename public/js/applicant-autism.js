@@ -3116,7 +3116,6 @@
     }
 
     window.deleteCompetitionSubmission = async function(id) {
-window.deleteCompetitionSubmission = async function(id) {
         if (!confirm('Are you sure you want to delete this competition entry?')) return;
         const uid = currentUserId();
         try {
