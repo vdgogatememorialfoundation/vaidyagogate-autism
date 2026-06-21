@@ -18,6 +18,8 @@
     let signupEmailOtpToken = null;
     let signupOtpInflight = false;
     let signupSubmitInflight = false;
+    let signupOtpWired = false;
+    let loginOtpInflight = false;
     let signupAuthConfig = null;
 
     function signupOtpChannels(cfg) {
@@ -568,6 +570,8 @@
     }
 
     function wireSignupOtpButtons() {
+        if (signupOtpWired) return;
+        signupOtpWired = true;
         ['phone'].forEach((ch) => {
             const send = document.getElementById('doctor-signup-send-otp-' + ch);
             const resend = document.getElementById('doctor-signup-resend-otp-' + ch);
@@ -632,6 +636,7 @@
         }
 
         async function sendLoginOtp() {
+            if (loginOtpInflight) return;
             clearErr();
             const pv = validatedLoginPhoneValue();
             if (!pv.valid) return showErr(pv.message);
@@ -640,6 +645,7 @@
                 sendBtn.textContent = 'Sending…';
             }
             setStatus('Sending OTP to WhatsApp…', '#64748b');
+            loginOtpInflight = true;
             try {
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
@@ -680,6 +686,7 @@
                 setStatus('', '#64748b');
                 showErr('Could not reach the server.');
             } finally {
+                loginOtpInflight = false;
                 if (sendBtn && sendBtn.textContent === 'Sending…') {
                     sendBtn.disabled = false;
                     sendBtn.textContent = 'Send OTP';

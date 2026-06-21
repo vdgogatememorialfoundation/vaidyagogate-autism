@@ -4015,13 +4015,11 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
         meta.certId = certId;
     }
 
-    otpLib.countRecentSends(db, channel, dest, (cerr, cnt) => {
-        if (cerr) return res.status(500).json({ error: cerr.message });
-        if (cnt >= otpLib.MAX_SENDS_PER_HOUR) {
-            return res.status(429).json({ error: 'Too many OTP requests. Try again later.' });
-        }
-        otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code) => {
-            if (serr) return res.status(500).json({ error: serr.message });
+    otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code) => {
+            if (serr) {
+                const st = serr.status === 429 ? 429 : 500;
+                return res.status(st).json({ error: serr.message });
+            }
             const purposeKey =
                 purpose === 'signup' ? 'OTP_VERIFICATION' : purpose === 'registration' ? 'OTP_VERIFICATION' : 'OTP_VERIFICATION';
             notifEngine.sendOtpMessages({
@@ -4047,7 +4045,6 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 res.json(payload);
             });
         });
-    });
 });
 
 app.post('/api/otp/verify', withAuxiliaryTables, (req, res) => {
