@@ -653,7 +653,6 @@
     async function submitAdminCompetitionEntry() {
         const uid = document.getElementById('ak-comp-add-uid')?.value.trim();
         const sid = document.getElementById('ak-comp-add-event')?.value;
-        const title = document.getElementById('ak-comp-add-title')?.value.trim();
         const cat = document.getElementById('ak-comp-add-category')?.value.trim();
         const desc = document.getElementById('ak-comp-add-desc')?.value.trim();
         const filesEl = document.getElementById('ak-comp-add-files');
@@ -661,7 +660,6 @@
 
         if (!uid) return alert('Please search and select an applicant first.');
         if (!sid) return alert('Select an event.');
-        if (!title) return alert('Enter an entry title.');
         if (!filesEl || !filesEl.files || !filesEl.files.length) return alert('Select at least one file.');
 
         if (msg) {
@@ -672,7 +670,6 @@
         const fd = new FormData();
         fd.append('userId', uid);
         fd.append('seminarId', sid);
-        fd.append('title', title);
         fd.append('category', cat);
         fd.append('description', desc);
         for (let i = 0; i < filesEl.files.length; i++) {
@@ -694,7 +691,6 @@
             document.getElementById('ak-comp-add-uid').value = '';
             document.getElementById('ak-comp-user-search').value = '';
             document.getElementById('ak-comp-user-results').innerHTML = '';
-            document.getElementById('ak-comp-add-title').value = '';
             document.getElementById('ak-comp-add-category').value = '';
             document.getElementById('ak-comp-add-desc').value = '';
             filesEl.value = '';
