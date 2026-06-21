@@ -370,9 +370,17 @@
                 <p id="ak-comp-stats" style="font-size:0.88rem;color:#475569;margin-bottom:16px;">Open this tab to load entries.</p>
                 <div class="card" id="ak-comp-admin-add-card" style="margin-bottom:16px; border:1px solid #e2e8f0; background:#f8fafc;">
                     <h3 style="margin:0 0 10px;color:#0f766e;"><i class="fas fa-plus-circle"></i> Add entry manually</h3>
-                    <p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Register a user for a competition on their behalf. You need their User ID.</p>
+                    <p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Register a user for a competition on their behalf.</p>
                     <div style="display:grid;gap:12px;max-width:720px;">
-                        <div><label for="ak-comp-add-uid">User ID</label><input type="text" id="ak-comp-add-uid" placeholder="e.g. USR_..." style="width:100%;padding:8px;"></div>
+                        <div>
+                            <label>Search Applicant</label>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="ak-comp-user-search" placeholder="Email, name, or phone number..." style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:4px;">
+                                <button type="button" class="btn-primary" id="ak-comp-user-search-btn" style="background:#475569;"><i class="fas fa-search"></i> Search</button>
+                            </div>
+                            <div id="ak-comp-user-results" style="margin-top:8px;"></div>
+                            <input type="hidden" id="ak-comp-add-uid">
+                        </div>
                         <div><label for="ak-comp-add-event">Event</label><select id="ak-comp-add-event" style="width:100%;padding:8px;"><option value="">Select an event...</option></select></div>
                         <div><label for="ak-comp-add-title">Entry Title</label><input type="text" id="ak-comp-add-title" style="width:100%;padding:8px;"></div>
                         <div><label for="ak-comp-add-category">Category</label><input type="text" id="ak-comp-add-category" style="width:100%;padding:8px;"></div>

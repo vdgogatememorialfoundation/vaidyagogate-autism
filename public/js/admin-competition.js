@@ -613,6 +613,43 @@
         }
     }
 
+    async function searchAdminCompUser() {
+        const q = document.getElementById('ak-comp-user-search')?.value.trim();
+        const resultsEl = document.getElementById('ak-comp-user-results');
+        const uidEl = document.getElementById('ak-comp-add-uid');
+        if (!q) {
+            alert('Enter a name, email, or phone number to search.');
+            return;
+        }
+        if (resultsEl) resultsEl.innerHTML = '<p style="font-size:0.85rem;color:#64748b;">Searching...</p>';
+        try {
+            const r = await fetch('/api/admin/users/lookup?q=' + encodeURIComponent(q));
+            const data = await r.json();
+            if (!data.found || !data.matches || !data.matches.length) {
+                if (resultsEl) resultsEl.innerHTML = '<p style="font-size:0.85rem;color:#b91c1c;">No user found.</p>';
+                return;
+            }
+            let html = '<ul style="list-style:none;padding:0;margin:0;max-height:200px;overflow-y:auto;border:1px solid #cbd5e1;border-radius:4px;">';
+            data.matches.forEach(u => {
+                const name = esc([u.first_name, u.last_name].filter(Boolean).join(' ') || 'No name');
+                const detail = esc(u.email || u.phone || 'No contact');
+                html += '<li style="padding:8px;border-bottom:1px solid #cbd5e1;cursor:pointer;background:#fff;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#fff\'" class="ak-comp-user-option" data-uid="' + u.id + '"><strong>' + name + '</strong> <span style="font-size:0.8rem;color:#64748b;">(' + detail + ')</span></li>';
+            });
+            html += '</ul>';
+            if (resultsEl) {
+                resultsEl.innerHTML = html;
+                resultsEl.querySelectorAll('.ak-comp-user-option').forEach(li => {
+                    li.addEventListener('click', () => {
+                        if (uidEl) uidEl.value = li.dataset.uid;
+                        resultsEl.innerHTML = '<div style="padding:8px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:4px;"><p style="font-size:0.85rem;color:#047857;font-weight:bold;margin:0;"><i class="fas fa-check-circle"></i> Selected: ' + li.innerHTML + '</p><button type="button" class="btn-primary" style="margin-top:6px;font-size:0.75rem;padding:4px 8px;background:#64748b;" onclick="document.getElementById(\'ak-comp-user-results\').innerHTML=\'\'; document.getElementById(\'ak-comp-add-uid\').value=\'\';">Change user</button></div>';
+                    });
+                });
+            }
+        } catch (e) {
+            if (resultsEl) resultsEl.innerHTML = '<p style="font-size:0.85rem;color:#b91c1c;">Search failed: ' + esc(e.message) + '</p>';
+        }
+    }
+
     async function submitAdminCompetitionEntry() {
         const uid = document.getElementById('ak-comp-add-uid')?.value.trim();
         const sid = document.getElementById('ak-comp-add-event')?.value;
@@ -622,7 +659,7 @@
         const filesEl = document.getElementById('ak-comp-add-files');
         const msg = document.getElementById('ak-comp-add-msg');
 
-        if (!uid) return alert('Enter the User ID of the applicant.');
+        if (!uid) return alert('Please search and select an applicant first.');
         if (!sid) return alert('Select an event.');
         if (!title) return alert('Enter an entry title.');
         if (!filesEl || !filesEl.files || !filesEl.files.length) return alert('Select at least one file.');
@@ -655,6 +692,8 @@
                 msg.style.color = '#047857';
             }
             document.getElementById('ak-comp-add-uid').value = '';
+            document.getElementById('ak-comp-user-search').value = '';
+            document.getElementById('ak-comp-user-results').innerHTML = '';
             document.getElementById('ak-comp-add-title').value = '';
             document.getElementById('ak-comp-add-category').value = '';
             document.getElementById('ak-comp-add-desc').value = '';
@@ -688,6 +727,13 @@
         document.getElementById('ak-comp-form-add')?.addEventListener('click', addCompFormField);
         document.getElementById('ak-comp-form-reset')?.addEventListener('click', resetCompFormDefaults);
         document.getElementById('ak-comp-add-submit')?.addEventListener('click', submitAdminCompetitionEntry);
+        document.getElementById('ak-comp-user-search-btn')?.addEventListener('click', searchAdminCompUser);
+        document.getElementById('ak-comp-user-search')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchAdminCompUser();
+            }
+        });
         loadCompetitionSeminars();
         refresh();
     };
