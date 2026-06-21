@@ -1520,6 +1520,12 @@
             const afterHeader = headerCard || main;
             tab.insertBefore(contactCard, afterHeader.nextSibling);
         }
+        const socialSection = document.getElementById('cms-social-links-section');
+        if (socialSection && contactCard) {
+            contactCard.insertAdjacentElement('afterend', socialSection);
+        } else if (socialSection && main) {
+            main.insertBefore(socialSection, main.firstElementChild);
+        }
         if (photos) tab.appendChild(photos);
 
         tightenAutismCmsTab();

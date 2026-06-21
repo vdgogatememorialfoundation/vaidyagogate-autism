@@ -10651,6 +10651,7 @@ function cmsCollectHomepageEditorFields() {
         publicNotices: cmsCollectPublicNoticesFromDom(),
         reviews: cmsCollectReviewsFromDom(),
         speakers: cmsCollectSpeakersFromDom(),
+        socialLinks: cmsCollectSocialFromDom(),
         homeJourney: cmsCollectHomeJourneyFromDom(),
         homeBento: cmsCollectHomeBentoFromDom(),
         homeCtaBand: cmsCollectHomeCtaFromDom(),
@@ -11715,11 +11716,27 @@ async function saveHomepageCmsOnly() {
         const saved = await verify.json().catch(() => ({}));
         __siteCmsEditing = saved;
         cmsApplyHeroFieldsToForm(saved);
+        cmsFillSocialRows(saved.socialLinks || []);
         setCmsSaveMessage('Homepage saved — live site updates within a few seconds.', '#15803d');
     } catch (e) {
         setCmsSaveMessage(e.message || 'Network error — check connection and try again.', '#b91c1c');
     }
 }
+
+async function saveSocialLinksCmsOnly() {
+    setCmsSaveMessage('');
+    try {
+        await saveCmsContentPartial({ socialLinks: cmsCollectSocialFromDom() });
+        const verify = await fetchPublicSiteCms();
+        const saved = await verify.json().catch(() => ({}));
+        __siteCmsEditing = saved;
+        cmsFillSocialRows(saved.socialLinks || []);
+        setCmsSaveMessage('Social links saved — live site updates within a few seconds.', '#15803d');
+    } catch (e) {
+        setCmsSaveMessage(e.message || 'Network error — check connection and try again.', '#b91c1c');
+    }
+}
+window.saveSocialLinksCmsOnly = saveSocialLinksCmsOnly;
 
 async function saveAdminSiteCms() {
     setCmsSaveMessage('');
