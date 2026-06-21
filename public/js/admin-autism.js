@@ -1218,7 +1218,6 @@
         window.__seminarPreregGlobalStepSections = globalStepSections;
         window.__seminarPreregDisplayStepSections = mergedStepSections;
         window.__seminarPreregOverrideFieldKeys = [];
-        syncSeminarPreregStepSectionsEditor(mergedStepSections);
         tbody.innerHTML = '';
         displayFields.forEach((f, idx) => {
             const enabled = f.enabled !== false;
@@ -1241,6 +1240,9 @@
                 <td>${optCell}</td>
             </tr>`;
         });
+        // Rebuild step sections editor AFTER fields are in the DOM so
+        // seminarPreregMaxStepFromUi() correctly reads step values >= 5.
+        syncSeminarPreregStepSectionsEditor(mergedStepSections);
         const minEl = document.getElementById('seminar-prereg-birth-year-min');
         const maxEl = document.getElementById('seminar-prereg-birth-year-max');
         const exTbody = document.getElementById('seminar-prereg-extra-fields-tbody');

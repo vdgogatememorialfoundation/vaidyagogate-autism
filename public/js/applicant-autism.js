@@ -14,6 +14,7 @@
     let _loadPreregSeminarsPromise = null;
     let competitionEvents = [];
     let competitionFormConfig = null;
+    let _compCountdownTimer = null;
 
     const HIDDEN_TABS = [
         'tab-orders',
@@ -640,11 +641,31 @@
     window.collectCompetitionFormData = collectCompetitionFormData;
     window.loadCompetitionFormForSelectedEvent = loadCompetitionFormForSelectedEvent;
 
+    function clearCompCountdownTimer() {
+        if (_compCountdownTimer) {
+            clearInterval(_compCountdownTimer);
+            _compCountdownTimer = null;
+        }
+    }
+
+    function formatCompCountdown(ms) {
+        if (ms <= 0) return '00:00:00';
+        const totalSec = Math.floor(ms / 1000);
+        const d = Math.floor(totalSec / 86400);
+        const h = Math.floor((totalSec % 86400) / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        const pad = (n) => String(n).padStart(2, '0');
+        if (d > 0) return d + 'd ' + pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's';
+        return pad(h) + ':' + pad(m) + ':' + pad(s);
+    }
+
     function renderCompetitionSchedulePanel() {
         const panel = document.getElementById('comp-event-schedule');
         const sel = document.getElementById('comp-seminar-select');
         const submitBtn = document.querySelector('#competition-form button[type="submit"]');
         if (!panel) return;
+        clearCompCountdownTimer();
         if (!competitionEvents.length) {
             panel.classList.remove('hidden');
             panel.innerHTML =
@@ -673,9 +694,33 @@
                 '<p style="margin:8px 0 0;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Open for submissions now.</p>';
             if (submitBtn) submitBtn.disabled = false;
         } else if (ev.windowState === 'upcoming') {
+            const opensAt = ev.opensAt ? Number(ev.opensAt) : null;
+            const countdownId = 'comp-countdown-' + (sid || 'x');
             html +=
-                '<p style="margin:8px 0 0;color:#b45309;font-weight:600;"><i class="fas fa-hourglass-half"></i> Not open yet — check back when submissions start.</p>';
+                '<div style="margin:10px 0 0;padding:10px 14px;border:1px solid #fde68a;border-radius:8px;background:#fffbeb;">' +
+                '<p style="margin:0 0 4px;color:#b45309;font-weight:600;"><i class="fas fa-hourglass-half"></i> Submissions open in:</p>' +
+                '<p id="' + countdownId + '" style="margin:0;font-size:1.35rem;font-weight:800;color:#92400e;font-variant-numeric:tabular-nums;letter-spacing:0.04em;">' +
+                (opensAt ? formatCompCountdown(opensAt - Date.now()) : '—') +
+                '</p>' +
+                '<p style="margin:4px 0 0;font-size:0.78rem;color:#a16207;">You can fill in the form below while you wait. Submitting will open when the countdown ends.</p>' +
+                '</div>';
             if (submitBtn) submitBtn.disabled = true;
+            if (opensAt) {
+                _compCountdownTimer = setInterval(() => {
+                    const rem = opensAt - Date.now();
+                    const el = document.getElementById(countdownId);
+                    if (rem <= 0) {
+                        clearCompCountdownTimer();
+                        // Refresh events so windowState flips to 'open'
+                        loadCompetitionEvents().then(() => {
+                            renderCompetitionSchedulePanel();
+                            loadCompetitionFormForSelectedEvent();
+                        });
+                        return;
+                    }
+                    if (el) el.textContent = formatCompCountdown(rem);
+                }, 1000);
+            }
         } else if (ev.windowState === 'unscheduled') {
             html +=
                 '<p style="margin:8px 0 0;color:#64748b;font-weight:600;">Schedule not set yet by organisers.</p>';
