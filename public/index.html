@@ -567,6 +567,7 @@
         let signupPhoneOtpToken = null;
         let signupEmailOtpToken = null;
         let signupOtpInflight = false;
+        let signupSubmitInflight = false;
         let loginPhoneOtpToken = null;
         let loginEmailOtpToken = null;
         window.__portalAuth = { showSignup: true, showLogin: true, requireEmailVerification: false };
@@ -652,9 +653,9 @@
             try {
                 const res = await fetch('/api/auth/signup-otp-required');
                 const d = await res.json();
-                setOtpPanelVisible(panel, !!d.required);
+                setOtpPanelVisible(panel, d.required !== false);
             } catch (_) {
-                setOtpPanelVisible(panel, false);
+                setOtpPanelVisible(panel, true);
             }
         }
 
@@ -1465,6 +1466,7 @@
 
         async function handleSignup(e) {
             e.preventDefault();
+            if (signupSubmitInflight) return;
             const firstName = document.getElementById('signup_firstname').value.trim();
             const lastName = document.getElementById('signup_lastname').value.trim();
             if (typeof validatePersonNameClient === 'function') {
@@ -1488,21 +1490,6 @@
                 phone = pv.cleanedPhone;
             }
             const password = (document.getElementById('signup_password') || {}).value || '';
-            
-            const body = { firstName, lastName, email, phone, password, role: 'doctor' };
-            const otpPanel = document.getElementById('signup_otp_panel');
-            if (isOtpPanelActive(otpPanel)) {
-                const phoneCode = String((document.getElementById('signup_phone_otp') || {}).value || '').trim();
-                if (signupPhoneOtpToken) {
-                    body.phoneOtpToken = signupPhoneOtpToken;
-                } else if (phoneCode) {
-                    body.phoneOtpCode = phoneCode;
-                } else {
-                    return alert(
-                        'Enter the WhatsApp OTP from your latest message, then tap Create account.'
-                    );
-                }
-            }
 
             try {
                 const check = await accountCheck(email, password, phone);
@@ -1527,16 +1514,32 @@
                 }
             } catch (availErr) {
                 console.error(availErr);
-                return alert('Could not verify email. Please try again.');
+                return alert('Could not verify details. Please try again.');
             }
 
+            const body = { firstName, lastName, email, phone, password, role: 'doctor' };
+            const otpPanel = document.getElementById('signup_otp_panel');
+            if (isOtpPanelActive(otpPanel)) {
+                const phoneCode = String((document.getElementById('signup_phone_otp') || {}).value || '').trim();
+                if (signupPhoneOtpToken) {
+                    body.phoneOtpToken = signupPhoneOtpToken;
+                } else if (phoneCode) {
+                    body.phoneOtpCode = phoneCode;
+                } else {
+                    return alert(
+                        'Enter the WhatsApp OTP from your latest message, then tap Create account.'
+                    );
+                }
+            }
+
+            signupSubmitInflight = true;
             let res;
             let data = {};
             let parseFailed = false;
             try {
                 res = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const parsed = await HttpJson.readJsonResponse(res);
@@ -1544,7 +1547,10 @@
                 parseFailed = parsed.parseFailed;
             } catch (netErr) {
                 console.error(netErr);
-                return alert('Network error. Please check your connection and try again.');
+                alert('Network error. Please check your connection and try again.');
+                return;
+            } finally {
+                signupSubmitInflight = false;
             }
             if (parseFailed) {
                 return alert(HttpJson.apiErrorMessage(res, data, true));

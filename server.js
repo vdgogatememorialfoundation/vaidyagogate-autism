@@ -4247,12 +4247,17 @@ app.post('/api/auth/signup', (req, res) => {
         }
         const requireEv = portalAuthPolicy.getPortalAuthConfig().requireEmailVerification;
         const evFlag = requireEv && !signupOtpRequired() ? 0 : 1;
+        const signupChannels = portalAuthPolicy.signupOtpChannels();
+        const phoneOtpCode =
+            req.body && req.body.phoneOtpCode != null ? String(req.body.phoneOtpCode).trim() : '';
 
-        function insertUser() {
+        function ensureSignupAvailable(cb) {
             authUsers.findUserByPhone(db, phoneNorm, (phErr, phoneExisting) => {
-                if (phErr) return res.status(500).json({ error: phErr.message });
+                if (phErr) return cb(phErr);
                 if (phoneExisting) {
-                    return res.status(409).json({
+                    return cb(null, {
+                        ok: false,
+                        status: 409,
                         error:
                             'This mobile number is already registered to another account. Sign in with that account or use a different number.',
                         needsLogin: true,
@@ -4261,11 +4266,13 @@ app.post('/api/auth/signup', (req, res) => {
                 }
                 const usersEmailPolicy = require('./lib/users-email-policy');
                 usersEmailPolicy.doctorEmailTaken(db, emailNorm, null, (dupErr, taken, existing) => {
-                    if (dupErr) return res.status(500).json({ error: dupErr.message });
+                    if (dupErr) return cb(dupErr);
                     if (taken) {
                         const pw = password != null ? String(password) : '';
                         const passwordMatch = !!(pw && existing && existing.password === pw);
-                        return res.status(409).json({
+                        return cb(null, {
+                            ok: false,
+                            status: 409,
                             error: passwordMatch
                                 ? 'An account with this email already exists. Please sign in.'
                                 : 'Email already registered. Please sign in instead.',
@@ -4274,12 +4281,16 @@ app.post('/api/auth/signup', (req, res) => {
                             emailTaken: true
                         });
                     }
-                    doInsertUser();
+                    cb(null, { ok: true });
                 });
             });
         }
 
-        function doInsertUser() {
+        function insertUser(resolvedPhoneToken) {
+            doInsertUser(resolvedPhoneToken);
+        }
+
+        function doInsertUser(resolvedPhoneToken) {
             const userIdStr = generateId();
     const userRole = role || 'doctor';
     const cleanFirstName = firstNameValidation.cleanedName;
@@ -4358,33 +4369,54 @@ app.post('/api/auth/signup', (req, res) => {
                         }
                         res.json(payload);
                     };
-                    if (portalAuthPolicy.passwordlessLoginEnabled()) {
-                        authUsers.findUserByEmail(db, emailNorm, (uErr, userRow) => {
-                            if (uErr || !userRow) return finishSignup(null);
-                            recordUserLogin(userRow.id, () => {
-                                finishSignup(userRow);
-                            });
-                        });
-                        return;
-                    }
-                    finishSignup(null);
+                    const consumeAndFinish = () => {
+                        if (signupOtpRequired() && resolvedPhoneToken) {
+                            otpLib.consumeSignupOtpTokens(
+                                db,
+                                {
+                                    phoneToken: resolvedPhoneToken,
+                                    emailToken: emailOtpToken,
+                                    needPhone: signupChannels.whatsapp,
+                                    needEmail: signupChannels.email
+                                },
+                                () => {}
+                            );
+                        }
+                        if (portalAuthPolicy.passwordlessLoginEnabled()) {
+                            const userRow = {
+                                id: newUserId,
+                                user_id_string: userIdStr,
+                                first_name: cleanFirstName,
+                                last_name: cleanLastName,
+                                email: emailNorm,
+                                phone: phoneNorm,
+                                role: userRole,
+                                user_role: userRole,
+                                email_verified: evFlag
+                            };
+                            recordUserLogin(newUserId, () => {});
+                            finishSignup(userRow);
+                            return;
+                        }
+                        finishSignup(null);
+                    };
+                    consumeAndFinish();
                 }
             );
         }
 
-        if (signupOtpRequired()) {
-            const signupChannels = portalAuthPolicy.signupOtpChannels();
-            const phoneOtpCode = req.body && req.body.phoneOtpCode != null ? String(req.body.phoneOtpCode).trim() : '';
+        function runSignupOtpGate(cb) {
+            if (!signupOtpRequired()) return cb(null, null);
 
             function finishSignupOtpCheck(resolvedPhoneToken) {
                 if (signupChannels.whatsapp && !resolvedPhoneToken) {
-                    return res.status(400).json({
+                    return cb(null, {
                         error:
                             'WhatsApp OTP verification is required. Enter the code from your latest WhatsApp message, then create your account.'
                     });
                 }
                 if (signupChannels.email && !emailOtpToken) {
-                    return res.status(400).json({ error: 'Email OTP verification is required before signup.' });
+                    return cb(null, { error: 'Email OTP verification is required before signup.' });
                 }
                 otpLib.validateSignupOtpTokensFlexible(
                     db,
@@ -4392,14 +4424,17 @@ app.post('/api/auth/signup', (req, res) => {
                         phoneToken: resolvedPhoneToken,
                         emailToken: emailOtpToken,
                         needPhone: signupChannels.whatsapp,
-                        needEmail: signupChannels.email
+                        needEmail: signupChannels.email,
+                        peekOnly: true
                     },
                     (verr, vr) => {
-                        if (verr) return res.status(500).json({ error: verr.message });
+                        if (verr) return cb(verr);
                         if (!vr || !vr.ok) {
-                            return res.status(400).json({ error: (vr && vr.error) || 'Invalid OTP verification' });
+                            return cb(null, {
+                                error: (vr && vr.error) || 'Invalid OTP verification'
+                            });
                         }
-                        insertUser();
+                        cb(null, resolvedPhoneToken);
                     }
                 );
             }
@@ -4413,9 +4448,9 @@ app.post('/api/auth/signup', (req, res) => {
                     db,
                     { channel: 'phone', destination: dest, purpose: 'signup', code: phoneOtpCode, meta: {} },
                     (verr, vresult) => {
-                        if (verr) return res.status(500).json({ error: verr.message });
+                        if (verr) return cb(verr);
                         if (!vresult || !vresult.ok || !vresult.token) {
-                            return res.status(400).json({
+                            return cb(null, {
                                 error:
                                     (vresult && vresult.error) ||
                                     'Invalid or expired WhatsApp code. Tap Resend and use the newest code only.'
@@ -4425,9 +4460,28 @@ app.post('/api/auth/signup', (req, res) => {
                     }
                 );
             }
-            return finishSignupOtpCheck(null);
+            finishSignupOtpCheck(null);
         }
-        insertUser();
+
+        ensureSignupAvailable((availErr, avail) => {
+            if (availErr) return res.status(500).json({ error: availErr.message });
+            if (!avail || !avail.ok) {
+                return res.status(avail.status || 409).json({
+                    error: avail.error,
+                    needsLogin: !!avail.needsLogin,
+                    phoneTaken: !!avail.phoneTaken,
+                    emailTaken: !!avail.emailTaken,
+                    passwordMatch: !!avail.passwordMatch
+                });
+            }
+            runSignupOtpGate((otpErr, otpOut) => {
+                if (otpErr) return res.status(500).json({ error: otpErr.message });
+                if (otpOut && typeof otpOut === 'object' && otpOut.error) {
+                    return res.status(400).json({ error: otpOut.error });
+                }
+                insertUser(typeof otpOut === 'string' ? otpOut : null);
+            });
+        });
     });
     };
 

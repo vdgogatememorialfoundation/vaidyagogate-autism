@@ -17,6 +17,7 @@
     let signupPhoneOtpToken = null;
     let signupEmailOtpToken = null;
     let signupOtpInflight = false;
+    let signupSubmitInflight = false;
     let signupAuthConfig = null;
 
     function signupOtpChannels(cfg) {
@@ -353,6 +354,7 @@
 
     async function handleDoctorSignup(e) {
         e.preventDefault();
+        if (signupSubmitInflight) return;
         const firstName = String((document.getElementById('doctor-signup-firstname') || {}).value || '').trim();
         const lastName = String((document.getElementById('doctor-signup-lastname') || {}).value || '').trim();
         const emailRaw = String((document.getElementById('doctor-signup-email') || {}).value || '').trim();
@@ -453,6 +455,7 @@
             if (otpHint) otpHint.classList.add('hidden');
         }
 
+        signupSubmitInflight = true;
         try {
             const res = await fetch('/api/auth/signup', {
                 method: 'POST',
@@ -559,6 +562,8 @@
         } catch (err) {
             console.error(err);
             alert('Network error.');
+        } finally {
+            signupSubmitInflight = false;
         }
     }
 
