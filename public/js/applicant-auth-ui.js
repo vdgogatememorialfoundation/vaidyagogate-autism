@@ -1,7 +1,7 @@
 /**
  * Applicant dashboard — login & signup in-app (no redirect to public homepage).
  */
-(function () {
+(function (global) {
     function isStandaloneDoctorApp() {
         try {
             if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
@@ -488,27 +488,52 @@
                     }
                 }
                 try {
-                    const loginBody = { phone, portal: 'doctor' };
-                    if (!passwordless) loginBody.password = password;
-                    if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
-                    const loginRes = await fetch('/api/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(loginBody)
-                    });
-                    let loginData = {};
-                    if (window.HttpJson) {
-                        const parsed = await window.HttpJson.readJsonResponse(loginRes);
-                        loginData = parsed.data || {};
-                    } else {
-                        loginData = await loginRes.json().catch(() => ({}));
-                    }
-                    if (loginRes.ok && loginData.success && loginData.user) {
-                        if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', loginData.user);
-                        window.currentUser = loginData.user;
-                        if (typeof bootDoctorDashboard === 'function') {
-                            bootDoctorDashboard(loginData.user);
-                            return;
+                    const phoneCode = String(
+                        (document.getElementById('doctor-signup-phone-otp') || {}).value || ''
+                    ).trim();
+                    if (passwordless && phoneCode) {
+                        const otpRes = await fetch('/api/auth/login-phone-otp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone, code: phoneCode })
+                        });
+                        let otpData = {};
+                        if (window.HttpJson) {
+                            const parsed = await window.HttpJson.readJsonResponse(otpRes);
+                            otpData = parsed.data || {};
+                        } else {
+                            otpData = await otpRes.json().catch(() => ({}));
+                        }
+                        if (otpRes.ok && otpData.success && otpData.user) {
+                            if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', otpData.user);
+                            window.currentUser = otpData.user;
+                            if (typeof bootDoctorDashboard === 'function') {
+                                bootDoctorDashboard(otpData.user);
+                                return;
+                            }
+                        }
+                    } else if (!passwordless) {
+                        const loginBody = { email, password, portal: 'doctor' };
+                        if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
+                        const loginRes = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginBody)
+                        });
+                        let loginData = {};
+                        if (window.HttpJson) {
+                            const parsed = await window.HttpJson.readJsonResponse(loginRes);
+                            loginData = parsed.data || {};
+                        } else {
+                            loginData = await loginRes.json().catch(() => ({}));
+                        }
+                        if (loginRes.ok && loginData.success && loginData.user) {
+                            if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', loginData.user);
+                            window.currentUser = loginData.user;
+                            if (typeof bootDoctorDashboard === 'function') {
+                                bootDoctorDashboard(loginData.user);
+                                return;
+                            }
                         }
                     }
                 } catch (loginErr) {
@@ -928,4 +953,4 @@
     } else {
         window.DoctorAuthUi.init();
     }
-})();
+})(window);

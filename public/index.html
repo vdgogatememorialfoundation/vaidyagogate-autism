@@ -494,8 +494,8 @@
                     <p style="margin:0 0 12px;"><span style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);">Login ID</span><strong id="signup-success-userid" style="color:var(--ink);"></strong></p>
                     <p style="margin:0;"><span style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);">Email</span><span id="signup-success-email" style="color:var(--ink);"></span></p>
                 </div>
-                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Sign in with your <strong>email</strong> and password (not the numeric login ID).</p>
-                <button type="button" class="btn-primary" style="width:100%;border:none;cursor:pointer;" onclick="closeSignupSuccessModal()">Continue to sign in</button>
+                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Sign in with your <strong>WhatsApp number</strong> and the OTP code (no password).</p>
+                <button type="button" class="btn-primary" style="width:100%;border:none;cursor:pointer;" onclick="closeSignupSuccessModal()">Open my dashboard</button>
             </div>
         </div>
         </div>
@@ -560,7 +560,7 @@
     <script src="/js/autism-announcements.js?v=3"></script>
     <script src="/js/vgmf-home-stats.js?v=4"></script>
     <script src="/js/vgmf-marketing.js"></script>
-    <script src="/js/otp-ui.js?v=20260619a"></script>
+    <script src="/js/otp-ui.js?v=20260622"></script>
     <script src="/js/http-json.js"></script>
     <script>
         let currentUserId = null;
@@ -1380,9 +1380,10 @@
             const emailEl = document.getElementById('signup-success-email');
             if (msg) {
                 let base =
-                    data.message || 'Your account is ready. Sign in and open your dashboard to pre-register and get your e-ticket.';
+                    data.message ||
+                    'Your account is ready. Open your dashboard to pre-register for the programme.';
                 if (data.needsEmailVerification) {
-                    base += ' Check your email for a verification link before you sign in.';
+                    base += ' Check your email for a verification link when prompted.';
                 }
                 msg.textContent = base;
             }
@@ -1401,8 +1402,7 @@
                 modal.style.display = 'none';
                 modal.setAttribute('aria-hidden', 'true');
             }
-            switchAuthTab('login');
-            openAuthModal('login');
+            window.location.href = doctorPortalUrl();
         }
 
         async function accountCheck(email, password, phone) {
@@ -1432,28 +1432,34 @@
             if (!code) return alert('Enter the OTP code from WhatsApp.');
             const statusEl = document.getElementById('login_otp_status');
             if (statusEl) statusEl.textContent = 'Signing you in…';
-            const res = await fetch('/api/auth/login-phone-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: pv.cleanedPhone, code })
-            });
-            const { data, parseFailed } = await readIndexApiJson(res);
-            if (statusEl) statusEl.textContent = '';
-            if (data.success) {
-                routeUserAfterLogin(data.user);
-            } else if (data.needsSignup) {
-                if (
-                    confirm(
-                        (data.error || 'No account with this number.') + '\n\nOpen Create account?'
-                    )
-                ) {
-                    switchAuthTab('signup');
-                    const sp = document.getElementById('signup_phone');
-                    if (sp) sp.value = pv.cleanedPhone;
-                    openAuthModal('signup');
+            try {
+                const res = await fetch('/api/auth/login-phone-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: pv.cleanedPhone, code })
+                });
+                const { data, parseFailed } = await readIndexApiJson(res);
+                if (statusEl) statusEl.textContent = '';
+                if (data.success) {
+                    routeUserAfterLogin(data.user);
+                } else if (data.needsSignup) {
+                    if (
+                        confirm(
+                            (data.error || 'No account with this number.') + '\n\nOpen Create account?'
+                        )
+                    ) {
+                        switchAuthTab('signup');
+                        const sp = document.getElementById('signup_phone');
+                        if (sp) sp.value = pv.cleanedPhone;
+                        openAuthModal('signup');
+                    }
+                } else {
+                    alert(indexApiError(res, data, parseFailed) || 'Sign-in failed.');
                 }
-            } else {
-                alert(indexApiError(res, data, parseFailed) || 'Sign-in failed.');
+            } catch (err) {
+                console.error(err);
+                if (statusEl) statusEl.textContent = '';
+                alert('Network error. Please try again.');
             }
         }
 
@@ -1549,6 +1555,12 @@
                 document.getElementById('signupForm')?.querySelector('form')?.reset();
                 const okEl = document.getElementById('signup_phone_otp_ok');
                 if (okEl) okEl.textContent = '';
+                if (data.autoLogin && data.user) {
+                    localStorage.setItem('seminar_doctor_user', JSON.stringify(data.user));
+                    currentUserId = data.user.id;
+                    window.location.href = doctorPortalUrl();
+                    return;
+                }
                 showSignupSuccessModal(data, email);
             } else if (data.needsLogin) {
                 alert(data.error || 'Email already registered. Please sign in with your WhatsApp number.');
