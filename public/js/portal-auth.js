@@ -169,7 +169,7 @@
         if (signupLead) {
             signupLead.textContent = signupChannels.email
                 ? 'Verify email and WhatsApp before signup.'
-                : 'Verify WhatsApp before signup.';
+                : 'Tap Send OTP once, enter the code from WhatsApp, then tap Create account.';
         }
 
         if (phoneOnlyLoginUi) {

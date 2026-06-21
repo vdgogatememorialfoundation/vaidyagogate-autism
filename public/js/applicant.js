@@ -1218,16 +1218,6 @@ window.onload = () => {
     const existing = typeof PortalAuth !== 'undefined' ? PortalAuth.getUser('doctor') : null;
     if (existing) {
         bootDoctorDashboard(existing);
-        return;
-    }
-    if (typeof DoctorAuthUi !== 'undefined' && typeof DoctorAuthUi.wireApplicantPhoneLogin === 'function') {
-        DoctorAuthUi.wireApplicantPhoneLogin(bootDoctorDashboard, (msg) => {
-            const el = document.getElementById('doctor-login-err');
-            if (el) {
-                el.textContent = msg;
-                el.classList.remove('hidden');
-            } else alert(msg);
-        });
     }
 };
 

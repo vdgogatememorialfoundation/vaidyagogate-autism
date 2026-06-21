@@ -3833,16 +3833,26 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
                     'Login OTP is not used for staff accounts. Sign in with email and password at the admin, judge, or scanner portal.'
             });
         }
-        authLoginOtp.sendLoginOtpChannel(db, out.row, channel, (e2, result) => {
-            if (e2) return res.status(500).json({ error: e2.message });
-            if (!result.ok) {
-                return res.status(result.status || 503).json({ error: result.error || 'Could not deliver OTP.' });
-            }
-            const payload = { success: true, ttlMinutes: result.ttlMinutes };
-            if (result.debugCode) payload.debugCode = result.debugCode;
-            if (result.warning) payload.warning = result.warning;
-            res.json(payload);
-        });
+        authLoginOtp.sendLoginOtpChannel(
+            db,
+            out.row,
+            channel,
+            (e2, result) => {
+        if (e2) return res.status(500).json({ error: e2.message });
+        if (!result.ok) {
+            return res.status(result.status || 503).json({ error: result.error || 'Could not deliver OTP.' });
+        }
+        const payload = { success: true, ttlMinutes: result.ttlMinutes };
+        if (result.debugCode) payload.debugCode = result.debugCode;
+        if (result.warning) payload.warning = result.warning;
+        if (result.reused) {
+            payload.reused = true;
+            payload.message = result.message || authLoginOtp.OTP_REUSE_MSG;
+        }
+        res.json(payload);
+    },
+            { forceResend: !!(req.body && req.body.forceResend) }
+        );
     },
         { requirePassword, phone, phoneOnly }
     );
@@ -4015,10 +4025,22 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
         meta.certId = certId;
     }
 
-    otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code) => {
+    otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code, id, codeReused) => {
             if (serr) {
                 const st = serr.status === 429 ? 429 : 500;
                 return res.status(st).json({ error: serr.message });
+            }
+            const forceResend = !!(req.body && req.body.forceResend);
+            if (codeReused && !forceResend) {
+                const debug = otpLib.otpDebugResponsesEnabled();
+                return res.json({
+                    success: true,
+                    reused: true,
+                    ttlMinutes: otpLib.OTP_TTL_MIN,
+                    message:
+                        'Your verification code is still valid. Check your latest WhatsApp message, then enter it below.',
+                    debugCode: debug ? code : undefined
+                });
             }
             const purposeKey =
                 purpose === 'signup' ? 'OTP_VERIFICATION' : purpose === 'registration' ? 'OTP_VERIFICATION' : 'OTP_VERIFICATION';

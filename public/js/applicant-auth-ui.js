@@ -20,6 +20,13 @@
     let signupSubmitInflight = false;
     let signupOtpWired = false;
     let loginOtpInflight = false;
+    let authUiInitialized = false;
+
+    function wireOtpButton(el, handler) {
+        if (!el || el.getAttribute('data-otp-wired') === '1') return;
+        el.setAttribute('data-otp-wired', '1');
+        el.addEventListener('click', handler);
+    }
     let signupAuthConfig = null;
 
     function signupOtpChannels(cfg) {
@@ -80,6 +87,14 @@
         if (legacyPanel) legacyPanel.remove();
         form.setAttribute('data-auth-ui', LOGIN_AUTH_UI_VERSION);
         form.innerHTML = PHONE_LOGIN_FORM_INNER;
+        form.removeAttribute('data-phone-login-wired');
+        signupOtpWired = false;
+        ['doctor-send-otp-phone', 'doctor-resend-otp-phone', 'doctor-signup-send-otp-phone', 'doctor-signup-resend-otp-phone'].forEach(
+            (id) => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('data-otp-wired');
+            }
+        );
         phoneLoginWired = false;
         return true;
     }
@@ -176,8 +191,9 @@
         return digits.length >= 10 ? digits.slice(-10) : digits;
     }
 
-    async function sendSignupOtp(channel) {
+    async function sendSignupOtp(channel, opts) {
         if (signupOtpInflight) return;
+        opts = opts || {};
         const raw =
             channel === 'email'
                 ? String((document.getElementById('doctor-signup-email') || {}).value || '').trim()
@@ -204,7 +220,12 @@
             const res = await fetch('/api/otp/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channel, destination: dest, purpose: 'signup' })
+                body: JSON.stringify({
+                    channel,
+                    destination: dest,
+                    purpose: 'signup',
+                    forceResend: !!opts.forceResend
+                })
             });
             const readJson = window.HttpJson ? window.HttpJson.readJsonResponse : null;
             const errMsg = window.HttpJson ? window.HttpJson.apiErrorMessage : null;
@@ -219,22 +240,28 @@
                 return;
             }
             if (window.OtpUi) {
-                window.OtpUi.cooldownSignupChannel(channel, 'doctor-signup', 60);
+                if (!data.reused) {
+                    window.OtpUi.cooldownSignupChannel(channel, 'doctor-signup', 60);
+                }
                 if (statusEl) {
                     window.OtpUi.notifyOtpSent(channel, data, {
                         silent: true,
                         inlineEl: statusEl,
-                        customMessage:
-                            channel === 'phone'
-                                ? 'Code sent to WhatsApp. Enter it below, then create your account.'
-                                : 'Code sent to your email. Enter it below.'
+                        customMessage: data.reused
+                            ? data.message ||
+                              'Code still valid — check your latest WhatsApp message, then create your account.'
+                            : channel === 'phone'
+                              ? 'Code sent to WhatsApp. Enter it below, then tap Create account.'
+                              : 'Code sent to your email. Enter it below.'
                     });
-                } else {
+                } else if (!data.reused) {
                     window.OtpUi.notifyOtpSent(channel, data);
                 }
             } else if (statusEl) {
-                statusEl.style.color = '#059669';
-                statusEl.textContent = 'OTP sent. Enter the code below.';
+                statusEl.style.color = data.reused ? '#b45309' : '#059669';
+                statusEl.textContent = data.reused
+                    ? data.message || 'Code still valid. Check your latest WhatsApp message.'
+                    : 'OTP sent. Enter the code below.';
             }
             const codeEl = document.getElementById(
                 channel === 'email' ? 'doctor-signup-email-otp' : 'doctor-signup-phone-otp'
@@ -572,14 +599,12 @@
     function wireSignupOtpButtons() {
         if (signupOtpWired) return;
         signupOtpWired = true;
-        ['phone'].forEach((ch) => {
-            const send = document.getElementById('doctor-signup-send-otp-' + ch);
-            const resend = document.getElementById('doctor-signup-resend-otp-' + ch);
-            const verify = document.getElementById('doctor-signup-verify-otp-' + ch);
-            if (send) send.addEventListener('click', () => sendSignupOtp(ch).catch(console.error));
-            if (resend) resend.addEventListener('click', () => sendSignupOtp(ch).catch(console.error));
-            if (verify) verify.addEventListener('click', () => verifySignupOtp(ch).catch(console.error));
-        });
+        wireOtpButton(document.getElementById('doctor-signup-send-otp-phone'), () =>
+            sendSignupOtp('phone', { forceResend: false }).catch(console.error)
+        );
+        wireOtpButton(document.getElementById('doctor-signup-resend-otp-phone'), () =>
+            sendSignupOtp('phone', { forceResend: true }).catch(console.error)
+        );
     }
 
     function validatedLoginPhoneValue() {
@@ -600,7 +625,8 @@
         const submitBtn = document.getElementById('doctor-login-submit');
         const statusEl = document.getElementById('doctor-login-otp-status');
         const errEl = document.getElementById('doctor-login-err');
-        if (!form) return;
+        if (!form || form.getAttribute('data-phone-login-wired') === '1') return;
+        form.setAttribute('data-phone-login-wired', '1');
 
         function showErr(msg) {
             if (errEl) {
@@ -635,7 +661,7 @@
             }
         }
 
-        async function sendLoginOtp() {
+        async function sendLoginOtp(forceResend) {
             if (loginOtpInflight) return;
             clearErr();
             const pv = validatedLoginPhoneValue();
@@ -650,7 +676,11 @@
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: pv.cleanedPhone, channel: 'phone' })
+                    body: JSON.stringify({
+                        phone: pv.cleanedPhone,
+                        channel: 'phone',
+                        forceResend: !!forceResend
+                    })
                 });
                 const { data, parseFailed } = await readApiJson(res);
                 if (parseFailed || !res.ok) {
@@ -670,14 +700,24 @@
                     return showErr(msg);
                 }
                 if (global.OtpUi) {
-                    global.OtpUi.cooldownLoginChannel('phone', 'doctor', 'doctor-resend-otp-phone', 60);
+                    if (!data.reused) {
+                        global.OtpUi.cooldownLoginChannel('phone', 'doctor', 'doctor-resend-otp-phone', 60);
+                    }
                     global.OtpUi.notifyOtpSent('phone', data, {
                         silent: true,
                         inlineEl: statusEl,
-                        customMessage: 'Code sent to WhatsApp. Enter it above and tap Sign in.'
+                        customMessage: data.reused
+                            ? data.message ||
+                              'Code still valid — check your latest WhatsApp message, then tap Sign in.'
+                            : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
                     });
                 } else {
-                    setStatus('Code sent to WhatsApp.', '#059669');
+                    setStatus(
+                        data.reused
+                            ? data.message || 'Code still valid. Check your latest WhatsApp message.'
+                            : 'Code sent to WhatsApp.',
+                        data.reused ? '#b45309' : '#059669'
+                    );
                 }
                 const codeEl = document.getElementById('doctor-phone-otp');
                 if (codeEl) codeEl.focus();
@@ -694,8 +734,8 @@
             }
         }
 
-        if (sendBtn) sendBtn.addEventListener('click', () => sendLoginOtp().catch(console.error));
-        if (resendBtn) resendBtn.addEventListener('click', () => sendLoginOtp().catch(console.error));
+        wireOtpButton(sendBtn, () => sendLoginOtp(false).catch(console.error));
+        wireOtpButton(resendBtn, () => sendLoginOtp(true).catch(console.error));
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -926,6 +966,8 @@
         bindPhoneLogin,
         wireApplicantPhoneLogin,
         init: function () {
+            if (authUiInitialized) return;
+            authUiInitialized = true;
             if (ensureFreshMobileAuthPage()) return;
             ensurePhoneLoginMarkup();
             applyStandaloneUi();
