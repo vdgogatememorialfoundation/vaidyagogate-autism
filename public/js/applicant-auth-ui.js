@@ -262,7 +262,7 @@
             const okEl = document.getElementById(
                 channel === 'email' ? 'doctor-signup-email-otp-ok' : 'doctor-signup-phone-otp-ok'
             );
-            const code = String((codeEl || {}).value || '').trim();
+            const code = String((codeEl || {}).value || '').replace(/\D/g, '').trim();
             if (!dest || !code) return alert('Enter contact and code.');
             const res = await fetch('/api/otp/verify', {
                 method: 'POST',
@@ -695,7 +695,9 @@
             clearErr();
             const pv = validatedLoginPhoneValue();
             if (!pv.valid) return showErr(pv.message);
-            const code = String((document.getElementById('doctor-phone-otp') || {}).value || '').trim();
+            const code = String((document.getElementById('doctor-phone-otp') || {}).value || '')
+                .replace(/\D/g, '')
+                .trim();
             if (!code) return showErr('Enter the OTP code from WhatsApp.');
             if (submitBtn) {
                 submitBtn.disabled = true;

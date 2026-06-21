@@ -4020,8 +4020,7 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
         if (cnt >= otpLib.MAX_SENDS_PER_HOUR) {
             return res.status(429).json({ error: 'Too many OTP requests. Try again later.' });
         }
-        const code = otpLib.generateOtpDigits();
-        otpLib.saveOtp(db, { channel, destination: dest, purpose, meta }, code, (serr) => {
+        otpLib.prepareOtpSend(db, { channel, destination: dest, purpose, meta }, (serr, code) => {
             if (serr) return res.status(500).json({ error: serr.message });
             const purposeKey =
                 purpose === 'signup' ? 'OTP_VERIFICATION' : purpose === 'registration' ? 'OTP_VERIFICATION' : 'OTP_VERIFICATION';

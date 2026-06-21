@@ -1018,7 +1018,7 @@
             const dest = signupOtpDestination(channel);
             const codeEl = document.getElementById(channel === 'email' ? 'signup_email_otp' : 'signup_phone_otp');
             const okEl = document.getElementById(channel === 'email' ? 'signup_email_otp_ok' : 'signup_phone_otp_ok');
-            const code = String((codeEl || {}).value || '').trim();
+            const code = String((codeEl || {}).value || '').replace(/\D/g, '').trim();
             if (!dest || !code) return alert('Enter the code you received.');
             try {
                 const res = await fetch('/api/otp/verify', {
@@ -1429,7 +1429,9 @@
             e.preventDefault();
             const pv = validatedIndexLoginPhone();
             if (!pv.valid) return alert(pv.message);
-            const code = String((document.getElementById('login_phone_otp') || {}).value || '').trim();
+            const code = String((document.getElementById('login_phone_otp') || {}).value || '')
+                .replace(/\D/g, '')
+                .trim();
             if (!code) return alert('Enter the OTP code from WhatsApp.');
             const statusEl = document.getElementById('login_otp_status');
             if (statusEl) statusEl.textContent = 'Signing you in…';
