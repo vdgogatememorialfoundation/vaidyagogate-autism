@@ -323,8 +323,8 @@
         if (sel) sel.innerHTML = '<option value="">Loading…</option>';
         if (addSel) addSel.innerHTML = '<option value="">Loading…</option>';
         try {
-            const rows = await api('/api/admin/seminars');
-            compSeminars = rows.filter((r) => r.status === 'published' || r.status === 'archived');
+            const rows = await api('/api/admin/seminars/all');
+            compSeminars = Array.isArray(rows) ? rows : [];
             if (sel) {
                 sel.innerHTML = '<option value="">— Select event —</option>';
                 compSeminars.forEach((s) => {
