@@ -4050,6 +4050,21 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
             }
             const forceResend = !!(req.body && req.body.forceResend);
             if (codeReused && !forceResend) {
+                // #region agent log
+                try {
+                    fs.appendFileSync(
+                        path.join(__dirname, 'debug-7880d4.log'),
+                        JSON.stringify({
+                            sessionId: '7880d4',
+                            timestamp: Date.now(),
+                            location: 'server.js:POST /api/otp/send',
+                            message: 'skipped whatsapp — code still valid',
+                            data: { channel, purpose, codeReused: true, forceResend: false },
+                            hypothesisId: 'A'
+                        }) + '\n'
+                    );
+                } catch (_) {}
+                // #endregion
                 const debug = otpLib.otpDebugResponsesEnabled();
                 return res.json({
                     success: true,
@@ -4070,6 +4085,28 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 eventKey: purposeKey
             }).then((results) => {
                 const sent = channel === 'phone' ? results.whatsapp : results.email;
+                // #region agent log
+                try {
+                    fs.appendFileSync(
+                        path.join(__dirname, 'debug-7880d4.log'),
+                        JSON.stringify({
+                            sessionId: '7880d4',
+                            timestamp: Date.now(),
+                            location: 'server.js:POST /api/otp/send',
+                            message: 'whatsapp delivery attempted',
+                            data: {
+                                channel,
+                                purpose,
+                                forceResend,
+                                codeReused: !!codeReused,
+                                sentOk: !!(sent && sent.ok),
+                                sentSkipped: !!(sent && sent.skipped)
+                            },
+                            hypothesisId: 'A'
+                        }) + '\n'
+                    );
+                } catch (_) {}
+                // #endregion
                 const debug = otpLib.otpDebugResponsesEnabled();
                 const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                 if (debug) payload.debugCode = code;

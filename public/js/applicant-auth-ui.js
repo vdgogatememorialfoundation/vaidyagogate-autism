@@ -230,6 +230,20 @@
             sendBtn.textContent = 'Sending…';
         }
         signupOtpInflight = true;
+        // #region agent log
+        fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+            body: JSON.stringify({
+                sessionId: '7880d4',
+                location: 'applicant-auth-ui.js:sendSignupOtp',
+                message: 'signup otp send click',
+                data: { channel, forceResend: !!opts.forceResend },
+                timestamp: Date.now(),
+                hypothesisId: 'B'
+            })
+        }).catch(() => {});
+        // #endregion
         if (statusEl) {
             statusEl.classList.remove('hidden');
             statusEl.style.color = '#64748b';
@@ -695,6 +709,20 @@
             }
             setStatus('Sending OTP to WhatsApp…', '#64748b');
             loginOtpInflight = true;
+            // #region agent log
+            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+                body: JSON.stringify({
+                    sessionId: '7880d4',
+                    location: 'applicant-auth-ui.js:sendLoginOtp',
+                    message: 'login otp send click',
+                    data: { forceResend: !!forceResend },
+                    timestamp: Date.now(),
+                    hypothesisId: 'B'
+                })
+            }).catch(() => {});
+            // #endregion
             try {
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',

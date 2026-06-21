@@ -445,8 +445,8 @@
                             <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Send OTP to WhatsApp, enter the code below, then tap Create account.</p>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                                 <span style="font-weight:600;min-width:48px;">WhatsApp</span>
-                                <button type="button" id="signup-send-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Send</button>
-                                <button type="button" id="signup-resend-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendSignupOtp('phone')">Resend</button>
+                                <button type="button" id="signup-send-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);">Send</button>
+                                <button type="button" id="signup-resend-otp-phone" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);">Resend</button>
                                 <input type="text" id="signup_phone_otp" placeholder="Code" style="max-width:80px;padding:8px;border-radius:8px;border:1px solid var(--line);">
                                 <button type="button" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="verifySignupOtp('phone')">Verify</button>
                                 <span id="signup_phone_otp_ok" style="font-size:0.8rem;color:#059669;"></span>
@@ -573,6 +573,7 @@
         let signupPhoneOtpToken = null;
         let signupEmailOtpToken = null;
         let signupOtpInflight = false;
+        let loginOtpInflight = false;
         let signupSubmitInflight = false;
         let loginPhoneOtpToken = null;
         let loginEmailOtpToken = null;
@@ -724,6 +725,7 @@
         }
 
         async function sendIndexLoginOtp(forceResend) {
+            if (loginOtpInflight) return;
             const pv = validatedIndexLoginPhone();
             if (!pv.valid) return alert(pv.message);
             const sendBtn = document.getElementById('index-send-login-otp');
@@ -733,6 +735,21 @@
                 sendBtn.textContent = 'Sending…';
             }
             if (statusEl) statusEl.textContent = 'Sending OTP to WhatsApp…';
+            loginOtpInflight = true;
+            // #region agent log
+            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+                body: JSON.stringify({
+                    sessionId: '7880d4',
+                    location: 'index.html:sendIndexLoginOtp',
+                    message: 'login otp send click',
+                    data: { forceResend: !!forceResend },
+                    timestamp: Date.now(),
+                    hypothesisId: 'B'
+                })
+            }).catch(() => {});
+            // #endregion
             try {
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
@@ -753,11 +770,16 @@
                     }
                     return alert(indexApiError(res, data, parseFailed));
                 }
-                if (OtpUi.cooldownLoginChannel) OtpUi.cooldownLoginChannel('phone', 'index', 'index-resend-login-otp', 60);
+                if (!data.reused && OtpUi.cooldownLoginChannel) {
+                    OtpUi.cooldownLoginChannel('phone', 'index', 'index-resend-login-otp', 60);
+                }
                 OtpUi.notifyOtpSent('phone', data, {
                     silent: true,
                     inlineEl: statusEl,
-                    customMessage: 'Code sent to WhatsApp. Enter it above and tap Sign in.'
+                    customMessage: data.reused
+                        ? data.message ||
+                          'Code still valid — check your latest WhatsApp message, then tap Sign in.'
+                        : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
                 });
                 const codeEl = document.getElementById('login_phone_otp');
                 if (codeEl) codeEl.focus();
@@ -766,6 +788,7 @@
                 if (statusEl) statusEl.textContent = '';
                 alert('Network error.');
             } finally {
+                loginOtpInflight = false;
                 if (sendBtn && sendBtn.textContent === 'Sending…') {
                     sendBtn.disabled = false;
                     sendBtn.textContent = 'Send OTP';
@@ -1033,7 +1056,7 @@
             return digits;
         }
 
-        async function sendSignupOtp(channel) {
+        async function sendSignupOtp(channel, forceResend) {
             if (signupOtpInflight) return;
             const raw =
                 channel === 'email'
@@ -1049,25 +1072,62 @@
                 return;
             }
             signupOtpInflight = true;
+            // #region agent log
+            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+                body: JSON.stringify({
+                    sessionId: '7880d4',
+                    location: 'index.html:sendSignupOtp',
+                    message: 'signup otp send click',
+                    data: { channel, forceResend: !!forceResend },
+                    timestamp: Date.now(),
+                    hypothesisId: 'B'
+                })
+            }).catch(() => {});
+            // #endregion
             try {
                 const res = await fetch('/api/otp/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ channel, destination: dest, purpose: 'signup' })
+                    body: JSON.stringify({
+                        channel,
+                        destination: dest,
+                        purpose: 'signup',
+                        forceResend: !!forceResend
+                    })
                 });
                 const { data, parseFailed } = await HttpJson.readJsonResponse(res);
                 if (parseFailed || !res.ok) {
                     return alert(HttpJson.apiErrorMessage(res, data, parseFailed));
                 }
                 if (data.debugCode) console.info('Signup OTP debug:', data.debugCode);
-                OtpUi.notifyOtpSent(channel, data);
-                if (OtpUi.cooldownSignupChannel) OtpUi.cooldownSignupChannel(channel, 'signup', 60);
+                if (!data.reused && OtpUi.cooldownSignupChannel) {
+                    OtpUi.cooldownSignupChannel(channel, 'signup', 60);
+                }
+                OtpUi.notifyOtpSent(channel, data, {
+                    customMessage: data.reused
+                        ? data.message ||
+                          'Code still valid — check your latest WhatsApp message, then tap Create account.'
+                        : undefined
+                });
             } catch (e) {
                 console.error(e);
                 alert('Network error.');
             } finally {
                 signupOtpInflight = false;
             }
+        }
+
+        let indexSignupOtpWired = false;
+        function wireIndexSignupOtpButtons() {
+            if (indexSignupOtpWired) return;
+            const sendBtn = document.getElementById('signup-send-otp-phone');
+            const resendBtn = document.getElementById('signup-resend-otp-phone');
+            if (!sendBtn || !resendBtn) return;
+            indexSignupOtpWired = true;
+            sendBtn.addEventListener('click', () => sendSignupOtp('phone', false).catch(console.error));
+            resendBtn.addEventListener('click', () => sendSignupOtp('phone', true).catch(console.error));
         }
 
         async function verifySignupOtp(channel) {
@@ -1109,6 +1169,7 @@
                 currentUserId = JSON.parse(user).id;
             }
             refreshSignupOtpPanel();
+            wireIndexSignupOtpButtons();
         });
 
 
