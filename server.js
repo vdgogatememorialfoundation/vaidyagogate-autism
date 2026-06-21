@@ -9940,13 +9940,39 @@ app.get('/api/admin/portal-auth-config', (req, res) => {
         if (e) return res.status(500).json({ error: e.message });
         if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
         portalAuthPolicy.loadPortalAuthConfig(db, () => {
-            res.json({
+            const envOverrides = portalAuthPolicy.getEnvOtpOverrides
+                ? portalAuthPolicy.getEnvOtpOverrides()
+                : {};
+            const payload = {
                 success: true,
                 config: portalAuthPolicy.getPortalAuthConfig(),
                 signupOtpEffective: portalAuthPolicy.signupOtpRequired(),
                 loginOtpEffective: portalAuthPolicy.applicantLoginOtpRequired('public'),
-                passwordlessLoginEffective: portalAuthPolicy.passwordlessLoginEnabled()
-            });
+                passwordlessLoginEffective: portalAuthPolicy.passwordlessLoginEnabled(),
+                envOverrides
+            };
+            // #region agent log
+            try {
+                fs.appendFileSync(
+                    path.join(__dirname, 'debug-7880d4.log'),
+                    JSON.stringify({
+                        sessionId: '7880d4',
+                        timestamp: Date.now(),
+                        location: 'server.js:GET portal-auth-config',
+                        message: 'admin load portal auth',
+                        data: {
+                            config: payload.config,
+                            signupOtpEffective: payload.signupOtpEffective,
+                            loginOtpEffective: payload.loginOtpEffective,
+                            passwordlessLoginEffective: payload.passwordlessLoginEffective,
+                            envOverrides
+                        },
+                        hypothesisId: 'A'
+                    }) + '\n'
+                );
+            } catch (_) {}
+            // #endregion
+            res.json(payload);
         });
     });
 });
@@ -10181,6 +10207,27 @@ app.post('/api/admin/portal-auth-config', (req, res) => {
         if (e) return res.status(500).json({ error: e.message });
         if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
         const merged = portalAuthPolicy.merge(config);
+        // #region agent log
+        try {
+            fs.appendFileSync(
+                path.join(__dirname, 'debug-7880d4.log'),
+                JSON.stringify({
+                    sessionId: '7880d4',
+                    timestamp: Date.now(),
+                    location: 'server.js:POST portal-auth-config',
+                    message: 'admin save portal auth',
+                    data: {
+                        incoming: config,
+                        merged,
+                        envOverrides: portalAuthPolicy.getEnvOtpOverrides
+                            ? portalAuthPolicy.getEnvOtpOverrides()
+                            : {}
+                    },
+                    hypothesisId: 'C'
+                }) + '\n'
+            );
+        } catch (_) {}
+        // #endregion
         const isSuper =
             String(adm.role || '').toLowerCase() === 'admin' &&
             String(adm.user_role || '').toLowerCase() !== 'co_admin';

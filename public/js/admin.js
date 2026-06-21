@@ -11307,6 +11307,26 @@ async function loadPortalAuthAdminForm() {
     try {
         const res = await fetch(`/api/admin/portal-auth-config?actingAdminId=${encodeURIComponent(adm.id)}`);
         const d = await res.json();
+        // #region agent log
+        fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+            body: JSON.stringify({
+                sessionId: '7880d4',
+                location: 'admin.js:loadPortalAuthAdminForm',
+                message: 'loaded portal auth config',
+                data: {
+                    config: d.config,
+                    signupOtpEffective: d.signupOtpEffective,
+                    loginOtpEffective: d.loginOtpEffective,
+                    passwordlessLoginEffective: d.passwordlessLoginEffective,
+                    envOverrides: d.envOverrides || null
+                },
+                timestamp: Date.now(),
+                hypothesisId: 'A'
+            })
+        }).catch(() => {});
+        // #endregion
         if (!d.success || !d.config) return;
         const setChk = (id, val) => {
             const el = document.getElementById(id);
@@ -11330,9 +11350,22 @@ async function loadPortalAuthAdminForm() {
         renderAdminGlobalPagesCheckboxes();
         renderWebsiteMenuPagesCheckboxes();
         if (eff) {
+            const env = d.envOverrides || {};
+            let envNote = '';
+            if (env.envActive) {
+                envNote =
+                    ' Server environment variables are overriding OTP until you save policy here once (REQUIRE_SIGNUP_OTP=' +
+                    (env.REQUIRE_SIGNUP_OTP || 'unset') +
+                    ', REQUIRE_LOGIN_OTP=' +
+                    (env.REQUIRE_LOGIN_OTP || 'unset') +
+                    ').';
+            } else if (env.persisted) {
+                envNote = ' Saved admin policy is active (environment OTP overrides ignored).';
+            }
             eff.textContent =
-                `Effective signup OTP: ${d.signupOtpEffective ? 'on' : 'off'} · Login OTP: ${d.loginOtpEffective ? 'on' : 'off'} · Passwordless login: ${d.passwordlessLoginEffective ? 'on' : 'off'} (environment variables can still override signup/login OTP).`;
+                `Effective signup OTP: ${d.signupOtpEffective ? 'on' : 'off'} · Login OTP: ${d.loginOtpEffective ? 'on' : 'off'} · Passwordless login: ${d.passwordlessLoginEffective ? 'on' : 'off'}.${envNote}`;
         }
+        wirePortalAuthAdminCheckboxCoupling();
     } catch (_) {
         if (eff) eff.textContent = '';
     }
@@ -11390,6 +11423,19 @@ function renderWebsiteMenuPagesCheckboxes() {
     }).join('');
 }
 
+function wirePortalAuthAdminCheckboxCoupling() {
+    const pwdless = document.getElementById('pa-passwordless-login');
+    const reqLogin = document.getElementById('pa-req-login-otp');
+    if (!pwdless || !reqLogin || pwdless.getAttribute('data-pa-coupled') === '1') return;
+    pwdless.setAttribute('data-pa-coupled', '1');
+    pwdless.addEventListener('change', () => {
+        if (pwdless.checked) reqLogin.checked = true;
+    });
+    reqLogin.addEventListener('change', () => {
+        if (!reqLogin.checked && pwdless.checked) pwdless.checked = false;
+    });
+}
+
 async function savePortalAuthAdminConfig() {
     const adm = getStoredAdminUser();
     const msg = document.getElementById('pa-save-msg');
@@ -11409,6 +11455,7 @@ async function savePortalAuthAdminConfig() {
         requireAdminOtpForSensitive: gv('pa-req-admin-sensitive-otp'),
         requireBehalfApplicantOtp: gv('pa-req-behalf-applicant-otp')
     };
+    if (config.passwordlessLogin) config.requireLoginOtp = true;
     if (isSuperAdminUser()) {
         const adminEnabledPages = {};
         document.querySelectorAll('#admin-global-pages-checkboxes input[data-global-admin-tab]').forEach((inp) => {
@@ -11423,6 +11470,20 @@ async function savePortalAuthAdminConfig() {
         });
         config.websiteMenuPages = websiteMenuPages;
     }
+    // #region agent log
+    fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+        body: JSON.stringify({
+            sessionId: '7880d4',
+            location: 'admin.js:savePortalAuthAdminConfig',
+            message: 'saving portal auth config',
+            data: { config },
+            timestamp: Date.now(),
+            hypothesisId: 'C'
+        })
+    }).catch(() => {});
+    // #endregion
     try {
         const res = await fetch('/api/admin/portal-auth-config', {
             method: 'POST',
@@ -11435,6 +11496,20 @@ async function savePortalAuthAdminConfig() {
             msg.textContent = data.success ? 'Portal auth policy saved.' : data.error || 'Save failed.';
         }
         if (data.success) {
+            // #region agent log
+            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
+                body: JSON.stringify({
+                    sessionId: '7880d4',
+                    location: 'admin.js:savePortalAuthAdminConfig:afterSave',
+                    message: 'save response',
+                    data: { savedConfig: data.config },
+                    timestamp: Date.now(),
+                    hypothesisId: 'E'
+                })
+            }).catch(() => {});
+            // #endregion
             await loadPortalAuthAdminForm();
             await refreshAdminSensitiveOtpRequirement();
             applyCoAdminSidebarVisibility();

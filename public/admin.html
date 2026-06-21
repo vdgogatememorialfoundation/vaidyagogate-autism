@@ -886,7 +886,7 @@
                 <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons ... paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Event management (after payments are complete).</p>
                 <div id="ak-portal-auth-card" class="card ak-cms-portal-auth" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Public portal sign-in &amp; security</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving doctor applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> still override signup/login OTP when set to 0 or 1.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving doctor applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. After you save here once, these settings control the live site. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> only apply before the first save.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-signup" checked> Show ...Create account... on main site</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-login" checked> Show sign-in entry on main site</label>
@@ -2534,7 +2534,7 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260620c"></script>
+    <script src="/js/admin.js?v=20260625b"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
