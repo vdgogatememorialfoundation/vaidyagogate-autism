@@ -8097,6 +8097,7 @@ app.post('/api/admin/seminars', (req, res) => {
     const preRegEnd = seminarDt.normalizeSeminarRegistrationEndForStorage(preregistration_end);
     const eventDt = seminarDt.normalizeSeminarDateTimeForStorage(event_date);
     const seminarPrice = portalProduct.FEATURES.noFees ? 0 : price || 0;
+    const finalRfj = seminarRegFlow.finalizeRegistrationFormJsonForStorage(null, rfj, req.body && req.body.seminar_flow);
     const bodyYear = req.body && req.body.portal_year != null ? parseInt(req.body.portal_year, 10) : null;
     portalTracking.getPortalYear(db, (ePy, defaultYear) => {
         const portalYear =
@@ -8121,7 +8122,7 @@ app.post('/api/admin/seminars', (req, res) => {
                 hero_image_path || null,
                 flyer_path || null,
                 gallery_paths || null,
-                rfj,
+                finalRfj,
                 prfj,
                 cpj,
                 wu,
@@ -8206,9 +8207,10 @@ app.put('/api/admin/seminars/:id', (req, res) => {
         const seminarId = parseInt(req.params.id, 10);
         db.get(`SELECT registration_form_json FROM seminars WHERE id = ?`, [seminarId], (eRf, existingRow) => {
             if (eRf) return res.status(500).json({ error: eRf.message });
-            const finalRfj = seminarRegFlow.mergeRegistrationFormJsonForStorage(
+            const finalRfj = seminarRegFlow.finalizeRegistrationFormJsonForStorage(
                 existingRow && existingRow.registration_form_json,
-                rfj
+                rfj,
+                req.body && req.body.seminar_flow
             );
             db.run(
             `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, preregistration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=? WHERE id=?`,

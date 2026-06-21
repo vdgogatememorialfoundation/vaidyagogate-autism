@@ -375,10 +375,90 @@
         return JSON.stringify(regCfg);
     }
 
+    function flowFlagBool(flow, key, defaultValue) {
+        if (!flow || typeof flow !== 'object') return defaultValue;
+        if (!Object.prototype.hasOwnProperty.call(flow, key)) return defaultValue;
+        return flow[key] === true;
+    }
+
+    function hasExplicitFlowFlags(flow) {
+        if (!flow || typeof flow !== 'object') return false;
+        return (
+            Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+            Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired') ||
+            Object.prototype.hasOwnProperty.call(flow, 'publicPreregEnabled') ||
+            Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen') ||
+            Object.prototype.hasOwnProperty.call(flow, 'autoAcceptPreregistration') ||
+            Object.prototype.hasOwnProperty.call(flow, 'autoAcceptRegistration')
+        );
+    }
+
+    function parseSeminarFlowFlags(registrationFormJson) {
+        try {
+            const parsed = parseSeminarRegistrationFormJson(registrationFormJson);
+            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            if (!hasExplicitFlowFlags(flow)) {
+                return {
+                    preregistrationRequired: true,
+                    mainRegistrationRequired: true,
+                    mainRegistrationOpen: true,
+                    autoAcceptPreregistration: false,
+                    autoAcceptRegistration: false,
+                    publicPreregEnabled: false
+                };
+            }
+            const preregistrationRequired = flowFlagBool(flow, 'preregistrationRequired', true);
+            const mainRegistrationRequired = flowFlagBool(flow, 'mainRegistrationRequired', true);
+            const flags = {
+                preregistrationRequired,
+                mainRegistrationRequired,
+                autoAcceptPreregistration: flowFlagBool(flow, 'autoAcceptPreregistration', false),
+                autoAcceptRegistration: flowFlagBool(flow, 'autoAcceptRegistration', false),
+                publicPreregEnabled: flowFlagBool(flow, 'publicPreregEnabled', false)
+            };
+            if (mainRegistrationRequired && !preregistrationRequired) {
+                flags.mainRegistrationOpen = true;
+            } else if (mainRegistrationRequired && preregistrationRequired) {
+                flags.mainRegistrationOpen = flowFlagBool(flow, 'mainRegistrationOpen', false);
+            } else {
+                flags.mainRegistrationOpen = false;
+            }
+            return flags;
+        } catch (_) {
+            return {
+                preregistrationRequired: true,
+                mainRegistrationRequired: true,
+                mainRegistrationOpen: false,
+                autoAcceptPreregistration: false,
+                autoAcceptRegistration: false,
+                publicPreregEnabled: false
+            };
+        }
+    }
+
+    function applySeminarFlowFlagsToUi(flags, opts) {
+        const options = opts || {};
+        const pre = document.getElementById('seminar-flow-prereg-required');
+        const main = document.getElementById('seminar-flow-main-required');
+        const mainOpen = document.getElementById('seminar-flow-main-open');
+        const autoPre = document.getElementById('seminar-flow-auto-prereg');
+        const autoReg = document.getElementById('seminar-flow-auto-reg');
+        const publicPrereg = document.getElementById('seminar-flow-public-prereg');
+        if (pre) pre.checked = flags.publicPreregEnabled ? true : flags.preregistrationRequired;
+        if (main) main.checked = flags.mainRegistrationRequired;
+        if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
+        if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
+        if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
+        if (publicPrereg) publicPrereg.checked = flags.publicPreregEnabled;
+        syncSeminarFlowFormSections(options);
+    }
+
     function prepareSeminarSaveData(data) {
         if (!data || typeof data !== 'object') return data;
         data.price = 0;
         syncSeminarScheduleFieldsToPayload(data);
+        const flowFlags = buildSeminarFlowFlagsFromUi();
+        data.seminar_flow = flowFlags;
         data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(data.registration_form_json);
         data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
         return data;
@@ -386,7 +466,8 @@
 
     window.__akPrepareSeminarSaveData = prepareSeminarSaveData;
 
-    function syncSeminarFlowFormSections() {
+    function syncSeminarFlowFormSections(opts) {
+        opts = opts || {};
         const preOn = (document.getElementById('seminar-flow-prereg-required') || {}).checked !== false;
         const mainOn = (document.getElementById('seminar-flow-main-required') || {}).checked !== false;
         const preCard = document.getElementById('seminar-prereg-form-card');
@@ -407,7 +488,7 @@
         if (mainOpenWrap) mainOpenWrap.style.display = preOn && mainOn ? '' : 'none';
         if (autoPre && !preOn) autoPre.checked = false;
         if (autoReg && !mainOn) autoReg.checked = false;
-        if (publicChk && !preOn) publicChk.checked = false;
+        if (publicChk && !preOn && !opts.fromSaved) publicChk.checked = false;
         if (mainOpen) {
             if (!mainOn) mainOpen.checked = false;
             else if (!preOn) mainOpen.checked = true;
@@ -919,45 +1000,6 @@
         }
     }
 
-    function parseSeminarFlowFlags(registrationFormJson) {
-        try {
-            const parsed = parseSeminarRegistrationFormJson(registrationFormJson);
-            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
-            const hasFlow =
-                Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
-                Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
-            const preregistrationRequired = hasFlow ? flow.preregistrationRequired === true : true;
-            const mainRegistrationRequired = hasFlow ? flow.mainRegistrationRequired === true : true;
-            let mainRegistrationOpen = true;
-            if (mainRegistrationRequired && !preregistrationRequired) {
-                mainRegistrationOpen = true;
-            } else if (mainRegistrationRequired && preregistrationRequired) {
-                mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
-                    ? flow.mainRegistrationOpen === true
-                    : false;
-            } else {
-                mainRegistrationOpen = false;
-            }
-            return {
-                preregistrationRequired,
-                mainRegistrationRequired,
-                mainRegistrationOpen,
-                autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
-                autoAcceptRegistration: flow.autoAcceptRegistration === true,
-                publicPreregEnabled: flow.publicPreregEnabled === true
-            };
-        } catch (_) {
-            return {
-                preregistrationRequired: true,
-                mainRegistrationRequired: true,
-                mainRegistrationOpen: false,
-                autoAcceptPreregistration: false,
-                autoAcceptRegistration: false,
-                publicPreregEnabled: false
-            };
-        }
-    }
-
     function patchSaveSeminar() {
         if (typeof window.saveSeminar !== 'function' || window.__autismSavePatched) return;
         const orig = window.saveSeminar;
@@ -1162,24 +1204,29 @@
     function patchEditSeminarFlowFlags() {
         if (typeof window.editSeminar !== 'function' || window.editSeminar.__akFlowHook) return;
         const orig = window.editSeminar;
-        window.editSeminar = function (index) {
+        window.editSeminar = async function (index) {
             orig.call(this, index);
-            const s = Array.isArray(window.globalSeminars) ? window.globalSeminars[index] : null;
+            let s = Array.isArray(window.globalSeminars) ? window.globalSeminars[index] : null;
+            const sid =
+                (document.getElementById('seminar-id') || {}).value || (s && s.id != null ? s.id : '');
+            if (sid) {
+                try {
+                    const res = await fetch(withAdminQuery('/api/admin/seminars/all'), {
+                        credentials: 'same-origin',
+                        cache: 'no-store'
+                    });
+                    const rows = await res.json();
+                    const fresh = (rows || []).find((x) => String(x.id) === String(sid));
+                    if (fresh) {
+                        s = fresh;
+                        const gi = (window.globalSeminars || []).findIndex((x) => String(x.id) === String(sid));
+                        if (gi >= 0) window.globalSeminars[gi] = fresh;
+                    }
+                } catch (_) {}
+            }
             const flags = parseSeminarFlowFlags(s && s.registration_form_json);
-            const pre = document.getElementById('seminar-flow-prereg-required');
-            const main = document.getElementById('seminar-flow-main-required');
-            const mainOpen = document.getElementById('seminar-flow-main-open');
-            const autoPre = document.getElementById('seminar-flow-auto-prereg');
-            const autoReg = document.getElementById('seminar-flow-auto-reg');
-            const publicPrereg = document.getElementById('seminar-flow-public-prereg');
-            if (pre) pre.checked = flags.preregistrationRequired;
-            if (main) main.checked = flags.mainRegistrationRequired;
-            if (mainOpen) mainOpen.checked = flags.mainRegistrationOpen;
-            if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
-            if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
-            if (publicPrereg) publicPrereg.checked = flags.publicPreregEnabled;
+            applySeminarFlowFlagsToUi(flags, { fromSaved: true });
             window.__akEditingSeminarId = s && s.id ? s.id : null;
-            syncSeminarFlowFormSections();
             loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
             try {
                 const p = s && s.preregistration_form_json ? JSON.parse(s.preregistration_form_json) : {};

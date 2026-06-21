@@ -34,17 +34,29 @@ const incomingFromClient = JSON.stringify({
     }
 });
 
-const stored = flow.mergeRegistrationFormJsonForStorage(existing, incomingFromClient);
+const seminarFlow = {
+    preregistrationRequired: true,
+    mainRegistrationRequired: true,
+    mainRegistrationOpen: false,
+    autoAcceptPreregistration: false,
+    autoAcceptRegistration: false,
+    publicPreregEnabled: true
+};
+
+const stored = flow.finalizeRegistrationFormJsonForStorage(existing, incomingFromClient, seminarFlow);
 const flags = flow.seminarFlowFlagsFromRegistrationFormJson(stored);
 assert(flags.publicPreregEnabled === true, 'publicPreregEnabled should persist after PUT merge');
 
-const roundTrip = flow.seminarFlowFlagsFromRegistrationFormJson(JSON.parse(stored));
-assert(roundTrip.publicPreregEnabled === true, 'reload should read publicPreregEnabled true');
-
-const objectInput = JSON.parse(stored);
+const fieldsOnly = JSON.stringify({ version: 1, fields: [{ key: 'parent_name', enabled: true }] });
+const storedFromBodyFlow = flow.finalizeRegistrationFormJsonForStorage(existing, fieldsOnly, seminarFlow);
 assert(
-    flow.seminarFlowFlagsFromRegistrationFormJson(objectInput).publicPreregEnabled === true,
-    'object-shaped registration_form_json should parse'
+    flow.seminarFlowFlagsFromRegistrationFormJson(storedFromBodyFlow).publicPreregEnabled === true,
+    'seminar_flow body should persist even when registration_form_json has no flow'
 );
+
+const publicOnlyFlow = JSON.stringify({ flow: { publicPreregEnabled: true } });
+const publicOnlyFlags = flow.seminarFlowFlagsFromRegistrationFormJson(publicOnlyFlow);
+assert(publicOnlyFlags.publicPreregEnabled === true, 'publicPreregEnabled alone should be read');
+assert(publicOnlyFlags.preregistrationRequired === true, 'missing preregistrationRequired should default true');
 
 console.log('OK: public pre-reg flow flag save/load verified');
