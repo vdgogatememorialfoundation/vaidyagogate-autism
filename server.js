@@ -3744,13 +3744,24 @@ function resolveLoginUserForOtp(email, password, cb, options) {
             }
         }
         if (!portalAuthPolicy.isStaffPortalAccount(row)) {
-            const phoneCheck = verifyApplicantLoginPhone(row, phoneRaw);
+            const phoneCheck = applicantLoginPhoneGate(row, phoneRaw, 'public');
             if (!phoneCheck.ok) {
                 return cb(null, { status: phoneCheck.status || 400, error: phoneCheck.error });
             }
         }
         cb(null, { status: 200, row });
     });
+}
+
+/** Phone match only when login OTP (WhatsApp) is enabled — not for email/password-only sign-in. */
+function applicantLoginPhoneGate(row, phoneRaw, loginPortal) {
+    if (portalAuthPolicy.isStaffPortalAccount(row)) return { ok: true };
+    if (!portalAuthPolicy.loginOtpRequiredForPortal(loginPortal || 'public')) {
+        return { ok: true };
+    }
+    const channels = portalAuthPolicy.loginOtpChannels();
+    if (!channels.whatsapp) return { ok: true };
+    return verifyApplicantLoginPhone(row, phoneRaw);
 }
 
 function verifyApplicantLoginPhone(row, phoneRaw) {
@@ -3805,6 +3816,10 @@ app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAux
 /** Send login OTP to one channel (email or phone) for the account matching email. */
 app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { email, password, channel, phone } = req.body || {};
+    const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
+    if (!portalAuthPolicy.applicantLoginOtpRequired(loginPortal)) {
+        return res.status(400).json({ error: 'Login OTP is disabled. Sign in with your email and password.' });
+    }
     const phoneOnly = !email && !!phone;
     if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
     if (!channel) return res.status(400).json({ error: 'channel is required' });
@@ -3914,6 +3929,9 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
     if (!codeStr) return res.status(400).json({ error: 'OTP code is required.' });
 
     const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
+    if (!portalAuthPolicy.applicantLoginOtpRequired(loginPortal)) {
+        return res.status(400).json({ error: 'Phone OTP sign-in is disabled. Use your email and password.' });
+    }
     authUsers.findUserByPhone(db, phoneV.cleanedPhone, (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!row) {
@@ -4377,7 +4395,7 @@ app.post('/api/auth/signup', (req, res) => {
                                     ? 'Signup successful! Check your email to verify your address, then sign in.'
                                     : portalAuthPolicy.passwordlessLoginEnabled()
                                       ? 'Account created. You are signed in.'
-                                      : 'Signup successful! Please create your profile before applying.'
+                                      : 'Account created. You are signed in — complete your profile next.'
                         };
                         if (userRow) {
                             delete userRow.password;
@@ -4400,7 +4418,7 @@ app.post('/api/auth/signup', (req, res) => {
                                 () => {}
                             );
                         }
-                        if (portalAuthPolicy.passwordlessLoginEnabled()) {
+                        if (portalAuthPolicy.passwordlessLoginEnabled() || evFlag === 1) {
                             const userRow = {
                                 id: newUserId,
                                 user_id_string: userIdStr,
@@ -4617,7 +4635,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     loginPortal !== 'admin' &&
                     loginPortal !== 'staff'
                 ) {
-                    const phoneCheck = verifyApplicantLoginPhone(row, phone);
+                    const phoneCheck = applicantLoginPhoneGate(row, phone, loginPortal);
                     if (!phoneCheck.ok) {
                         return res.status(phoneCheck.status || 400).json({ error: phoneCheck.error });
                     }

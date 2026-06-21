@@ -500,7 +500,7 @@
                     <p style="margin:0 0 12px;"><span style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);">Login ID</span><strong id="signup-success-userid" style="color:var(--ink);"></strong></p>
                     <p style="margin:0;"><span style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);">Email</span><span id="signup-success-email" style="color:var(--ink);"></span></p>
                 </div>
-                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Sign in with your <strong>WhatsApp number</strong> and the OTP code (no password).</p>
+                <p id="signup-success-signin-hint" style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Sign in with your email and password to open your dashboard.</p>
                 <button type="button" class="btn-primary" style="width:100%;border:none;cursor:pointer;" onclick="closeSignupSuccessModal()">Open my dashboard</button>
             </div>
         </div>
@@ -1446,6 +1446,13 @@
             }
             if (uidEl) uidEl.textContent = data.user_id_string || '—';
             if (emailEl) emailEl.textContent = email || '—';
+            const hintEl = document.getElementById('signup-success-signin-hint');
+            if (hintEl) {
+                const loginOtpOn = indexLoginOtpOn();
+                hintEl.textContent = loginOtpOn
+                    ? 'Sign in with your WhatsApp number and the OTP code from your message.'
+                    : 'Sign in with your email and password to open your dashboard.';
+            }
             closeAuthModal();
             if (modal) {
                 modal.style.display = 'flex';
@@ -1523,7 +1530,6 @@
                 .replace(/\D/g, '')
                 .trim();
             if (!code) return alert('Enter the OTP code from WhatsApp.');
-            const statusEl = document.getElementById('login_otp_status');
             if (statusEl) statusEl.textContent = 'Signing you in…';
             try {
                 const res = await fetch('/api/auth/login-phone-otp', {
@@ -1584,7 +1590,8 @@
             const password = (document.getElementById('signup_password') || {}).value || '';
             const otpPanel = document.getElementById('signup_otp_panel');
             const signupOtpOn = isOtpPanelActive(otpPanel);
-            if (!signupOtpOn && !String(password).trim()) {
+            const passwordlessSignup = !!(window.__portalAuth && window.__portalAuth.passwordlessLogin);
+            if ((!signupOtpOn || !passwordlessSignup) && !String(password).trim()) {
                 return alert('Choose a password for your account.');
             }
 
@@ -1602,9 +1609,11 @@
                     return;
                 }
                 if (check.exists) {
-                    alert(check.message || 'This email is already registered. Please sign in with your WhatsApp number.');
+                    alert(check.message || 'This email is already registered. Please sign in.');
                     switchAuthTab('login');
+                    const le = document.getElementById('login_email');
                     const lp = document.getElementById('login_phone');
+                    if (le) le.value = email;
                     if (lp && phone) lp.value = phone;
                     openAuthModal('login');
                     return;
@@ -1665,9 +1674,11 @@
                 }
                 showSignupSuccessModal(data, email);
             } else if (data.needsLogin) {
-                alert(data.error || 'Email already registered. Please sign in with your WhatsApp number.');
+                alert(data.error || 'Email already registered. Please sign in.');
                 switchAuthTab('login');
+                const le = document.getElementById('login_email');
                 const lp = document.getElementById('login_phone');
+                if (le) le.value = email;
                 if (lp && phone) lp.value = phone;
                 openAuthModal('login');
             } else {

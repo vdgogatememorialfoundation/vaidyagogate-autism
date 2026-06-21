@@ -172,9 +172,11 @@
         if (!showLogin) refreshSignupOtpPanel();
     }
 
-    function prefillLoginForm(_email, phone, password) {
+    function prefillLoginForm(email, phone, password) {
+        const le = document.getElementById('doctor-login-email');
         const lph = document.getElementById('doctor-login-phone');
         const lp = document.getElementById('doctor-login-password');
+        if (le && email) le.value = email;
         if (lph && phone) lph.value = phone;
         if (lp && password) lp.value = password;
     }
@@ -591,58 +593,6 @@
                         bootDoctorDashboard(data.user);
                         return;
                     }
-                }
-                try {
-                    const phoneCode = String(
-                        (document.getElementById('doctor-signup-phone-otp') || {}).value || ''
-                    ).trim();
-                    if (passwordless && phoneCode) {
-                        const otpRes = await fetch('/api/auth/login-phone-otp', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ phone, code: phoneCode })
-                        });
-                        let otpData = {};
-                        if (window.HttpJson) {
-                            const parsed = await window.HttpJson.readJsonResponse(otpRes);
-                            otpData = parsed.data || {};
-                        } else {
-                            otpData = await otpRes.json().catch(() => ({}));
-                        }
-                        if (otpRes.ok && otpData.success && otpData.user) {
-                            if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', otpData.user);
-                            window.currentUser = otpData.user;
-                            if (typeof bootDoctorDashboard === 'function') {
-                                bootDoctorDashboard(otpData.user);
-                                return;
-                            }
-                        }
-                    } else if (!passwordless) {
-                        const loginBody = { email, password, portal: 'doctor' };
-                        if (data.phoneOtpToken) loginBody.phoneOtpToken = data.phoneOtpToken;
-                        const loginRes = await fetch('/api/auth/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(loginBody)
-                        });
-                        let loginData = {};
-                        if (window.HttpJson) {
-                            const parsed = await window.HttpJson.readJsonResponse(loginRes);
-                            loginData = parsed.data || {};
-                        } else {
-                            loginData = await loginRes.json().catch(() => ({}));
-                        }
-                        if (loginRes.ok && loginData.success && loginData.user) {
-                            if (typeof PortalAuth !== 'undefined') PortalAuth.setUser('doctor', loginData.user);
-                            window.currentUser = loginData.user;
-                            if (typeof bootDoctorDashboard === 'function') {
-                                bootDoctorDashboard(loginData.user);
-                                return;
-                            }
-                        }
-                    }
-                } catch (loginErr) {
-                    console.warn('[signup] auto-login', loginErr);
                 }
                 alert(data.message || 'Account created. Please sign in.');
                 switchDoctorAuthTab('login');
