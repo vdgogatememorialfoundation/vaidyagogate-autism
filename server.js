@@ -4011,11 +4011,25 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
                             { dest, userId: row.id, codeLen: codeStr.replace(/\D/g, '').length },
                             extra || {}
                         ),
-                        hypothesisId: 'F'
+                        hypothesisId: 'H'
                     }) + '\n'
                 );
             } catch (_) {}
             // #endregion
+        }
+
+        function rejectAfterSignupCodeCheck() {
+            const tryDest = destAlt || dest;
+            const codeNorm = otpLib.sanitizeOtpCode(codeStr);
+            const signupExpected = otpLib.generateOtpForDestination('phone', tryDest, 'signup', {});
+            if (codeNorm && codeNorm === signupExpected) {
+                return res.status(400).json({
+                    error:
+                        'That WhatsApp code is for Create account (registration), not sign-in. Switch to the Create account tab and tap Create account, or tap Send OTP here to get a sign-in code.'
+                });
+            }
+            logVerifyFail({});
+            return res.status(400).json({ error: 'Invalid or expired code' });
         }
 
         tryVerifyDestination(dest, (err, result) => {
@@ -4025,12 +4039,10 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
                 return tryVerifyDestination(destAlt, (err2, result2) => {
                     if (err2) return res.status(500).json({ error: err2.message });
                     if (result2 && result2.ok) return finishLoginOk();
-                    logVerifyFail({ destAlt });
-                    return res.status(400).json({ error: 'Invalid or expired code' });
+                    return rejectAfterSignupCodeCheck();
                 });
             }
-            logVerifyFail({});
-            return res.status(400).json({ error: 'Invalid or expired code' });
+            return rejectAfterSignupCodeCheck();
         });
     });
 });
@@ -4093,7 +4105,8 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 return res.status(st).json({ error: serr.message });
             }
             const forceResend = !!(req.body && req.body.forceResend);
-            if (codeReused) {
+            const skipWa = otpLib.shouldSkipOtpWhatsApp(channel, dest, purpose, meta, code, { forceResend });
+            if (skipWa) {
                 // #region agent log
                 try {
                     fs.appendFileSync(
@@ -4102,20 +4115,23 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                             sessionId: '7880d4',
                             timestamp: Date.now(),
                             location: 'server.js:POST /api/otp/send',
-                            message: 'skipped whatsapp — code still valid',
-                            data: { channel, purpose, codeReused: true, forceResend: !!forceResend },
-                            hypothesisId: 'D'
+                            message: 'skipped whatsapp — already delivered this code',
+                            data: { channel, purpose, forceResend: !!forceResend },
+                            hypothesisId: 'G'
                         }) + '\n'
                     );
                 } catch (_) {}
                 // #endregion
                 const debug = otpLib.otpDebugResponsesEnabled();
+                const signupMsg =
+                    purpose === 'signup'
+                        ? 'Your registration code is still valid. Enter it on the Create account tab and tap Create account — do not use it on Sign in.'
+                        : 'Your verification code is still valid. Check your latest WhatsApp message, then enter it below.';
                 return res.json({
                     success: true,
                     reused: true,
                     ttlMinutes: otpLib.OTP_TTL_MIN,
-                    message:
-                        'Your verification code is still valid. Check your latest WhatsApp message, then enter it below.',
+                    message: signupMsg,
                     debugCode: debug ? code : undefined
                 });
             }
@@ -4159,6 +4175,9 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                         error: sent.error || 'Could not deliver OTP. Configure ZeptoMail email and/or WhatsApp API.',
                         debugCode: debug ? code : undefined
                     });
+                }
+                if (sent.ok) {
+                    otpLib.markOtpWhatsAppSent(channel, dest, purpose, meta, code);
                 }
                 if (sent.skipped) {
                     payload.warning = 'Messaging not fully configured; use debugCode in development or set ZEPTOMAIL_API_KEY / WHATSAPP_* env vars.';

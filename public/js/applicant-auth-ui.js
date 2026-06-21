@@ -169,8 +169,16 @@
             btnUp.classList.toggle('is-active', !showLogin);
             btnUp.setAttribute('aria-selected', !showLogin ? 'true' : 'false');
         }
+        if (showLogin) {
+            const signupOtp = document.getElementById('doctor-signup-phone-otp');
+            if (signupOtp) signupOtp.value = '';
+        } else {
+            const loginOtp = document.getElementById('doctor-phone-otp');
+            if (loginOtp) loginOtp.value = '';
+        }
         syncApplicantAuthTitle(showLogin);
         if (!showLogin) refreshSignupOtpPanel();
+        else refreshLoginAuthUi();
     }
 
     function prefillLoginForm(email, phone, password) {
@@ -283,7 +291,9 @@
                         inlineEl: statusEl,
                         customMessage: data.reused
                             ? data.message ||
-                              'Code still valid — check your latest WhatsApp message, then create your account.'
+                              (channel === 'phone'
+                                  ? 'Registration code still valid. Enter it below and tap Create account — not on Sign in.'
+                                  : 'Code still valid. Enter it below and tap Create account.')
                             : channel === 'phone'
                               ? 'Code sent to WhatsApp. Enter it below, then tap Create account.'
                               : 'Code sent to your email. Enter it below.'
@@ -760,7 +770,7 @@
                         inlineEl: statusEl,
                         customMessage: data.reused
                             ? data.message ||
-                              'Code still valid — check your latest WhatsApp message, then tap Sign in.'
+                              'Sign-in code still valid. Use the code from your latest sign-in WhatsApp message (not a registration code).'
                             : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
                     });
                 } else {
