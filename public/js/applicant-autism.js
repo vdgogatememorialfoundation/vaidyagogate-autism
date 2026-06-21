@@ -12,6 +12,7 @@
     const SEMINARS_CACHE_MS = 20000;
     const _lastGridFp = { prereg: '', main: '' };
     let _loadPreregSeminarsPromise = null;
+    let competitionEvents = [];
 
     const HIDDEN_TABS = [
         'tab-orders',
@@ -438,16 +439,110 @@
 
     function showCompRegisterView() {
         if (typeof switchTab === 'function') switchTab('tab-comp-register');
-        loadPreregSeminars().then(() => {
-            const compSel = document.getElementById('comp-seminar-select');
-            const preregSel = document.getElementById('prereg-seminar-select');
-            if (compSel && preregSel) compSel.innerHTML = preregSel.innerHTML;
-        });
+        loadCompetitionEvents().then(() => renderCompetitionSchedulePanel());
     }
 
     function showCompTrackView() {
         if (typeof switchTab === 'function') switchTab('tab-comp-track');
         loadCompetitionList();
+    }
+
+    async function loadCompetitionEvents() {
+        try {
+            const data = await fetchJson('/api/competition/events');
+            competitionEvents = Array.isArray(data.events) ? data.events : [];
+        } catch (_) {
+            competitionEvents = [];
+        }
+        refreshCompetitionNavVisibility();
+        populateCompetitionEventSelect();
+        return competitionEvents;
+    }
+
+    function refreshCompetitionNavVisibility() {
+        const hasComp = competitionEvents.length > 0;
+        document.querySelectorAll('[data-tab="tab-comp-register"], [data-tab="tab-comp-track"]').forEach((el) => {
+            el.style.display = hasComp ? '' : 'none';
+        });
+        document.querySelectorAll('[data-ak-hub="comp-register"], [data-ak-hub="comp-track"]').forEach((el) => {
+            el.style.display = hasComp ? '' : 'none';
+        });
+        document
+            .querySelectorAll('.ak-hub-tile[onclick*="showCompRegisterView"], .ak-hub-tile[onclick*="showCompTrackView"]')
+            .forEach((el) => {
+                el.style.display = hasComp ? '' : 'none';
+            });
+    }
+
+    function populateCompetitionEventSelect() {
+        const sel = document.getElementById('comp-seminar-select');
+        if (!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">Select event</option>';
+        competitionEvents.forEach((ev) => {
+            const opt = document.createElement('option');
+            opt.value = String(ev.id);
+            const st =
+                ev.windowState === 'open'
+                    ? ' — open now'
+                    : ev.windowState === 'upcoming'
+                      ? ' — opens soon'
+                      : ev.windowState === 'unscheduled'
+                        ? ' — schedule pending'
+                        : ' — closed';
+            opt.textContent = (ev.title || 'Event') + st;
+            if (ev.windowState !== 'open') opt.disabled = ev.windowState === 'closed';
+            sel.appendChild(opt);
+        });
+        if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+        renderCompetitionSchedulePanel();
+    }
+
+    function renderCompetitionSchedulePanel() {
+        const panel = document.getElementById('comp-event-schedule');
+        const sel = document.getElementById('comp-seminar-select');
+        const submitBtn = document.querySelector('#competition-form button[type="submit"]');
+        if (!panel) return;
+        if (!competitionEvents.length) {
+            panel.classList.remove('hidden');
+            panel.innerHTML =
+                '<strong style="color:#6b21a8;">No competition events</strong><p style="margin:6px 0 0;">Registration forms are available; competition uploads are not open for any event yet.</p>';
+            if (submitBtn) submitBtn.disabled = true;
+            return;
+        }
+        const sid = sel && sel.value ? parseInt(sel.value, 10) : null;
+        const ev = sid ? competitionEvents.find((x) => Number(x.id) === sid) : null;
+        if (!ev) {
+            panel.classList.add('hidden');
+            panel.innerHTML = '';
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+        panel.classList.remove('hidden');
+        let html = '';
+        if (ev.instructions) {
+            html += '<p style="margin:0 0 8px;"><strong style="color:#6b21a8;">Competition details</strong><br>' + escapeAkHtml(ev.instructions) + '</p>';
+        }
+        const startLabel = ev.competitionStart ? akFormatTrackDateTime(ev.competitionStart) : '—';
+        const endLabel = ev.competitionEnd ? akFormatTrackDateTime(ev.competitionEnd) : '—';
+        html += '<p style="margin:0;font-size:0.84rem;"><strong>Submissions:</strong> ' + escapeAkHtml(startLabel) + ' to ' + escapeAkHtml(endLabel) + '</p>';
+        if (ev.windowState === 'open') {
+            html +=
+                '<p style="margin:8px 0 0;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Open for submissions now.</p>';
+            if (submitBtn) submitBtn.disabled = false;
+        } else if (ev.windowState === 'upcoming') {
+            html +=
+                '<p style="margin:8px 0 0;color:#b45309;font-weight:600;"><i class="fas fa-hourglass-half"></i> Not open yet — check back when submissions start.</p>';
+            if (submitBtn) submitBtn.disabled = true;
+        } else if (ev.windowState === 'unscheduled') {
+            html +=
+                '<p style="margin:8px 0 0;color:#64748b;font-weight:600;">Schedule not set yet by organisers.</p>';
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            html += '<p style="margin:8px 0 0;color:#94a3b8;font-weight:600;">Submissions closed for this event.</p>';
+            if (submitBtn) submitBtn.disabled = true;
+        }
+        panel.innerHTML = html;
     }
 
     function showCaseRegisterView() {
@@ -2876,8 +2971,8 @@
         });
     }
 
-    async function submitCompetition(ev) {
-        ev.preventDefault();
+    async function submitCompetition(event) {
+        event.preventDefault();
         const uid = currentUserId();
         if (!uid) return alert('Please sign in again.');
         const title = document.getElementById('comp-title')?.value?.trim();
@@ -2886,7 +2981,18 @@
         const seminarId = document.getElementById('comp-seminar-select')?.value || '';
         const files = document.getElementById('comp-files')?.files;
         if (!title) return alert('Enter a title.');
+        if (!seminarId) return alert('Select the event for this competition entry.');
         if (!files || !files.length) return alert('Upload at least one file (photo, video, PPT, or PDF).');
+        const compEv = competitionEvents.find((x) => String(x.id) === String(seminarId));
+        if (compEv && compEv.windowState !== 'open') {
+            return alert(
+                compEv.windowState === 'upcoming'
+                    ? 'Competition submissions are not open yet for this event.'
+                    : compEv.windowState === 'unscheduled'
+                      ? 'Competition schedule is not set yet for this event.'
+                      : 'Competition submissions have closed for this event.'
+            );
+        }
         const fd = new FormData();
         fd.append('userId', uid);
         fd.append('title', title);
@@ -2992,6 +3098,7 @@
         document.getElementById('prereg-wizard-next')?.addEventListener('click', onPreregWizardNext);
         document.getElementById('prereg-wizard-back')?.addEventListener('click', onPreregWizardBack);
         document.getElementById('competition-form')?.addEventListener('submit', submitCompetition);
+        document.getElementById('comp-seminar-select')?.addEventListener('change', renderCompetitionSchedulePanel);
     }
 
     window.loadPreregList = loadPreregList;
@@ -3217,11 +3324,7 @@
             } else if (tabId === 'tab-main-reg-track') {
                 if (typeof loadApplications === 'function') loadApplications(true);
             } else if (tabId === 'tab-comp-register') {
-                loadPreregSeminars().then(() => {
-                    const compSel = document.getElementById('comp-seminar-select');
-                    const preregSel = document.getElementById('prereg-seminar-select');
-                    if (compSel && preregSel) compSel.innerHTML = preregSel.innerHTML;
-                });
+                loadCompetitionEvents().then(() => renderCompetitionSchedulePanel());
             } else if (tabId === 'tab-comp-track') {
                 loadCompetitionList();
             } else if (tabId === 'tab-abstract') {
@@ -3766,6 +3869,7 @@
             accountFields.style.display = 'grid';
         }
         wireAutismTabs();
+        loadCompetitionEvents();
         if (typeof loadApplicantAnnouncements === 'function') loadApplicantAnnouncements();
         if (typeof loadApplications === 'function') {
             setTimeout(() => {

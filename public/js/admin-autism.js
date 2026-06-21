@@ -91,6 +91,104 @@
             '</div></div>' +
             '<p style="flex:1 1 100%;margin:0;font-size:0.78rem;color:#64748b;">With auto-accept on, applicants are approved instantly; you can still reject any application from tracking at any time.</p>';
         block.insertAdjacentElement('afterend', flow);
+        injectCompetitionFlowBlock();
+    }
+
+    function injectCompetitionFlowBlock() {
+        if (document.getElementById('seminar-flow-competition-enabled')) return;
+        const flow = document.getElementById('seminar-flow-public-prereg-wrap')?.closest('div[style*="f0fdfa"]');
+        if (!flow || !flow.parentNode) return;
+        const block = document.createElement('div');
+        block.id = 'seminar-competition-flow-block';
+        block.style.cssText =
+            'margin-top:10px;padding:10px 12px;border:1px solid #e9d5ff;border-radius:8px;background:#faf5ff;';
+        block.innerHTML =
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;font-weight:600;color:#6b21a8;"><input type="checkbox" id="seminar-flow-competition-enabled"> This event has a competition</label>' +
+            '<p style="margin:6px 0 10px;font-size:0.78rem;color:#64748b;">When off, applicants only use pre-registration / main registration forms — no competition upload for this event.</p>' +
+            '<div id="seminar-competition-details-wrap" style="display:none;">' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">' +
+            '<div><label style="font-size:0.82rem;">Competition opens (IST)</label><input type="datetime-local" id="seminar-competition-start" style="width:100%;padding:8px;"></div>' +
+            '<div><label style="font-size:0.82rem;">Competition closes (IST)</label><input type="datetime-local" id="seminar-competition-end" style="width:100%;padding:8px;"></div>' +
+            '</div>' +
+            '<div><label style="font-size:0.82rem;">Competition details (shown to applicants)</label><textarea id="seminar-competition-instructions" rows="2" style="width:100%;padding:8px;" placeholder="Categories, rules, prizes, venue…"></textarea></div>' +
+            '<p style="margin:8px 0 0;font-size:0.76rem;color:#64748b;">Submissions open automatically between the start and end times.</p>' +
+            '</div>';
+        flow.parentNode.insertBefore(block, flow.nextSibling);
+        document.getElementById('seminar-flow-competition-enabled')?.addEventListener('change', syncCompetitionFlowUi);
+    }
+
+    function parseCompetitionFlowFromJson(registrationFormJson) {
+        const flow = parseSeminarRegistrationFormJson(registrationFormJson).flow || {};
+        return {
+            competitionEnabled: flow.competitionEnabled === true,
+            competitionStart: flow.competitionStart || '',
+            competitionEnd: flow.competitionEnd || '',
+            competitionInstructions: flow.competitionInstructions || ''
+        };
+    }
+
+    function syncCompetitionFlowUi() {
+        const on = document.getElementById('seminar-flow-competition-enabled')?.checked === true;
+        const wrap = document.getElementById('seminar-competition-details-wrap');
+        if (wrap) wrap.style.display = on ? '' : 'none';
+    }
+
+    function applyCompetitionFlowToUi(registrationFormJson) {
+        const comp = parseCompetitionFlowFromJson(registrationFormJson);
+        const chk = document.getElementById('seminar-flow-competition-enabled');
+        const start = document.getElementById('seminar-competition-start');
+        const end = document.getElementById('seminar-competition-end');
+        const instr = document.getElementById('seminar-competition-instructions');
+        if (chk) chk.checked = comp.competitionEnabled;
+        if (start) {
+            start.value =
+                comp.competitionStart && window.PortalDateTime && window.PortalDateTime.toDatetimeLocal
+                    ? window.PortalDateTime.toDatetimeLocal(comp.competitionStart)
+                    : comp.competitionStart
+                      ? String(comp.competitionStart).slice(0, 16)
+                      : '';
+        }
+        if (end) {
+            end.value =
+                comp.competitionEnd && window.PortalDateTime && window.PortalDateTime.toRegistrationEndLocal
+                    ? window.PortalDateTime.toRegistrationEndLocal(comp.competitionEnd)
+                    : comp.competitionEnd && window.PortalDateTime && window.PortalDateTime.toDatetimeLocal
+                      ? window.PortalDateTime.toDatetimeLocal(comp.competitionEnd)
+                      : comp.competitionEnd
+                        ? String(comp.competitionEnd).slice(0, 16)
+                        : '';
+        }
+        if (instr) instr.value = comp.competitionInstructions || '';
+        syncCompetitionFlowUi();
+    }
+
+    function buildCompetitionFlowFromUi() {
+        const on = document.getElementById('seminar-flow-competition-enabled')?.checked === true;
+        if (!on) {
+            return {
+                competitionEnabled: false,
+                competitionStart: null,
+                competitionEnd: null,
+                competitionInstructions: ''
+            };
+        }
+        const startEl = document.getElementById('seminar-competition-start');
+        const endEl = document.getElementById('seminar-competition-end');
+        const instrEl = document.getElementById('seminar-competition-instructions');
+        return {
+            competitionEnabled: true,
+            competitionStart: startEl && startEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromDatetimeLocal(startEl.value)
+                    : startEl.value
+                : null,
+            competitionEnd: endEl && endEl.value
+                ? window.PortalDateTime
+                    ? window.PortalDateTime.fromRegistrationEndLocal(endEl.value)
+                    : endEl.value
+                : null,
+            competitionInstructions: instrEl ? String(instrEl.value || '').trim() : ''
+        };
     }
 
     function ensureSeminarPreregOverrideEditor() {
@@ -370,7 +468,8 @@
             autoAcceptPreregistration:
                 (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
             autoAcceptRegistration: (document.getElementById('seminar-flow-auto-reg') || {}).checked === true,
-            publicPreregEnabled: (document.getElementById('seminar-flow-public-prereg') || {}).checked === true
+            publicPreregEnabled: (document.getElementById('seminar-flow-public-prereg') || {}).checked === true,
+            ...buildCompetitionFlowFromUi()
         };
     }
 
@@ -479,6 +578,11 @@
         if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
         if (publicPrereg) publicPrereg.checked = flags.publicPreregEnabled;
         syncSeminarFlowFormSections(options);
+        applyCompetitionFlowToUi(
+            options && options.registrationFormJson != null
+                ? options.registrationFormJson
+                : existingSeminarFromForm() && existingSeminarFromForm().registration_form_json
+        );
     }
 
     function prepareSeminarSaveData(data) {
@@ -1496,7 +1600,8 @@
                 } catch (_) {}
             }
             const flags = parseSeminarFlowFlags(s && s.registration_form_json);
-            applySeminarFlowFlagsToUi(flags, { fromSaved: true });
+            applySeminarFlowFlagsToUi(flags, { fromSaved: true, registrationFormJson: s && s.registration_form_json });
+            applyCompetitionFlowToUi(s && s.registration_form_json);
             window.__akEditingSeminarId = s && s.id ? s.id : null;
             loadSeminarPreregFormOverrideUi((s && s.preregistration_form_json) || '');
             try {
@@ -1528,6 +1633,9 @@
             if (autoReg) autoReg.checked = false;
             const publicPrereg = document.getElementById('seminar-flow-public-prereg');
             if (publicPrereg) publicPrereg.checked = false;
+            const compOn = document.getElementById('seminar-flow-competition-enabled');
+            if (compOn) compOn.checked = false;
+            applyCompetitionFlowToUi('');
             window.__akEditingSeminarId = null;
             applySeminarPreregDatesToUi(null);
             syncSeminarFlowFormSections();

@@ -5,6 +5,8 @@
     'use strict';
 
     let compRows = [];
+    let compSeminars = [];
+    let compSettingsSeminar = null;
 
     function esc(s) {
         const d = document.createElement('div');
@@ -62,6 +64,188 @@
                 );
             })
             .join('');
+    }
+
+    function parseCompetitionFlow(registrationFormJson) {
+        let flow = {};
+        try {
+            const cfg =
+                typeof registrationFormJson === 'string'
+                    ? JSON.parse(registrationFormJson)
+                    : registrationFormJson || {};
+            flow = cfg && typeof cfg.flow === 'object' ? cfg.flow : {};
+        } catch (_) {}
+        return {
+            competitionEnabled: flow.competitionEnabled === true,
+            competitionStart: flow.competitionStart || '',
+            competitionEnd: flow.competitionEnd || '',
+            competitionInstructions: flow.competitionInstructions || ''
+        };
+    }
+
+    function toDtLocal(val) {
+        if (!val) return '';
+        if (window.PortalDateTime && window.PortalDateTime.toDatetimeLocal) {
+            return window.PortalDateTime.toDatetimeLocal(val);
+        }
+        return String(val).slice(0, 16);
+    }
+
+    function toEndLocal(val) {
+        if (!val) return '';
+        if (window.PortalDateTime && window.PortalDateTime.toRegistrationEndLocal) {
+            return window.PortalDateTime.toRegistrationEndLocal(val);
+        }
+        return toDtLocal(val);
+    }
+
+    function syncCompSettingsUi() {
+        const on = document.getElementById('ak-comp-enabled')?.checked === true;
+        const wrap = document.getElementById('ak-comp-details-wrap');
+        if (wrap) wrap.style.display = on ? '' : 'none';
+    }
+
+    function applyCompSettingsToForm(sem) {
+        compSettingsSeminar = sem || null;
+        const comp = parseCompetitionFlow(sem && sem.registration_form_json);
+        const chk = document.getElementById('ak-comp-enabled');
+        const start = document.getElementById('ak-comp-start');
+        const end = document.getElementById('ak-comp-end');
+        const instr = document.getElementById('ak-comp-instructions');
+        if (chk) chk.checked = comp.competitionEnabled;
+        if (start) start.value = toDtLocal(comp.competitionStart);
+        if (end) end.value = toEndLocal(comp.competitionEnd);
+        if (instr) instr.value = comp.competitionInstructions || '';
+        syncCompSettingsUi();
+    }
+
+    async function loadCompetitionSeminars() {
+        const sel = document.getElementById('ak-comp-event-select');
+        if (!sel) return;
+        try {
+            const rows = await api('/api/admin/seminars/all');
+            compSeminars = Array.isArray(rows) ? rows : [];
+            sel.innerHTML = '<option value="">— Select event —</option>';
+            compSeminars.forEach((s) => {
+                const comp = parseCompetitionFlow(s.registration_form_json);
+                const tag = comp.competitionEnabled ? ' · competition on' : '';
+                sel.innerHTML +=
+                    '<option value="' +
+                    s.id +
+                    '">' +
+                    esc(s.title || 'Event #' + s.id) +
+                    tag +
+                    '</option>';
+            });
+            if (sel.value) {
+                const sem = compSeminars.find((x) => String(x.id) === String(sel.value));
+                applyCompSettingsToForm(sem);
+            }
+        } catch (e) {
+            sel.innerHTML = '<option value="">Could not load events</option>';
+        }
+    }
+
+    async function saveCompetitionSettings() {
+        const sid = parseInt((document.getElementById('ak-comp-event-select') || {}).value, 10);
+        const msg = document.getElementById('ak-comp-settings-msg');
+        if (!sid) {
+            if (msg) {
+                msg.textContent = 'Select an event first.';
+                msg.style.color = '#b91c1c';
+            }
+            return;
+        }
+        let sem = compSeminars.find((x) => Number(x.id) === sid);
+        if (!sem) {
+            try {
+                const rows = await api('/api/admin/seminars/all');
+                compSeminars = Array.isArray(rows) ? rows : [];
+                sem = compSeminars.find((x) => Number(x.id) === sid);
+            } catch (e) {
+                if (msg) {
+                    msg.textContent = e.message || 'Could not load event.';
+                    msg.style.color = '#b91c1c';
+                }
+                return;
+            }
+        }
+        if (!sem) {
+            if (msg) {
+                msg.textContent = 'Event not found.';
+                msg.style.color = '#b91c1c';
+            }
+            return;
+        }
+        const on = document.getElementById('ak-comp-enabled')?.checked === true;
+        let cfg = {};
+        try {
+            cfg = sem.registration_form_json ? JSON.parse(sem.registration_form_json) : {};
+        } catch (_) {
+            cfg = {};
+        }
+        if (!cfg.flow || typeof cfg.flow !== 'object') cfg.flow = {};
+        cfg.flow.competitionEnabled = on;
+        if (on) {
+            const startEl = document.getElementById('ak-comp-start');
+            const endEl = document.getElementById('ak-comp-end');
+            cfg.flow.competitionStart =
+                startEl && startEl.value
+                    ? window.PortalDateTime
+                        ? window.PortalDateTime.fromDatetimeLocal(startEl.value)
+                        : startEl.value
+                    : null;
+            cfg.flow.competitionEnd =
+                endEl && endEl.value
+                    ? window.PortalDateTime
+                        ? window.PortalDateTime.fromRegistrationEndLocal(endEl.value)
+                        : endEl.value
+                    : null;
+            cfg.flow.competitionInstructions = String(
+                (document.getElementById('ak-comp-instructions') || {}).value || ''
+            ).trim();
+        } else {
+            cfg.flow.competitionStart = null;
+            cfg.flow.competitionEnd = null;
+            cfg.flow.competitionInstructions = '';
+        }
+        const payload = Object.assign({}, sem, {
+            registration_form_json: JSON.stringify(cfg),
+            seminar_flow: cfg.flow
+        });
+        if (typeof window.__akPrepareSeminarSaveData === 'function') {
+            window.__akPrepareSeminarSaveData(payload);
+        }
+        if (msg) {
+            msg.textContent = 'Saving…';
+            msg.style.color = '#475569';
+        }
+        try {
+            const res = await fetch('/api/admin/seminars/' + sid, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || res.statusText);
+            if (msg) {
+                msg.textContent = on
+                    ? 'Competition enabled and saved for this event.'
+                    : 'Competition turned off — only registration forms apply for this event.';
+                msg.style.color = '#047857';
+            }
+            await loadCompetitionSeminars();
+            const sel = document.getElementById('ak-comp-event-select');
+            if (sel) sel.value = String(sid);
+            applyCompSettingsToForm(compSeminars.find((x) => Number(x.id) === sid));
+            await refresh();
+        } catch (e) {
+            if (msg) {
+                msg.textContent = e.message || 'Save failed';
+                msg.style.color = '#b91c1c';
+            }
+        }
     }
 
     function filteredRows() {
@@ -199,6 +383,7 @@
 
     window.initAdminCompetitionTracking = function initAdminCompetitionTracking() {
         if (window.__akCompInit) {
+            loadCompetitionSeminars();
             refresh();
             return;
         }
@@ -206,6 +391,14 @@
         document.getElementById('ak-comp-refresh')?.addEventListener('click', refresh);
         document.getElementById('ak-comp-search')?.addEventListener('input', renderTable);
         document.getElementById('ak-comp-status-filter')?.addEventListener('change', renderTable);
+        document.getElementById('ak-comp-enabled')?.addEventListener('change', syncCompSettingsUi);
+        document.getElementById('ak-comp-event-select')?.addEventListener('change', () => {
+            const sid = (document.getElementById('ak-comp-event-select') || {}).value;
+            const sem = compSeminars.find((x) => String(x.id) === String(sid));
+            applyCompSettingsToForm(sem);
+        });
+        document.getElementById('ak-comp-save-settings')?.addEventListener('click', saveCompetitionSettings);
+        loadCompetitionSeminars();
         refresh();
     };
 

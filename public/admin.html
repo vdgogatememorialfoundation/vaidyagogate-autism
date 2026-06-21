@@ -340,7 +340,24 @@
             <!-- Competition management -->
             <div id="tab-competition-tracking" class="tab-pane hidden">
                 <h2 style="margin-bottom: 8px;">Competition management</h2>
-                <p style="color:#64748b;margin-bottom:12px;max-width:720px;">Review all creative competition submissions — art, essays, videos, and presentations. Each entry has a barcode for tracking.</p>
+                <p style="color:#64748b;margin-bottom:12px;max-width:720px;">Turn competition on per event, set the submission window, and review creative entries.</p>
+                <div class="card" id="ak-comp-settings-card" style="margin-bottom:16px;">
+                    <h3 style="margin:0 0 10px;color:#6b21a8;">Competition settings (per event)</h3>
+                    <p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">If <strong>This event has a competition</strong> is off, applicants only see registration forms for that event — no competition upload.</p>
+                    <div style="display:grid;gap:12px;max-width:720px;">
+                        <div><label for="ak-comp-event-select">Event</label><select id="ak-comp-event-select" style="width:100%;padding:8px;"><option value="">Loading events…</option></select></div>
+                        <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="ak-comp-enabled"> This event has a competition</label>
+                        <div id="ak-comp-details-wrap" style="display:none;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div><label style="font-size:0.82rem;">Competition opens (IST)</label><input type="datetime-local" id="ak-comp-start" style="width:100%;padding:8px;"></div>
+                                <div><label style="font-size:0.82rem;">Competition closes (IST)</label><input type="datetime-local" id="ak-comp-end" style="width:100%;padding:8px;"></div>
+                            </div>
+                            <div style="margin-top:10px;"><label style="font-size:0.82rem;">Competition details (shown to applicants)</label><textarea id="ak-comp-instructions" rows="2" style="width:100%;padding:8px;" placeholder="Categories, rules, prizes…"></textarea></div>
+                        </div>
+                        <div><button type="button" class="btn-primary" id="ak-comp-save-settings" style="background:#7c3aed;"><i class="fas fa-save"></i> Save competition settings</button></div>
+                        <p id="ak-comp-settings-msg" style="font-size:0.88rem;font-weight:600;margin:0;"></p>
+                    </div>
+                </div>
                 <p id="ak-comp-stats" style="font-size:0.88rem;color:#475569;margin-bottom:16px;">Open this tab to load entries.</p>
                 <div class="card">
                     <div class="ak-prereg-toolbar">
@@ -2550,9 +2567,9 @@
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
-    <script src="/js/admin-competition.js?v=4"></script>
+    <script src="/js/admin-competition.js?v=5"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism52"></script>
+    <script src="/js/admin-autism.js?v=autism53"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=4"></script>
 </body>
