@@ -778,7 +778,7 @@
                     inlineEl: statusEl,
                     customMessage: data.reused
                         ? data.message ||
-                          'Code still valid. Use the same WhatsApp code for Sign in and Create account.'
+                          'Sign-in code still valid. Use your latest sign-in WhatsApp code (not a registration code).'
                         : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
                 });
                 const codeEl = document.getElementById('login_phone_otp');
@@ -1108,7 +1108,7 @@
                 OtpUi.notifyOtpSent(channel, data, {
                     customMessage: data.reused
                         ? data.message ||
-                          'Code still valid. Use the same WhatsApp code for Sign in and Create account.'
+                          'Registration code still valid. Enter it on Create account — not on Sign in.'
                         : undefined
                 });
             } catch (e) {

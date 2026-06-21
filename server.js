@@ -4018,7 +4018,16 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
             // #endregion
         }
 
-        function rejectLoginOtp() {
+        function rejectAfterSignupCodeCheck() {
+            const tryDest = destAlt || dest;
+            const codeNorm = otpLib.sanitizeOtpCode(codeStr);
+            const signupExpected = otpLib.generateOtpForDestination('phone', tryDest, 'signup', {});
+            if (codeNorm && codeNorm === signupExpected) {
+                return res.status(400).json({
+                    error:
+                        'That WhatsApp code is for Create account (registration), not sign-in. Tap Send OTP on Sign in to get a sign-in code.'
+                });
+            }
             logVerifyFail({});
             return res.status(400).json({ error: 'Invalid or expired code' });
         }
@@ -4030,10 +4039,10 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
                 return tryVerifyDestination(destAlt, (err2, result2) => {
                     if (err2) return res.status(500).json({ error: err2.message });
                     if (result2 && result2.ok) return finishLoginOk();
-                    return rejectLoginOtp();
+                    return rejectAfterSignupCodeCheck();
                 });
             }
-            return rejectLoginOtp();
+            return rejectAfterSignupCodeCheck();
         });
     });
 });
@@ -4114,15 +4123,15 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 } catch (_) {}
                 // #endregion
                 const debug = otpLib.otpDebugResponsesEnabled();
-                const unifiedMsg =
-                    'Your verification code is still valid. Use the same WhatsApp code on Sign in and Create account.';
-                const signupMsg = unifiedMsg;
-                const loginMsg = unifiedMsg;
+                const signupMsg =
+                    purpose === 'signup'
+                        ? 'Your registration code is still valid. Enter it on Create account — not on Sign in.'
+                        : 'Your sign-in code is still valid. Enter it on Sign in — not on Create account.';
                 return res.json({
                     success: true,
                     reused: true,
                     ttlMinutes: otpLib.OTP_TTL_MIN,
-                    message: purpose === 'signup' ? signupMsg : loginMsg,
+                    message: signupMsg,
                     debugCode: debug ? code : undefined
                 });
             }
@@ -4221,25 +4230,49 @@ app.post('/api/otp/verify', withAuxiliaryTables, (req, res) => {
         if (seminarId != null && seminarId !== '') meta.seminarId = parseInt(seminarId, 10);
         if (uidNum != null && !Number.isNaN(uidNum)) meta.userId = uidNum;
     }
-    otpLib.verifyOtp(
-        db,
-        {
-            channel,
-            destination: dest,
-            purpose,
-            code,
-            meta,
-            userId: uidNum,
-            seminarId: meta.seminarId
-        },
-        (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            if (!result || !result.ok) {
-                return res.status(400).json({ error: (result && result.error) || 'Verification failed' });
+    function runOtpVerify() {
+        otpLib.verifyOtp(
+            db,
+            {
+                channel,
+                destination: dest,
+                purpose,
+                code,
+                meta,
+                userId: uidNum,
+                seminarId: meta.seminarId
+            },
+            (err, result) => {
+                if (err) return res.status(500).json({ error: err.message });
+                if (!result || !result.ok) {
+                    return res.status(400).json({ error: (result && result.error) || 'Verification failed' });
+                }
+                res.json({ success: true, token: result.token });
             }
-            res.json({ success: true, token: result.token });
-        }
-    );
+        );
+    }
+
+    if (purpose === 'signup' && channel === 'phone') {
+        const codeNorm = otpLib.sanitizeOtpCode(code);
+        authUsers.findUserByPhone(db, dest, (lookupErr, existing) => {
+            if (lookupErr) return res.status(500).json({ error: lookupErr.message });
+            if (existing && codeNorm) {
+                const loginExpected = otpLib.generateOtpForDestination('phone', dest, 'login', {
+                    userId: existing.id
+                });
+                if (codeNorm === loginExpected) {
+                    return res.status(400).json({
+                        error:
+                            'That code is for Sign in, not Create account. Tap Send OTP on Create account for a registration code.'
+                    });
+                }
+            }
+            runOtpVerify();
+        });
+        return;
+    }
+
+    runOtpVerify();
 });
 
 // 1. Auth: Signup

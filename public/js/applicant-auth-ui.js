@@ -292,7 +292,7 @@
                         customMessage: data.reused
                             ? data.message ||
                               (channel === 'phone'
-                                  ? 'Code still valid. Use the same WhatsApp code for Sign in and Create account.'
+                                  ? 'Registration code still valid. Enter it below and tap Create account — not on Sign in.'
                                   : 'Code still valid. Enter it below and tap Create account.')
                             : channel === 'phone'
                               ? 'Code sent to WhatsApp. Enter it below, then tap Create account.'
@@ -770,7 +770,7 @@
                         inlineEl: statusEl,
                         customMessage: data.reused
                             ? data.message ||
-                              'Code still valid. Use the same WhatsApp code for Sign in and Create account.'
+                              'Sign-in code still valid. Use the code from your latest sign-in WhatsApp message (not a registration code).'
                             : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
                     });
                 } else {
