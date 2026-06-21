@@ -4374,26 +4374,58 @@ app.post('/api/auth/signup', (req, res) => {
 
         if (signupOtpRequired()) {
             const signupChannels = portalAuthPolicy.signupOtpChannels();
-            if (signupChannels.whatsapp && !phoneOtpToken) {
-                return res.status(400).json({ error: 'WhatsApp OTP verification is required before signup.' });
+            const phoneOtpCode = req.body && req.body.phoneOtpCode != null ? String(req.body.phoneOtpCode).trim() : '';
+
+            function finishSignupOtpCheck(resolvedPhoneToken) {
+                if (signupChannels.whatsapp && !resolvedPhoneToken) {
+                    return res.status(400).json({
+                        error:
+                            'WhatsApp OTP verification is required. Enter the code from your latest WhatsApp message, then create your account.'
+                    });
+                }
+                if (signupChannels.email && !emailOtpToken) {
+                    return res.status(400).json({ error: 'Email OTP verification is required before signup.' });
+                }
+                otpLib.validateSignupOtpTokensFlexible(
+                    db,
+                    {
+                        phoneToken: resolvedPhoneToken,
+                        emailToken: emailOtpToken,
+                        needPhone: signupChannels.whatsapp,
+                        needEmail: signupChannels.email
+                    },
+                    (verr, vr) => {
+                        if (verr) return res.status(500).json({ error: verr.message });
+                        if (!vr || !vr.ok) {
+                            return res.status(400).json({ error: (vr && vr.error) || 'Invalid OTP verification' });
+                        }
+                        insertUser();
+                    }
+                );
             }
-            if (signupChannels.email && !emailOtpToken) {
-                return res.status(400).json({ error: 'Email OTP verification is required before signup.' });
+
+            if (phoneOtpToken) {
+                return finishSignupOtpCheck(phoneOtpToken);
             }
-            otpLib.validateSignupOtpTokensFlexible(
-                db,
-                {
-                    phoneToken: phoneOtpToken,
-                    emailToken: emailOtpToken,
-                    needPhone: signupChannels.whatsapp,
-                    needEmail: signupChannels.email
-                },
-                (verr, vr) => {
-                if (verr) return res.status(500).json({ error: verr.message });
-                if (!vr || !vr.ok) return res.status(400).json({ error: (vr && vr.error) || 'Invalid OTP verification' });
-                insertUser();
-            });
-            return;
+            if (signupChannels.whatsapp && phoneOtpCode) {
+                const dest = otpLib.normalizeOtpDestination('phone', phoneNorm);
+                return otpLib.verifyOtp(
+                    db,
+                    { channel: 'phone', destination: dest, purpose: 'signup', code: phoneOtpCode, meta: {} },
+                    (verr, vresult) => {
+                        if (verr) return res.status(500).json({ error: verr.message });
+                        if (!vresult || !vresult.ok || !vresult.token) {
+                            return res.status(400).json({
+                                error:
+                                    (vresult && vresult.error) ||
+                                    'Invalid or expired WhatsApp code. Tap Resend and use the newest code only.'
+                            });
+                        }
+                        finishSignupOtpCheck(vresult.token);
+                    }
+                );
+            }
+            return finishSignupOtpCheck(null);
         }
         insertUser();
     });

@@ -16,6 +16,7 @@
 
     let signupPhoneOtpToken = null;
     let signupEmailOtpToken = null;
+    let signupOtpInflight = false;
     let signupAuthConfig = null;
 
     function signupOtpChannels(cfg) {
@@ -173,6 +174,7 @@
     }
 
     async function sendSignupOtp(channel) {
+        if (signupOtpInflight) return;
         const raw =
             channel === 'email'
                 ? String((document.getElementById('doctor-signup-email') || {}).value || '').trim()
@@ -189,6 +191,7 @@
             sendBtn.disabled = true;
             sendBtn.textContent = 'Sending…';
         }
+        signupOtpInflight = true;
         if (statusEl) {
             statusEl.classList.remove('hidden');
             statusEl.style.color = '#64748b';
@@ -241,6 +244,7 @@
                 statusEl.textContent = 'Could not send OTP. Try again.';
             }
         } finally {
+            signupOtpInflight = false;
             if (sendBtn && sendBtn.textContent === 'Sending…') {
                 sendBtn.disabled = false;
                 sendBtn.textContent = 'Send';
@@ -425,23 +429,28 @@
         const otpHint = document.getElementById('doctor-signup-otp-hint');
         if (otpPanel && otpPanel.style.display !== 'none') {
             const channels = signupOtpChannels();
-            if (!signupTokensReady(channels)) {
-                const missing = [];
-                if (channels.email && !signupEmailOtpToken) missing.push('email');
-                if (channels.whatsapp && !signupPhoneOtpToken) missing.push('WhatsApp');
-                const msg =
-                    'Verify ' +
-                    missing.join(' and ') +
-                    ' before creating your account (Send → enter code → Verify).';
-                if (otpHint) {
-                    otpHint.textContent = msg;
-                    otpHint.classList.remove('hidden');
+            const phoneCode = String(
+                (document.getElementById('doctor-signup-phone-otp') || {}).value || ''
+            ).trim();
+            if (channels.whatsapp) {
+                if (signupPhoneOtpToken) {
+                    body.phoneOtpToken = signupPhoneOtpToken;
+                } else if (phoneCode) {
+                    body.phoneOtpCode = phoneCode;
+                } else {
+                    const msg = 'Enter the WhatsApp OTP code from your latest message, then create your account.';
+                    if (otpHint) {
+                        otpHint.textContent = msg;
+                        otpHint.classList.remove('hidden');
+                    }
+                    return alert(msg);
                 }
-                return alert(msg);
             }
-            if (otpHint) otpHint.classList.add('hidden');
-            if (channels.whatsapp) body.phoneOtpToken = signupPhoneOtpToken;
+            if (channels.email && !signupEmailOtpToken) {
+                return alert('Verify email OTP before creating your account.');
+            }
             if (channels.email) body.emailOtpToken = signupEmailOtpToken;
+            if (otpHint) otpHint.classList.add('hidden');
         }
 
         try {
