@@ -190,25 +190,33 @@
     };
 
     window.previewCompetitionEntry = function previewCompetitionEntry() {
-        const title = document.getElementById('comp-title')?.value?.trim();
-        if (!title) return alert('Enter an entry title first.');
-        const catEl = document.getElementById('comp-category');
-        const catLabel = catEl?.selectedOptions?.[0]?.textContent || catEl?.value || '';
         const semEl = document.getElementById('comp-seminar-select');
         const semLabel = semEl?.value ? semEl.selectedOptions?.[0]?.textContent || semEl.value : '—';
-        const files = document.getElementById('comp-files')?.files;
-        const fileNames = files && files.length ? Array.from(files).map((f) => f.name).join(', ') : '—';
+        const collected =
+            typeof window.collectCompetitionFormData === 'function'
+                ? window.collectCompetitionFormData()
+                : { formData: {}, files: [] };
+        const formData = collected.formData || {};
+        const files = collected.files || [];
+        const fileNames = files.length ? files.map((f) => f.name).join(', ') : '—';
+        const rows = [['Event', semLabel]];
+        document.querySelectorAll('#comp-dynamic-fields [data-comp-key]').forEach((el) => {
+            if (el.dataset.compType === 'file') return;
+            const key = el.dataset.compKey;
+            const label =
+                el.closest('.form-group')?.querySelector('label')?.textContent?.replace(/\s*\*$/, '') || key;
+            let val = formData[key] || '—';
+            if (el.dataset.compType === 'select' && el.selectedOptions?.length) {
+                val = el.selectedOptions[0].textContent || val;
+            }
+            rows.push([label, val]);
+        });
+        if (files.length) rows.push(['Files', fileNames]);
         openFormPreviewModal({
             title: 'Competition entry preview',
             barcodeText: 'COMP-PREVIEW',
             barcodeNote: 'Entry barcode is assigned when you submit.',
-            rows: [
-                ['Event', semLabel],
-                ['Title', title],
-                ['Category', catLabel],
-                ['Description', document.getElementById('comp-description')?.value || '—'],
-                ['Files', fileNames]
-            ],
+            rows: rows,
             onConfirm: function () {
                 document.getElementById('competition-form')?.requestSubmit();
             }

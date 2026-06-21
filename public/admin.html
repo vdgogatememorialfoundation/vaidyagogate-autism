@@ -353,8 +353,17 @@
                                 <div><label style="font-size:0.82rem;">Competition closes (IST)</label><input type="datetime-local" id="ak-comp-end" style="width:100%;padding:8px;"></div>
                             </div>
                             <div style="margin-top:10px;"><label style="font-size:0.82rem;">Competition details (shown to applicants)</label><textarea id="ak-comp-instructions" rows="2" style="width:100%;padding:8px;" placeholder="Categories, rules, prizes…"></textarea></div>
+                            <div id="ak-comp-form-wrap" style="margin-top:16px;padding-top:14px;border-top:1px solid #e9d5ff;">
+                                <h4 style="margin:0 0 8px;color:#6b21a8;">Competition form (linked to this event)</h4>
+                                <p style="font-size:0.84rem;color:#64748b;margin:0 0 12px;">Configure fields applicants fill when submitting a competition entry for the selected event.</p>
+                                <div id="ak-comp-form-fields" style="display:grid;gap:10px;"></div>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+                                    <button type="button" class="btn-primary" id="ak-comp-form-add" style="background:#475569;"><i class="fas fa-plus"></i> Add field</button>
+                                    <button type="button" class="btn-primary" id="ak-comp-form-reset" style="background:#64748b;"><i class="fas fa-undo"></i> Reset to defaults</button>
+                                </div>
+                            </div>
                         </div>
-                        <div><button type="button" class="btn-primary" id="ak-comp-save-settings" style="background:#7c3aed;"><i class="fas fa-save"></i> Save competition settings</button></div>
+                        <div><button type="button" class="btn-primary" id="ak-comp-save-settings" style="background:#7c3aed;"><i class="fas fa-save"></i> Save competition settings &amp; form</button></div>
                         <p id="ak-comp-settings-msg" style="font-size:0.88rem;font-weight:600;margin:0;"></p>
                     </div>
                 </div>
@@ -2567,7 +2576,7 @@
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
-    <script src="/js/admin-competition.js?v=6"></script>
+    <script src="/js/admin-competition.js?v=7"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
     <script src="/js/admin-autism.js?v=autism54"></script>
     <script src="/js/autism-theme.js?v=3"></script>

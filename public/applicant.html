@@ -226,9 +226,9 @@
                 <button type="button" class="menu-item" data-tab="tab-seminars"><i class="fas fa-calendar-check"></i> Events</button>
                 <button type="button" class="menu-item" data-tab="tab-prereg"><i class="fas fa-clipboard-list"></i> Pre-registration</button>
                 <button type="button" class="menu-item" data-tab="tab-applications"><i class="fas fa-tasks"></i> Main registration</button>
-                <button type="button" class="menu-item" data-tab="tab-competition"><i class="fas fa-photo-video"></i> Competition uploads</button>
-                <button type="button" class="menu-item" data-tab="tab-abstract"><i class="fas fa-file-upload"></i> Case presentation</button>
-                <button type="button" class="menu-item" data-tab="tab-case-track"><i class="fas fa-route"></i> Track case applications</button>
+                <button type="button" class="menu-item" data-tab="tab-competition"><i class="fas fa-trophy"></i> Competition</button>
+                <button type="button" class="menu-item hidden" data-tab="tab-abstract"><i class="fas fa-file-upload"></i> Case presentation</button>
+                <button type="button" class="menu-item hidden" data-tab="tab-case-track"><i class="fas fa-route"></i> Track case applications</button>
                 <button type="button" class="menu-item" data-tab="tab-feedback"><i class="fas fa-star"></i> Event feedback</button>
                 <button type="button" class="menu-item" data-tab="tab-support"><i class="fas fa-ticket-alt"></i> Support tickets</button>
                 <button type="button" class="menu-item hidden" data-tab="tab-orders"><i class="fas fa-receipt"></i> Orders</button>
@@ -284,10 +284,8 @@
                         <div class="ak-hub-actions">
                             <button type="button" class="ak-hub-tile" onclick="showEventRegisterView()"><i class="fas fa-calendar-plus"></i><span>Register Event</span><small>Pre-registration</small></button>
                             <button type="button" class="ak-hub-tile" onclick="showEventTrackView()"><i class="fas fa-route"></i><span>Track Event</span><small>Pre-reg &amp; main status</small></button>
-                            <button type="button" class="ak-hub-tile" onclick="showCompRegisterView()"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload files</small></button>
-                            <button type="button" class="ak-hub-tile" onclick="showCompTrackView()"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry status</small></button>
-                            <button type="button" class="ak-hub-tile" onclick="showCaseRegisterView()"><i class="fas fa-file-upload"></i><span>Case presentation</span><small>Apply when open</small></button>
-                            <button type="button" class="ak-hub-tile" onclick="showCaseTrackView()"><i class="fas fa-route"></i><span>Track case apps</span><small>Submission status</small></button>
+                            <button type="button" class="ak-hub-tile" onclick="showCompRegisterView()"><i class="fas fa-trophy"></i><span>Competition</span><small>Submit when open</small></button>
+                            <button type="button" class="ak-hub-tile" onclick="showCompTrackView()"><i class="fas fa-route"></i><span>Track competition</span><small>Entry status</small></button>
                         </div>
                     </div>
                     <div class="card">
@@ -569,17 +567,14 @@
                 </div>
 
                 <div id="tab-competition" class="tab-pane hidden">
-                    <h3 class="section-title">Competition uploads</h3>
-                    <p style="color:#64748b;margin-bottom:16px;">Upload photos, videos, PPT, or PDF entries for competitions.</p>
+                    <h3 class="section-title">Competition</h3>
+                    <p style="color:#64748b;margin-bottom:16px;">Submit your competition entry for events that have competition enabled.</p>
                     <p id="comp-track-live" class="hidden" style="margin-bottom:12px;font-size:0.88rem;font-weight:600;color:#1e40af;"></p>
                     <div class="card">
                         <form id="competition-form">
                             <div class="form-group"><label>Event *</label><select id="comp-seminar-select" required><option value="">Select event</option></select></div>
                             <div id="comp-event-schedule" class="hidden" style="margin-bottom:12px;padding:10px 12px;border:1px solid #e9d5ff;border-radius:8px;background:#faf5ff;font-size:0.88rem;color:#475569;"></div>
-                            <div class="form-group"><label>Entry title *</label><input type="text" id="comp-title" required></div>
-                            <div class="form-group"><label>Category</label><select id="comp-category"><option value="art">Art &amp; Drawing</option><option value="essay">Essay</option><option value="video">Video</option><option value="presentation">Presentation (PPT)</option></select></div>
-                            <div class="form-group"><label>Description</label><textarea id="comp-description" rows="3"></textarea></div>
-                            <div class="form-group"><label>Files (images, video, PPT, PDF) *</label><input type="file" id="comp-files" multiple accept="image/*,video/*,.ppt,.pptx,.pdf"></div>
+                            <div id="comp-dynamic-fields"></div>
                             <div style="display:flex;flex-wrap:wrap;gap:10px;">
                                 <button type="button" class="btn-primary" style="background:#475569;" onclick="previewCompetitionEntry()"><i class="fas fa-eye"></i> Preview entry</button>
                                 <button type="submit" class="btn-primary"><i class="fas fa-cloud-upload-alt"></i> Submit entry</button>
@@ -940,7 +935,7 @@
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism34"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>
-    <script src="/js/applicant-autism.js?v=autism52"></script>
+    <script src="/js/applicant-autism.js?v=autism53"></script>
     <script src="/js/autism-announcements.js?v=5"></script>
     <script src="/js/autism-applicant-live.js?v=20260620a"></script>
     <script src="/js/autism-theme.js?v=3"></script>

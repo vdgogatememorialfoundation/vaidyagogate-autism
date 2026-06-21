@@ -13,12 +13,15 @@
     const _lastGridFp = { prereg: '', main: '' };
     let _loadPreregSeminarsPromise = null;
     let competitionEvents = [];
+    let competitionFormConfig = null;
 
     const HIDDEN_TABS = [
         'tab-orders',
         'tab-receipts',
         'tab-payments',
-        'tab-volunteer'
+        'tab-volunteer',
+        'tab-abstract',
+        'tab-case-track'
     ];
 
     function separatePreregAndMainRegistration() {
@@ -170,10 +173,8 @@
             { tab: 'tab-prereg-track', icon: 'fa-route', label: 'Pre-reg tracking' },
             { tab: 'tab-main-reg-hub', icon: 'fa-file-signature', label: 'Main registration' },
             { tab: 'tab-main-reg-track', icon: 'fa-tasks', label: 'Main reg tracking' },
-            { tab: 'tab-comp-register', icon: 'fa-cloud-upload-alt', label: 'Register Competition' },
-            { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' },
-            { tab: 'tab-abstract', icon: 'fa-file-upload', label: 'Case presentation' },
-            { tab: 'tab-case-track', icon: 'fa-route', label: 'Track case applications' }
+            { tab: 'tab-comp-register', icon: 'fa-trophy', label: 'Competition' },
+            { tab: 'tab-comp-track', icon: 'fa-route', label: 'Track competition' }
         ];
         const anchor = menu.querySelector('[data-tab="tab-feedback"]');
         hubItems.forEach((it) => {
@@ -375,8 +376,8 @@
             regPane.id = 'tab-comp-register';
             regPane.className = 'tab-pane hidden';
             regPane.innerHTML =
-                '<h3 class="section-title">Register competition entry</h3>' +
-                '<p style="color:#64748b;margin-bottom:16px;">Upload photos, videos, PPT, or PDF for competitions.</p>';
+                '<h3 class="section-title">Competition</h3>' +
+                '<p style="color:#64748b;margin-bottom:16px;">Submit your competition entry when submissions are open.</p>';
             if (formCard) regPane.appendChild(formCard);
             const trackPane = document.createElement('div');
             trackPane.id = 'tab-comp-track';
@@ -384,7 +385,7 @@
             trackPane.innerHTML =
                 '<div class="ak-track-page">' +
                 '<div class="ak-track-page-head">' +
-                '<h3><i class="fas fa-photo-video" style="color:#7c3aed;margin-right:8px;"></i> Track competition entries</h3>' +
+                '<h3><i class="fas fa-trophy" style="color:#7c3aed;margin-right:8px;"></i> Track competition</h3>' +
                 '<p>See when your files are received, reviewed, and approved.</p>' +
                 '</div>' +
                 '<section class="ak-track-section ak-track-section--comp">' +
@@ -439,7 +440,10 @@
 
     function showCompRegisterView() {
         if (typeof switchTab === 'function') switchTab('tab-comp-register');
-        loadCompetitionEvents().then(() => renderCompetitionSchedulePanel());
+        loadCompetitionEvents().then(() => {
+            renderCompetitionSchedulePanel();
+            loadCompetitionFormForSelectedEvent();
+        });
     }
 
     function showCompTrackView() {
@@ -496,7 +500,145 @@
         });
         if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
         renderCompetitionSchedulePanel();
+        loadCompetitionFormForSelectedEvent();
     }
+
+    async function loadCompetitionFormForSelectedEvent() {
+        const sel = document.getElementById('comp-seminar-select');
+        const sid = sel && sel.value ? parseInt(sel.value, 10) : null;
+        const box = document.getElementById('comp-dynamic-fields');
+        if (!box) return;
+        if (!sid) {
+            competitionFormConfig = null;
+            box.innerHTML =
+                '<p style="color:#64748b;font-size:0.88rem;margin:0;">Select an event to load the competition form.</p>';
+            return;
+        }
+        box.innerHTML = '<p style="color:#64748b;font-size:0.88rem;margin:0;">Loading form…</p>';
+        try {
+            const data = await fetchJson('/api/competition/form-config?seminarId=' + sid);
+            competitionFormConfig = data.formConfig || null;
+            renderCompetitionDynamicForm();
+        } catch (e) {
+            competitionFormConfig = null;
+            box.innerHTML =
+                '<p style="color:#b91c1c;font-size:0.88rem;margin:0;">' +
+                escapeAkHtml(e.message || 'Could not load competition form.') +
+                '</p>';
+        }
+    }
+
+    function renderCompetitionDynamicForm() {
+        const box = document.getElementById('comp-dynamic-fields');
+        if (!box) return;
+        const cfg = competitionFormConfig;
+        const fields = cfg && Array.isArray(cfg.fields) ? cfg.fields.filter((f) => f.enabled !== false) : [];
+        if (!fields.length) {
+            box.innerHTML =
+                '<p style="color:#64748b;font-size:0.88rem;margin:0;">No competition form fields are configured for this event yet.</p>';
+            return;
+        }
+        box.innerHTML = fields
+            .map((f) => {
+                const req = f.required ? ' *' : '';
+                const id = 'comp-field-' + f.key;
+                if (f.type === 'file') {
+                    return (
+                        '<div class="form-group"><label for="' +
+                        id +
+                        '">' +
+                        escapeAkHtml(f.label || f.key) +
+                        req +
+                        '</label><input type="file" id="' +
+                        id +
+                        '" data-comp-key="' +
+                        escapeAkHtml(f.key) +
+                        '" data-comp-type="file"' +
+                        (f.required ? ' required' : '') +
+                        ' multiple accept="image/*,video/*,.ppt,.pptx,.pdf"></div>'
+                    );
+                }
+                if (f.type === 'textarea') {
+                    return (
+                        '<div class="form-group"><label for="' +
+                        id +
+                        '">' +
+                        escapeAkHtml(f.label || f.key) +
+                        req +
+                        '</label><textarea id="' +
+                        id +
+                        '" data-comp-key="' +
+                        escapeAkHtml(f.key) +
+                        '" data-comp-type="textarea" rows="3"' +
+                        (f.required ? ' required' : '') +
+                        '></textarea></div>'
+                    );
+                }
+                if (f.type === 'select') {
+                    const opts = (f.options || [])
+                        .map(
+                            (o) =>
+                                '<option value="' +
+                                escapeAkHtml(o.value) +
+                                '">' +
+                                escapeAkHtml(o.label || o.value) +
+                                '</option>'
+                        )
+                        .join('');
+                    return (
+                        '<div class="form-group"><label for="' +
+                        id +
+                        '">' +
+                        escapeAkHtml(f.label || f.key) +
+                        req +
+                        '</label><select id="' +
+                        id +
+                        '" data-comp-key="' +
+                        escapeAkHtml(f.key) +
+                        '" data-comp-type="select"' +
+                        (f.required ? ' required' : '') +
+                        '><option value="">Select</option>' +
+                        opts +
+                        '</select></div>'
+                    );
+                }
+                return (
+                    '<div class="form-group"><label for="' +
+                    id +
+                    '">' +
+                    escapeAkHtml(f.label || f.key) +
+                    req +
+                    '</label><input type="text" id="' +
+                    id +
+                    '" data-comp-key="' +
+                    escapeAkHtml(f.key) +
+                    '" data-comp-type="text"' +
+                    (f.required ? ' required' : '') +
+                    '></div>'
+                );
+            })
+            .join('');
+    }
+
+    function collectCompetitionFormData() {
+        const data = {};
+        const files = [];
+        document.querySelectorAll('#comp-dynamic-fields [data-comp-key]').forEach((el) => {
+            const key = el.dataset.compKey;
+            if (!key) return;
+            if (el.dataset.compType === 'file') {
+                if (el.files && el.files.length) {
+                    for (let i = 0; i < el.files.length; i++) files.push(el.files[i]);
+                }
+                return;
+            }
+            data[key] = el.value != null ? String(el.value).trim() : '';
+        });
+        return { formData: data, files };
+    }
+
+    window.collectCompetitionFormData = collectCompetitionFormData;
+    window.loadCompetitionFormForSelectedEvent = loadCompetitionFormForSelectedEvent;
 
     function renderCompetitionSchedulePanel() {
         const panel = document.getElementById('comp-event-schedule');
@@ -506,7 +648,7 @@
         if (!competitionEvents.length) {
             panel.classList.remove('hidden');
             panel.innerHTML =
-                '<strong style="color:#6b21a8;">No competition events</strong><p style="margin:6px 0 0;">Registration forms are available; competition uploads are not open for any event yet.</p>';
+                '<strong style="color:#6b21a8;">No competition events</strong><p style="margin:6px 0 0;">Registration forms are available; competition is not open for any event yet.</p>';
             if (submitBtn) submitBtn.disabled = true;
             return;
         }
@@ -545,27 +687,8 @@
         panel.innerHTML = html;
     }
 
-    function showCaseRegisterView() {
-        if (typeof switchTab === 'function') switchTab('tab-abstract');
-        if (typeof loadCaseProgramsGrid === 'function') loadCaseProgramsGrid();
-    }
-
-    function showCaseTrackView() {
-        if (typeof switchTab === 'function') switchTab('tab-case-track');
-        if (typeof loadCaseApplicationsTracker === 'function') loadCaseApplicationsTracker();
-    }
-
     window.showCompRegisterView = showCompRegisterView;
     window.showCompTrackView = showCompTrackView;
-    window.showCaseRegisterView = showCaseRegisterView;
-    window.showCaseTrackView = showCaseTrackView;
-
-    function enableCasePresentationNav() {
-        document.querySelectorAll('[data-tab="tab-abstract"], [data-tab="tab-case-track"]').forEach((el) => {
-            el.classList.remove('hidden');
-            el.style.display = '';
-        });
-    }
 
     function hideAutismDisabledTabs() {
         HIDDEN_TABS.forEach((tabId) => {
@@ -2975,14 +3098,8 @@
         event.preventDefault();
         const uid = currentUserId();
         if (!uid) return alert('Please sign in again.');
-        const title = document.getElementById('comp-title')?.value?.trim();
-        const category = document.getElementById('comp-category')?.value || '';
-        const description = document.getElementById('comp-description')?.value || '';
         const seminarId = document.getElementById('comp-seminar-select')?.value || '';
-        const files = document.getElementById('comp-files')?.files;
-        if (!title) return alert('Enter a title.');
         if (!seminarId) return alert('Select the event for this competition entry.');
-        if (!files || !files.length) return alert('Upload at least one file (photo, video, PPT, or PDF).');
         const compEv = competitionEvents.find((x) => String(x.id) === String(seminarId));
         if (compEv && compEv.windowState !== 'open') {
             return alert(
@@ -2993,12 +3110,16 @@
                       : 'Competition submissions have closed for this event.'
             );
         }
+        const collected = collectCompetitionFormData();
+        const formData = collected.formData || {};
+        const files = collected.files || [];
         const fd = new FormData();
         fd.append('userId', uid);
-        fd.append('title', title);
-        fd.append('category', category);
-        fd.append('description', description);
-        if (seminarId) fd.append('seminarId', seminarId);
+        fd.append('seminarId', seminarId);
+        fd.append('formData', JSON.stringify(formData));
+        if (formData.title) fd.append('title', formData.title);
+        if (formData.category) fd.append('category', formData.category);
+        if (formData.description) fd.append('description', formData.description);
         for (let i = 0; i < files.length; i++) fd.append('files', files[i]);
         const msg = document.getElementById('comp-status-msg');
         try {
@@ -3010,6 +3131,7 @@
                 msg.style.color = '#047857';
             }
             document.getElementById('competition-form')?.reset();
+            loadCompetitionFormForSelectedEvent();
             loadCompetitionList();
         } catch (e) {
             if (msg) {
@@ -3027,8 +3149,8 @@
             const rows = await fetchJson('/api/competition-submissions/' + uid);
             if (!rows.length) {
                 box.innerHTML = akTrackEmptyHtml(
-                    'fa-photo-video',
-                    'No competition entries yet. Use <strong>Register Competition</strong> to upload your work.'
+                    'fa-trophy',
+                    'No competition entries yet. Use <strong>Competition</strong> to submit your work.'
                 );
                 return;
             }
@@ -3052,10 +3174,8 @@
             '<button type="button" class="ak-hub-tile" data-ak-hub="prereg-track"><i class="fas fa-route"></i><span>Pre-reg tracking</span><small>Status &amp; tracking IDs</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-hub"><i class="fas fa-file-signature"></i><span>Main registration</span><small>Complete registration</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-track"><i class="fas fa-tasks"></i><span>Main reg tracking</span><small>Application status</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload entry files</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry review status</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="case-register"><i class="fas fa-file-upload"></i><span>Case presentation</span><small>Apply when open</small></button>' +
-            '<button type="button" class="ak-hub-tile" data-ak-hub="case-track"><i class="fas fa-route"></i><span>Track case apps</span><small>Submission status</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-trophy"></i><span>Competition</span><small>Submit when open</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-route"></i><span>Track competition</span><small>Entry review status</small></button>' +
             '</div>';
         if (quickCard) dash.insertBefore(hub, quickCard);
         else dash.appendChild(hub);
@@ -3068,8 +3188,6 @@
                 else if (k === 'main-reg-track') showMainRegTrackView();
                 else if (k === 'comp-register') showCompRegisterView();
                 else if (k === 'comp-track') showCompTrackView();
-                else if (k === 'case-register') showCaseRegisterView();
-                else if (k === 'case-track') showCaseTrackView();
             });
         });
         const ql = dash.querySelector('.card h3');
@@ -3098,7 +3216,10 @@
         document.getElementById('prereg-wizard-next')?.addEventListener('click', onPreregWizardNext);
         document.getElementById('prereg-wizard-back')?.addEventListener('click', onPreregWizardBack);
         document.getElementById('competition-form')?.addEventListener('submit', submitCompetition);
-        document.getElementById('comp-seminar-select')?.addEventListener('change', renderCompetitionSchedulePanel);
+        document.getElementById('comp-seminar-select')?.addEventListener('change', () => {
+            renderCompetitionSchedulePanel();
+            loadCompetitionFormForSelectedEvent();
+        });
     }
 
     window.loadPreregList = loadPreregList;
@@ -3324,13 +3445,12 @@
             } else if (tabId === 'tab-main-reg-track') {
                 if (typeof loadApplications === 'function') loadApplications(true);
             } else if (tabId === 'tab-comp-register') {
-                loadCompetitionEvents().then(() => renderCompetitionSchedulePanel());
+                loadCompetitionEvents().then(() => {
+                    renderCompetitionSchedulePanel();
+                    loadCompetitionFormForSelectedEvent();
+                });
             } else if (tabId === 'tab-comp-track') {
                 loadCompetitionList();
-            } else if (tabId === 'tab-abstract') {
-                if (typeof loadCaseProgramsGrid === 'function') loadCaseProgramsGrid();
-            } else if (tabId === 'tab-case-track') {
-                if (typeof loadCaseApplicationsTracker === 'function') loadCaseApplicationsTracker();
             }
         };
         window.switchTab.__akHubHook = true;
@@ -3849,7 +3969,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
-        enableCasePresentationNav();
         separatePreregAndMainRegistration();
         wireRegisterModal();
         setupDashboardHub();
