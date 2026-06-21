@@ -131,6 +131,8 @@
     function applyApplicantAuthUi(cfg) {
         cfg = cfg || global.__portalAuth || {};
         const passwordless = !!cfg.passwordlessLogin;
+        const loginOtpOn = cfg.applicantLoginOtpRequired === true;
+        const signupOtpOn = cfg.requireSignupOtp !== false;
         const isAutismDash = document.body && document.body.classList.contains('ak-portal-dash');
         const signupChannels = {
             whatsapp: cfg.signupOtpWhatsapp !== false,
@@ -148,12 +150,18 @@
         ['doctor-login-password-wrap', 'doctor-signup-password-wrap'].forEach((id) => {
             const el = document.getElementById(id);
             if (!el) return;
-            el.style.display = passwordless ? 'none' : '';
+            const isLogin = id === 'doctor-login-password-wrap';
+            const showPwd = isLogin ? !loginOtpOn : !signupOtpOn || !passwordless;
+            el.style.display = showPwd ? '' : 'none';
+            el.classList.toggle('hidden', !showPwd);
             const input = el.querySelector('input[type="password"]');
-            if (input) input.required = !passwordless;
+            if (input) input.required = showPwd;
         });
         const forgotBtn = document.getElementById('doctor-forgot-password-btn');
-        if (forgotBtn) forgotBtn.style.display = passwordless ? 'none' : '';
+        if (forgotBtn) {
+            forgotBtn.style.display = loginOtpOn ? 'none' : '';
+            forgotBtn.classList.toggle('hidden', loginOtpOn);
+        }
 
         const signupEmailRow = document.getElementById('doctor-signup-email-otp-row');
         if (signupEmailRow) {
@@ -196,10 +204,7 @@
             const loginLead = document.getElementById('doctor-login-otp-lead');
             const loginPanel = document.getElementById('doctor-login-otp-panel');
             if (loginPanel) {
-                loginPanel.style.display =
-                    passwordless || cfg.applicantLoginOtpRequired || cfg.requireLoginOtp
-                        ? 'block'
-                        : loginPanel.style.display;
+                loginPanel.style.display = loginOtpOn ? 'block' : 'none';
             }
             if (loginLead) {
                 if (passwordless) {
@@ -216,8 +221,23 @@
             }
         }
         const signupPanel = document.getElementById('doctor-signup-otp-panel');
-        if (signupPanel && cfg.requireSignupOtp !== false) {
-            signupPanel.style.display = 'block';
+        if (signupPanel) {
+            signupPanel.style.display = signupOtpOn ? 'block' : 'none';
+        }
+
+        const loginOtpWrap = document.getElementById('doctor-login-otp-wrap');
+        if (loginOtpWrap) {
+            loginOtpWrap.style.display = loginOtpOn ? '' : 'none';
+            loginOtpWrap.classList.toggle('hidden', !loginOtpOn);
+        }
+
+        if (phoneOnlyLoginUi) {
+            const loginIntro = document.querySelector('#doctor-auth-login-panel > p');
+            if (loginIntro) {
+                loginIntro.textContent = loginOtpOn
+                    ? 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.'
+                    : 'Sign in with your email and password.';
+            }
         }
     }
 
@@ -233,7 +253,7 @@
             const q = portal ? '?portal=' + encodeURIComponent(portal) : '';
             const res = await fetch('/api/auth/login-otp-required' + q);
             const d = await res.json();
-            panelEl.style.display = d.required || d.passwordless ? 'block' : 'none';
+            panelEl.style.display = d.required ? 'block' : 'none';
         } catch (_) {
             panelEl.style.display = 'none';
         }
@@ -479,10 +499,9 @@
             if (!passwordless) body.password = password;
             const otpActive =
                 otpPanel &&
-                (otpPanel.style.display === 'block' ||
-                    passwordless ||
-                    cfg.applicantLoginOtpRequired ||
-                    cfg.requireLoginOtp);
+                otpPanel.style.display !== 'none' &&
+                !otpPanel.classList.contains('hidden') &&
+                (cfg.applicantLoginOtpRequired === true || cfg.requireLoginOtp === true);
             if (otpActive) {
                 if (loginChannels.whatsapp && !phoneOtpToken) {
                     const msg = passwordless

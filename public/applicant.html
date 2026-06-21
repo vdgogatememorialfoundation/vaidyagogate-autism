@@ -144,6 +144,7 @@
             <form id="doctor-login-form" data-auth-ui="phone-v2">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
                 <input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">
+                <div id="doctor-login-otp-wrap">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>
                 <div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
                     <input type="text" id="doctor-phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
@@ -151,7 +152,10 @@
                     <button type="button" id="doctor-resend-otp-phone" class="ak-otp-action-btn" style="padding:10px 14px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-weight:700;color:#475569;white-space:nowrap;">Resend</button>
                 </div>
                 <p id="doctor-login-otp-status" style="font-size:0.82rem;color:#64748b;margin:0 0 10px;min-height:1.2em;"></p>
+                </div>
                 <div id="doctor-login-password-wrap" class="hidden">
+                <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email</label>
+                <input type="email" id="doctor-login-email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:12px 0 6px;">Password</label>
                 <input type="password" id="doctor-login-password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
                 <p style="margin:10px 0 0;">
@@ -179,7 +183,7 @@
                     <input type="email" id="doctor-signup-email" placeholder="you@example.com" required autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
                     <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
                     <input type="tel" id="doctor-signup-phone" placeholder="10-digit mobile number" required autocomplete="tel" inputmode="tel" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
-                    <div id="doctor-signup-otp-panel" style="display:block;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
+                    <div id="doctor-signup-otp-panel" style="display:none;margin-bottom:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
                         <p id="doctor-signup-otp-lead" style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">Tap Send OTP once, enter the code from WhatsApp, then tap Create account.</p>
                         <p id="doctor-signup-otp-hint" class="hidden" style="font-size:0.8rem;color:#b45309;margin-bottom:8px;font-weight:600;"></p>
                         <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>
@@ -926,10 +930,10 @@
     <script src="/js/site-branding.js?v=20260529b"></script>
     <script src="/js/otp-ui.js?v=20260622"></script>
     <script src="/js/http-json.js"></script>
-    <script src="/js/portal-auth.js?v=20260622"></script>
+    <script src="/js/portal-auth.js?v=20260624e"></script>
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
-    <script src="/js/applicant-auth-ui.js?v=20260624d"></script>
+    <script src="/js/applicant-auth-ui.js?v=20260624e"></script>
     <script src="/js/portal-upload.js?v=20260523"></script>
     <script src="/js/applicant.js?v=autism34"></script>
     <script src="/js/autism-form-preview.js?v=20260615c"></script>

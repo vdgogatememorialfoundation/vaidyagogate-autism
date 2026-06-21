@@ -31,6 +31,9 @@
 
     function signupOtpChannels(cfg) {
         cfg = cfg || signupAuthConfig || global.__portalAuth || {};
+        if (cfg.required === false || cfg.requireSignupOtp === false) {
+            return { whatsapp: false, email: false };
+        }
         if (cfg.channels && typeof cfg.channels === 'object') {
             return { whatsapp: cfg.channels.whatsapp !== false, email: false };
         }
@@ -38,6 +41,11 @@
             whatsapp: cfg.signupOtpWhatsapp !== false,
             email: false
         };
+    }
+
+    function loginOtpEnabled(cfg) {
+        cfg = cfg || global.__portalAuth || {};
+        return cfg.applicantLoginOtpRequired === true;
     }
 
     function signupTokensReady(channels) {
@@ -51,6 +59,7 @@
     const PHONE_LOGIN_FORM_INNER =
         '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>' +
         '<input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+        '<div id="doctor-login-otp-wrap">' +
         '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>' +
         '<div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +
         '<input type="text" id="doctor-phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">' +
@@ -58,6 +67,14 @@
         '<button type="button" id="doctor-resend-otp-phone" class="ak-otp-action-btn" style="padding:10px 14px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;font-weight:700;color:#475569;white-space:nowrap;">Resend</button>' +
         '</div>' +
         '<p id="doctor-login-otp-status" style="font-size:0.82rem;color:#64748b;margin:0 0 10px;min-height:1.2em;"></p>' +
+        '</div>' +
+        '<div id="doctor-login-password-wrap" class="hidden">' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email</label>' +
+        '<input type="email" id="doctor-login-email" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:12px 0 6px;">Password</label>' +
+        '<input type="password" id="doctor-login-password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:8px;">' +
+        '<p style="margin:0 0 10px;"><button type="button" id="doctor-forgot-password-btn" style="padding:0;border:none;background:none;color:#0f766e;font-weight:700;font-size:0.85rem;cursor:pointer;text-decoration:underline;">Forgot password?</button></p>' +
+        '</div>' +
         '<p id="doctor-login-err" class="hidden" style="color:#b91c1c;font-size:0.85rem;margin-top:10px;font-weight:600;"></p>' +
         '<button type="submit" id="doctor-login-submit" class="btn-primary" style="width:100%;margin-top:8px;">Sign in</button>';
 
@@ -348,11 +365,27 @@
             const res = await fetch('/api/auth/signup-otp-required');
             const d = await res.json();
             signupAuthConfig = d;
-            panel.style.display = d.required !== false ? 'block' : 'none';
-            if (global.PortalAuth && typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
+            const otpOn = d.required !== false;
+            panel.style.display = otpOn ? 'block' : 'none';
+            const signupPwdWrap = document.getElementById('doctor-signup-password-wrap');
+            if (signupPwdWrap) {
+                const showPwd = !otpOn || !(global.__portalAuth && global.__portalAuth.passwordlessLogin);
+                signupPwdWrap.style.display = showPwd ? '' : 'none';
+                const pw = document.getElementById('doctor-signup-password');
+                if (pw) pw.required = showPwd;
+            }
+            if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {
+                const cfg = await global.PortalAuth.loadPublicPortalAuth();
+                global.__portalAuth = Object.assign({}, cfg, {
+                    requireSignupOtp: otpOn,
+                    signupOtpWhatsapp: d.whatsapp !== false,
+                    signupOtpEmail: false
+                });
+                global.PortalAuth.applyApplicantAuthUi(global.__portalAuth);
+            } else if (global.PortalAuth && typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
                 global.PortalAuth.applyApplicantAuthUi(
                     Object.assign({}, global.__portalAuth || {}, {
-                        requireSignupOtp: d.required,
+                        requireSignupOtp: otpOn,
                         signupOtpWhatsapp: d.whatsapp !== false,
                         signupOtpEmail: false
                     })
@@ -361,6 +394,44 @@
         } catch (_) {
             panel.style.display = 'none';
         }
+    }
+
+    async function refreshLoginAuthUi() {
+        try {
+            if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {
+                const cfg = await global.PortalAuth.loadPublicPortalAuth();
+                global.__portalAuth = cfg;
+                if (typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
+                    global.PortalAuth.applyApplicantAuthUi(cfg);
+                }
+            } else {
+                const res = await fetch('/api/public/portal-auth');
+                global.__portalAuth = await res.json();
+            }
+            const otpOn = loginOtpEnabled(global.__portalAuth);
+            const phoneEl = document.getElementById('doctor-login-phone');
+            if (phoneEl) phoneEl.required = otpOn;
+            const emailEl = document.getElementById('doctor-login-email');
+            const passEl = document.getElementById('doctor-login-password');
+            if (emailEl) emailEl.required = !otpOn;
+            if (passEl) passEl.required = !otpOn;
+            const otpWrap = document.getElementById('doctor-login-otp-wrap');
+            const pwdWrap = document.getElementById('doctor-login-password-wrap');
+            if (otpWrap) {
+                otpWrap.style.display = otpOn ? '' : 'none';
+                otpWrap.classList.toggle('hidden', !otpOn);
+            }
+            if (pwdWrap) {
+                pwdWrap.style.display = otpOn ? 'none' : '';
+                pwdWrap.classList.toggle('hidden', otpOn);
+            }
+            const loginIntro = document.querySelector('#doctor-auth-login-panel > p');
+            if (loginIntro) {
+                loginIntro.textContent = otpOn
+                    ? 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.'
+                    : 'Sign in with your email and password.';
+            }
+        } catch (_) {}
     }
 
     async function accountCheck(email, password, phone) {
@@ -402,11 +473,12 @@
         }
         const passwordEl = document.getElementById('doctor-signup-password');
         const password = passwordEl ? passwordEl.value : '';
-        const passwordless =
-            (global.__portalAuth && global.__portalAuth.passwordlessLogin) ||
-            (global.PortalAuth && global.__portalAuth && global.__portalAuth.passwordlessLogin);
-        if (!passwordless && !String(password || '').trim()) {
-            return alert('Enter a password.');
+        const signupOtpOn = global.__portalAuth && global.__portalAuth.requireSignupOtp !== false;
+        const passwordless = !!(global.__portalAuth && global.__portalAuth.passwordlessLogin);
+        if (!signupOtpOn || !passwordless) {
+            if (!String(password || '').trim()) {
+                return alert('Enter a password.');
+            }
         }
         const errEl = document.getElementById('doctor-signup-err');
 
@@ -458,8 +530,9 @@
         const body = { firstName, lastName, email, phone, password, role: 'doctor' };
         const otpPanel = document.getElementById('doctor-signup-otp-panel');
         const otpHint = document.getElementById('doctor-signup-otp-hint');
-        if (otpPanel && otpPanel.style.display !== 'none') {
-            const channels = signupOtpChannels();
+        const channels = signupOtpChannels(signupAuthConfig || global.__portalAuth);
+        const otpRequired = channels.whatsapp || channels.email;
+        if (otpPanel && otpPanel.style.display !== 'none' && otpRequired) {
             const phoneCode = String(
                 (document.getElementById('doctor-signup-phone-otp') || {}).value || ''
             ).trim();
@@ -740,6 +813,58 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             clearErr();
+            const cfg = global.__portalAuth || {};
+            const otpOn = loginOtpEnabled(cfg);
+
+            if (!otpOn) {
+                const emailRaw = String((document.getElementById('doctor-login-email') || {}).value || '').trim();
+                const password = String((document.getElementById('doctor-login-password') || {}).value || '');
+                let email = emailRaw.toLowerCase();
+                if (typeof validateEmailClient === 'function') {
+                    const ev = validateEmailClient(emailRaw, 'Email');
+                    if (!ev.valid) return showErr(ev.message);
+                    email = ev.cleanedEmail;
+                } else if (!email) {
+                    return showErr('Enter your email.');
+                }
+                if (!password) return showErr('Enter your password.');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Signing in…';
+                }
+                setStatus('Signing you in…', '#64748b');
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, portal: 'doctor' })
+                    });
+                    const { data, parseFailed } = await readApiJson(res);
+                    if (!res.ok || !data.success) {
+                        const msg =
+                            parseFailed && global.HttpJson
+                                ? global.HttpJson.apiErrorMessage(res, data, true)
+                                : data.error || 'Sign in failed.';
+                        setStatus('', '#64748b');
+                        return showErr(msg);
+                    }
+                    if (global.PortalAuth) global.PortalAuth.setUser('doctor', data.user);
+                    window.currentUser = data.user;
+                    setStatus('', '#64748b');
+                    if (typeof onSuccess === 'function') onSuccess(data.user);
+                } catch (err) {
+                    console.error(err);
+                    setStatus('', '#64748b');
+                    showErr('Could not reach the server.');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign in';
+                    }
+                }
+                return;
+            }
+
             const pv = validatedLoginPhoneValue();
             if (!pv.valid) return showErr(pv.message);
             const code = String((document.getElementById('doctor-phone-otp') || {}).value || '')
@@ -974,10 +1099,14 @@
             blockHomepageNavigation();
             if (global.PortalAuth && typeof global.PortalAuth.loadPublicPortalAuth === 'function') {
                 global.PortalAuth.loadPublicPortalAuth().then((cfg) => {
+                    global.__portalAuth = cfg;
                     if (typeof global.PortalAuth.applyApplicantAuthUi === 'function') {
                         global.PortalAuth.applyApplicantAuthUi(cfg);
                     }
+                    refreshLoginAuthUi();
                 });
+            } else {
+                refreshLoginAuthUi();
             }
             refreshSignupOtpPanel();
             wireSignupOtpButtons();

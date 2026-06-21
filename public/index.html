@@ -413,17 +413,23 @@
                 </div>
                 <div id="loginForm">
                     <form onsubmit="handleLogin(event)">
-                        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
-                        <div class="form-group"><label>Phone (WhatsApp)</label><input type="tel" id="login_phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number"></div>
+                        <p id="index-login-lead" style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
+                        <div id="index-login-otp-wrap">
+                        <div class="form-group"><label>Phone (WhatsApp)</label><input type="tel" id="login_phone" autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number"></div>
                         <div class="form-group">
                             <label>WhatsApp OTP</label>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                                 <input type="text" id="login_phone_otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:100px;padding:8px;border-radius:8px;border:1px solid var(--line);">
                                 <button type="button" id="index-send-login-otp" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendIndexLoginOtp()">Send OTP</button>
-                                <button type="button" id="index-resend-login-otp" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendIndexLoginOtp()">Resend</button>
+                                <button type="button" id="index-resend-login-otp" class="btn-ghost" style="padding:6px 12px;font-size:0.8rem;color:var(--ink);border-color:var(--line);" onclick="sendIndexLoginOtp(true)">Resend</button>
                             </div>
                         </div>
                         <p id="login_otp_status" style="font-size:0.82rem;color:var(--muted);margin:0 0 8px;min-height:1.2em;"></p>
+                        </div>
+                        <div id="index-login-password-wrap" class="hidden">
+                        <div class="form-group"><label>Email</label><input type="email" id="login_email" autocomplete="email" placeholder="you@example.com"></div>
+                        <div class="form-group"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="Password"></div>
+                        </div>
                         <button type="submit" class="btn-primary" style="width:100%;margin-top:12px;border:none;cursor:pointer;">Sign in</button>
                     </form>
                 </div>
@@ -602,7 +608,12 @@
                 if (tabLogin) tabLogin.style.display = window.__portalAuth.showLogin !== false ? '' : 'none';
                 if (tabSignup) tabSignup.style.display = window.__portalAuth.showSignup !== false ? '' : 'none';
                 const pwdWrap = document.getElementById('signup_password_wrap');
-                if (pwdWrap) pwdWrap.classList.toggle('hidden', window.__portalAuth.passwordlessLogin !== false);
+                if (pwdWrap) {
+                    const showPwd =
+                        window.__portalAuth.requireSignupOtp === false || !window.__portalAuth.passwordlessLogin;
+                    pwdWrap.classList.toggle('hidden', !showPwd);
+                }
+                applyIndexAuthPanels();
                 applyWebsiteMenuVisibility();
             } catch (_) {}
         }
@@ -647,19 +658,60 @@
             return panel && !panel.classList.contains('hidden');
         }
 
+        function indexLoginOtpOn() {
+            const p = window.__portalAuth || {};
+            return p.applicantLoginOtpRequired === true;
+        }
+
+        function applyIndexAuthPanels() {
+            const p = window.__portalAuth || {};
+            const loginOtpOn = indexLoginOtpOn();
+            const signupOtpOn = p.requireSignupOtp !== false;
+            const otpWrap = document.getElementById('index-login-otp-wrap');
+            const pwdWrap = document.getElementById('index-login-password-wrap');
+            const signupOtpPanel = document.getElementById('signup_otp_panel');
+            const signupPwdWrap = document.getElementById('signup_password_wrap');
+            const loginLead = document.getElementById('index-login-lead');
+            const loginPhone = document.getElementById('login_phone');
+            const loginEmail = document.getElementById('login_email');
+            const loginPassword = document.getElementById('login_password');
+            if (otpWrap) otpWrap.classList.toggle('hidden', !loginOtpOn);
+            if (pwdWrap) pwdWrap.classList.toggle('hidden', loginOtpOn);
+            if (signupOtpPanel) setOtpPanelVisible(signupOtpPanel, signupOtpOn);
+            if (signupPwdWrap) {
+                const showPwd = !signupOtpOn || !p.passwordlessLogin;
+                signupPwdWrap.classList.toggle('hidden', !showPwd);
+            }
+            if (loginLead) {
+                loginLead.textContent = loginOtpOn
+                    ? 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.'
+                    : 'Sign in with your email and password.';
+            }
+            if (loginPhone) loginPhone.required = loginOtpOn;
+            if (loginEmail) loginEmail.required = !loginOtpOn;
+            if (loginPassword) loginPassword.required = !loginOtpOn;
+            const signupPassword = document.getElementById('signup_password');
+            if (signupPassword) signupPassword.required = !signupOtpOn || !p.passwordlessLogin;
+        }
+
         async function refreshSignupOtpPanel() {
             const panel = document.getElementById('signup_otp_panel');
             if (!panel) return;
             try {
                 const res = await fetch('/api/auth/signup-otp-required');
                 const d = await res.json();
-                setOtpPanelVisible(panel, d.required !== false);
+                window.__portalAuth = Object.assign({}, window.__portalAuth || {}, {
+                    requireSignupOtp: d.required !== false
+                });
+                applyIndexAuthPanels();
             } catch (_) {
-                setOtpPanelVisible(panel, true);
+                setOtpPanelVisible(panel, false);
             }
         }
 
-        async function refreshLoginOtpPanel() {}
+        async function refreshLoginOtpPanel() {
+            applyIndexAuthPanels();
+        }
 
         function validatedIndexLoginPhone() {
             const raw = String((document.getElementById('login_phone') || {}).value || '').trim();
@@ -671,7 +723,7 @@
             return { valid: false, message: 'Enter your 10-digit WhatsApp number.' };
         }
 
-        async function sendIndexLoginOtp() {
+        async function sendIndexLoginOtp(forceResend) {
             const pv = validatedIndexLoginPhone();
             if (!pv.valid) return alert(pv.message);
             const sendBtn = document.getElementById('index-send-login-otp');
@@ -685,7 +737,11 @@
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: pv.cleanedPhone, channel: 'phone' })
+                    body: JSON.stringify({
+                        phone: pv.cleanedPhone,
+                        channel: 'phone',
+                        forceResend: !!forceResend
+                    })
                 });
                 const { data, parseFailed } = await readIndexApiJson(res);
                 if (parseFailed || !res.ok) {
@@ -1427,6 +1483,40 @@
 
         async function handleLogin(e) {
             e.preventDefault();
+            const statusEl = document.getElementById('login_otp_status');
+            if (!indexLoginOtpOn()) {
+                const emailRaw = String((document.getElementById('login_email') || {}).value || '').trim();
+                const password = String((document.getElementById('login_password') || {}).value || '');
+                let email = emailRaw.toLowerCase();
+                if (typeof validateEmailClient === 'function') {
+                    const ev = validateEmailClient(emailRaw, 'Email');
+                    if (!ev.valid) return alert(ev.message);
+                    email = ev.cleanedEmail;
+                } else if (!email) {
+                    return alert('Enter your email.');
+                }
+                if (!password) return alert('Enter your password.');
+                if (statusEl) statusEl.textContent = 'Signing you in…';
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, portal: 'doctor' })
+                    });
+                    const { data, parseFailed } = await readIndexApiJson(res);
+                    if (statusEl) statusEl.textContent = '';
+                    if (data.success) {
+                        routeUserAfterLogin(data.user);
+                    } else {
+                        alert(indexApiError(res, data, parseFailed) || 'Sign-in failed.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    if (statusEl) statusEl.textContent = '';
+                    alert('Network error. Please try again.');
+                }
+                return;
+            }
             const pv = validatedIndexLoginPhone();
             if (!pv.valid) return alert(pv.message);
             const code = String((document.getElementById('login_phone_otp') || {}).value || '')
@@ -1492,6 +1582,11 @@
                 phone = pv.cleanedPhone;
             }
             const password = (document.getElementById('signup_password') || {}).value || '';
+            const otpPanel = document.getElementById('signup_otp_panel');
+            const signupOtpOn = isOtpPanelActive(otpPanel);
+            if (!signupOtpOn && !String(password).trim()) {
+                return alert('Choose a password for your account.');
+            }
 
             try {
                 const check = await accountCheck(email, password, phone);
@@ -1520,8 +1615,7 @@
             }
 
             const body = { firstName, lastName, email, phone, password, role: 'doctor' };
-            const otpPanel = document.getElementById('signup_otp_panel');
-            if (isOtpPanelActive(otpPanel)) {
+            if (signupOtpOn) {
                 const phoneCode = String((document.getElementById('signup_phone_otp') || {}).value || '').trim();
                 if (signupPhoneOtpToken) {
                     body.phoneOtpToken = signupPhoneOtpToken;
