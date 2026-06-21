@@ -3572,6 +3572,73 @@ async function loadCaseProgramDefaultFields() {
     }
 }
 
+function syncCaseProgCapacityUi() {
+    const unlimited = document.getElementById('case-prog-unlimited-capacity');
+    const capInput = document.getElementById('case-prog-max-total');
+    const showSeats = document.getElementById('case-prog-show-seats');
+    if (!unlimited || !capInput) return;
+    const isUnlimited = unlimited.checked;
+    capInput.disabled = isUnlimited;
+    if (isUnlimited) {
+        capInput.value = '';
+        if (showSeats) {
+            showSeats.checked = false;
+            showSeats.disabled = true;
+        }
+    } else if (showSeats) {
+        showSeats.disabled = false;
+    }
+}
+
+function applyCaseProgCapacityFromProgram(p) {
+    const unlimited = document.getElementById('case-prog-unlimited-capacity');
+    const capInput = document.getElementById('case-prog-max-total');
+    if (!unlimited || !capInput) return;
+    const capRaw = p.maxTotalSubmissions != null ? p.maxTotalSubmissions : p.max_total_submissions;
+    const cap = capRaw != null && String(capRaw).trim() !== '' ? parseInt(capRaw, 10) : null;
+    const isUnlimited = cap == null || Number.isNaN(cap) || cap <= 0;
+    unlimited.checked = isUnlimited;
+    capInput.value = isUnlimited ? '' : String(cap);
+    syncCaseProgCapacityUi();
+}
+
+function syncSeminarCapacityUi() {
+    const unlimited = document.getElementById('seminar-unlimited-capacity');
+    const capInput = document.getElementById('seminar-capacity');
+    const showSeats = document.getElementById('seminar-show-seats-public');
+    if (!unlimited || !capInput) return;
+    const isUnlimited = unlimited.checked;
+    capInput.disabled = isUnlimited;
+    if (isUnlimited) {
+        capInput.value = '';
+        if (showSeats) {
+            showSeats.checked = false;
+            showSeats.disabled = true;
+        }
+    } else if (showSeats) {
+        showSeats.disabled = false;
+    }
+}
+
+function applySeminarCapacityFromRow(s) {
+    const unlimited = document.getElementById('seminar-unlimited-capacity');
+    const capInput = document.getElementById('seminar-capacity');
+    if (!unlimited || !capInput) return;
+    const cap = Number(s.capacity) || 0;
+    const isUnlimited = cap <= 0;
+    unlimited.checked = isUnlimited;
+    capInput.value = isUnlimited ? '' : String(cap);
+    syncSeminarCapacityUi();
+}
+
+let _capacityUiWired = false;
+function wireCapacityUiOnce() {
+    if (_capacityUiWired) return;
+    _capacityUiWired = true;
+    document.getElementById('case-prog-unlimited-capacity')?.addEventListener('change', syncCaseProgCapacityUi);
+    document.getElementById('seminar-unlimited-capacity')?.addEventListener('change', syncSeminarCapacityUi);
+}
+
 function resetAdminCaseProgramForm() {
     const editId = document.getElementById('case-prog-edit-id');
     if (editId) editId.value = '';
@@ -3595,6 +3662,9 @@ function resetAdminCaseProgramForm() {
     if (vi) vi.checked = true;
     const act = document.getElementById('case-prog-active');
     if (act) act.checked = true;
+    const caseUnlim = document.getElementById('case-prog-unlimited-capacity');
+    if (caseUnlim) caseUnlim.checked = true;
+    syncCaseProgCapacityUi();
     setCaseProgMsg('', true);
     loadCaseProgramDefaultFields();
     renderCaseProgramCriteriaEditor(null);
@@ -3620,9 +3690,11 @@ async function editAdminCaseProgram(id) {
                 ? window.PortalDateTime.toDatetimeLocal(p.registration_end)
                 : (p.registration_end || '').slice(0, 16);
         document.getElementById('case-prog-max-per-user').value = String(p.maxPresentationsPerUser != null ? p.maxPresentationsPerUser : p.max_presentations_per_user != null ? p.max_presentations_per_user : 2);
-        document.getElementById('case-prog-max-total').value = p.maxTotalSubmissions != null ? String(p.maxTotalSubmissions) : p.max_total_submissions != null ? String(p.max_total_submissions) : '';
+        applyCaseProgCapacityFromProgram(p);
         const caseSeatsEl = document.getElementById('case-prog-show-seats');
-        if (caseSeatsEl) caseSeatsEl.checked = p.showSeatsPublic !== false && p.show_seats_public !== 0;
+        if (caseSeatsEl && !document.getElementById('case-prog-unlimited-capacity')?.checked) {
+            caseSeatsEl.checked = p.showSeatsPublic !== false && p.show_seats_public !== 0;
+        }
         document.getElementById('case-prog-max-files').value = String(p.maxFilesPerSubmission != null ? p.maxFilesPerSubmission : p.max_files_per_submission != null ? p.max_files_per_submission : 5);
         document.getElementById('case-prog-max-mb').value = String(p.maxFileSizeMb != null ? p.maxFileSizeMb : p.max_file_size_mb != null ? p.max_file_size_mb : 100);
         const cats = p.enabledCategories || [];
@@ -3651,6 +3723,7 @@ async function loadAdminCaseReviewers() {
 }
 
 async function initAdminCaseMgmtTab() {
+    wireCapacityUiOnce();
     await fillAdminSeminarSelect('case-prog-seminar', true);
     if (!document.getElementById('case-prog-edit-id') || !document.getElementById('case-prog-edit-id').value) {
         resetAdminCaseProgramForm();
@@ -3858,6 +3931,14 @@ async function saveAdminCaseProgram() {
     if (document.getElementById('case-cat-viddhakarma') && document.getElementById('case-cat-viddhakarma').checked) enabledCategories.push('viddhakarma');
     if (!enabledCategories.length) return alert('Select at least one category');
     const editId = document.getElementById('case-prog-edit-id') && document.getElementById('case-prog-edit-id').value.trim();
+    const unlimitedCap = document.getElementById('case-prog-unlimited-capacity')?.checked === true;
+    let maxTotalSubmissions = null;
+    if (!unlimitedCap) {
+        maxTotalSubmissions = parseInt((document.getElementById('case-prog-max-total') || {}).value, 10);
+        if (!maxTotalSubmissions || maxTotalSubmissions < 1) {
+            return alert('Enter total presentation slots (at least 1), or check Unlimited.');
+        }
+    }
     const payload = {
         title: title,
         description: (document.getElementById('case-prog-desc') || {}).value || '',
@@ -3870,8 +3951,8 @@ async function saveAdminCaseProgram() {
             ? window.PortalDateTime.fromDatetimeLocal((document.getElementById('case-prog-end') || {}).value)
             : (document.getElementById('case-prog-end') || {}).value || null,
         maxPresentationsPerUser: (document.getElementById('case-prog-max-per-user') || {}).value || 2,
-        maxTotalSubmissions: (document.getElementById('case-prog-max-total') || {}).value || null,
-        showSeatsPublic: document.getElementById('case-prog-show-seats')?.checked === true,
+        maxTotalSubmissions: maxTotalSubmissions,
+        showSeatsPublic: unlimitedCap ? false : document.getElementById('case-prog-show-seats')?.checked === true,
         maxFilesPerSubmission: (document.getElementById('case-prog-max-files') || {}).value || 5,
         maxFileSizeMb: (document.getElementById('case-prog-max-mb') || {}).value || 100,
         enabledCategories: enabledCategories,
@@ -5135,7 +5216,10 @@ function renderAdminCaseProgramsList() {
     rows.forEach(function (p) {
         const used = p.submissionCount != null ? p.submissionCount : p.submission_count || 0;
         const capMax = p.maxTotalSubmissions != null ? p.maxTotalSubmissions : p.max_total_submissions;
-        const cap = capMax != null ? ' · ' + used + '/' + capMax + ' slots' : ' · ' + used + ' submission(s)';
+        const cap =
+            capMax != null && Number(capMax) > 0
+                ? ' · ' + used + '/' + capMax + ' slots'
+                : ' · ' + used + ' submission(s) · unlimited';
         box.innerHTML +=
             '<div style="padding:10px 0;border-bottom:1px solid #e2e8f0;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;"><div><strong>' +
             String(p.title || '').replace(/</g, '&lt;') +
@@ -7902,6 +7986,10 @@ function openCreateSeminarModal() {
     document.getElementById('admin-seminar-modal').classList.remove('hidden');
     document.getElementById('seminar-form').reset();
     document.getElementById('seminar-id').value = '';
+    wireCapacityUiOnce();
+    const semUnlim = document.getElementById('seminar-unlimited-capacity');
+    if (semUnlim) semUnlim.checked = true;
+    syncSeminarCapacityUi();
     const otpCh = document.getElementById('seminar-otp-app');
     if (otpCh) otpCh.checked = true;
     const otpS1 = document.getElementById('seminar-otp-step1');
@@ -7981,6 +8069,7 @@ function editSeminar(index) {
         return;
     }
     const s = globalSeminars[index];
+    wireCapacityUiOnce();
     document.getElementById('seminar-id').value = s.id;
     document.getElementById('seminar-title').value = s.title;
     document.getElementById('seminar-desc').value = s.description || '';
@@ -7997,9 +8086,11 @@ function editSeminar(index) {
     const py = document.getElementById('seminar-portal-year');
     if (py) py.value = s.portal_year || adminPortalYear || new Date().getFullYear();
     
-    document.getElementById('seminar-capacity').value = s.capacity || 0;
+    applySeminarCapacityFromRow(s);
     const showSeatsEl = document.getElementById('seminar-show-seats-public');
-    if (showSeatsEl) showSeatsEl.checked = s.show_seats_public == null || Number(s.show_seats_public) !== 0;
+    if (showSeatsEl && !document.getElementById('seminar-unlimited-capacity')?.checked) {
+        showSeatsEl.checked = s.show_seats_public == null || Number(s.show_seats_public) !== 0;
+    }
     document.getElementById('seminar-price').value = s.price || 0;
     document.getElementById('seminar-active').value = s.is_active ? '1' : '0';
     
@@ -8049,6 +8140,16 @@ function editSeminar(index) {
 async function saveSeminar(e) {
     e.preventDefault();
     const id = document.getElementById('seminar-id').value;
+    wireCapacityUiOnce();
+    const seminarUnlimited = document.getElementById('seminar-unlimited-capacity')?.checked === true;
+    let seminarCapacity = 0;
+    if (!seminarUnlimited) {
+        seminarCapacity = parseInt(document.getElementById('seminar-capacity').value, 10);
+        if (!seminarCapacity || seminarCapacity < 1) {
+            alert('Enter event capacity (at least 1), or check Unlimited.');
+            return;
+        }
+    }
     let galleryVal = (document.getElementById('seminar-gallery') || {}).value || '[]';
     try {
         const parsed = JSON.parse(galleryVal || '[]');
@@ -8076,8 +8177,8 @@ async function saveSeminar(e) {
                 ? window.PortalDateTime.fromDatetimeLocal(raw)
                 : raw;
         })(),
-        capacity: parseInt(document.getElementById('seminar-capacity').value) || 0,
-        show_seats_public: document.getElementById('seminar-show-seats-public')?.checked === true,
+        capacity: seminarCapacity,
+        show_seats_public: seminarUnlimited ? false : document.getElementById('seminar-show-seats-public')?.checked === true,
         price: parseFloat(document.getElementById('seminar-price').value) || 0,
         is_active: document.getElementById('seminar-active').value === '1',
         checkin_enabled: document.getElementById('seminar-checkin-enabled').value === '1',
