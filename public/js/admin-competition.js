@@ -210,12 +210,11 @@
             cfg.flow.competitionInstructions = '';
         }
         const payload = Object.assign({}, sem, {
+            id: sem.id,
             registration_form_json: JSON.stringify(cfg),
-            seminar_flow: cfg.flow
+            seminar_flow: cfg.flow,
+            __akCompetitionSettingsOnly: true
         });
-        if (typeof window.__akPrepareSeminarSaveData === 'function') {
-            window.__akPrepareSeminarSaveData(payload);
-        }
         if (msg) {
             msg.textContent = 'Saving…';
             msg.style.color = '#475569';

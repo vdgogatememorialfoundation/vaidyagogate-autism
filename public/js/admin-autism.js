@@ -366,6 +366,36 @@
         return (window.globalSeminars || []).find((x) => String(x.id) === String(sid)) || null;
     }
 
+    function resolveSeminarRecordForSave(data) {
+        const fromForm = existingSeminarFromForm();
+        if (fromForm) return fromForm;
+        const sid =
+            data && data.id != null
+                ? data.id
+                : (document.getElementById('seminar-id') || {}).value || null;
+        if (sid != null && String(sid).trim() !== '') {
+            const hit = (window.globalSeminars || []).find((x) => String(x.id) === String(sid));
+            if (hit) return hit;
+        }
+        return data && data.title != null ? data : null;
+    }
+
+    function isSeminarPreregEditorHydrated() {
+        const keys = window.__seminarPreregOverrideFieldKeys;
+        const tbody = document.getElementById('seminar-prereg-override-tbody');
+        return !!(Array.isArray(keys) && keys.length && tbody && tbody.querySelector('tr'));
+    }
+
+    function isSeminarMainRegEditorHydrated() {
+        const keys = window.__seminarOverrideFieldKeys;
+        const tbody = document.getElementById('seminar-reg-override-tbody');
+        return !!(Array.isArray(keys) && keys.length && tbody && tbody.querySelector('tr'));
+    }
+
+    function isSeminarFlowEditorAvailable() {
+        return !!document.getElementById('seminar-flow-prereg-required');
+    }
+
     function applySeminarPreregDatesToUi(seminar) {
         const ps = document.getElementById('seminar-prereg-start');
         const pe = document.getElementById('seminar-prereg-end');
@@ -413,7 +443,7 @@
     }
 
     function syncSeminarScheduleFieldsToPayload(data) {
-        const existing = existingSeminarFromForm();
+        const existing = resolveSeminarRecordForSave(data);
         const psEl = document.getElementById('seminar-prereg-start');
         const peEl = document.getElementById('seminar-prereg-end');
         const rsEl = document.getElementById('seminar-reg-start');
@@ -425,7 +455,9 @@
                     : psEl.value
                 : existing && existing.preregistration_start
                   ? existing.preregistration_start
-                  : null;
+                  : data.preregistration_start != null
+                    ? data.preregistration_start
+                    : null;
         }
         if (peEl) {
             data.preregistration_end = peEl.value
@@ -434,21 +466,31 @@
                     : peEl.value
                 : existing && existing.preregistration_end
                   ? existing.preregistration_end
-                  : null;
+                  : data.preregistration_end != null
+                    ? data.preregistration_end
+                    : null;
         }
         if (rsEl) {
             data.registration_start = rsEl.value
                 ? window.PortalDateTime
                     ? window.PortalDateTime.fromDatetimeLocal(rsEl.value)
                     : rsEl.value
-                : null;
+                : existing && existing.registration_start
+                  ? existing.registration_start
+                  : data.registration_start != null
+                    ? data.registration_start
+                    : null;
         }
         if (reEl) {
             data.registration_end = reEl.value
                 ? window.PortalDateTime
                     ? window.PortalDateTime.fromRegistrationEndLocal(reEl.value)
                     : reEl.value
-                : null;
+                : existing && existing.registration_end
+                  ? existing.registration_end
+                  : data.registration_end != null
+                    ? data.registration_end
+                    : null;
         }
     }
 
@@ -486,19 +528,23 @@
         return {};
     }
 
-    function mergeSeminarRegistrationFormJsonForSave(regFormOverride) {
+    function mergeSeminarRegistrationFormJsonForSave(regFormOverride, data) {
+        const existing = resolveSeminarRecordForSave(data);
         let regCfg = {};
-        const existing = existingSeminarFromForm();
         if (regFormOverride && String(regFormOverride).trim()) {
             regCfg = parseSeminarRegistrationFormJson(regFormOverride);
         } else if (existing && existing.registration_form_json) {
             regCfg = parseSeminarRegistrationFormJson(existing.registration_form_json);
-            delete regCfg.fields;
-            delete regCfg.stepSections;
-            delete regCfg.birthYearMin;
-            delete regCfg.birthYearMax;
+            if (isSeminarMainRegEditorHydrated()) {
+                delete regCfg.fields;
+                delete regCfg.stepSections;
+                delete regCfg.birthYearMin;
+                delete regCfg.birthYearMax;
+            }
         }
-        regCfg.flow = { ...(regCfg.flow || {}), ...buildSeminarFlowFlagsFromUi() };
+        if (isSeminarFlowEditorAvailable()) {
+            regCfg.flow = { ...(regCfg.flow || {}), ...buildSeminarFlowFlagsFromUi() };
+        }
         return JSON.stringify(regCfg);
     }
 
@@ -587,12 +633,30 @@
 
     function prepareSeminarSaveData(data) {
         if (!data || typeof data !== 'object') return data;
+        if (data.__akSeminarPayloadPrepared) return data;
+
+        if (data.__akCompetitionSettingsOnly) {
+            delete data.__akCompetitionSettingsOnly;
+            try {
+                const parsed = JSON.parse(data.registration_form_json || '{}');
+                data.seminar_flow = parsed.flow || data.seminar_flow || {};
+            } catch (_) {
+                /* keep payload as sent */
+            }
+            data.__akSeminarPayloadPrepared = true;
+            return data;
+        }
+
         data.price = 0;
         syncSeminarScheduleFieldsToPayload(data);
         const flowFlags = buildSeminarFlowFlagsFromUi();
         data.seminar_flow = flowFlags;
-        data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(data.registration_form_json);
-        data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json);
+        data.registration_form_json = mergeSeminarRegistrationFormJsonForSave(
+            data.registration_form_json,
+            data
+        );
+        data.preregistration_form_json = mergePreregFormJsonForSave(data.preregistration_form_json, data);
+        data.__akSeminarPayloadPrepared = true;
         return data;
     }
 
@@ -988,7 +1052,7 @@
         const idEl = document.getElementById('seminar-id');
         if (idEl) idEl.value = String(sid);
         window.__akEditingSeminarId = Number(sid) || sid;
-        const mergedJson = mergeSeminarRegistrationFormJsonForSave(null);
+        const mergedJson = mergeSeminarRegistrationFormJsonForSave(null, { id: sid });
         const seminars = window.globalSeminars || [];
         const gi = seminars.findIndex((x) => String(x.id) === String(sid));
         if (gi >= 0) {
@@ -1330,14 +1394,22 @@
         return JSON.stringify(payload);
     }
 
-    function mergePreregFormJsonForSave(existingJson) {
+    function mergePreregFormJsonForSave(existingJson, data) {
         let cfg = {};
+        const sourceJson =
+            existingJson != null && String(existingJson).trim() !== ''
+                ? existingJson
+                : (resolveSeminarRecordForSave(data) || {}).preregistration_form_json;
         try {
-            cfg = existingJson ? JSON.parse(existingJson) : {};
+            cfg = sourceJson ? JSON.parse(sourceJson) : {};
         } catch (_) {
             cfg = {};
         }
         const otp = readPreregOtpFromUi();
+        if (!isSeminarPreregEditorHydrated()) {
+            cfg.otp = otp;
+            return JSON.stringify(cfg);
+        }
         const built = buildSeminarPreregFormOverrideJsonFromUi();
         if (built) {
             try {
@@ -1407,7 +1479,10 @@
             ) {
                 try {
                     const data = JSON.parse(opts.body);
-                    prepareSeminarSaveData(data);
+                    if (!data.__akSeminarPayloadPrepared) {
+                        prepareSeminarSaveData(data);
+                    }
+                    delete data.__akSeminarPayloadPrepared;
                     nextOpts = { ...opts, body: JSON.stringify(data) };
                 } catch (_) {}
             }
@@ -1582,6 +1657,8 @@
         window.editSeminar = async function (index) {
             orig.call(this, index);
             let s = Array.isArray(window.globalSeminars) ? window.globalSeminars[index] : null;
+            applySeminarPreregDatesToUi(s);
+            applyCompetitionFlowToUi(s && s.registration_form_json);
             const sid =
                 (document.getElementById('seminar-id') || {}).value || (s && s.id != null ? s.id : '');
             if (sid) {
