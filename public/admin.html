@@ -368,6 +368,20 @@
                     </div>
                 </div>
                 <p id="ak-comp-stats" style="font-size:0.88rem;color:#475569;margin-bottom:16px;">Open this tab to load entries.</p>
+                <div class="card" id="ak-comp-admin-add-card" style="margin-bottom:16px; border:1px solid #e2e8f0; background:#f8fafc;">
+                    <h3 style="margin:0 0 10px;color:#0f766e;"><i class="fas fa-plus-circle"></i> Add entry manually</h3>
+                    <p style="font-size:0.88rem;color:#64748b;margin-bottom:12px;">Register a user for a competition on their behalf. You need their User ID.</p>
+                    <div style="display:grid;gap:12px;max-width:720px;">
+                        <div><label for="ak-comp-add-uid">User ID</label><input type="text" id="ak-comp-add-uid" placeholder="e.g. USR_..." style="width:100%;padding:8px;"></div>
+                        <div><label for="ak-comp-add-event">Event</label><select id="ak-comp-add-event" style="width:100%;padding:8px;"><option value="">Select an event...</option></select></div>
+                        <div><label for="ak-comp-add-title">Entry Title</label><input type="text" id="ak-comp-add-title" style="width:100%;padding:8px;"></div>
+                        <div><label for="ak-comp-add-category">Category</label><input type="text" id="ak-comp-add-category" style="width:100%;padding:8px;"></div>
+                        <div><label for="ak-comp-add-desc">Description (optional)</label><textarea id="ak-comp-add-desc" rows="2" style="width:100%;padding:8px;"></textarea></div>
+                        <div><label>Files</label><input type="file" id="ak-comp-add-files" multiple style="width:100%;padding:8px;border:1px dashed #cbd5e1;border-radius:4px;"></div>
+                        <div><button type="button" class="btn-primary" id="ak-comp-add-submit" style="background:#0f766e;"><i class="fas fa-upload"></i> Submit entry</button></div>
+                        <p id="ak-comp-add-msg" style="font-size:0.88rem;font-weight:600;margin:0;"></p>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="ak-prereg-toolbar">
                         <div><label for="ak-comp-status-filter">Status</label><select id="ak-comp-status-filter"><option value="all">All</option><option value="submitted">Submitted</option><option value="under_review">Under review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>

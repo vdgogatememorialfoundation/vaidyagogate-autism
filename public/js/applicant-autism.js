@@ -3115,6 +3115,19 @@
         return map[st] || map.submitted;
     }
 
+    window.deleteCompetitionSubmission = async function(id) {
+        if (!confirm('Are you sure you want to delete this competition entry?')) return;
+        const uid = currentUserId();
+        try {
+            const r = await fetch('/api/competition-submissions/' + id + '?userId=' + encodeURIComponent(uid), { method: 'DELETE' });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || r.statusText);
+            loadCompetitionList();
+        } catch (e) {
+            alert('Delete failed: ' + e.message);
+        }
+    };
+
     function renderCompTrackCard(r) {
         const meta = compStatusMeta(r.status);
         const code = r.application_no || 'COMP-' + r.id;
@@ -3131,7 +3144,9 @@
                 '</p>';
         }
         foot +=
-            '<div class="ak-barcode-inline"><img src="/api/qrcode/' +
+            '<div class="ak-barcode-inline" style="position:relative;">' +
+            '<button type="button" onclick="deleteCompetitionSubmission(' + r.id + ')" class="btn-primary" style="position:absolute;top:0;right:0;background:#fee2e2;color:#b91c1c;padding:6px 12px;font-size:0.75rem;"><i class="fas fa-trash"></i> Delete entry</button>' +
+            '<img src="/api/qrcode/' +
             encodeURIComponent(code) +
             '" alt="Entry QR" width="80" height="80"><div><strong style="font-size:0.82rem;color:#64748b;">Entry ID</strong><br><code>' +
             escapeAkHtml(code) +

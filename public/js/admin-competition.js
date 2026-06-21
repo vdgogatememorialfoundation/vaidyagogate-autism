@@ -319,28 +319,37 @@
 
     async function loadCompetitionSeminars() {
         const sel = document.getElementById('ak-comp-event-select');
-        if (!sel) return;
+        const addSel = document.getElementById('ak-comp-add-event');
+        if (sel) sel.innerHTML = '<option value="">Loading…</option>';
+        if (addSel) addSel.innerHTML = '<option value="">Loading…</option>';
         try {
-            const rows = await api('/api/admin/seminars/all');
-            compSeminars = Array.isArray(rows) ? rows : [];
-            sel.innerHTML = '<option value="">— Select event —</option>';
-            compSeminars.forEach((s) => {
-                const comp = parseCompetitionFlow(s.registration_form_json);
-                const tag = comp.competitionEnabled ? ' · competition on' : '';
-                sel.innerHTML +=
-                    '<option value="' +
-                    s.id +
-                    '">' +
-                    esc(s.title || 'Event #' + s.id) +
-                    tag +
-                    '</option>';
-            });
-            if (sel.value) {
+            const rows = await api('/api/admin/seminars');
+            compSeminars = rows.filter((r) => r.status === 'published' || r.status === 'archived');
+            if (sel) {
+                sel.innerHTML = '<option value="">— Select event —</option>';
+                compSeminars.forEach((s) => {
+                    const comp = parseCompetitionFlow(s.registration_form_json);
+                    const tag = comp.competitionEnabled ? ' · competition on' : '';
+                    sel.innerHTML +=
+                        '<option value="' +
+                        s.id +
+                        '">' +
+                        esc(s.title || 'Event #' + s.id) +
+                        tag +
+                        '</option>';
+                });
+            }
+            if (addSel) {
+                addSel.innerHTML = '<option value="">Select an event</option>' +
+                    compSeminars.map((s) => '<option value="' + s.id + '">' + esc(s.title || 'Event #' + s.id) + '</option>').join('');
+            }
+            if (sel && sel.value) {
                 const sem = compSeminars.find((x) => String(x.id) === String(sel.value));
                 applyCompSettingsToForm(sem);
             }
         } catch (e) {
-            sel.innerHTML = '<option value="">Could not load events</option>';
+            if (sel) sel.innerHTML = '<option value="">Could not load events</option>';
+            if (addSel) addSel.innerHTML = '<option value="">Could not load events</option>';
         }
     }
 
@@ -535,7 +544,9 @@
                                 '</option>'
                         )
                         .join('') +
-                    '</select></td>' +
+                    '</select>' +
+                    '<button type="button" class="ak-comp-delete-btn" data-comp-id="' + r.id + '" style="margin-left:8px;padding:4px 8px;font-size:0.8rem;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
+                    '</td>' +
                     '</tr>'
                 );
             })
@@ -564,6 +575,26 @@
                 }
             });
         });
+        tbody.querySelectorAll('.ak-comp-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Are you sure you want to delete this competition entry?')) return;
+                const id = parseInt(btn.dataset.compId, 10);
+                const msg = document.getElementById('ak-comp-action-msg');
+                try {
+                    await api('/api/admin/competition-submissions/' + id, { method: 'DELETE' });
+                    if (msg) {
+                        msg.textContent = 'Entry deleted.';
+                        msg.style.color = '#047857';
+                    }
+                    await refresh();
+                } catch (e) {
+                    if (msg) {
+                        msg.textContent = e.message || 'Delete failed';
+                        msg.style.color = '#b91c1c';
+                    }
+                }
+            });
+        });
     }
 
     async function refresh() {
@@ -579,6 +610,61 @@
                     '<tr><td colspan="8" style="color:#b91c1c;text-align:center;">' + esc(e.message) + '</td></tr>';
             }
             renderStats();
+        }
+    }
+
+    async function submitAdminCompetitionEntry() {
+        const uid = document.getElementById('ak-comp-add-uid')?.value.trim();
+        const sid = document.getElementById('ak-comp-add-event')?.value;
+        const title = document.getElementById('ak-comp-add-title')?.value.trim();
+        const cat = document.getElementById('ak-comp-add-category')?.value.trim();
+        const desc = document.getElementById('ak-comp-add-desc')?.value.trim();
+        const filesEl = document.getElementById('ak-comp-add-files');
+        const msg = document.getElementById('ak-comp-add-msg');
+
+        if (!uid) return alert('Enter the User ID of the applicant.');
+        if (!sid) return alert('Select an event.');
+        if (!title) return alert('Enter an entry title.');
+        if (!filesEl || !filesEl.files || !filesEl.files.length) return alert('Select at least one file.');
+
+        if (msg) {
+            msg.textContent = 'Submitting...';
+            msg.style.color = '#475569';
+        }
+
+        const fd = new FormData();
+        fd.append('userId', uid);
+        fd.append('seminarId', sid);
+        fd.append('title', title);
+        fd.append('category', cat);
+        fd.append('description', desc);
+        for (let i = 0; i < filesEl.files.length; i++) {
+            fd.append('files', filesEl.files[i]);
+        }
+
+        try {
+            const r = await fetch('/api/competition-submissions/submit', {
+                method: 'POST',
+                body: fd
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || r.statusText);
+            
+            if (msg) {
+                msg.textContent = 'Entry added successfully.';
+                msg.style.color = '#047857';
+            }
+            document.getElementById('ak-comp-add-uid').value = '';
+            document.getElementById('ak-comp-add-title').value = '';
+            document.getElementById('ak-comp-add-category').value = '';
+            document.getElementById('ak-comp-add-desc').value = '';
+            filesEl.value = '';
+            await refresh();
+        } catch (e) {
+            if (msg) {
+                msg.textContent = e.message || 'Submit failed';
+                msg.style.color = '#b91c1c';
+            }
         }
     }
 
@@ -601,6 +687,7 @@
         document.getElementById('ak-comp-save-settings')?.addEventListener('click', saveCompetitionSettings);
         document.getElementById('ak-comp-form-add')?.addEventListener('click', addCompFormField);
         document.getElementById('ak-comp-form-reset')?.addEventListener('click', resetCompFormDefaults);
+        document.getElementById('ak-comp-add-submit')?.addEventListener('click', submitAdminCompetitionEntry);
         loadCompetitionSeminars();
         refresh();
     };
