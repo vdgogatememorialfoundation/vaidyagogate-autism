@@ -1497,9 +1497,6 @@ function buildDisplayNameFromFormData(formData, userRow) {
     } catch (_) {
         fd = {};
     }
-    if (fd.child_name && String(fd.child_name).trim() !== '') {
-        return String(fd.child_name).replace(/\s+/g, ' ').trim();
-    }
     const parts = [fd.fname, fd.mname, fd.lname].filter((x) => x != null && String(x).trim() !== '');
     if (parts.length) return parts.join(' ').replace(/\s+/g, ' ').trim();
     if (userRow) {
