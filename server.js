@@ -1685,6 +1685,7 @@ function migrateAutismSeoDefaults(done) {
 }
 
 const regFormCfg = require('./lib/registration-form-config');
+const stepSectionsLib = require('./lib/form-step-sections');
 
 function autismApplicantFormFields(fields) {
     return (fields || []).filter(
@@ -1708,7 +1709,9 @@ function registrationFormFieldsForPortal(fields) {
 function loadGlobalRegistrationFormConfig(callback) {
     db.get(`SELECT value FROM global_settings WHERE key = 'registration_form_config'`, [], (err, row) => {
         if (err || !row || !row.value) {
-            const def = regFormCfg.buildConfigPayload(DEFAULT_REGISTRATION_FORM_CONFIG.fields, {});
+            const def = regFormCfg.buildConfigPayload(DEFAULT_REGISTRATION_FORM_CONFIG.fields, {
+                stepSections: DEFAULT_REGISTRATION_FORM_CONFIG.stepSections
+            });
             return callback(null, def);
         }
         try {
@@ -1755,7 +1758,11 @@ function loadRegistrationFormConfig(seminarIdOrNull, callback) {
                 return finish({
                     ...globalCfg,
                     birthYearMin: seminarParsed.birthYearMin != null ? seminarParsed.birthYearMin : globalCfg.birthYearMin,
-                    birthYearMax: seminarParsed.birthYearMax != null ? seminarParsed.birthYearMax : globalCfg.birthYearMax
+                    birthYearMax: seminarParsed.birthYearMax != null ? seminarParsed.birthYearMax : globalCfg.birthYearMax,
+                    stepSections: stepSectionsLib.mergeStepSections(
+                        globalCfg.stepSections,
+                        seminarParsed.stepSections
+                    )
                 });
             }
             const mergedFields = regFormCfg.mergeRegistrationFields(globalCfg.fields, seminarParsed.fields);
@@ -1764,7 +1771,11 @@ function loadRegistrationFormConfig(seminarIdOrNull, callback) {
                     birthYearMin:
                         seminarParsed.birthYearMin != null ? seminarParsed.birthYearMin : globalCfg.birthYearMin,
                     birthYearMax:
-                        seminarParsed.birthYearMax != null ? seminarParsed.birthYearMax : globalCfg.birthYearMax
+                        seminarParsed.birthYearMax != null ? seminarParsed.birthYearMax : globalCfg.birthYearMax,
+                    stepSections: stepSectionsLib.mergeStepSections(
+                        globalCfg.stepSections,
+                        seminarParsed.stepSections
+                    )
                 })
             );
         });
@@ -5046,6 +5057,8 @@ app.get('/api/registration-form-config', (req, res) => {
                     fields: mergedFields,
                     birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
                     birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
+                    stepSections:
+                        (cfg && cfg.stepSections) || stepSectionsLib.DEFAULT_MAIN_REG_STEP_SECTIONS,
                     otpOnApplication: false,
                     submitOtpRequired: false,
                     ...flags
@@ -5090,6 +5103,8 @@ app.get('/api/admin/registration-form-config', (req, res) => {
                 fields: registrationFormFieldsForPortal((cfg && cfg.fields) || []),
                 birthYearMin: cfg && cfg.birthYearMin != null ? cfg.birthYearMin : null,
                 birthYearMax: cfg && cfg.birthYearMax != null ? cfg.birthYearMax : null,
+                stepSections:
+                    (cfg && cfg.stepSections) || stepSectionsLib.DEFAULT_MAIN_REG_STEP_SECTIONS,
                 otpOnApplication: false,
                 submitOtpRequired: false,
                 ...flags
@@ -5588,7 +5603,7 @@ app.post('/api/admin/upload-assets', withUploadAssets, (req, res) => {
 app.get('/api/assets/:key', fileStore.serveAssetHandler(db));
 
 app.post('/api/admin/registration-form-config', (req, res) => {
-    const { fields, birthYearMin, birthYearMax } = req.body;
+    const { fields, birthYearMin, birthYearMax, stepSections } = req.body;
     if (!Array.isArray(fields)) return res.status(400).json({ error: 'fields must be an array' });
     const normalized = sanitizeRegistrationFormFields(
         fields.map((f) => ({
@@ -5601,7 +5616,7 @@ app.post('/api/admin/registration-form-config', (req, res) => {
         }))
     );
     const payload = JSON.stringify(
-        regFormCfg.buildConfigPayload(normalized, { birthYearMin, birthYearMax })
+        regFormCfg.buildConfigPayload(normalized, { birthYearMin, birthYearMax, stepSections })
     );
     upsertGlobalSetting('registration_form_config', payload, (e) => {
         if (e) return res.status(500).json({ error: e.message });

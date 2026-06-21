@@ -1,7 +1,13 @@
 (function () {
     'use strict';
 
-    const STEP_LABELS = { 1: 'Parent', 2: 'Child', 3: 'Address', 4: 'Questions' };
+    const DEFAULT_STEP_SECTIONS = {
+        1: 'Parent',
+        2: 'Child',
+        3: 'Address',
+        4: 'Questions'
+    };
+    let stepSections = [];
     let preregFields = [];
     let seminarId = null;
     let seminarTitle = '';
@@ -137,6 +143,35 @@
         __closesTimer = setInterval(tick, 1000);
     }
 
+    function stepTitle(step) {
+        const n = parseInt(step, 10);
+        const hit = (stepSections || []).find((s) => s && parseInt(s.step, 10) === n);
+        return (hit && hit.title) || DEFAULT_STEP_SECTIONS[n] || 'Step ' + n;
+    }
+
+    function stepSubtitle(step) {
+        const n = parseInt(step, 10);
+        const hit = (stepSections || []).find((s) => s && parseInt(s.step, 10) === n);
+        return hit && hit.subtitle ? hit.subtitle : '';
+    }
+
+    function appendStepPanelHeading(panel, step) {
+        const title = stepTitle(step);
+        const subtitle = stepSubtitle(step);
+        const h = document.createElement('h3');
+        h.className = 'pub-step-heading';
+        h.style.cssText = 'margin:0 0 12px;color:#0f766e;font-size:1.05rem;';
+        h.textContent = title;
+        panel.appendChild(h);
+        if (subtitle) {
+            const p = document.createElement('p');
+            p.className = 'pub-step-subheading';
+            p.style.cssText = 'margin:-4px 0 12px;color:#64748b;font-size:0.88rem;';
+            p.textContent = subtitle;
+            panel.appendChild(p);
+        }
+    }
+
     function qs(id) {
         return document.getElementById(id);
     }
@@ -247,6 +282,7 @@
             const panel = document.createElement('div');
             panel.className = 'pub-step-panel hidden';
             panel.dataset.formStep = String(step);
+            appendStepPanelHeading(panel, step);
             fields.forEach((f) => {
                 const fg = document.createElement('div');
                 fg.className = 'form-group';
@@ -299,7 +335,7 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.dataset.step = String(idx);
-            btn.textContent = (s + '. ' + (STEP_LABELS[s] || 'Step ' + s));
+            btn.textContent = (s + '. ' + stepTitle(s));
             btn.addEventListener('click', () => goToStep(idx));
             nav.appendChild(btn);
             idx++;
@@ -453,6 +489,7 @@
         seminarId = data.seminarId || id;
         seminarTitle = data.seminarTitle || '';
         preregFields = data.fields || [];
+        stepSections = Array.isArray(data.stepSections) ? data.stepSections : [];
         const titleEl = qs('pub-prereg-event-title');
         if (titleEl && seminarTitle) {
             titleEl.textContent = seminarTitle;

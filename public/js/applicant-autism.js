@@ -535,13 +535,69 @@
     let preregResubmitId = null;
     let preregGridCountdownTimer = null;
     let preregWizardStep = 1;
-    const PREREG_WIZARD_STEPS = [
-        { n: 1, label: 'Parent' },
-        { n: 2, label: 'Child' },
-        { n: 3, label: 'Address' },
-        { n: 4, label: 'Questions' }
+    const DEFAULT_PREREG_STEP_SECTIONS = [
+        { step: 1, title: 'Parent', subtitle: '' },
+        { step: 2, title: 'Child', subtitle: '' },
+        { step: 3, title: 'Address', subtitle: '' },
+        { step: 4, title: 'Questions', subtitle: '' }
     ];
+    let preregStepSections = DEFAULT_PREREG_STEP_SECTIONS.slice();
     let __preregPinLookupTimer = null;
+
+    function normalizePreregStepSections(raw) {
+        const fb = DEFAULT_PREREG_STEP_SECTIONS;
+        const src = Array.isArray(raw) && raw.length ? raw : fb;
+        const byStep = {};
+        fb.forEach((s) => {
+            byStep[s.step] = { ...s };
+        });
+        src.forEach((s) => {
+            if (!s || s.step == null) return;
+            const n = parseInt(s.step, 10);
+            if (Number.isNaN(n) || n < 1) return;
+            byStep[n] = {
+                step: n,
+                title: s.title != null && String(s.title).trim() ? String(s.title).trim() : byStep[n].title,
+                subtitle: s.subtitle != null ? String(s.subtitle).trim() : byStep[n].subtitle
+            };
+        });
+        return Object.keys(byStep)
+            .map((k) => byStep[parseInt(k, 10)])
+            .sort((a, b) => a.step - b.step);
+    }
+
+    function preregStepTitle(step) {
+        const n = parseInt(step, 10);
+        const hit = preregStepSections.find((s) => s.step === n);
+        return (hit && hit.title) || `Step ${n}`;
+    }
+
+    function preregStepSubtitle(step) {
+        const n = parseInt(step, 10);
+        const hit = preregStepSections.find((s) => s.step === n);
+        return hit && hit.subtitle ? hit.subtitle : '';
+    }
+
+    function getPreregWizardSteps() {
+        return preregStepSections.map((st) => ({ n: st.step, label: st.title || `Step ${st.step}` }));
+    }
+
+    function appendPreregStepPanelHeading(panel, step) {
+        const title = preregStepTitle(step);
+        const subtitle = preregStepSubtitle(step);
+        const h = document.createElement('h4');
+        h.className = 'ak-form-step-heading';
+        h.style.cssText = 'color:#0f766e;margin:0 0 14px;font-size:1.05rem;';
+        h.textContent = title;
+        panel.appendChild(h);
+        if (subtitle) {
+            const p = document.createElement('p');
+            p.className = 'ak-form-step-subheading';
+            p.style.cssText = 'color:#64748b;margin:-8px 0 14px;font-size:0.88rem;';
+            p.textContent = subtitle;
+            panel.appendChild(p);
+        }
+    }
 
     async function loadPreregFormConfig(seminarId) {
         const q = seminarId ? `?seminarId=${encodeURIComponent(seminarId)}` : '';
@@ -551,6 +607,8 @@
         window.__preregOtpOnSubmit = !!data.otpOnSubmit;
         window.__preregEmailConfigured = !!data.emailConfigured;
         window.__preregWhatsappConfigured = !!data.whatsappConfigured;
+        preregStepSections = normalizePreregStepSections(data.stepSections);
+        window.__preregStepSections = preregStepSections;
         const otpOn = window.__preregOtpOnApplication;
         preregFields = (data.fields || []).map((f) => {
             if (!f || !otpOn) return { ...f, verifyOtp: false };
@@ -746,7 +804,7 @@
         const nav = document.getElementById('prereg-wizard-nav');
         if (!nav) return;
         nav.innerHTML = '';
-        PREREG_WIZARD_STEPS.forEach((st) => {
+        getPreregWizardSteps().forEach((st) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.dataset.step = String(st.n);
@@ -847,6 +905,7 @@
             const panel = document.createElement('div');
             panel.className = 'ak-prereg-step-panel' + (step === 1 ? '' : ' hidden');
             panel.dataset.step = String(step);
+            if (preregFieldsForStep(step).length) appendPreregStepPanelHeading(panel, step);
             preregFieldsForStep(step).forEach((f) => {
                 const fg = document.createElement('div');
                 fg.className = 'form-group';
@@ -2919,6 +2978,75 @@
         if (ht) ht.textContent = 'Autism Awareness Programme — Dashboard';
         updateProfileDisplayName();
     }
+
+    function mainRegStepSection(step, fallback) {
+        const sections = window.__registrationStepSections || [];
+        const n = parseInt(step, 10);
+        const hit = sections.find((s) => s && parseInt(s.step, 10) === n);
+        return (hit && hit.title) || fallback;
+    }
+
+    function ensureMainRegPanelHeading(panelId, title, subtitle) {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        let h = panel.querySelector('.ak-form-step-heading');
+        if (!h) {
+            h = document.createElement('h4');
+            h.className = 'ak-form-step-heading';
+            h.style.cssText = 'color:#0f766e;margin:0 0 14px;font-size:1.05rem;';
+            panel.insertBefore(h, panel.firstChild);
+        }
+        h.textContent = title;
+        let sub = panel.querySelector('.ak-form-step-subheading');
+        if (subtitle) {
+            if (!sub) {
+                sub = document.createElement('p');
+                sub.className = 'ak-form-step-subheading';
+                sub.style.cssText = 'color:#64748b;margin:-8px 0 14px;font-size:0.88rem;';
+                h.insertAdjacentElement('afterend', sub);
+            }
+            sub.textContent = subtitle;
+        } else if (sub) {
+            sub.remove();
+        }
+    }
+
+    window.__akApplyMainRegStepSections = function applyMainRegStepSections(sections) {
+        if (!document.body.classList.contains('ak-portal-dash')) return;
+        window.__registrationStepSections = Array.isArray(sections) ? sections : [];
+        const secs = window.__registrationStepSections;
+        const t1 = mainRegStepSection(1, 'Personal details');
+        const t2 = mainRegStepSection(2, 'Address');
+        const t3 = mainRegStepSection(3, 'Programme details');
+        const ind1 = document.getElementById('ind-step-1');
+        const ind2 = document.getElementById('ind-step-2');
+        const ind3 = document.getElementById('ind-step-3');
+        if (ind1) ind1.textContent = '1. ' + t1;
+        if (ind2) ind2.textContent = '2. ' + t2;
+        if (ind3) ind3.textContent = '3. ' + t3;
+        const s1 = secs.find((s) => parseInt(s.step, 10) === 1);
+        const s2 = secs.find((s) => parseInt(s.step, 10) === 2);
+        const s3 = secs.find((s) => parseInt(s.step, 10) === 3);
+        ensureMainRegPanelHeading('step-1', t1, s1 && s1.subtitle);
+        ensureMainRegPanelHeading('step-2', t2, s2 && s2.subtitle);
+        const extraWrap = document.getElementById('ak-main-reg-extra');
+        if (extraWrap) {
+            const intro = extraWrap.querySelector('p');
+            if (intro) {
+                intro.textContent =
+                    (s3 && s3.subtitle) ||
+                    'Complete programme-specific details for this event. Fields are configured by the admin team.';
+            }
+            let h = extraWrap.querySelector('.ak-form-step-heading');
+            if (!h) {
+                h = document.createElement('h4');
+                h.className = 'ak-form-step-heading';
+                h.style.cssText = 'color:#0f766e;margin:0 0 10px;font-size:1.05rem;';
+                extraWrap.insertBefore(h, extraWrap.firstChild);
+            }
+            h.textContent = t3;
+        }
+    };
 
     function renderMainRegExtraFields() {
         const container = document.getElementById('reg-autism-extra-fields');

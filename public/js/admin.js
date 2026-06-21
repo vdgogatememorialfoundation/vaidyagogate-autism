@@ -7570,24 +7570,31 @@ async function loadSeminarFormOverrideUi(overrideJson) {
     let globalFields = [];
     let globalBirthMin = null;
     let globalBirthMax = null;
+    let globalStepSections = [];
     try {
         const res = await fetch('/api/registration-form-config');
         const data = await res.json();
         globalFields = data.fields || [];
         globalBirthMin = data.birthYearMin;
         globalBirthMax = data.birthYearMax;
+        globalStepSections = data.stepSections || [];
     } catch (_) {}
     window.__seminarGlobalFields = globalFields;
     window.__seminarGlobalFieldKeys = globalFields.map((f) => f.key);
+    window.__seminarGlobalStepSections = globalStepSections;
     let overrideFields = [];
     let seminarBirthMin = null;
     let seminarBirthMax = null;
+    let seminarStepSections = null;
     if (overrideJson && String(overrideJson).trim()) {
         try {
             const parsed = JSON.parse(overrideJson);
             if (parsed && Array.isArray(parsed.fields)) overrideFields = parsed.fields;
             seminarBirthMin = parsed.birthYearMin;
             seminarBirthMax = parsed.birthYearMax;
+            if (Array.isArray(parsed.stepSections) && parsed.stepSections.length) {
+                seminarStepSections = parsed.stepSections;
+            }
         } catch (_) {}
     }
     const byKey = {};
@@ -7650,6 +7657,15 @@ async function loadSeminarFormOverrideUi(overrideJson) {
     window.__seminarGlobalBirthMax = globalBirthMax;
     if (!extras.length) {
         cmsFillSeminarExtraRows([]);
+    }
+    if (typeof window.__akApplySeminarMainStepSections === 'function') {
+        const mergedSections = (globalStepSections || []).map((g) => {
+            const ov = (seminarStepSections || []).find((s) => s && s.step === g.step);
+            return ov ? { ...g, ...ov } : g;
+        });
+        window.__akApplySeminarMainStepSections(
+            seminarStepSections && seminarStepSections.length ? mergedSections : globalStepSections
+        );
     }
     updateSeminarPolicyPreviews();
 }
@@ -7723,6 +7739,18 @@ function buildSeminarFormOverrideJsonFromUi() {
     const qualChanged = qualOpts.map((o) => o.value).sort().join('|') !== gQualVals;
     const birthChanged =
         birthYearMin !== window.__seminarGlobalBirthMin || birthYearMax !== window.__seminarGlobalBirthMax;
+    const uiStepSections =
+        typeof window.__akReadSeminarMainStepSections === 'function'
+            ? window.__akReadSeminarMainStepSections()
+            : [];
+    const stepSectionsChanged =
+        typeof window.__akSeminarMainStepSectionsEqual === 'function'
+            ? !window.__akSeminarMainStepSectionsEqual(uiStepSections)
+            : false;
+    const stepSectionOverride =
+        typeof window.__akSeminarMainStepSectionDiff === 'function'
+            ? window.__akSeminarMainStepSectionDiff(uiStepSections)
+            : null;
     if (
         !extras.length &&
         !anyDisabled &&
@@ -7732,6 +7760,7 @@ function buildSeminarFormOverrideJsonFromUi() {
         !anyStepChange &&
         !qualChanged &&
         !birthChanged &&
+        !stepSectionsChanged &&
         birthYearMin == null &&
         birthYearMax == null
     ) {
@@ -7740,6 +7769,7 @@ function buildSeminarFormOverrideJsonFromUi() {
     const payload = { version: 1, fields: allFields };
     if (birthYearMin != null) payload.birthYearMin = birthYearMin;
     if (birthYearMax != null) payload.birthYearMax = birthYearMax;
+    if (stepSectionOverride) payload.stepSections = stepSectionOverride;
     return JSON.stringify(payload);
 }
 
@@ -9433,6 +9463,9 @@ async function loadAdminRegistrationFormConfig(skipFetch) {
             const data = await res.json();
             fields = data.fields || [];
             window.__adminRegFieldRowsCache = fields;
+            if (typeof window.__akApplyMainRegStepSectionsToAdmin === 'function') {
+                window.__akApplyMainRegStepSectionsToAdmin(data.stepSections);
+            }
             const qual = fields.find((f) => f.key === 'qual');
             renderQualOptionCheckboxes(
                 'admin-global-qual-options',
@@ -9500,7 +9533,11 @@ async function saveAdminRegistrationFormConfig() {
             body: JSON.stringify({
                 fields,
                 birthYearMin: Number.isInteger(birthYearMin) ? birthYearMin : null,
-                birthYearMax: Number.isInteger(birthYearMax) ? birthYearMax : null
+                birthYearMax: Number.isInteger(birthYearMax) ? birthYearMax : null,
+                stepSections:
+                    typeof window.__akReadMainRegStepSectionsFromAdmin === 'function'
+                        ? window.__akReadMainRegStepSectionsFromAdmin()
+                        : undefined
             })
         });
         const data = await res.json();

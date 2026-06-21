@@ -1852,6 +1852,7 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
         window.__registrationFormFields = data.fields || [];
         window.__registrationBirthYearMin = data.birthYearMin != null ? data.birthYearMin : null;
         window.__registrationBirthYearMax = data.birthYearMax != null ? data.birthYearMax : null;
+        window.__registrationStepSections = data.stepSections || [];
         updateRegistrationDobHint();
         window.__otpOnApplication = !!data.otpOnApplication;
         window.__otpOnStep1 = !!data.otpOnStep1;
@@ -1882,6 +1883,9 @@ async function loadRegistrationFormConfigAndApply(seminarIdOpt) {
                     !['ncism', 'certificate'].includes(String(f.key || ''))
             );
             hideAutismRegistrationQualUi();
+            if (typeof window.__akApplyMainRegStepSections === 'function') {
+                window.__akApplyMainRegStepSections(window.__registrationStepSections || []);
+            }
         }
     } catch (e) {
         console.error(e);

@@ -105,6 +105,17 @@
             mainCard.id = 'seminar-main-form-card';
             const heading = mainCard.querySelector('label[style*="font-weight:600"]');
             if (heading) heading.textContent = 'Main registration form (this event)';
+            if (!mainCard.querySelector('#seminar-main-step-sections-editor')) {
+                const editor = document.createElement('div');
+                editor.id = 'seminar-main-step-sections-editor';
+                editor.innerHTML = buildStepSectionsEditorHtml(
+                    'seminar-main',
+                    AK_DEFAULT_MAIN_REG_STEP_SECTIONS,
+                    4
+                );
+                const table = mainCard.querySelector('table');
+                if (table) mainCard.insertBefore(editor, table);
+            }
             if (!mainCard.querySelector('p.ak-main-form-hint')) {
                 const hint = document.createElement('p');
                 hint.className = 'ak-main-form-hint';
@@ -145,6 +156,7 @@
         card.innerHTML =
             '<label style="font-weight:600;">Pre-registration form (this seminar)</label>' +
             '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only. Edit label, type, step, on/off, required, and select options.</p>' +
+            buildStepSectionsEditorHtml('seminar-prereg', AK_DEFAULT_PREREG_STEP_SECTIONS, 4) +
             '<table class="data-table" style="font-size:0.88rem;">' +
             '<thead><tr><th>Field</th><th>Label</th><th>Type</th><th>Step</th><th>On</th><th>Required</th><th>Options</th></tr></thead>' +
             '<tbody id="seminar-prereg-override-tbody"></tbody>' +
@@ -157,6 +169,7 @@
             '</table>' +
             '<button type="button" class="btn-primary" id="seminar-prereg-add-extra" style="margin-top:8px;padding:4px 12px;font-size:0.82rem;background:#0d9488;">+ Add pre-registration field</button>' +
             '<button type="button" class="btn-primary" id="seminar-prereg-custom-only" style="margin-top:8px;margin-left:8px;padding:4px 12px;font-size:0.82rem;background:#475569;">Use custom-only pre-registration form</button>' +
+            '<button type="button" class="btn-primary" id="seminar-prereg-use-global" style="margin-top:8px;margin-left:8px;padding:4px 12px;font-size:0.82rem;background:#2563eb;">Use global pre-registration form</button>' +
             '</div>' +
             '<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;">' +
             '<div><label style="font-size:0.8rem;">Earliest birth year (override)</label><input type="number" id="seminar-prereg-birth-year-min" min="1900" max="2100" placeholder="Global default" style="width:100%;padding:6px;"></div>' +
@@ -176,6 +189,15 @@
         if (addBtn) addBtn.addEventListener('click', () => addSeminarPreregExtraFieldRow());
         const customOnly = document.getElementById('seminar-prereg-custom-only');
         if (customOnly) customOnly.addEventListener('click', () => makePreregFormCustomOnly());
+        const useGlobal = document.getElementById('seminar-prereg-use-global');
+        if (useGlobal) {
+            useGlobal.addEventListener('click', () => {
+                loadSeminarPreregFormOverrideUi('');
+                alert(
+                    'Loaded global pre-registration form defaults. Save this event to apply them for this event.'
+                );
+            });
+        }
     }
 
     function makePreregFormCustomOnly() {
@@ -363,13 +385,15 @@
 
     function mergeSeminarRegistrationFormJsonForSave(regFormOverride) {
         let regCfg = {};
+        const existing = existingSeminarFromForm();
         if (regFormOverride && String(regFormOverride).trim()) {
             regCfg = parseSeminarRegistrationFormJson(regFormOverride);
-        } else {
-            const existing = existingSeminarFromForm();
-            if (existing && existing.registration_form_json) {
-                regCfg = parseSeminarRegistrationFormJson(existing.registration_form_json);
-            }
+        } else if (existing && existing.registration_form_json) {
+            regCfg = parseSeminarRegistrationFormJson(existing.registration_form_json);
+            delete regCfg.fields;
+            delete regCfg.stepSections;
+            delete regCfg.birthYearMin;
+            delete regCfg.birthYearMax;
         }
         regCfg.flow = { ...(regCfg.flow || {}), ...buildSeminarFlowFlagsFromUi() };
         return JSON.stringify(regCfg);
@@ -567,6 +591,121 @@
     ];
 
     const AK_FIELD_TYPES = ['text', 'textarea', 'select', 'number', 'date', 'email', 'tel', 'boolean', 'file'];
+
+    const AK_DEFAULT_PREREG_STEP_SECTIONS = [
+        { step: 1, title: 'Parent', subtitle: '' },
+        { step: 2, title: 'Child', subtitle: '' },
+        { step: 3, title: 'Address', subtitle: '' },
+        { step: 4, title: 'Questions', subtitle: '' }
+    ];
+
+    const AK_DEFAULT_MAIN_REG_STEP_SECTIONS = [
+        { step: 1, title: 'Personal details', subtitle: '' },
+        { step: 2, title: 'Address', subtitle: '' },
+        { step: 3, title: 'Programme details', subtitle: '' },
+        { step: 4, title: 'Terms & confirmation', subtitle: '' }
+    ];
+
+    function normalizeStepSectionsClient(raw, fallback) {
+        const fb = Array.isArray(fallback) && fallback.length ? fallback : [];
+        const src = Array.isArray(raw) && raw.length ? raw : fb;
+        const byStep = {};
+        fb.forEach((s) => {
+            if (!s || s.step == null) return;
+            const n = parseInt(s.step, 10);
+            if (Number.isNaN(n) || n < 1) return;
+            byStep[n] = {
+                step: n,
+                title: String(s.title || `Step ${n}`).trim() || `Step ${n}`,
+                subtitle: String(s.subtitle || '').trim()
+            };
+        });
+        src.forEach((s) => {
+            if (!s || s.step == null) return;
+            const n = parseInt(s.step, 10);
+            if (Number.isNaN(n) || n < 1) return;
+            const prev = byStep[n] || { step: n, title: `Step ${n}`, subtitle: '' };
+            byStep[n] = {
+                step: n,
+                title: s.title != null && String(s.title).trim() ? String(s.title).trim() : prev.title,
+                subtitle: s.subtitle != null ? String(s.subtitle).trim() : prev.subtitle
+            };
+        });
+        return Object.keys(byStep)
+            .map((k) => byStep[parseInt(k, 10)])
+            .sort((a, b) => a.step - b.step);
+    }
+
+    function stepSectionsEqual(a, b) {
+        const left = normalizeStepSectionsClient(a, []);
+        const right = normalizeStepSectionsClient(b, []);
+        if (left.length !== right.length) return false;
+        return left.every(
+            (s, i) =>
+                s.step === right[i].step &&
+                s.title === right[i].title &&
+                s.subtitle === right[i].subtitle
+        );
+    }
+
+    function stepSectionDiffClient(globalSections, uiSections, fallback) {
+        const g = normalizeStepSectionsClient(globalSections, fallback);
+        const u = normalizeStepSectionsClient(uiSections, g);
+        const diff = [];
+        u.forEach((sec) => {
+            const base = g.find((x) => x.step === sec.step);
+            if (!base) {
+                diff.push(sec);
+                return;
+            }
+            if (sec.title !== base.title || sec.subtitle !== base.subtitle) diff.push(sec);
+        });
+        return diff.length ? diff : null;
+    }
+
+    function buildStepSectionsEditorHtml(idPrefix, sections, count) {
+        const secs = normalizeStepSectionsClient(sections, AK_DEFAULT_PREREG_STEP_SECTIONS);
+        let html =
+            '<div class="ak-step-sections-editor" style="margin:0 0 14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">' +
+            '<p style="margin:0 0 10px;font-weight:600;font-size:0.88rem;color:#1e3a8a;">Step section titles</p>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">';
+        for (let i = 1; i <= count; i++) {
+            const sec = secs.find((s) => s.step === i) || { step: i, title: `Step ${i}`, subtitle: '' };
+            const titleSafe = String(sec.title || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            const subSafe = String(sec.subtitle || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            html +=
+                `<div><label style="font-size:0.78rem;color:#64748b;">Step ${i} title</label>` +
+                `<input type="text" id="${idPrefix}-step-${i}-title" value="${titleSafe}" style="width:100%;padding:6px 8px;margin:4px 0 6px;">` +
+                `<label style="font-size:0.78rem;color:#64748b;">Step ${i} subtitle (optional)</label>` +
+                `<input type="text" id="${idPrefix}-step-${i}-subtitle" value="${subSafe}" placeholder="Short description shown on the form" style="width:100%;padding:6px 8px;"></div>`;
+        }
+        html += '</div></div>';
+        return html;
+    }
+
+    function readStepSectionsFromEditor(idPrefix, count, fallback) {
+        const out = [];
+        for (let i = 1; i <= count; i++) {
+            out.push({
+                step: i,
+                title: String((document.getElementById(`${idPrefix}-step-${i}-title`) || {}).value || '').trim() ||
+                    (fallback && fallback[i - 1] ? fallback[i - 1].title : `Step ${i}`),
+                subtitle: String((document.getElementById(`${idPrefix}-step-${i}-subtitle`) || {}).value || '').trim()
+            });
+        }
+        return normalizeStepSectionsClient(out, fallback);
+    }
+
+    function applyStepSectionsToEditor(idPrefix, sections, count) {
+        const secs = normalizeStepSectionsClient(sections, AK_DEFAULT_PREREG_STEP_SECTIONS);
+        for (let i = 1; i <= count; i++) {
+            const sec = secs.find((s) => s.step === i) || { step: i, title: `Step ${i}`, subtitle: '' };
+            const titleEl = document.getElementById(`${idPrefix}-step-${i}-title`);
+            const subEl = document.getElementById(`${idPrefix}-step-${i}-subtitle`);
+            if (titleEl) titleEl.value = sec.title || '';
+            if (subEl) subEl.value = sec.subtitle || '';
+        }
+    }
 
     function mergeFormFieldLists(globalFields, overrideFields, defaultFields) {
         const byKey = {};
@@ -776,6 +915,7 @@
         let globalFields = [];
         let globalBirthMin = null;
         let globalBirthMax = null;
+        let globalStepSections = AK_DEFAULT_PREREG_STEP_SECTIONS.slice();
         try {
             const res = await fetch(withAdminQuery('/api/admin/preregistration-form-config'), {
                 credentials: 'same-origin',
@@ -785,25 +925,47 @@
             globalFields = Array.isArray(data.fields) ? data.fields : [];
             globalBirthMin = data.birthYearMin == null ? null : Number(data.birthYearMin);
             globalBirthMax = data.birthYearMax == null ? null : Number(data.birthYearMax);
+            globalStepSections = normalizeStepSectionsClient(
+                data.stepSections,
+                AK_DEFAULT_PREREG_STEP_SECTIONS
+            );
         } catch (_) {}
         let overrideFields = [];
         let seminarBirthMin = null;
         let seminarBirthMax = null;
+        let seminarStepSections = null;
         try {
             const parsed = overrideJson && String(overrideJson).trim() ? JSON.parse(overrideJson) : {};
             overrideFields = Array.isArray(parsed.fields) ? parsed.fields : [];
             seminarBirthMin = parsed.birthYearMin == null ? null : Number(parsed.birthYearMin);
             seminarBirthMax = parsed.birthYearMax == null ? null : Number(parsed.birthYearMax);
+            if (Array.isArray(parsed.stepSections) && parsed.stepSections.length) {
+                seminarStepSections = normalizeStepSectionsClient(
+                    parsed.stepSections,
+                    AK_DEFAULT_PREREG_STEP_SECTIONS
+                );
+            }
         } catch (_) {}
-        const mergedFields = mergeFormFieldLists(globalFields, overrideFields, AK_DEFAULT_PREREG_FIELDS);
-        const globalKeys = new Set(mergedFields.map((f) => String(f.key || '')));
+        const mergedStepSections = seminarStepSections
+            ? normalizeStepSectionsClient(
+                  globalStepSections.map((g) => {
+                      const ov = (seminarStepSections || []).find((s) => s.step === g.step);
+                      return ov ? { ...g, ...ov } : g;
+                  }),
+                  AK_DEFAULT_PREREG_STEP_SECTIONS
+              )
+            : globalStepSections;
+        const displayFields = mergeFormFieldLists(globalFields, overrideFields, AK_DEFAULT_PREREG_FIELDS);
+        const globalKeys = new Set(displayFields.map((f) => String(f.key || '')));
         const extras = overrideFields.filter((f) => f && f.key && !globalKeys.has(String(f.key)));
-        window.__seminarPreregGlobalFields = mergedFields;
+        window.__seminarPreregGlobalFields = mergeFormFieldLists(globalFields, [], AK_DEFAULT_PREREG_FIELDS);
         window.__seminarPreregGlobalBirthMin = globalBirthMin;
         window.__seminarPreregGlobalBirthMax = globalBirthMax;
+        window.__seminarPreregGlobalStepSections = globalStepSections;
         window.__seminarPreregOverrideFieldKeys = [];
+        applyStepSectionsToEditor('seminar-prereg', mergedStepSections, 4);
         tbody.innerHTML = '';
-        mergedFields.forEach((f, idx) => {
+        displayFields.forEach((f, idx) => {
             const enabled = f.enabled !== false;
             const required = !!f.required;
             const label = f.label || f.key;
@@ -956,10 +1118,34 @@
         const birthChanged =
             birthYearMin !== window.__seminarPreregGlobalBirthMin ||
             birthYearMax !== window.__seminarPreregGlobalBirthMax;
-        if (!anyChanged && !birthChanged && !extras.length && birthYearMin == null && birthYearMax == null) return null;
+        const uiStepSections = readStepSectionsFromEditor(
+            'seminar-prereg',
+            4,
+            AK_DEFAULT_PREREG_STEP_SECTIONS
+        );
+        const stepSectionsChanged = !stepSectionsEqual(
+            uiStepSections,
+            window.__seminarPreregGlobalStepSections || AK_DEFAULT_PREREG_STEP_SECTIONS
+        );
+        const stepSectionOverride = stepSectionDiffClient(
+            window.__seminarPreregGlobalStepSections,
+            uiStepSections,
+            AK_DEFAULT_PREREG_STEP_SECTIONS
+        );
+        if (
+            !anyChanged &&
+            !birthChanged &&
+            !extras.length &&
+            !stepSectionsChanged &&
+            birthYearMin == null &&
+            birthYearMax == null
+        ) {
+            return null;
+        }
         const payload = { version: 3, fields: fields.concat(extras), otp: readPreregOtpFromUi() };
         if (birthYearMin != null) payload.birthYearMin = birthYearMin;
         if (birthYearMax != null) payload.birthYearMax = birthYearMax;
+        if (stepSectionOverride) payload.stepSections = stepSectionOverride;
         return JSON.stringify(payload);
     }
 
@@ -970,13 +1156,21 @@
         } catch (_) {
             cfg = {};
         }
-        cfg.otp = readPreregOtpFromUi();
+        const otp = readPreregOtpFromUi();
         const built = buildSeminarPreregFormOverrideJsonFromUi();
         if (built) {
             try {
                 const p = JSON.parse(built);
-                cfg = { ...cfg, ...p, otp: cfg.otp };
-            } catch (_) {}
+                cfg = { ...cfg, ...p, otp };
+            } catch (_) {
+                cfg.otp = otp;
+            }
+        } else {
+            delete cfg.fields;
+            delete cfg.stepSections;
+            delete cfg.birthYearMin;
+            delete cfg.birthYearMax;
+            cfg.otp = otp;
         }
         return JSON.stringify(cfg);
     }
@@ -2080,6 +2274,7 @@
         card.innerHTML =
             '<h3 style="margin:0 0 8px;">Pre-registration form fields (4-step)</h3>' +
             '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Customize pre-registration fields shown to applicants.</p>' +
+            buildStepSectionsEditorHtml('ak-prereg', AK_DEFAULT_PREREG_STEP_SECTIONS, 4) +
             '<table class="data-table"><thead><tr><th>Field key</th><th>Label</th><th>Type</th><th>Step</th><th>Enabled</th><th>Required</th><th>Options JSON (for select)</th><th></th></tr></thead><tbody id="ak-prereg-editor-tbody"><tr><td colspan="8">Open tab to load…</td></tr></tbody></table>' +
             '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
             '<button type="button" class="btn-primary" style="background:#0d9488;" id="ak-prereg-add-field-btn">+ Add field</button>' +
@@ -2192,6 +2387,11 @@
             if (!r.ok) throw new Error(data.error || r.statusText);
             const fields = Array.isArray(data.fields) ? data.fields : [];
             window.__akPreregAdminRows = mergeFormFieldLists(fields, [], AK_DEFAULT_PREREG_FIELDS);
+            applyStepSectionsToEditor(
+                'ak-prereg',
+                normalizeStepSectionsClient(data.stepSections, AK_DEFAULT_PREREG_STEP_SECTIONS),
+                4
+            );
             renderPreregFieldEditorRows();
         } catch (e) {
             if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#b91c1c;">Failed to load</td></tr>';
@@ -2238,7 +2438,11 @@
             const adm = typeof getStoredAdminUser === 'function' ? getStoredAdminUser() : null;
             const aid = adm && adm.id ? Number(adm.id) : null;
             if (!aid) throw new Error('actingAdminId is required. Sign in to admin again.');
-            const payload = { version: 3, fields };
+            const payload = {
+                version: 3,
+                fields,
+                stepSections: readStepSectionsFromEditor('ak-prereg', 4, AK_DEFAULT_PREREG_STEP_SECTIONS)
+            };
             const r = await fetch('/api/admin/preregistration-form-config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2280,7 +2484,54 @@
             label.textContent = 'Main registration form (global defaults)';
             mainCard.insertBefore(label, mainCard.firstChild);
         }
+        if (mainCard && !document.getElementById('ak-main-step-sections-editor')) {
+            const editor = document.createElement('div');
+            editor.id = 'ak-main-step-sections-editor';
+            editor.innerHTML = buildStepSectionsEditorHtml(
+                'ak-main',
+                AK_DEFAULT_MAIN_REG_STEP_SECTIONS,
+                4
+            );
+            const table = mainCard.querySelector('table');
+            if (table) mainCard.insertBefore(editor, table);
+        }
     }
+
+    window.__akApplyMainRegStepSectionsToAdmin = function (sections) {
+        applyStepSectionsToEditor(
+            'ak-main',
+            normalizeStepSectionsClient(sections, AK_DEFAULT_MAIN_REG_STEP_SECTIONS),
+            4
+        );
+    };
+
+    window.__akReadMainRegStepSectionsFromAdmin = function () {
+        return readStepSectionsFromEditor('ak-main', 4, AK_DEFAULT_MAIN_REG_STEP_SECTIONS);
+    };
+
+    window.__akApplySeminarMainStepSections = function (sections) {
+        applyStepSectionsToEditor(
+            'seminar-main',
+            normalizeStepSectionsClient(sections, AK_DEFAULT_MAIN_REG_STEP_SECTIONS),
+            4
+        );
+    };
+
+    window.__akReadSeminarMainStepSections = function () {
+        return readStepSectionsFromEditor('seminar-main', 4, AK_DEFAULT_MAIN_REG_STEP_SECTIONS);
+    };
+
+    window.__akSeminarMainStepSectionDiff = function (uiSections) {
+        return stepSectionDiffClient(
+            window.__seminarGlobalStepSections,
+            uiSections,
+            AK_DEFAULT_MAIN_REG_STEP_SECTIONS
+        );
+    };
+
+    window.__akSeminarMainStepSectionsEqual = function (uiSections) {
+        return stepSectionsEqual(uiSections, window.__seminarGlobalStepSections || AK_DEFAULT_MAIN_REG_STEP_SECTIONS);
+    };
 
     function patchRegistrationFormTabLoader() {
         if (typeof window.switchTab !== 'function' || window.switchTab.__akRegFormHook) return;
