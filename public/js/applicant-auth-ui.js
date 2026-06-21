@@ -20,6 +20,7 @@
     let signupSubmitInflight = false;
     let signupOtpWired = false;
     let loginOtpInflight = false;
+    let loginSubmitInflight = false;
     let authUiInitialized = false;
 
     function wireOtpButton(el, handler) {
@@ -790,6 +791,7 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (loginSubmitInflight) return;
             clearErr();
             const cfg = global.__portalAuth || {};
             const otpOn = loginOtpEnabled(cfg);
@@ -849,6 +851,7 @@
                 .replace(/\D/g, '')
                 .trim();
             if (!code) return showErr('Enter the OTP code from WhatsApp.');
+            loginSubmitInflight = true;
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Signing in…';
@@ -883,6 +886,7 @@
                 setStatus('', '#64748b');
                 showErr('Could not reach the server.');
             } finally {
+                loginSubmitInflight = false;
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Sign in';

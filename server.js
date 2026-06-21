@@ -3960,34 +3960,78 @@ app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
         }
         const dest = authUsers.loginOtpDestination('phone', row);
         if (!dest) return res.status(400).json({ error: 'No phone on file for this account.' });
-        otpLib.verifyOtp(
-            db,
-            {
-                channel: 'phone',
-                destination: dest,
-                purpose: 'login',
-                code: codeStr,
-                meta: { userId: row.id },
-                userId: row.id,
-                seminarId: null
-            },
-            (verr, result) => {
-                if (verr) return res.status(500).json({ error: verr.message });
-                if (!result || !result.ok) {
-                    return res.status(400).json({ error: (result && result.error) || 'Invalid or expired OTP.' });
+        const meta = { userId: row.id };
+
+        function tryVerifyDestination(destTry, next) {
+            otpLib.verifyOtp(
+                db,
+                {
+                    channel: 'phone',
+                    destination: destTry,
+                    purpose: 'login',
+                    code: codeStr,
+                    meta,
+                    userId: row.id,
+                    seminarId: null
+                },
+                (verr, result) => {
+                    if (verr) return next(verr);
+                    if (result && result.ok) return next(null, result);
+                    next(null, null);
                 }
-                delete row.password;
-                normalizeAuthUserRow(row);
-                res.json({ success: true, user: row });
-                recordUserLogin(row.id, () => {});
-                activityLog.logFromRequest(db, req, {
-                    user_id: row.id,
-                    user_role: row.role || row.user_role,
-                    action: 'auth.login',
-                    meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
+            );
+        }
+
+        const destAlt = otpLib.normalizeOtpDestination('phone', phoneV.cleanedPhone);
+
+        function finishLoginOk() {
+            delete row.password;
+            normalizeAuthUserRow(row);
+            res.json({ success: true, user: row });
+            recordUserLogin(row.id, () => {});
+            activityLog.logFromRequest(db, req, {
+                user_id: row.id,
+                user_role: row.role || row.user_role,
+                action: 'auth.login',
+                meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
+            });
+        }
+
+        function logVerifyFail(extra) {
+            // #region agent log
+            try {
+                fs.appendFileSync(
+                    path.join(__dirname, 'debug-7880d4.log'),
+                    JSON.stringify({
+                        sessionId: '7880d4',
+                        timestamp: Date.now(),
+                        location: 'server.js:login-phone-otp',
+                        message: 'login otp verify failed',
+                        data: Object.assign(
+                            { dest, userId: row.id, codeLen: codeStr.replace(/\D/g, '').length },
+                            extra || {}
+                        ),
+                        hypothesisId: 'F'
+                    }) + '\n'
+                );
+            } catch (_) {}
+            // #endregion
+        }
+
+        tryVerifyDestination(dest, (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (result && result.ok) return finishLoginOk();
+            if (destAlt && destAlt !== dest) {
+                return tryVerifyDestination(destAlt, (err2, result2) => {
+                    if (err2) return res.status(500).json({ error: err2.message });
+                    if (result2 && result2.ok) return finishLoginOk();
+                    logVerifyFail({ destAlt });
+                    return res.status(400).json({ error: 'Invalid or expired code' });
                 });
             }
-        );
+            logVerifyFail({});
+            return res.status(400).json({ error: 'Invalid or expired code' });
+        });
     });
 });
 
@@ -4049,7 +4093,7 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                 return res.status(st).json({ error: serr.message });
             }
             const forceResend = !!(req.body && req.body.forceResend);
-            if (codeReused && !forceResend) {
+            if (codeReused) {
                 // #region agent log
                 try {
                     fs.appendFileSync(
@@ -4059,8 +4103,8 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                             timestamp: Date.now(),
                             location: 'server.js:POST /api/otp/send',
                             message: 'skipped whatsapp — code still valid',
-                            data: { channel, purpose, codeReused: true, forceResend: false },
-                            hypothesisId: 'A'
+                            data: { channel, purpose, codeReused: true, forceResend: !!forceResend },
+                            hypothesisId: 'D'
                         }) + '\n'
                     );
                 } catch (_) {}
