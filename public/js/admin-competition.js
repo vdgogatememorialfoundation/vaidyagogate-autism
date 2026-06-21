@@ -545,7 +545,8 @@
                         )
                         .join('') +
                     '</select>' +
-                    '<button type="button" class="ak-comp-delete-btn" data-comp-id="' + r.id + '" style="margin-left:8px;padding:4px 8px;font-size:0.8rem;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
+                    '<br><button type="button" onclick="downloadCompetitionCertificate(\'' + encodeURIComponent(JSON.stringify(r)) + '\')" style="margin-top:4px;padding:4px 8px;font-size:0.8rem;background:#0f766e;color:#fff;border:none;border-radius:4px;cursor:pointer;"><i class="fas fa-award"></i> Cert</button>' +
+                    '<button type="button" class="ak-comp-delete-btn" data-comp-id="' + r.id + '" style="margin-left:4px;margin-top:4px;padding:4px 8px;font-size:0.8rem;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
                     '</td>' +
                     '</tr>'
                 );
@@ -656,6 +657,7 @@
         const cat = document.getElementById('ak-comp-add-category')?.value.trim();
         const desc = document.getElementById('ak-comp-add-desc')?.value.trim();
         const filesEl = document.getElementById('ak-comp-add-files');
+        const override = document.getElementById('ak-comp-override-limits')?.checked;
         const msg = document.getElementById('ak-comp-add-msg');
 
         if (!uid) return alert('Please search and select an applicant first.');
@@ -672,6 +674,7 @@
         fd.append('seminarId', sid);
         fd.append('category', cat);
         fd.append('description', desc);
+        if (override) fd.append('adminOverride', 'true');
         for (let i = 0; i < filesEl.files.length; i++) {
             fd.append('files', filesEl.files[i]);
         }
@@ -693,6 +696,7 @@
             document.getElementById('ak-comp-user-results').innerHTML = '';
             document.getElementById('ak-comp-add-category').value = '';
             document.getElementById('ak-comp-add-desc').value = '';
+            document.getElementById('ak-comp-override-limits').checked = false;
             filesEl.value = '';
             await refresh();
         } catch (e) {
@@ -744,4 +748,65 @@
         };
         window.switchTab.__akCompHook = true;
     }
+
+    window.downloadCompetitionCertificate = async function downloadCompetitionCertificate(rowJsonStr) {
+        let row;
+        try { row = JSON.parse(decodeURIComponent(rowJsonStr)); } catch (e) { return alert('Invalid row data'); }
+        if (!window.jspdf) {
+            alert('PDF library not loaded. Please refresh and try again.');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        
+        doc.setLineWidth(2);
+        doc.setDrawColor(15, 118, 110);
+        doc.rect(10, 10, pageW - 20, pageH - 20);
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(203, 213, 225);
+        doc.rect(12, 12, pageW - 24, pageH - 24);
+
+        doc.setFontSize(26);
+        doc.setTextColor(15, 118, 110);
+        doc.text('CERTIFICATE OF PARTICIPATION', pageW / 2, 45, { align: 'center' });
+        
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text('This is proudly presented to', pageW / 2, 65, { align: 'center' });
+        
+        const participantName = row.first_name ? (row.first_name + ' ' + (row.last_name||'')) : 'Participant';
+        doc.setFontSize(28);
+        doc.setTextColor(15, 23, 42);
+        doc.text(participantName, pageW / 2, 85, { align: 'center' });
+        
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text('for their creative entry and participation in the competition category:', pageW / 2, 105, { align: 'center' });
+        
+        doc.setFontSize(18);
+        doc.setTextColor(15, 118, 110);
+        const catMap = {
+            child_drawing: 'Child: Drawing',
+            child_singing: 'Child: Singing',
+            child_writing: 'Child: Writing',
+            parent_essay: 'Parent: Essay / "मनोगत"'
+        };
+        doc.text(catMap[row.category] || row.category || 'General', pageW / 2, 125, { align: 'center' });
+        
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Event: ' + (row.seminar_title || 'EXPRESSIONS: Celebrating Every Child'), pageW / 2, 145, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.text('Date: 6 September 2026', pageW / 2, 155, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Application No: ' + (row.application_no || ('COMP-'+row.id)), pageW / 2, 185, { align: 'center' });
+        doc.text('Generated on: ' + new Date().toLocaleDateString(), pageW / 2, 192, { align: 'center' });
+
+        doc.save('Certificate_of_Participation_' + (row.application_no || row.id) + '.pdf');
+    };
 })();
