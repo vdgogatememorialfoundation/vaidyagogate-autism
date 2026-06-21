@@ -2781,6 +2781,10 @@ async function loadCaseProgramsGrid() {
                 btn =
                     '<p style="color:#b45309;margin-top:10px;font-size:0.88rem;">Applications not open yet</p>' +
                     '<button type="button" class="btn-primary" style="margin-top:8px;opacity:0.55;" disabled>Not open</button>';
+            } else if (win === 'unscheduled') {
+                btn =
+                    '<p style="color:#64748b;margin-top:10px;font-size:0.88rem;">Application schedule not set yet</p>' +
+                    '<button type="button" class="btn-primary" style="margin-top:8px;opacity:0.55;" disabled>Not scheduled</button>';
             } else {
                 btn = '<p style="color:#94a3b8;margin-top:10px;font-size:0.88rem;">Applications closed for this program</p>';
             }
@@ -2792,7 +2796,7 @@ async function loadCaseProgramsGrid() {
                 <p style="font-size:0.85rem;color:#64748b;margin:0;">${escapeHtml(p.description || '')}</p>
                 ${p.seminar_title ? `<p style="font-size:0.82rem;margin-top:6px;">Linked seminar: ${escapeHtml(p.seminar_title)}</p>` : ''}
                 ${regLine}
-                <p style="font-size:0.78rem;margin-top:6px;color:${win === 'open' ? '#059669' : '#64748b'};">Status: ${escapeHtml(win === 'open' ? 'Open for applications' : win === 'upcoming' ? 'Opening soon' : 'Closed')}</p>
+                <p style="font-size:0.78rem;margin-top:6px;color:${win === 'open' ? '#059669' : '#64748b'};">Status: ${escapeHtml(win === 'open' ? 'Open for applications' : win === 'upcoming' ? 'Opening soon' : win === 'unscheduled' ? 'Schedule not set' : 'Closed')}</p>
                 ${slots}
                 ${btn}`;
             grid.appendChild(card);

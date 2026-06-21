@@ -6,12 +6,10 @@
 
     window.PORTAL_IS_AUTISM = true;
 
-    const HIDE_MODULES = ['tab-case-mgmt', 'tab-admin-payments', 'tab-pos'];
+    const HIDE_MODULES = ['tab-admin-payments', 'tab-pos'];
 
     const HIDE_TEXT = [
         'judge',
-        'case presentation',
-        'case program',
         'payment gateway',
         'pos on-spot',
         'on-spot pos'
@@ -2682,7 +2680,20 @@
         window.loadAdminSiteCms.__akCmsHook = true;
     }
 
+    function injectCaseProgramScheduleNote() {
+        const start = document.getElementById('case-prog-start');
+        if (!start || document.getElementById('case-prog-schedule-note')) return;
+        const note = document.createElement('p');
+        note.id = 'case-prog-schedule-note';
+        note.style.cssText = 'grid-column:1/-1;margin:0;font-size:0.78rem;color:#64748b;';
+        note.textContent =
+            'Set both registration open and close dates (IST). Applications open automatically when the start time is reached and close after the end time — no manual toggle needed.';
+        const grid = start.closest('div[style*="grid"]');
+        if (grid) grid.appendChild(note);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        injectCaseProgramScheduleNote();
         injectFormEditorStyles();
         upgradeSeminarFormTableHeads();
         fixLegacyAdminLoginPage();

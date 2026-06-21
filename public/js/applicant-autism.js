@@ -14,8 +14,6 @@
     let _loadPreregSeminarsPromise = null;
 
     const HIDDEN_TABS = [
-        'tab-abstract',
-        'tab-case-track',
         'tab-orders',
         'tab-receipts',
         'tab-payments',
@@ -172,7 +170,9 @@
             { tab: 'tab-main-reg-hub', icon: 'fa-file-signature', label: 'Main registration' },
             { tab: 'tab-main-reg-track', icon: 'fa-tasks', label: 'Main reg tracking' },
             { tab: 'tab-comp-register', icon: 'fa-cloud-upload-alt', label: 'Register Competition' },
-            { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' }
+            { tab: 'tab-comp-track', icon: 'fa-photo-video', label: 'Track Competition' },
+            { tab: 'tab-abstract', icon: 'fa-file-upload', label: 'Case presentation' },
+            { tab: 'tab-case-track', icon: 'fa-route', label: 'Track case applications' }
         ];
         const anchor = menu.querySelector('[data-tab="tab-feedback"]');
         hubItems.forEach((it) => {
@@ -450,8 +450,27 @@
         loadCompetitionList();
     }
 
+    function showCaseRegisterView() {
+        if (typeof switchTab === 'function') switchTab('tab-abstract');
+        if (typeof loadCaseProgramsGrid === 'function') loadCaseProgramsGrid();
+    }
+
+    function showCaseTrackView() {
+        if (typeof switchTab === 'function') switchTab('tab-case-track');
+        if (typeof loadCaseApplicationsTracker === 'function') loadCaseApplicationsTracker();
+    }
+
     window.showCompRegisterView = showCompRegisterView;
     window.showCompTrackView = showCompTrackView;
+    window.showCaseRegisterView = showCaseRegisterView;
+    window.showCaseTrackView = showCaseTrackView;
+
+    function enableCasePresentationNav() {
+        document.querySelectorAll('[data-tab="tab-abstract"], [data-tab="tab-case-track"]').forEach((el) => {
+            el.classList.remove('hidden');
+            el.style.display = '';
+        });
+    }
 
     function hideAutismDisabledTabs() {
         HIDDEN_TABS.forEach((tabId) => {
@@ -2929,6 +2948,8 @@
             '<button type="button" class="ak-hub-tile" data-ak-hub="main-reg-track"><i class="fas fa-tasks"></i><span>Main reg tracking</span><small>Application status</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-register"><i class="fas fa-cloud-upload-alt"></i><span>Register Competition</span><small>Upload entry files</small></button>' +
             '<button type="button" class="ak-hub-tile" data-ak-hub="comp-track"><i class="fas fa-photo-video"></i><span>Track Competition</span><small>Entry review status</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="case-register"><i class="fas fa-file-upload"></i><span>Case presentation</span><small>Apply when open</small></button>' +
+            '<button type="button" class="ak-hub-tile" data-ak-hub="case-track"><i class="fas fa-route"></i><span>Track case apps</span><small>Submission status</small></button>' +
             '</div>';
         if (quickCard) dash.insertBefore(hub, quickCard);
         else dash.appendChild(hub);
@@ -2941,6 +2962,8 @@
                 else if (k === 'main-reg-track') showMainRegTrackView();
                 else if (k === 'comp-register') showCompRegisterView();
                 else if (k === 'comp-track') showCompTrackView();
+                else if (k === 'case-register') showCaseRegisterView();
+                else if (k === 'case-track') showCaseTrackView();
             });
         });
         const ql = dash.querySelector('.card h3');
@@ -3201,6 +3224,10 @@
                 });
             } else if (tabId === 'tab-comp-track') {
                 loadCompetitionList();
+            } else if (tabId === 'tab-abstract') {
+                if (typeof loadCaseProgramsGrid === 'function') loadCaseProgramsGrid();
+            } else if (tabId === 'tab-case-track') {
+                if (typeof loadCaseApplicationsTracker === 'function') loadCaseApplicationsTracker();
             }
         };
         window.switchTab.__akHubHook = true;
@@ -3719,6 +3746,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         hideAutismDisabledTabs();
+        enableCasePresentationNav();
         separatePreregAndMainRegistration();
         wireRegisterModal();
         setupDashboardHub();
