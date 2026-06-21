@@ -660,17 +660,26 @@
         return pad(h) + ':' + pad(m) + ':' + pad(s);
     }
 
+    function _compSetFormVisible(show) {
+        const fieldsBox = document.getElementById('comp-dynamic-fields');
+        const form = document.getElementById('competition-form');
+        const submitBtn = form && form.querySelector('button[type="submit"]');
+        const previewBtn = form && form.querySelector('button[type="button"]');
+        if (fieldsBox) fieldsBox.style.display = show ? '' : 'none';
+        if (submitBtn) { submitBtn.disabled = !show; submitBtn.style.display = show ? '' : 'none'; }
+        if (previewBtn) previewBtn.style.display = show ? '' : 'none';
+    }
+
     function renderCompetitionSchedulePanel() {
         const panel = document.getElementById('comp-event-schedule');
         const sel = document.getElementById('comp-seminar-select');
-        const submitBtn = document.querySelector('#competition-form button[type="submit"]');
         if (!panel) return;
         clearCompCountdownTimer();
         if (!competitionEvents.length) {
             panel.classList.remove('hidden');
             panel.innerHTML =
                 '<strong style="color:#6b21a8;">No competition events</strong><p style="margin:6px 0 0;">Registration forms are available; competition is not open for any event yet.</p>';
-            if (submitBtn) submitBtn.disabled = true;
+            _compSetFormVisible(false);
             return;
         }
         const sid = sel && sel.value ? parseInt(sel.value, 10) : null;
@@ -678,7 +687,7 @@
         if (!ev) {
             panel.classList.add('hidden');
             panel.innerHTML = '';
-            if (submitBtn) submitBtn.disabled = false;
+            _compSetFormVisible(false);
             return;
         }
         panel.classList.remove('hidden');
@@ -690,28 +699,28 @@
         const endLabel = ev.competitionEnd ? akFormatTrackDateTime(ev.competitionEnd) : '—';
         html += '<p style="margin:0;font-size:0.84rem;"><strong>Submissions:</strong> ' + escapeAkHtml(startLabel) + ' to ' + escapeAkHtml(endLabel) + '</p>';
         if (ev.windowState === 'open') {
-            html +=
-                '<p style="margin:8px 0 0;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Open for submissions now.</p>';
-            if (submitBtn) submitBtn.disabled = false;
+            html += '<p style="margin:8px 0 0;color:#047857;font-weight:600;"><i class="fas fa-check-circle"></i> Open for submissions now.</p>';
+            panel.innerHTML = html;
+            _compSetFormVisible(true);
         } else if (ev.windowState === 'upcoming') {
             const opensAt = ev.opensAt ? Number(ev.opensAt) : null;
             const countdownId = 'comp-countdown-' + (sid || 'x');
             html +=
-                '<div style="margin:10px 0 0;padding:10px 14px;border:1px solid #fde68a;border-radius:8px;background:#fffbeb;">' +
-                '<p style="margin:0 0 4px;color:#b45309;font-weight:600;"><i class="fas fa-hourglass-half"></i> Submissions open in:</p>' +
-                '<p id="' + countdownId + '" style="margin:0;font-size:1.35rem;font-weight:800;color:#92400e;font-variant-numeric:tabular-nums;letter-spacing:0.04em;">' +
+                '<div style="margin:10px 0 0;padding:14px 18px;border:1px solid #fde68a;border-radius:10px;background:#fffbeb;text-align:center;">' +
+                '<p style="margin:0 0 6px;color:#b45309;font-weight:600;font-size:0.95rem;"><i class="fas fa-hourglass-half"></i>&nbsp; Submissions open in</p>' +
+                '<p id="' + countdownId + '" style="margin:0;font-size:2rem;font-weight:800;color:#92400e;font-variant-numeric:tabular-nums;letter-spacing:0.06em;">' +
                 (opensAt ? formatCompCountdown(opensAt - Date.now()) : '—') +
                 '</p>' +
-                '<p style="margin:4px 0 0;font-size:0.78rem;color:#a16207;">You can fill in the form below while you wait. Submitting will open when the countdown ends.</p>' +
+                '<p style="margin:8px 0 0;font-size:0.8rem;color:#a16207;">The form will appear automatically when submissions open.</p>' +
                 '</div>';
-            if (submitBtn) submitBtn.disabled = true;
+            panel.innerHTML = html;
+            _compSetFormVisible(false);
             if (opensAt) {
                 _compCountdownTimer = setInterval(() => {
                     const rem = opensAt - Date.now();
                     const el = document.getElementById(countdownId);
                     if (rem <= 0) {
                         clearCompCountdownTimer();
-                        // Refresh events so windowState flips to 'open'
                         loadCompetitionEvents().then(() => {
                             renderCompetitionSchedulePanel();
                             loadCompetitionFormForSelectedEvent();
@@ -722,14 +731,14 @@
                 }, 1000);
             }
         } else if (ev.windowState === 'unscheduled') {
-            html +=
-                '<p style="margin:8px 0 0;color:#64748b;font-weight:600;">Schedule not set yet by organisers.</p>';
-            if (submitBtn) submitBtn.disabled = true;
+            html += '<p style="margin:8px 0 0;color:#64748b;font-weight:600;">Schedule not set yet by organisers.</p>';
+            panel.innerHTML = html;
+            _compSetFormVisible(false);
         } else {
             html += '<p style="margin:8px 0 0;color:#94a3b8;font-weight:600;">Submissions closed for this event.</p>';
-            if (submitBtn) submitBtn.disabled = true;
+            panel.innerHTML = html;
+            _compSetFormVisible(false);
         }
-        panel.innerHTML = html;
     }
 
     window.showCompRegisterView = showCompRegisterView;
