@@ -221,7 +221,7 @@
 
     function maxWizardStep() {
         const steps = (preregFields || []).map((f) => Number(f.step) || 1).filter((n) => n > 0);
-        return steps.length ? Math.max(...steps, 4) : 4;
+        return steps.length ? Math.max(...steps) : 4;
     }
 
     function totalSteps() {

@@ -579,7 +579,13 @@
     }
 
     function getPreregWizardSteps() {
-        return preregStepSections.map((st) => ({ n: st.step, label: st.title || `Step ${st.step}` }));
+        const maxStep = preregMaxWizardStep();
+        const steps = [];
+        for (let s = 1; s <= maxStep; s++) {
+            const hit = preregStepSections.find((st) => st.step === s);
+            steps.push({ n: s, label: (hit && hit.title) || `Step ${s}` });
+        }
+        return steps;
     }
 
     function appendPreregStepPanelHeading(panel, step) {
@@ -687,7 +693,7 @@
         const steps = (preregFields || [])
             .map((f) => Number(f.step) || 1)
             .filter((n) => n > 0);
-        return steps.length ? Math.max(...steps, 4) : 4;
+        return steps.length ? Math.max(...steps) : 4;
     }
 
     function fillPreregSelectOptions(sel, options, placeholder) {

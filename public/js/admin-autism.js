@@ -155,8 +155,8 @@
         card.style.cssText = 'margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;';
         card.innerHTML =
             '<label style="font-weight:600;">Pre-registration form (this seminar)</label>' +
-            '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only. Edit label, type, step, on/off, required, and select options.</p>' +
-            buildStepSectionsEditorHtml('seminar-prereg', AK_DEFAULT_PREREG_STEP_SECTIONS, 4) +
+            '<p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Configure pre-registration fields for this event only. Edit label, type, step, on/off, required, and select options. Step section titles appear automatically for each step number in use (up to 9).</p>' +
+            '<div id="seminar-prereg-step-sections-editor"></div>' +
             '<table class="data-table" style="font-size:0.88rem;">' +
             '<thead><tr><th>Field</th><th>Label</th><th>Type</th><th>Step</th><th>On</th><th>Required</th><th>Options</th></tr></thead>' +
             '<tbody id="seminar-prereg-override-tbody"></tbody>' +
@@ -241,8 +241,14 @@
             `<td><button type="button" class="btn-primary sem-pr-ex-del" style="padding:3px 8px;background:#b91c1c;">X</button></td>`;
         tbody.appendChild(tr);
         tr.querySelectorAll('input,select').forEach((el) => {
-            el.addEventListener('input', updatePreregFormPreview);
-            el.addEventListener('change', updatePreregFormPreview);
+            el.addEventListener('input', () => {
+                if (el.classList.contains('sem-pr-ex-step')) syncSeminarPreregStepSectionsEditor();
+                updatePreregFormPreview();
+            });
+            el.addEventListener('change', () => {
+                if (el.classList.contains('sem-pr-ex-step')) syncSeminarPreregStepSectionsEditor();
+                updatePreregFormPreview();
+            });
         });
         tr.querySelector('.sem-pr-ex-del')?.addEventListener('click', () => {
             tr.remove();
@@ -707,6 +713,85 @@
         }
     }
 
+    function seminarPreregMaxStepFromUi() {
+        let max = 4;
+        const bump = (v) => {
+            const n = parseInt(v, 10);
+            if (!Number.isNaN(n) && n > max) max = n;
+        };
+        document.querySelectorAll('#seminar-prereg-override-tbody .sem-pr-ov-step').forEach((el) => bump(el.value));
+        document.querySelectorAll('#seminar-prereg-extra-fields-tbody .sem-pr-ex-step').forEach((el) => bump(el.value));
+        return Math.min(Math.max(max, 4), 9);
+    }
+
+    function akPreregMaxStepFromAdminRows() {
+        let max = 4;
+        (window.__akPreregAdminRows || []).forEach((f) => {
+            const n = parseInt(f.step, 10);
+            if (!Number.isNaN(n) && n > max) max = n;
+        });
+        document.querySelectorAll('#ak-prereg-editor-tbody input[id^="ak-prereg-step-"]').forEach((el) => {
+            const n = parseInt(el.value, 10);
+            if (!Number.isNaN(n) && n > max) max = n;
+        });
+        return Math.min(Math.max(max, 4), 9);
+    }
+
+    function syncSeminarPreregStepSectionsEditor(sections) {
+        const host = document.getElementById('seminar-prereg-step-sections-editor');
+        if (!host) return;
+        const count = seminarPreregMaxStepFromUi();
+        const prevCount = parseInt(host.dataset.stepCount, 10) || 0;
+        let prevSections = sections;
+        if (!prevSections && prevCount > 0) {
+            prevSections = readStepSectionsFromEditor(
+                'seminar-prereg',
+                prevCount,
+                AK_DEFAULT_PREREG_STEP_SECTIONS
+            );
+        }
+        const merged = normalizeStepSectionsClient(
+            prevSections || window.__seminarPreregDisplayStepSections || AK_DEFAULT_PREREG_STEP_SECTIONS,
+            AK_DEFAULT_PREREG_STEP_SECTIONS
+        );
+        host.innerHTML = buildStepSectionsEditorHtml('seminar-prereg', merged, count);
+        host.dataset.stepCount = String(count);
+        applyStepSectionsToEditor('seminar-prereg', merged, count);
+    }
+
+    function syncAkPreregStepSectionsEditor(sections) {
+        const host = document.getElementById('ak-prereg-step-sections-editor');
+        if (!host) return;
+        const count = akPreregMaxStepFromAdminRows();
+        const prevCount = parseInt(host.dataset.stepCount, 10) || 0;
+        let prevSections = sections;
+        if (!prevSections && prevCount > 0) {
+            prevSections = readStepSectionsFromEditor('ak-prereg', prevCount, AK_DEFAULT_PREREG_STEP_SECTIONS);
+        }
+        const merged = normalizeStepSectionsClient(
+            prevSections || AK_DEFAULT_PREREG_STEP_SECTIONS,
+            AK_DEFAULT_PREREG_STEP_SECTIONS
+        );
+        host.innerHTML = buildStepSectionsEditorHtml('ak-prereg', merged, count);
+        host.dataset.stepCount = String(count);
+        applyStepSectionsToEditor('ak-prereg', merged, count);
+    }
+
+    function wireSeminarPreregStepSectionSync() {
+        const rebalance = () => {
+            syncSeminarPreregStepSectionsEditor();
+            updatePreregFormPreview();
+        };
+        document.querySelectorAll('#seminar-prereg-override-tbody .sem-pr-ov-step').forEach((el) => {
+            el.addEventListener('input', rebalance);
+            el.addEventListener('change', rebalance);
+        });
+        document.querySelectorAll('#seminar-prereg-extra-fields-tbody .sem-pr-ex-step').forEach((el) => {
+            el.addEventListener('input', rebalance);
+            el.addEventListener('change', rebalance);
+        });
+    }
+
     function mergeFormFieldLists(globalFields, overrideFields, defaultFields) {
         const byKey = {};
         const ingest = (f) => {
@@ -860,7 +945,10 @@
             '#seminar-reg-override-tbody td:nth-child(7) { min-width: 200px; }' +
             '#seminar-prereg-form-card .data-table,' +
             '#seminar-main-form-card .data-table,' +
-            '#ak-prereg-form-editor-card .data-table { table-layout: auto; width: 100%; }';
+            '#ak-prereg-form-editor-card .data-table { table-layout: auto; width: 100%; }' +
+            '#admin-seminar-modal-panel { width: min(1200px, 96vw) !important; max-height: 94vh !important; }' +
+            '#seminar-prereg-form-card .data-table,' +
+            '#seminar-main-form-card .data-table { display: block; overflow-x: auto; }';
         document.head.appendChild(style);
     }
 
@@ -962,8 +1050,9 @@
         window.__seminarPreregGlobalBirthMin = globalBirthMin;
         window.__seminarPreregGlobalBirthMax = globalBirthMax;
         window.__seminarPreregGlobalStepSections = globalStepSections;
+        window.__seminarPreregDisplayStepSections = mergedStepSections;
         window.__seminarPreregOverrideFieldKeys = [];
-        applyStepSectionsToEditor('seminar-prereg', mergedStepSections, 4);
+        syncSeminarPreregStepSectionsEditor(mergedStepSections);
         tbody.innerHTML = '';
         displayFields.forEach((f, idx) => {
             const enabled = f.enabled !== false;
@@ -999,6 +1088,7 @@
                 el.addEventListener('change', updatePreregFormPreview);
             });
         });
+        wireSeminarPreregStepSectionSync();
         if (minEl) minEl.oninput = updatePreregFormPreview;
         if (maxEl) maxEl.oninput = updatePreregFormPreview;
         updatePreregFormPreview();
@@ -1094,17 +1184,6 @@
             }
             extras.push(row);
         });
-        const anyChanged = fields.some((f) => {
-            const g = globals.find((x) => x.key === f.key) || {};
-            return (
-                String(f.label || '') !== String(g.label || f.key) ||
-                !!f.enabled !== (g.enabled !== false) ||
-                !!f.required !== !!g.required ||
-                String(f.type || 'text') !== String(g.type || 'text') ||
-                (parseInt(f.step, 10) || 1) !== (parseInt(g.step, 10) || 1) ||
-                !selectOptionsEqual(f.options, g.options)
-            );
-        });
         const minEl = document.getElementById('seminar-prereg-birth-year-min');
         const maxEl = document.getElementById('seminar-prereg-birth-year-max');
         const birthYearMin =
@@ -1115,37 +1194,37 @@
             maxEl && maxEl.value !== '' && !Number.isNaN(parseInt(maxEl.value, 10))
                 ? parseInt(maxEl.value, 10)
                 : null;
-        const birthChanged =
-            birthYearMin !== window.__seminarPreregGlobalBirthMin ||
-            birthYearMax !== window.__seminarPreregGlobalBirthMax;
+        const maxStep = seminarPreregMaxStepFromUi();
         const uiStepSections = readStepSectionsFromEditor(
             'seminar-prereg',
-            4,
+            maxStep,
             AK_DEFAULT_PREREG_STEP_SECTIONS
         );
-        const stepSectionsChanged = !stepSectionsEqual(
-            uiStepSections,
-            window.__seminarPreregGlobalStepSections || AK_DEFAULT_PREREG_STEP_SECTIONS
-        );
-        const stepSectionOverride = stepSectionDiffClient(
-            window.__seminarPreregGlobalStepSections,
-            uiStepSections,
-            AK_DEFAULT_PREREG_STEP_SECTIONS
-        );
-        if (
-            !anyChanged &&
-            !birthChanged &&
+        const globalsMatch =
+            fields.every((f) => {
+                const g = globals.find((x) => x.key === f.key) || {};
+                return (
+                    String(f.label || '') === String(g.label || f.key) &&
+                    !!f.enabled === (g.enabled !== false) &&
+                    !!f.required === !!g.required &&
+                    String(f.type || 'text') === String(g.type || 'text') &&
+                    (parseInt(f.step, 10) || 1) === (parseInt(g.step, 10) || 1) &&
+                    selectOptionsEqual(f.options, g.options)
+                );
+            }) &&
             !extras.length &&
-            !stepSectionsChanged &&
-            birthYearMin == null &&
-            birthYearMax == null
-        ) {
-            return null;
-        }
-        const payload = { version: 3, fields: fields.concat(extras), otp: readPreregOtpFromUi() };
+            birthYearMin === (window.__seminarPreregGlobalBirthMin ?? null) &&
+            birthYearMax === (window.__seminarPreregGlobalBirthMax ?? null) &&
+            stepSectionsEqual(uiStepSections, window.__seminarPreregGlobalStepSections || AK_DEFAULT_PREREG_STEP_SECTIONS);
+        if (globalsMatch) return null;
+        const payload = {
+            version: 3,
+            fields: fields.concat(extras),
+            stepSections: uiStepSections,
+            otp: readPreregOtpFromUi()
+        };
         if (birthYearMin != null) payload.birthYearMin = birthYearMin;
         if (birthYearMax != null) payload.birthYearMax = birthYearMax;
-        if (stepSectionOverride) payload.stepSections = stepSectionOverride;
         return JSON.stringify(payload);
     }
 
@@ -2278,9 +2357,9 @@
         card.className = 'card';
         card.style.cssText = 'margin-top:16px;border-left:4px solid #2563eb;';
         card.innerHTML =
-            '<h3 style="margin:0 0 8px;">Pre-registration form fields (4-step)</h3>' +
-            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Customize pre-registration fields shown to applicants.</p>' +
-            buildStepSectionsEditorHtml('ak-prereg', AK_DEFAULT_PREREG_STEP_SECTIONS, 4) +
+            '<h3 style="margin:0 0 8px;">Pre-registration form fields</h3>' +
+            '<p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Customize pre-registration fields shown to applicants. Step section titles expand when you use step 5 or higher.</p>' +
+            '<div id="ak-prereg-step-sections-editor"></div>' +
             '<table class="data-table"><thead><tr><th>Field key</th><th>Label</th><th>Type</th><th>Step</th><th>Enabled</th><th>Required</th><th>Options JSON (for select)</th><th></th></tr></thead><tbody id="ak-prereg-editor-tbody"><tr><td colspan="8">Open tab to load…</td></tr></tbody></table>' +
             '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
             '<button type="button" class="btn-primary" style="background:#0d9488;" id="ak-prereg-add-field-btn">+ Add field</button>' +
@@ -2365,6 +2444,11 @@
                 );
             })
             .join('');
+        tbody.querySelectorAll('input[id^="ak-prereg-step-"]').forEach((el) => {
+            const sync = () => syncAkPreregStepSectionsEditor();
+            el.addEventListener('input', sync);
+            el.addEventListener('change', sync);
+        });
     }
 
     window.removeAdminPreregFieldRow = function removeAdminPreregFieldRow(idx) {
@@ -2393,10 +2477,8 @@
             if (!r.ok) throw new Error(data.error || r.statusText);
             const fields = Array.isArray(data.fields) ? data.fields : [];
             window.__akPreregAdminRows = mergeFormFieldLists(fields, [], AK_DEFAULT_PREREG_FIELDS);
-            applyStepSectionsToEditor(
-                'ak-prereg',
-                normalizeStepSectionsClient(data.stepSections, AK_DEFAULT_PREREG_STEP_SECTIONS),
-                4
+            syncAkPreregStepSectionsEditor(
+                normalizeStepSectionsClient(data.stepSections, AK_DEFAULT_PREREG_STEP_SECTIONS)
             );
             renderPreregFieldEditorRows();
         } catch (e) {
@@ -2447,7 +2529,11 @@
             const payload = {
                 version: 3,
                 fields,
-                stepSections: readStepSectionsFromEditor('ak-prereg', 4, AK_DEFAULT_PREREG_STEP_SECTIONS)
+                stepSections: readStepSectionsFromEditor(
+                    'ak-prereg',
+                    akPreregMaxStepFromAdminRows(),
+                    AK_DEFAULT_PREREG_STEP_SECTIONS
+                )
             };
             const r = await fetch('/api/admin/preregistration-form-config', {
                 method: 'POST',
