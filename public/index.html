@@ -1445,25 +1445,31 @@
             });
         }
 
+        function dashboardAuthUrl(tab) {
+            const params = new URLSearchParams();
+            params.set(tab === 'signup' ? 'signup' : 'login', '1');
+            if (new URLSearchParams(window.location.search).get('app') === '1') params.set('app', '1');
+            return '/dashboard?' + params.toString();
+        }
+
         function openAuthModal(tab) {
             refreshPortalAuthUi().then(() => {
                 const p = window.__portalAuth || {};
                 if (tab === 'login' && p.showLogin === false) {
                     if (p.showSignup !== false) tab = 'signup';
                     else {
-                        alert('Sign-in through this page is currently disabled.');
+                        alert('Sign-in is currently disabled.');
                         return;
                     }
                 }
                 if (tab === 'signup' && p.showSignup === false) {
                     if (p.showLogin !== false) tab = 'login';
                     else {
-                        alert('New registrations through this page are currently disabled.');
+                        alert('New registrations are currently disabled.');
                         return;
                     }
                 }
-                document.getElementById('authModal').style.display = 'flex';
-                switchAuthTab(tab === 'signup' ? 'signup' : 'login');
+                window.location.href = dashboardAuthUrl(tab === 'signup' ? 'signup' : 'login');
             });
         }
         function openRegisterModal() {
