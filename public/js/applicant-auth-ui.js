@@ -58,8 +58,8 @@
     const LOGIN_AUTH_UI_VERSION = 'phone-v2';
 
     const PHONE_LOGIN_FORM_INNER =
-        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>' +
-        '<input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email or Phone (WhatsApp)</label>' +
+        '<input type="text" id="doctor-login-phone" required autocomplete="username" inputmode="text" placeholder="Email or 10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
         '<div id="doctor-login-otp-wrap">' +
         '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>' +
         '<div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +

@@ -140,10 +140,10 @@
                 <button type="button" id="doctor-auth-tab-signup" class="ak-auth-tab" role="tab" aria-selected="false" onclick="DoctorAuthUi.switchDoctorAuthTab('signup')">Create account</button>
             </div>
             <div id="doctor-auth-login-panel">
-            <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
+            <p style="color:#64748b;font-size:0.95rem;margin-bottom:14px;">Enter your email or WhatsApp number, tap Send OTP, enter the code, then sign in.</p>
             <form id="doctor-login-form" data-auth-ui="phone-v2">
-                <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Phone (WhatsApp)</label>
-                <input type="tel" id="doctor-login-phone" required autocomplete="tel" inputmode="tel" placeholder="10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">
+                <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email or Phone (WhatsApp)</label>
+                <input type="text" id="doctor-login-phone" required autocomplete="username" inputmode="text" placeholder="Email or 10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">
                 <div id="doctor-login-otp-wrap">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>
                 <div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
