@@ -139,8 +139,8 @@
             email: isAutismDash ? false : cfg.signupOtpEmail === true
         };
         const loginChannels = {
-            whatsapp: cfg.loginOtpWhatsapp !== false,
-            email: isAutismDash ? false : cfg.loginOtpEmail === true
+            whatsapp: cfg.loginOtpWhatsapp === true,
+            email: cfg.loginOtpEmail !== false
         };
         const phoneOnlyLoginUi =
             !!document.getElementById('doctor-login-submit') ||
@@ -492,8 +492,8 @@
             const cfg = global.__portalAuth || {};
             const passwordless = !!cfg.passwordlessLogin;
             const loginChannels = {
-                whatsapp: cfg.loginOtpWhatsapp !== false,
-                email: cfg.loginOtpEmail === true
+                whatsapp: cfg.loginOtpWhatsapp === true,
+                email: cfg.loginOtpEmail !== false
             };
             const body = Object.assign({ portal: portal === 'doctor' ? 'doctor' : portal }, phonePack.payload);
             if (!passwordless) body.password = password;
