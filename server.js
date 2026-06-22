@@ -4153,7 +4153,14 @@ app.post('/api/otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (r
                         eventKey: purposeKey
                     })
                     .then((results) => {
-                        const sent = channel === 'phone' ? results.whatsapp : results.email;
+                        const sent =
+                            channel === 'phone'
+                                ? results.whatsapp && results.whatsapp.ok
+                                    ? results.whatsapp
+                                    : results.sms && results.sms.ok
+                                      ? results.sms
+                                      : results.whatsapp || results.sms
+                                : results.email;
                         const debug = otpLib.otpDebugResponsesEnabled();
                         const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                         if (debug) payload.debugCode = code;
@@ -9817,7 +9824,14 @@ function sendCertificateVerifyOtpChannel(channel, destination, meta, cb) {
                     eventKey: 'OTP_VERIFICATION'
                 })
                 .then((results) => {
-                    const sent = channel === 'phone' ? results.whatsapp : results.email;
+                    const sent =
+                        channel === 'phone'
+                            ? results.whatsapp && results.whatsapp.ok
+                                ? results.whatsapp
+                                : results.sms && results.sms.ok
+                                  ? results.sms
+                                  : results.whatsapp || results.sms
+                            : results.email;
                     const debug =
                         otpLib.otpDebugResponsesEnabled();
                     if (!sent.ok && !sent.skipped) {
@@ -10510,7 +10524,14 @@ app.post('/api/admin/otp/send', withIntegrationSettingsLoaded, (req, res) => {
                             eventKey: 'OTP_VERIFICATION'
                         })
                         .then((results) => {
-                            const sent = channel === 'phone' ? results.whatsapp : results.email;
+                            const sent =
+                            channel === 'phone'
+                                ? results.whatsapp && results.whatsapp.ok
+                                    ? results.whatsapp
+                                    : results.sms && results.sms.ok
+                                      ? results.sms
+                                      : results.whatsapp || results.sms
+                                : results.email;
                             const debug = otpLib.otpDebugResponsesEnabled();
                             const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                             if (debug) payload.debugCode = code;
@@ -11352,7 +11373,14 @@ app.post('/api/admin/proxy-otp/send', withIntegrationSettingsLoaded, (req, res) 
                     db,
                     eventKey: 'OTP_VERIFICATION'
                 }).then((results) => {
-                    const sent = channel === 'phone' ? results.whatsapp : results.email;
+                    const sent =
+                        channel === 'phone'
+                            ? results.whatsapp && results.whatsapp.ok
+                                ? results.whatsapp
+                                : results.sms && results.sms.ok
+                                  ? results.sms
+                                  : results.whatsapp || results.sms
+                            : results.email;
                     const debug = otpLib.otpDebugResponsesEnabled();
                     const payload = { success: true, ttlMinutes: otpLib.OTP_TTL_MIN };
                     if (debug) payload.debugCode = code;

@@ -2162,7 +2162,7 @@
 
                         <div style="grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid #e2e8f0;">
                             <h4 style="margin:0 0 8px;color:#0c4a6e;">MSG91 SMS (India)</h4>
-                            <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Transactional SMS for OTP and programme updates. Use DLT-approved <strong>Flow ID</strong> templates from your MSG91 panel. Phone OTP uses MSG91 when configured (WhatsApp is fallback).</p>
+                            <p style="font-size:0.82rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Transactional SMS for OTP and programme updates. Used as fallback when WhatsApp is unavailable. Phone OTP uses <strong>WhatsApp first</strong> when Meta is configured.</p>
                         </div>
                         <div style="grid-column:1/-1;"><label>MSG91 Auth Key</label><input type="password" id="int-msg91-key" placeholder="From MSG91 dashboard → API" style="width:100%" autocomplete="new-password"></div>
                         <div><label>Sender ID (DLT, 6 chars)</label><input type="text" id="int-msg91-sender" placeholder="VGMFND" style="width:100%" maxlength="6"></div>

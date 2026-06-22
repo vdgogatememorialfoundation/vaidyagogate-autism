@@ -151,6 +151,33 @@
         });
     }
 
+    function regOtpSendKey(sid, fieldKey, purpose) {
+        return String(sid) + ':' + fieldKey + ':' + purpose;
+    }
+
+    function takeRegOtpForceResend(sid, fieldKey, purpose) {
+        window.__regOtpSendKeys = window.__regOtpSendKeys || {};
+        const key = regOtpSendKey(sid, fieldKey, purpose);
+        const forceResend = !!window.__regOtpSendKeys[key];
+        window.__regOtpSendKeys[key] = true;
+        return forceResend;
+    }
+
+    function applyRegOtpSendStatus(statusEl, data, channel) {
+        if (!statusEl) return;
+        if (data.reused) {
+            statusEl.textContent =
+                'Code still valid — check WhatsApp. Tap Send again to resend a new message.';
+            statusEl.style.color = '#b45309';
+            return;
+        }
+        statusEl.style.color = '#059669';
+        statusEl.textContent =
+            data.debugCode && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+                ? 'Code sent (dev: ' + data.debugCode + ')'
+                : 'Sent ✓';
+    }
+
     global.OtpUi = {
         channelLabel,
         notifyOtpSent,
@@ -158,6 +185,8 @@
         signupOtpButtonIds,
         cooldownSignupChannel,
         loginOtpButtonIds,
-        cooldownLoginChannel
+        cooldownLoginChannel,
+        takeRegOtpForceResend,
+        applyRegOtpSendStatus
     };
 })(typeof window !== 'undefined' ? window : global);

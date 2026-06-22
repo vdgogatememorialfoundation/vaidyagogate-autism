@@ -1551,6 +1551,9 @@ async function sendRegistrationOtpForField(fieldKey) {
     const purpose = window.__otpOnStep1 ? 'registration' : 'registration_field';
     const body = { channel, destination: dest, purpose, seminarId: sid };
     if (!window.__otpOnStep1) body.fieldKey = fieldKey;
+    if (window.OtpUi && typeof window.OtpUi.takeRegOtpForceResend === 'function') {
+        body.forceResend = window.OtpUi.takeRegOtpForceResend(sid, fieldKey, purpose);
+    }
     const statusEl = document.getElementById(fieldKey === 'email' ? 'reg-otp-status-email' : 'reg-otp-status-phone');
     if (statusEl) statusEl.textContent = 'Sending…';
     try {
@@ -1564,17 +1567,24 @@ async function sendRegistrationOtpForField(fieldKey) {
             if (statusEl) statusEl.textContent = '';
             return alert(data.error || 'Could not send code.');
         }
-        if (statusEl) {
+        if (window.OtpUi && typeof window.OtpUi.applyRegOtpSendStatus === 'function') {
+            window.OtpUi.applyRegOtpSendStatus(statusEl, data, channel);
+        } else if (statusEl) {
             statusEl.textContent =
                 data.debugCode && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
                     ? 'Code sent (dev: ' + data.debugCode + ')'
                     : 'Sent ✓';
         }
-        if (data.debugCode && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-            console.info('OTP debug:', data.debugCode);
+        if (data.debugCode) console.info('OTP debug:', data.debugCode);
+        if (window.OtpUi) {
+            window.OtpUi.notifyOtpSent(channel, data, {
+                customMessage: data.reused
+                    ? 'Your code is still valid. Check WhatsApp, or tap Send again to resend.'
+                    : undefined
+            });
+        } else if (!data.reused) {
+            alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
         }
-        if (window.OtpUi) window.OtpUi.notifyOtpSent(channel, data);
-        else alert('OTP sent successfully to your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
     } catch (e) {
         console.error(e);
         if (statusEl) statusEl.textContent = '';
@@ -1656,6 +1666,9 @@ async function sendRegistrationSubmitOtpForField(fieldKey) {
     const dest = registrationOtpDestination(fieldKey);
     if (!dest) return alert(channel === 'email' ? 'Enter your email first.' : 'Enter your phone first.');
     const body = { channel, destination: dest, purpose: 'registration_submit', seminarId: sid };
+    if (window.OtpUi && typeof window.OtpUi.takeRegOtpForceResend === 'function') {
+        body.forceResend = window.OtpUi.takeRegOtpForceResend(sid, fieldKey, 'registration_submit');
+    }
     const statusEl = document.getElementById(
         fieldKey === 'email' ? 'reg-submit-otp-status-email' : 'reg-submit-otp-status-phone'
     );
@@ -1671,20 +1684,21 @@ async function sendRegistrationSubmitOtpForField(fieldKey) {
             if (statusEl) statusEl.textContent = '';
             return alert(data.error || 'Could not send code.');
         }
-        if (statusEl) {
-            statusEl.textContent = data.debugCode
-                ? 'Code sent (dev: ' + data.debugCode + ')'
-                : 'Sent ✓';
+        if (window.OtpUi && typeof window.OtpUi.applyRegOtpSendStatus === 'function') {
+            window.OtpUi.applyRegOtpSendStatus(statusEl, data, channel);
+        } else if (statusEl) {
+            statusEl.textContent = data.debugCode ? 'Code sent (dev: ' + data.debugCode + ')' : 'Sent ✓';
         }
         if (data.debugCode) console.info('Submit OTP debug:', data.debugCode);
         if (window.OtpUi) {
             window.OtpUi.notifyOtpSent(channel, data, {
-                customMessage:
-                    'OTP sent successfully. Check your ' +
-                    (channel === 'email' ? 'email' : 'WhatsApp') +
-                    ' before submitting your application.'
+                customMessage: data.reused
+                    ? 'Your code is still valid. Check WhatsApp, or tap Send again to resend.'
+                    : 'OTP sent successfully. Check your ' +
+                          (channel === 'email' ? 'email' : 'WhatsApp') +
+                          ' before submitting your application.'
             });
-        } else {
+        } else if (!data.reused) {
             alert('OTP sent successfully. Check your ' + (channel === 'email' ? 'email' : 'WhatsApp') + '.');
         }
     } catch (e) {
