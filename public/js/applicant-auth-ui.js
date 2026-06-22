@@ -813,7 +813,11 @@
             const otpOn = loginOtpEnabled(cfg);
 
             if (!otpOn) {
-                const emailRaw = String((document.getElementById('doctor-login-email') || {}).value || '').trim();
+                const emailField = document.getElementById('doctor-login-email');
+                const unifiedField = document.getElementById('doctor-login-phone');
+                const emailRaw = String(
+                    (emailField && emailField.value) || (unifiedField && unifiedField.value) || ''
+                ).trim();
                 const password = String((document.getElementById('doctor-login-password') || {}).value || '');
                 let email = emailRaw.toLowerCase();
                 if (typeof validateEmailClient === 'function') {
