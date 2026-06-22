@@ -3705,6 +3705,7 @@ function resolveLoginUserForOtp(email, password, cb, options) {
     const requirePassword = options && options.requirePassword === true;
     const phoneRaw = options && options.phone;
     const phoneOnly = !!(options && options.phoneOnly);
+    const channel = String((options && options.channel) || '').toLowerCase();
 
     if (phoneOnly) {
         const phoneV = contactValidation.validatePhone(phoneRaw);
@@ -3757,7 +3758,7 @@ function resolveLoginUserForOtp(email, password, cb, options) {
             }
         }
         if (!portalAuthPolicy.isStaffPortalAccount(row)) {
-            const phoneCheck = applicantLoginPhoneGate(row, phoneRaw, 'public');
+            const phoneCheck = applicantLoginPhoneGate(row, phoneRaw, 'public', channel);
             if (!phoneCheck.ok) {
                 return cb(null, { status: phoneCheck.status || 400, error: phoneCheck.error });
             }
@@ -3766,14 +3767,17 @@ function resolveLoginUserForOtp(email, password, cb, options) {
     });
 }
 
-/** Phone match only when login OTP (WhatsApp) is enabled — not for email/password-only sign-in. */
-function applicantLoginPhoneGate(row, phoneRaw, loginPortal) {
+/** Phone match only when WhatsApp login OTP is required for the requested channel. */
+function applicantLoginPhoneGate(row, phoneRaw, loginPortal, channel) {
     if (portalAuthPolicy.isStaffPortalAccount(row)) return { ok: true };
     if (!portalAuthPolicy.loginOtpRequiredForPortal(loginPortal || 'public')) {
         return { ok: true };
     }
     const channels = portalAuthPolicy.loginOtpChannels();
     if (!channels.whatsapp) return { ok: true };
+    if (channel === 'email') {
+        return { ok: true };
+    }
     return verifyApplicantLoginPhone(row, phoneRaw);
 }
 
@@ -3879,10 +3883,10 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         }
         res.json(payload);
     },
-            { forceResend: !!(req.body && req.body.forceResend) }
+            { forceResend: !!(req.body && req.body.forceResend), channel }
         );
     },
-        { requirePassword, phone, phoneOnly }
+        { requirePassword, phone, phoneOnly, channel }
     );
 });
 
@@ -3901,171 +3905,36 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
         email || null,
         password,
         (err, out) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (out.status !== 200) {
-            return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
-        }
-        const row = out.row;
-        const dest = authUsers.loginOtpDestination(channel, row);
-        if (!dest) return res.status(400).json({ error: 'Missing destination on account' });
-        const meta = { userId: row.id };
-        otpLib.verifyOtp(
-            db,
-            {
-                channel,
-                destination: dest,
-                purpose: 'login',
-                code,
-                meta,
-                userId: row.id,
-                seminarId: null
-            },
-            (verr, result) => {
-                if (verr) return res.status(500).json({ error: verr.message });
-                if (!result || !result.ok) {
-                    return res.status(400).json({ error: (result && result.error) || 'Verification failed' });
-                }
-                res.json({ success: true, token: result.token });
+            if (err) return res.status(500).json({ error: err.message });
+            if (out.status !== 200) {
+                return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
             }
-        );
-    },
-        { requirePassword, phone, phoneOnly }
-    );
-});
-
-/** Phone + OTP code → sign in (one step for passwordless applicant portal). */
-app.post('/api/auth/login-phone-otp', withAuxiliaryTables, (req, res) => {
-    const { phone, code } = req.body || {};
-    const phoneV = contactValidation.validatePhone(phone);
-    if (!phoneV.valid) return res.status(400).json({ error: phoneV.message });
-    const codeStr = String(code || '').trim();
-    if (!codeStr) return res.status(400).json({ error: 'OTP code is required.' });
-
-    const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
-    if (!portalAuthPolicy.applicantLoginOtpRequired(loginPortal)) {
-        return res.status(400).json({ error: 'Phone OTP sign-in is disabled. Use your email and password.' });
-    }
-    authUsers.findUserByPhone(db, phoneV.cleanedPhone, (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) {
-            return res.status(401).json({
-                error: 'No account found with this phone number. Please create an account first.',
-                needsSignup: true
-            });
-        }
-        if (Number(row.is_banned) === 1) {
-            return res.status(403).json({
-                error: 'Your account has been banned. Please contact the foundation office.',
-                accountBanned: true
-            });
-        }
-        if (Number(row.is_disabled) === 1) {
-            return res.status(403).json({ error: 'Your account has been disabled. Please contact support.' });
-        }
-        const userRoles = require('./lib/user-roles');
-        if (userRoles.isStaffPortalAccount(row) || String(row.role || '').toLowerCase() === 'admin') {
-            return res.status(403).json({
-                error: 'This phone number is linked to a staff account. Use the admin portal to sign in.'
-            });
-        }
-        if (!userRoles.isDoctorPortalAccount(row)) {
-            return res.status(403).json({ error: 'This account cannot sign in to the applicant portal.' });
-        }
-        const dest = authUsers.loginOtpDestination('phone', row);
-        if (!dest) return res.status(400).json({ error: 'No phone on file for this account.' });
-        const meta = { userId: row.id };
-
-        function tryVerifyDestination(destTry, next) {
+            const row = out.row;
+            const dest = authUsers.loginOtpDestination(channel, row);
+            if (!dest) return res.status(400).json({ error: 'Missing destination on account' });
+            const meta = { userId: row.id };
             otpLib.verifyOtp(
                 db,
                 {
-                    channel: 'phone',
-                    destination: destTry,
+                    channel,
+                    destination: dest,
                     purpose: 'login',
-                    code: codeStr,
+                    code,
                     meta,
                     userId: row.id,
                     seminarId: null
                 },
                 (verr, result) => {
-                    if (verr) return next(verr);
-                    if (result && result.ok) return next(null, result);
-                    next(null, null);
-                }
-            );
-        }
-
-        const destAlt = otpLib.normalizeOtpDestination('phone', phoneV.cleanedPhone);
-
-        function finishLoginOk() {
-            delete row.password;
-            normalizeAuthUserRow(row);
-            res.json({ success: true, user: row });
-            recordUserLogin(row.id, () => {});
-            activityLog.logFromRequest(db, req, {
-                user_id: row.id,
-                user_role: row.role || row.user_role,
-                action: 'auth.login',
-                meta: { email: row.email, user_id_string: row.user_id_string, method: 'phone_otp' }
-            });
-        }
-
-        function logVerifyFail(extra) {
-            // #region agent log
-            try {
-                fs.appendFileSync(
-                    path.join(__dirname, 'debug-7880d4.log'),
-                    JSON.stringify({
-                        sessionId: '7880d4',
-                        timestamp: Date.now(),
-                        location: 'server.js:login-phone-otp',
-                        message: 'login otp verify failed',
-                        data: Object.assign(
-                            { dest, userId: row.id, codeLen: codeStr.replace(/\D/g, '').length },
-                            extra || {}
-                        ),
-                        hypothesisId: 'H'
-                    }) + '\n'
-                );
-            } catch (_) {}
-            // #endregion
-        }
-
-        function rejectAfterSignupCodeCheck() {
-            const tryDest = destAlt || dest;
-            const codeNorm = otpLib.sanitizeOtpCode(codeStr);
-            const nowIso = new Date().toISOString();
-            db.get(
-                `SELECT meta FROM otp_codes WHERE channel = 'phone' AND destination = ? AND purpose = 'signup' AND consumed = 0 AND expires_at > ? ORDER BY id DESC LIMIT 1`,
-                [tryDest, nowIso],
-                (lookupErr, signupRow) => {
-                    if (lookupErr) return res.status(500).json({ error: lookupErr.message });
-                    const signupCode = otpLib.readOtpFromMeta(signupRow && signupRow.meta);
-                    if (codeNorm && signupCode && codeNorm === signupCode) {
-                        return res.status(400).json({
-                            error:
-                                'That WhatsApp code is for Create account (registration), not sign-in. Tap Send OTP on Sign in to get a sign-in code.'
-                        });
+                    if (verr) return res.status(500).json({ error: verr.message });
+                    if (!result || !result.ok) {
+                        return res.status(400).json({ error: (result && result.error) || 'Verification failed' });
                     }
-                    logVerifyFail({});
-                    return res.status(400).json({ error: 'Invalid or expired code' });
+                    res.json({ success: true, token: result.token });
                 }
             );
-        }
-
-        tryVerifyDestination(dest, (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            if (result && result.ok) return finishLoginOk();
-            if (destAlt && destAlt !== dest) {
-                return tryVerifyDestination(destAlt, (err2, result2) => {
-                    if (err2) return res.status(500).json({ error: err2.message });
-                    if (result2 && result2.ok) return finishLoginOk();
-                    return rejectAfterSignupCodeCheck();
-                });
-            }
-            return rejectAfterSignupCodeCheck();
-        });
-    });
+        },
+        { requirePassword, phone, phoneOnly, channel }
+    );
 });
 
 // OTP: send & verify (used by homepage signup + doctor registration)
