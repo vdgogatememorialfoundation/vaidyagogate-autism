@@ -46,7 +46,7 @@
 
     function loginOtpEnabled(cfg) {
         cfg = cfg || global.__portalAuth || {};
-        return cfg.applicantLoginOtpRequired === true;
+        return cfg.applicantLoginOtpRequired === true || cfg.requireLoginOtp === true;
     }
 
     function signupTokensReady(channels) {

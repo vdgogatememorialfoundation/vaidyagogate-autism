@@ -131,7 +131,7 @@
     function applyApplicantAuthUi(cfg) {
         cfg = cfg || global.__portalAuth || {};
         const passwordless = !!cfg.passwordlessLogin;
-        const loginOtpOn = cfg.applicantLoginOtpRequired === true;
+        const loginOtpOn = cfg.applicantLoginOtpRequired === true || cfg.requireLoginOtp === true;
         const signupOtpOn = cfg.requireSignupOtp !== false;
         const isAutismDash = document.body && document.body.classList.contains('ak-portal-dash');
         const signupChannels = {
