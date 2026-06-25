@@ -4427,10 +4427,28 @@ async function loadAdminSeminarAnalytics() {
     }
 }
 
+function setReportFormat(fmt, buttonEl) {
+    window.__reportFmt = fmt;
+    if (!buttonEl) return;
+    const buttons = buttonEl.parentNode.querySelectorAll('button');
+    buttons.forEach((btn) => {
+        btn.style.outline = 'none';
+        btn.style.boxShadow = 'none';
+        btn.style.opacity = '0.6';
+    });
+    buttonEl.style.opacity = '1.0';
+    buttonEl.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.5)';
+}
+
 async function initAdminReportsTab() {
     await fillAdminSeminarSelect('report-seminar', false);
     await fillAdminSeminarSelect('reg-ov-seminar', false);
     await loadAdminRegistrationOverrides();
+    // Default to xlsx format and highlight it
+    const xlsxBtn = document.getElementById('btn-report-fmt-xlsx');
+    if (xlsxBtn) {
+        setReportFormat('xlsx', xlsxBtn);
+    }
 }
 
 function downloadAdminReport(type, format) {
