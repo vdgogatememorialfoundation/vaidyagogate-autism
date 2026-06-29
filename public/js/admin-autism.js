@@ -88,7 +88,12 @@
             '<a class="btn-primary" id="seminar-public-prereg-open" href="/preregister" target="_blank" rel="noopener" style="padding:6px 12px;font-size:0.82rem;background:#0d9488;text-decoration:none;display:none;">Open form</a>' +
             '</div>' +
             '<p id="seminar-public-prereg-link-hint" style="margin:8px 0 0;font-size:0.76rem;color:#64748b;"></p>' +
-            '</div></div>' +
+            '</div>' +
+            '<div id="seminar-flow-public-prereg-search-wrap" style="margin-top:10px;padding:8px 10px;border:1px dashed #5eead4;border-radius:8px;background:#f0fdfa;display:none;">' +
+            '<label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;font-weight:600;color:#0f766e;"><input type="checkbox" id="seminar-flow-public-prereg-search"> Enable public pre-registration search (anyone can look up status)</label>' +
+            '<p style="margin:6px 0 0;font-size:0.76rem;color:#64748b;">When enabled, a public search page lets anyone look up pre-registration status by name, email, phone, or app ID. Contact info is masked.</p>' +
+            '</div>' +
+            '</div>' +
             '<p style="flex:1 1 100%;margin:0;font-size:0.78rem;color:#64748b;">With auto-accept on, applicants are approved instantly; you can still reject any application from tracking at any time.</p>';
         block.insertAdjacentElement('afterend', flow);
         injectCompetitionFlowBlock();
@@ -511,6 +516,7 @@
                 (document.getElementById('seminar-flow-auto-prereg') || {}).checked === true,
             autoAcceptRegistration: (document.getElementById('seminar-flow-auto-reg') || {}).checked === true,
             publicPreregEnabled: (document.getElementById('seminar-flow-public-prereg') || {}).checked === true,
+            publicPreregSearchEnabled: (document.getElementById('seminar-flow-public-prereg-search') || {}).checked === true,
             ...buildCompetitionFlowFromUi()
         };
     }
@@ -562,7 +568,8 @@
             Object.prototype.hasOwnProperty.call(flow, 'publicPreregEnabled') ||
             Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen') ||
             Object.prototype.hasOwnProperty.call(flow, 'autoAcceptPreregistration') ||
-            Object.prototype.hasOwnProperty.call(flow, 'autoAcceptRegistration')
+            Object.prototype.hasOwnProperty.call(flow, 'autoAcceptRegistration') ||
+            Object.prototype.hasOwnProperty.call(flow, 'publicPreregSearchEnabled')
         );
     }
 
@@ -577,7 +584,8 @@
                     mainRegistrationOpen: true,
                     autoAcceptPreregistration: false,
                     autoAcceptRegistration: false,
-                    publicPreregEnabled: false
+                    publicPreregEnabled: false,
+                    publicPreregSearchEnabled: false
                 };
             }
             const preregistrationRequired = flowFlagBool(flow, 'preregistrationRequired', true);
@@ -587,7 +595,8 @@
                 mainRegistrationRequired,
                 autoAcceptPreregistration: flowFlagBool(flow, 'autoAcceptPreregistration', false),
                 autoAcceptRegistration: flowFlagBool(flow, 'autoAcceptRegistration', false),
-                publicPreregEnabled: flowFlagBool(flow, 'publicPreregEnabled', false)
+                publicPreregEnabled: flowFlagBool(flow, 'publicPreregEnabled', false),
+                publicPreregSearchEnabled: flowFlagBool(flow, 'publicPreregSearchEnabled', false)
             };
             if (mainRegistrationRequired && !preregistrationRequired) {
                 flags.mainRegistrationOpen = true;
@@ -604,7 +613,8 @@
                 mainRegistrationOpen: false,
                 autoAcceptPreregistration: false,
                 autoAcceptRegistration: false,
-                publicPreregEnabled: false
+                publicPreregEnabled: false,
+                publicPreregSearchEnabled: false
             };
         }
     }
@@ -623,6 +633,10 @@
         if (autoPre) autoPre.checked = flags.autoAcceptPreregistration;
         if (autoReg) autoReg.checked = flags.autoAcceptRegistration;
         if (publicPrereg) publicPrereg.checked = flags.publicPreregEnabled;
+        const publicSearch = document.getElementById('seminar-flow-public-prereg-search');
+        if (publicSearch) publicSearch.checked = flags.publicPreregSearchEnabled;
+        const publicSearchWrap = document.getElementById('seminar-flow-public-prereg-search-wrap');
+        if (publicSearchWrap) publicSearchWrap.style.display = flags.publicPreregEnabled ? '' : 'none';
         syncSeminarFlowFormSections(options);
         applyCompetitionFlowToUi(
             options && options.registrationFormJson != null
@@ -685,6 +699,11 @@
         if (autoPre && !preOn) autoPre.checked = false;
         if (autoReg && !mainOn) autoReg.checked = false;
         if (publicChk && !preOn && !opts.fromSaved) publicChk.checked = false;
+        const publicSearchWrap = document.getElementById('seminar-flow-public-prereg-search-wrap');
+        const publicSearchChk = document.getElementById('seminar-flow-public-prereg-search');
+        const publicPreregOn = publicChk && publicChk.checked && preOn;
+        if (publicSearchWrap) publicSearchWrap.style.display = publicPreregOn ? '' : 'none';
+        if (publicSearchChk && !publicPreregOn && !opts.fromSaved) publicSearchChk.checked = false;
         if (mainOpen) {
             if (!mainOn) mainOpen.checked = false;
             else if (!preOn) mainOpen.checked = true;
@@ -2900,7 +2919,7 @@
         patchEditSeminarFlowFlags();
         document.getElementById('seminar-flow-prereg-required')?.addEventListener('change', syncSeminarFlowFormSections);
         document.getElementById('seminar-flow-main-required')?.addEventListener('change', syncSeminarFlowFormSections);
-        document.getElementById('seminar-flow-public-prereg')?.addEventListener('change', syncPublicPreregLinkUi);
+        document.getElementById('seminar-flow-public-prereg')?.addEventListener('change', () => { syncSeminarFlowFormSections(); syncPublicPreregLinkUi(); });
         document.getElementById('seminar-public-prereg-copy')?.addEventListener('click', () => {
             const input = document.getElementById('seminar-public-prereg-url');
             const val = input && input.value ? input.value : '';

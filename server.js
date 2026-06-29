@@ -9052,8 +9052,40 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
     );
 });
 
+// Helper: check if any active seminar has public pre-registration search enabled
+function isPublicPreregSearchEnabled(cb) {
+    db.all(
+        `SELECT registration_form_json FROM seminars WHERE is_active = 1`,
+        [],
+        (err, rows) => {
+            if (err) return cb(err, false);
+            const enabled = (rows || []).some(r => {
+                try {
+                    const flags = seminarFlowFlagsFromJson(r.registration_form_json);
+                    return flags.publicPreregEnabled && flags.publicPreregSearchEnabled;
+                } catch (_) { return false; }
+            });
+            cb(null, enabled);
+        }
+    );
+}
+
+// Check if public pre-registration search is enabled
+app.get('/api/public/preregistrations/search/enabled', (req, res) => {
+    isPublicPreregSearchEnabled((err, enabled) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ enabled: !!enabled });
+    });
+});
+
 // Public search for pre-registration status
 app.get('/api/public/preregistrations/search', (req, res) => {
+    isPublicPreregSearchEnabled((checkErr, searchEnabled) => {
+        if (checkErr) return res.status(500).json({ error: checkErr.message });
+        if (!searchEnabled) {
+            return res.status(403).json({ error: 'Public pre-registration search is not currently enabled.' });
+        }
+
     const q = String(req.query.q || '').trim();
     if (!q || q.length < 3) {
         return res.status(400).json({ error: 'Search query must be at least 3 characters' });
@@ -9107,6 +9139,7 @@ app.get('/api/public/preregistrations/search', (req, res) => {
         
         res.json(masked);
     });
+    }); // end isPublicPreregSearchEnabled callback
 });
 
 function enableCertificateForRegistration(registrationId, cb) {
