@@ -6912,49 +6912,100 @@ function handleFlowAction(payload, cb) {
             const eventTitle = sem.title;
             
             db.get(
-                `SELECT id, user_id_string, first_name, last_name, email FROM users WHERE phone = ? OR whatsapp = ?`,
+                `SELECT id, user_id_string, first_name, last_name, email, password FROM users WHERE phone = ? OR whatsapp = ?`,
                 [cleanPhone, cleanPhone],
                 (errUser, userRow) => {
                     if (errUser) return cb(errUser);
                     
-                    if (action === 'ping' || !screen || screen === 'WELCOME' || screen === 'MAIN_HUB') {
+                    if (action === 'ping' || !screen || screen === 'WELCOME') {
                         if (!userRow) {
                             return cb(null, {
                                 version: "2.1",
-                                screen: "MAIN_HUB",
+                                screen: "SIGN_IN",
                                 data: {
                                     event_title: eventTitle,
-                                    is_registered: false,
-                                    is_preregistered: false,
-                                    user_name: "Guest"
+                                    message: "Welcome! Please sign in with your email or password, or navigate to Sign Up."
                                 }
                             });
                         }
                         
+                        return loadUserHubData(userRow.id, eventTitle, seminarId, cb);
+                    }
+                    
+                    if (screen === 'SIGN_IN') {
+                        const emailInput = String(data.email || '').trim().toLowerCase();
+                        const passwordInput = String(data.password || '').trim();
+                        
+                        if (!emailInput || !passwordInput) {
+                            return cb(new Error('Email/Phone and Password are required.'));
+                        }
+                        
                         db.get(
-                            `SELECT id, application_no, status FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
-                            [userRow.id, seminarId],
-                            (errPre, preregRow) => {
-                                if (errPre) return cb(errPre);
+                            `SELECT id, password FROM users WHERE (LOWER(email) = ? OR phone = ? OR whatsapp = ?)`,
+                            [emailInput, emailInput, emailInput],
+                            (errLook, rowLook) => {
+                                if (errLook) return cb(errLook);
+                                if (!rowLook || rowLook.password !== passwordInput) {
+                                    return cb(new Error('Invalid email/phone or password. Please try again.'));
+                                }
                                 
-                                db.get(
-                                    `SELECT id, application_no, status FROM registrations WHERE user_id = ? AND seminar_id = ?`,
-                                    [userRow.id, seminarId],
-                                    (errReg, regRow) => {
-                                        if (errReg) return cb(errReg);
+                                return loadUserHubData(rowLook.id, eventTitle, seminarId, cb);
+                            }
+                        );
+                        return;
+                    }
+                    
+                    if (screen === 'SIGN_UP') {
+                        const firstName = String(data.first_name || '').trim();
+                        const lastName = String(data.last_name || '').trim();
+                        const emailInput = String(data.email || '').trim().toLowerCase();
+                        const passwordInput = String(data.password || '').trim();
+                        const confirmPasswordInput = String(data.confirm_password || '').trim();
+                        const termsAgreement = data.terms_agreement || data.terms_acceptance || data.agree_tnc || '';
+                        
+                        if (!firstName || !lastName || !emailInput || !passwordInput) {
+                            return cb(new Error('First Name, Last Name, Email, and Password are required.'));
+                        }
+                        if (passwordInput !== confirmPasswordInput) {
+                            return cb(new Error('Passwords do not match.'));
+                        }
+                        
+                        db.get(
+                            `SELECT id FROM users WHERE email = ? OR phone = ? OR whatsapp = ?`,
+                            [emailInput, cleanPhone, cleanPhone],
+                            (errExist, rowExist) => {
+                                if (errExist) return cb(errExist);
+                                if (rowExist) {
+                                    return cb(new Error('An account with this email or phone number already exists. Please Sign In.'));
+                                }
+                                
+                                const userIdString = 'USR_' + Math.random().toString(36).substring(2, 11).toUpperCase();
+                                
+                                db.run(
+                                    `INSERT INTO users (user_id_string, first_name, last_name, email, phone, whatsapp, password, role, user_role, activated) VALUES (?, ?, ?, ?, ?, ?, ?, 'doctor', 'doctor', 1)`,
+                                    [userIdString, firstName, lastName, emailInput, cleanPhone, cleanPhone, passwordInput],
+                                    function(errInsert) {
+                                        if (errInsert) return cb(errInsert);
+                                        const newUserId = this.lastID;
                                         
-                                        cb(null, {
-                                            version: "2.1",
-                                            screen: "MAIN_HUB",
-                                            data: {
-                                                event_title: eventTitle,
-                                                is_registered: !!regRow,
-                                                is_preregistered: !!preregRow,
-                                                prereg_status: preregRow ? preregRow.status : '',
-                                                reg_status: regRow ? regRow.status : '',
-                                                user_name: `${userRow.first_name || ''} ${userRow.last_name || ''}`.trim()
+                                        const applicationNo = 'PRG-' + Math.floor(100000 + Math.random() * 900000);
+                                        const preregFormData = {
+                                            first_name: firstName,
+                                            last_name: lastName,
+                                            email: emailInput,
+                                            phone: cleanPhone,
+                                            terms_agreement: termsAgreement
+                                        };
+                                        
+                                        db.run(
+                                            `INSERT INTO preregistrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'approved', ?)`,
+                                            [newUserId, seminarId, applicationNo, JSON.stringify(preregFormData)],
+                                            function(errPre) {
+                                                if (errPre) return cb(errPre);
+                                                
+                                                return loadUserHubData(newUserId, eventTitle, seminarId, cb);
                                             }
-                                        });
+                                        );
                                     }
                                 );
                             }
@@ -6962,59 +7013,75 @@ function handleFlowAction(payload, cb) {
                         return;
                     }
                     
+                    if (screen === 'FORGOT_PASSWORD') {
+                        const emailInput = String(data.email || '').trim().toLowerCase();
+                        if (!emailInput) {
+                            return cb(new Error('Please enter your email to reset password.'));
+                        }
+                        
+                        db.get(
+                            `SELECT id, first_name, email FROM users WHERE email = ?`,
+                            [emailInput],
+                            (errForgot, rowForgot) => {
+                                if (errForgot) return cb(errForgot);
+                                if (!rowForgot) {
+                                    return cb(new Error('No account found with this email.'));
+                                }
+                                
+                                cb(null, {
+                                    version: "2.1",
+                                    screen: "SUCCESS_SCREEN",
+                                    data: {
+                                        message: `If your email is registered, we have sent password reset instructions to ${emailInput}.`
+                                    }
+                                });
+                            }
+                        );
+                        return;
+                    }
+                    
                     if (screen === 'PRE_REG_FORM_SUBMIT') {
-                        const firstName = String(data.first_name || '').trim();
-                        const lastName = String(data.last_name || '').trim();
-                        const email = String(data.email || '').trim().toLowerCase();
+                        if (!userRow) return cb(new Error('Please sign in or sign up first.'));
+                        
+                        const regType = String(data.registration_type || 'seminar').trim();
                         const city = String(data.city || '').trim();
                         const state = String(data.state || '').trim();
                         const qual = String(data.qualification || '').trim();
                         const college = String(data.college || '').trim();
-                        const regType = String(data.registration_type || 'seminar').trim();
                         
-                        if (!firstName || !lastName || !email) {
-                            return cb(new Error('First Name, Last Name, and Email are required.'));
-                        }
+                        const applicationNo = 'PRG-' + Math.floor(100000 + Math.random() * 900000);
+                        const preregFormData = {
+                            first_name: userRow.first_name,
+                            last_name: userRow.last_name,
+                            email: userRow.email,
+                            phone: cleanPhone,
+                            city,
+                            state,
+                            qual,
+                            college,
+                            registration_type: regType
+                        };
                         
-                        ensureUserAccount(cleanPhone, firstName, lastName, email, (errAcc, targetUserId) => {
-                            if (errAcc) return cb(errAcc);
-                            
-                            const applicationNo = 'PRG-' + Math.floor(100000 + Math.random() * 900000);
-                            const formData = {
-                                first_name: firstName,
-                                last_name: lastName,
-                                email,
-                                phone: cleanPhone,
-                                city,
-                                state,
-                                qual,
-                                college,
-                                registration_type: regType
-                            };
-                            
-                            db.run(
-                                `INSERT INTO preregistrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'approved', ?)`,
-                                [targetUserId, seminarId, applicationNo, JSON.stringify(formData)],
-                                function(errInsert) {
-                                    if (errInsert) return cb(errInsert);
-                                    
-                                    cb(null, {
-                                        version: "2.1",
-                                        screen: "SUCCESS_SCREEN",
-                                        data: {
-                                            message: `Pre-registration successful for Autism ${regType === 'fellowship' ? 'Fellowship' : 'Seminar'}! Application ID: ${applicationNo}.`
-                                        }
-                                    });
-                                }
-                            );
-                        });
+                        db.run(
+                            `INSERT INTO preregistrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'approved', ?)`,
+                            [userRow.id, seminarId, applicationNo, JSON.stringify(preregFormData)],
+                            function(errPreInsert) {
+                                if (errPreInsert) return cb(errPreInsert);
+                                
+                                cb(null, {
+                                    version: "2.1",
+                                    screen: "SUCCESS_SCREEN",
+                                    data: {
+                                        message: `Pre-registration successful for Autism ${regType === 'fellowship' ? 'Fellowship' : 'Seminar'}! Application ID: ${applicationNo}.`
+                                    }
+                                });
+                            }
+                        );
                         return;
                     }
                     
                     if (screen === 'MAIN_REG_FORM_SUBMIT') {
-                        if (!userRow) {
-                            return cb(new Error('Please complete pre-registration first.'));
-                        }
+                        if (!userRow) return cb(new Error('Please sign in first.'));
                         
                         db.get(
                             `SELECT status, form_data FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
@@ -7064,9 +7131,7 @@ function handleFlowAction(payload, cb) {
                     }
                     
                     if (screen === 'GET_TICKET') {
-                        if (!userRow) {
-                            return cb(new Error('No registration found for this number.'));
-                        }
+                        if (!userRow) return cb(new Error('Please sign in first.'));
                         
                         db.get(
                             `SELECT r.application_no, r.status, t.ticket_id_string, t.is_scanned
@@ -7106,29 +7171,68 @@ function handleFlowAction(payload, cb) {
                             return cb(new Error('Subject and message are required.'));
                         }
                         
-                        ensureUserAccount(cleanPhone, "WhatsApp", "User", `wa_${cleanPhone}@vaidyagogate.org`, (errAcc, targetUserId) => {
-                            if (errAcc) return cb(errAcc);
-                            
-                            db.run(
-                                `INSERT INTO support_tickets (user_id, subject, message, status) VALUES (?, ?, ?, 'open')`,
-                                [targetUserId, subject, message],
-                                function(errInsert) {
-                                    if (errInsert) return cb(errInsert);
-                                    
-                                    cb(null, {
-                                        version: "2.1",
-                                        screen: "SUCCESS_SCREEN",
-                                        data: {
-                                            message: `Support ticket #${this.lastID} created successfully! Our team will contact you shortly.`
-                                        }
-                                    });
-                                }
-                            );
-                        });
+                        const targetUserId = userRow ? userRow.id : null;
+                        if (!targetUserId) return cb(new Error('Please sign in first.'));
+                        
+                        db.run(
+                            `INSERT INTO support_tickets (user_id, subject, message, status) VALUES (?, ?, ?, 'open')`,
+                            [targetUserId, subject, message],
+                            function(errInsert) {
+                                if (errInsert) return cb(errInsert);
+                                
+                                cb(null, {
+                                    version: "2.1",
+                                    screen: "SUCCESS_SCREEN",
+                                    data: {
+                                        message: `Support ticket #${this.lastID} created successfully! Our team will contact you shortly.`
+                                    }
+                                });
+                            }
+                        );
                         return;
                     }
                     
                     cb(new Error(`Unknown screen: ${screen}`));
+                }
+            );
+        }
+    );
+}
+
+function loadUserHubData(userId, eventTitle, seminarId, cb) {
+    db.get(
+        `SELECT id, first_name, last_name FROM users WHERE id = ?`,
+        [userId],
+        (errUser, userRow) => {
+            if (errUser) return cb(errUser);
+            if (!userRow) return cb(new Error('User not found.'));
+            
+            db.get(
+                `SELECT id, application_no, status FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
+                [userId, seminarId],
+                (errPre, preregRow) => {
+                    if (errPre) return cb(errPre);
+                    
+                    db.get(
+                        `SELECT id, application_no, status FROM registrations WHERE user_id = ? AND seminar_id = ?`,
+                        [userId, seminarId],
+                        (errReg, regRow) => {
+                            if (errReg) return cb(errReg);
+                            
+                            cb(null, {
+                                version: "2.1",
+                                screen: "MAIN_HUB",
+                                data: {
+                                    event_title: eventTitle,
+                                    is_registered: !!regRow,
+                                    is_preregistered: !!preregRow,
+                                    prereg_status: preregRow ? preregRow.status : '',
+                                    reg_status: regRow ? regRow.status : '',
+                                    user_name: `${userRow.first_name || ''} ${userRow.last_name || ''}`.trim()
+                                }
+                            });
+                        }
+                    );
                 }
             );
         }
