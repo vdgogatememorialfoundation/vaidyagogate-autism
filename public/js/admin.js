@@ -11295,7 +11295,9 @@ async function loadJudgeCommunicationsAdmin() {
                 const judge = [r.judge_first, r.judge_last].filter(Boolean).join(' ') || r.judge_uid || '—';
                 return (
                     '<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">' +
-                    (r.created_at || '').slice(0, 19) +
+                    (window.PortalDateTime && window.PortalDateTime.formatDb
+                        ? window.PortalDateTime.formatDb(r.created_at) + ' IST'
+                        : (r.created_at || '').slice(0, 19)) +
                     '</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">' +
                     judge +
                     '</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">' +

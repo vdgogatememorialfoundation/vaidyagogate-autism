@@ -48,7 +48,11 @@
                         '</strong><div style="color:#475569;margin-top:4px;font-size:0.88rem;">' +
                         esc((r.body || '').slice(0, 200)) +
                         '</div><div style="font-size:0.78rem;color:#94a3b8;margin-top:6px;">' +
-                        esc((r.created_at || '').slice(0, 16)) +
+                        esc(
+                            window.PortalDateTime && window.PortalDateTime.formatDb
+                                ? window.PortalDateTime.formatDb(r.created_at) + ' IST'
+                                : (r.created_at || '').slice(0, 16)
+                        ) +
                         ' · ' +
                         (r.is_active ? 'Active' : 'Off') +
                         '</div></div>' +

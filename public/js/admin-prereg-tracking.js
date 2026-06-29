@@ -18,6 +18,27 @@
         return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
     }
 
+    function formatPreregTime(raw) {
+        if (!raw) return '—';
+        if (window.PortalDateTime && window.PortalDateTime.formatDb) {
+            return window.PortalDateTime.formatDb(raw) + ' IST';
+        }
+        const s = String(raw).trim();
+        const d = /Z$|[+-]\d{2}/.test(s) ? new Date(s) : new Date(s.replace(' ', 'T') + 'Z');
+        if (Number.isNaN(d.getTime())) return s.slice(0, 16);
+        return (
+            d.toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }) + ' IST'
+        );
+    }
+
     function tabVisible() {
         const el = document.getElementById('tab-prereg-tracking');
         return el && !el.classList.contains('hidden');
@@ -399,7 +420,7 @@
                     regStatusLabel(r) +
                     '</td>' +
                     '<td>' +
-                    esc((r.created_at || '').slice(0, 16)) +
+                    esc(formatPreregTime(r.created_at)) +
                     '</td>' +
                     '<td>' +
                     '<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.78rem;" data-ak-view="' +
@@ -468,6 +489,9 @@
             (src.key === 'public'
                 ? ' <span style="color:#64748b;font-size:0.85rem;">— no sign-in at submission</span>'
                 : '') +
+            '</dd>' +
+            '<dt>Submitted at</dt><dd>' +
+            esc(formatPreregTime(row.created_at)) +
             '</dd>' +
             '<dt>Email / phone</dt><dd>' +
             esc(row.email) +

@@ -232,7 +232,11 @@
                     badge(r.status) +
                     '</td>' +
                     '<td>' +
-                    esc((r.created_at || '').slice(0, 16)) +
+                    esc(
+                        window.PortalDateTime && window.PortalDateTime.formatDb
+                            ? window.PortalDateTime.formatDb(r.created_at) + ' IST'
+                            : (r.created_at || '').slice(0, 16)
+                    ) +
                     '</td>' +
                     '<td><select data-ak-final-status="' +
                     r.id +

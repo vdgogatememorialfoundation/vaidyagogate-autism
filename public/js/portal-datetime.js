@@ -201,6 +201,33 @@
         return d.getTime();
     }
 
+    function parseDbDateTime(iso) {
+        if (!iso) return null;
+        if (iso instanceof Date) return Number.isNaN(iso.getTime()) ? null : iso;
+        const s = String(iso).trim();
+        if (!s) return null;
+        if (/Z$|[+-]\d{2}(:?\d{2})?$/i.test(s)) return new Date(s);
+        let norm = s.includes('T') ? s : s.replace(' ', 'T');
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(norm)) norm += ':00';
+        const d = new Date(norm + 'Z');
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatDbDateTime(iso, opts) {
+        const d = parseDbDateTime(iso);
+        if (!d || Number.isNaN(d.getTime())) return iso ? String(iso) : '';
+        const base = {
+            timeZone: PORTAL_DISPLAY_TZ,
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        return d.toLocaleString('en-IN', Object.assign(base, opts || {}));
+    }
+
     global.PortalDateTime = {
         TZ: PORTAL_DISPLAY_TZ,
         IST_OFFSET,
@@ -214,6 +241,8 @@
         formatStored,
         formatLong: formatPortalDateTimeLong,
         formatEvent: formatEventDisplay,
-        formatScan: formatScanDateTime
+        formatScan: formatScanDateTime,
+        parseDb: parseDbDateTime,
+        formatDb: formatDbDateTime
     };
 })(typeof window !== 'undefined' ? window : global);

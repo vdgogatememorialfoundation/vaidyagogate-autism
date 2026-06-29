@@ -223,10 +223,6 @@ CREATE TABLE IF NOT EXISTS otp_codes (
             consumed INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
-CREATE TABLE IF NOT EXISTS otp_whatsapp_deliveries (
-            otp_code_id INTEGER PRIMARY KEY,
-            sent_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
 CREATE TABLE IF NOT EXISTS otp_verification_tokens (
             id SERIAL PRIMARY KEY,
             token_hash TEXT NOT NULL,

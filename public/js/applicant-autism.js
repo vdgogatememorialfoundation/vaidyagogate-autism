@@ -2975,8 +2975,8 @@
         let foot =
             '<p class="ak-track-card-v3__msg" style="color:#64748b;">Submitted ' +
             escapeAkHtml(
-                window.PortalDateTime && window.PortalDateTime.format
-                    ? window.PortalDateTime.format(r.created_at) + ' IST'
+                window.PortalDateTime && window.PortalDateTime.formatDb
+                    ? window.PortalDateTime.formatDb(r.created_at) + ' IST'
                     : (r.created_at || '').slice(0, 16)
             ) +
             '</p>';
