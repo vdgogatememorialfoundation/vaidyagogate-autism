@@ -6855,6 +6855,309 @@ app.post('/api/auth/reset-password', withAuxiliaryTables, (req, res) => {
     );
 });
 
+// WhatsApp Flows Decryption & Processing Webhook
+app.post('/api/whatsapp/flows', (req, res) => {
+    const whatsappFlowsCrypto = require('./lib/whatsapp-flows-crypto');
+    
+    try {
+        const decryptedRequest = whatsappFlowsCrypto.decryptRequest(req.body);
+        const { decrypted, aesKey, algo } = decryptedRequest;
+        
+        console.log('[whatsapp-flows] decrypted request:', JSON.stringify(decrypted));
+        
+        handleFlowAction(decrypted, (err, responsePayload) => {
+            if (err) {
+                console.error('[whatsapp-flows] processing error:', err);
+                const errResponse = {
+                    version: "2.1",
+                    screen: "ERROR_SCREEN",
+                    data: {
+                        error_message: err.message || 'An error occurred.'
+                    }
+                };
+                const encrypted = whatsappFlowsCrypto.encryptResponse(errResponse, aesKey, algo);
+                return res.json(encrypted);
+            }
+            
+            const encrypted = whatsappFlowsCrypto.encryptResponse(responsePayload, aesKey, algo);
+            res.json(encrypted);
+        });
+    } catch (e) {
+        console.error('[whatsapp-flows] decryption failed:', e);
+        res.status(400).send('Decryption failed.');
+    }
+});
+
+function handleFlowAction(payload, cb) {
+    const { normalizePhoneE164 } = require('./lib/whatsapp-service');
+    const action = payload.action;
+    const screen = payload.screen;
+    const data = payload.data || {};
+    
+    const senderPhone = payload.phone || payload.sender_phone_number || data.phone || data.sender_phone_number || '';
+    const cleanPhone = normalizePhoneE164(senderPhone);
+    
+    if (!cleanPhone) {
+        return cb(new Error('User phone number could not be identified.'));
+    }
+    
+    db.get(
+        `SELECT id, title, event_date FROM seminars WHERE is_active = 1 ORDER BY id DESC LIMIT 1`,
+        [],
+        (errSem, sem) => {
+            if (errSem) return cb(errSem);
+            if (!sem) return cb(new Error('No active event found.'));
+            
+            const seminarId = sem.id;
+            const eventTitle = sem.title;
+            
+            db.get(
+                `SELECT id, user_id_string, first_name, last_name, email FROM users WHERE phone = ? OR whatsapp = ?`,
+                [cleanPhone, cleanPhone],
+                (errUser, userRow) => {
+                    if (errUser) return cb(errUser);
+                    
+                    if (action === 'ping' || !screen || screen === 'WELCOME' || screen === 'MAIN_HUB') {
+                        if (!userRow) {
+                            return cb(null, {
+                                version: "2.1",
+                                screen: "MAIN_HUB",
+                                data: {
+                                    event_title: eventTitle,
+                                    is_registered: false,
+                                    is_preregistered: false,
+                                    user_name: "Guest"
+                                }
+                            });
+                        }
+                        
+                        db.get(
+                            `SELECT id, application_no, status FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
+                            [userRow.id, seminarId],
+                            (errPre, preregRow) => {
+                                if (errPre) return cb(errPre);
+                                
+                                db.get(
+                                    `SELECT id, application_no, status FROM registrations WHERE user_id = ? AND seminar_id = ?`,
+                                    [userRow.id, seminarId],
+                                    (errReg, regRow) => {
+                                        if (errReg) return cb(errReg);
+                                        
+                                        cb(null, {
+                                            version: "2.1",
+                                            screen: "MAIN_HUB",
+                                            data: {
+                                                event_title: eventTitle,
+                                                is_registered: !!regRow,
+                                                is_preregistered: !!preregRow,
+                                                prereg_status: preregRow ? preregRow.status : '',
+                                                reg_status: regRow ? regRow.status : '',
+                                                user_name: `${userRow.first_name || ''} ${userRow.last_name || ''}`.trim()
+                                            }
+                                        });
+                                    }
+                                );
+                            }
+                        );
+                        return;
+                    }
+                    
+                    if (screen === 'PRE_REG_FORM_SUBMIT') {
+                        const firstName = String(data.first_name || '').trim();
+                        const lastName = String(data.last_name || '').trim();
+                        const email = String(data.email || '').trim().toLowerCase();
+                        const city = String(data.city || '').trim();
+                        const state = String(data.state || '').trim();
+                        const qual = String(data.qualification || '').trim();
+                        const college = String(data.college || '').trim();
+                        const regType = String(data.registration_type || 'seminar').trim();
+                        
+                        if (!firstName || !lastName || !email) {
+                            return cb(new Error('First Name, Last Name, and Email are required.'));
+                        }
+                        
+                        ensureUserAccount(cleanPhone, firstName, lastName, email, (errAcc, targetUserId) => {
+                            if (errAcc) return cb(errAcc);
+                            
+                            const applicationNo = 'PRG-' + Math.floor(100000 + Math.random() * 900000);
+                            const formData = {
+                                first_name: firstName,
+                                last_name: lastName,
+                                email,
+                                phone: cleanPhone,
+                                city,
+                                state,
+                                qual,
+                                college,
+                                registration_type: regType
+                            };
+                            
+                            db.run(
+                                `INSERT INTO preregistrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'approved', ?)`,
+                                [targetUserId, seminarId, applicationNo, JSON.stringify(formData)],
+                                function(errInsert) {
+                                    if (errInsert) return cb(errInsert);
+                                    
+                                    cb(null, {
+                                        version: "2.1",
+                                        screen: "SUCCESS_SCREEN",
+                                        data: {
+                                            message: `Pre-registration successful for Autism ${regType === 'fellowship' ? 'Fellowship' : 'Seminar'}! Application ID: ${applicationNo}.`
+                                        }
+                                    });
+                                }
+                            );
+                        });
+                        return;
+                    }
+                    
+                    if (screen === 'MAIN_REG_FORM_SUBMIT') {
+                        if (!userRow) {
+                            return cb(new Error('Please complete pre-registration first.'));
+                        }
+                        
+                        db.get(
+                            `SELECT status, form_data FROM preregistrations WHERE user_id = ? AND seminar_id = ?`,
+                            [userRow.id, seminarId],
+                            (errPre, preregRow) => {
+                                if (errPre) return cb(errPre);
+                                if (!preregRow || String(preregRow.status).toLowerCase() !== 'approved') {
+                                    return cb(new Error('An approved pre-registration is required to complete main registration.'));
+                                }
+                                
+                                const spec = String(data.specialization || '').trim();
+                                const regno = String(data.registration_no || '').trim();
+                                const hospital = String(data.hospital_name || '').trim();
+                                const exp = parseInt(data.experience_years, 10) || 0;
+                                
+                                const applicationNo = 'APP-' + Math.floor(100000 + Math.random() * 900000);
+                                
+                                let parsedPre = {};
+                                try { parsedPre = JSON.parse(preregRow.form_data || '{}'); } catch(_) {}
+                                
+                                const mergedFormData = {
+                                    ...parsedPre,
+                                    specialization: spec,
+                                    registration_no: regno,
+                                    hospital_name: hospital,
+                                    experience_years: exp
+                                };
+                                
+                                db.run(
+                                    `INSERT INTO registrations (user_id, seminar_id, application_no, status, form_data) VALUES (?, ?, ?, 'submitted', ?)`,
+                                    [userRow.id, seminarId, applicationNo, JSON.stringify(mergedFormData)],
+                                    function(errInsert) {
+                                        if (errInsert) return cb(errInsert);
+                                        
+                                        cb(null, {
+                                            version: "2.1",
+                                            screen: "SUCCESS_SCREEN",
+                                            data: {
+                                                message: `Main registration submitted successfully! Application ID: ${applicationNo}.`
+                                            }
+                                        });
+                                    }
+                                );
+                            }
+                        );
+                        return;
+                    }
+                    
+                    if (screen === 'GET_TICKET') {
+                        if (!userRow) {
+                            return cb(new Error('No registration found for this number.'));
+                        }
+                        
+                        db.get(
+                            `SELECT r.application_no, r.status, t.ticket_id_string, t.is_scanned
+                             FROM registrations r
+                             LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
+                             LEFT JOIN tickets t ON t.order_id = o.id
+                             WHERE r.user_id = ? AND r.seminar_id = ?`,
+                            [userRow.id, seminarId],
+                            (errTicket, ticketRow) => {
+                                if (errTicket) return cb(errTicket);
+                                if (!ticketRow) {
+                                    return cb(new Error('No registration found for this event.'));
+                                }
+                                
+                                const isCheckedIn = ticketRow.is_scanned === 1 || ticketRow.status === 'checked_in';
+                                
+                                cb(null, {
+                                    version: "2.1",
+                                    screen: "TICKET_DETAILS",
+                                    data: {
+                                        application_no: ticketRow.application_no,
+                                        ticket_id: ticketRow.ticket_id_string || 'Pending Payment/Approval',
+                                        status: ticketRow.status,
+                                        checked_in: isCheckedIn ? 'Yes (Checked in)' : 'No (Not checked in)'
+                                    }
+                                });
+                            }
+                        );
+                        return;
+                    }
+                    
+                    if (screen === 'CONTACT_SUPPORT_SUBMIT') {
+                        const subject = String(data.subject || '').trim();
+                        const message = String(data.message || '').trim();
+                        
+                        if (!subject || !message) {
+                            return cb(new Error('Subject and message are required.'));
+                        }
+                        
+                        ensureUserAccount(cleanPhone, "WhatsApp", "User", `wa_${cleanPhone}@vaidyagogate.org`, (errAcc, targetUserId) => {
+                            if (errAcc) return cb(errAcc);
+                            
+                            db.run(
+                                `INSERT INTO support_tickets (user_id, subject, message, status) VALUES (?, ?, ?, 'open')`,
+                                [targetUserId, subject, message],
+                                function(errInsert) {
+                                    if (errInsert) return cb(errInsert);
+                                    
+                                    cb(null, {
+                                        version: "2.1",
+                                        screen: "SUCCESS_SCREEN",
+                                        data: {
+                                            message: `Support ticket #${this.lastID} created successfully! Our team will contact you shortly.`
+                                        }
+                                    });
+                                }
+                            );
+                        });
+                        return;
+                    }
+                    
+                    cb(new Error(`Unknown screen: ${screen}`));
+                }
+            );
+        }
+    );
+}
+
+function ensureUserAccount(phone, firstName, lastName, email, cb) {
+    db.get(
+        `SELECT id FROM users WHERE phone = ? OR whatsapp = ? OR email = ?`,
+        [phone, phone, email],
+        (err, row) => {
+            if (err) return cb(err);
+            if (row) return cb(null, row.id);
+            
+            const userIdString = 'USR_' + Math.random().toString(36).substring(2, 11).toUpperCase();
+            const tempPassword = Math.random().toString(36).substring(2, 10);
+            
+            db.run(
+                `INSERT INTO users (user_id_string, first_name, last_name, email, phone, whatsapp, password, role, user_role, activated) VALUES (?, ?, ?, ?, ?, ?, ?, 'doctor', 'doctor', 1)`,
+                [userIdString, firstName, lastName, email, phone, phone, tempPassword],
+                function(errInsert) {
+                    if (errInsert) return cb(errInsert);
+                    cb(null, this.lastID);
+                }
+            );
+        }
+    );
+}
+
 // Meta WhatsApp webhook (https://developers.facebook.com/docs/whatsapp/cloud-api)
 app.get('/api/webhooks/whatsapp', (req, res) => {
     integrationSettings.ensureIntegrationSettingsLoaded(db, () => {
