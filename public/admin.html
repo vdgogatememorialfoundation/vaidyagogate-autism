@@ -1782,6 +1782,7 @@
                         <button type="button" id="btn-report-fmt-pdf" class="btn-primary" style="background:#64748b; transition: all 0.2s;" onclick="setReportFormat('pdf', this)">PDF / Print</button>
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <button type="button" class="btn-primary" style="background:#9333ea;" onclick="downloadAdminReport('preregistrations', window.__reportFmt||'xlsx')">Pre-registrations</button>
                         <button type="button" class="btn-primary" onclick="downloadAdminReport('pending', window.__reportFmt||'xlsx')">Pending</button>
                         <button type="button" class="btn-primary" style="background:#15803d;" onclick="downloadAdminReport('paid', window.__reportFmt||'xlsx')">Paid</button>
                         <button type="button" class="btn-primary" style="background:#b45309;" onclick="downloadAdminReport('unpaid', window.__reportFmt||'xlsx')">Unpaid</button>
