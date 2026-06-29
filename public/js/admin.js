@@ -4396,7 +4396,7 @@ async function loadAdminSeminarAnalytics() {
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || 'Failed');
         const rev = d.revenue || {};
-        const ps = d.practitionerVsStudent || {};
+        const pr = d.preregStats || {};
         host.innerHTML = `
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;">
                 <div class="card" style="padding:12px;"><div class="muted" style="font-size:0.75rem;">Registered</div><strong>${d.registered || 0}</strong></div>
@@ -4414,11 +4414,23 @@ async function loadAdminSeminarAnalytics() {
                 <div><h4 style="margin:0 0 6px;">By city</h4>${renderAnalyticsList('city', d.byCity)}</div>
                 <div><h4 style="margin:0 0 6px;">By qualification</h4>${renderAnalyticsList('qualification', d.byQual)}</div>
                 <div><h4 style="margin:0 0 6px;">Top colleges</h4>${renderAnalyticsList('college', d.byCollege)}</div>
-                <div><h4 style="margin:0 0 6px;">Practitioner vs student</h4>
+                <div><h4 style="margin:0 0 6px;">Registration breakdown</h4>
                     <ul style="margin:0;padding-left:18px;font-size:0.88rem;">
-                        <li>Practitioner / PG — <strong>${ps.practitioner || 0}</strong></li>
-                        <li>UG student — <strong>${ps.student || 0}</strong></li>
-                        <li>Other — <strong>${ps.other || 0}</strong></li>
+                        <li>Total Pre-registered — <strong>${pr.total || 0}</strong>
+                            <ul style="margin:2px 0 0;padding-left:14px;font-size:0.8rem;color:#64748b;list-style-type:circle;">
+                                <li>Pending review — <strong>${pr.submitted || 0}</strong></li>
+                                <li>Approved — <strong>${pr.approved || 0}</strong></li>
+                                <li>Rejected — <strong>${pr.rejected || 0}</strong></li>
+                                <li>Revision required — <strong>${pr.revision_required || 0}</strong></li>
+                            </ul>
+                        </li>
+                        <li style="margin-top:8px;">Total Main Registered — <strong>${d.registered || 0}</strong>
+                            <ul style="margin:2px 0 0;padding-left:14px;font-size:0.8rem;color:#64748b;list-style-type:circle;">
+                                <li>Confirmed (approved) — <strong>${d.confirmed || 0}</strong></li>
+                                <li>Paid — <strong>${d.paid || 0}</strong></li>
+                                <li>Checked in — <strong>${d.scanned || 0}</strong></li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>`;
