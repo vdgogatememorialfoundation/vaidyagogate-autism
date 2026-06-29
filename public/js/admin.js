@@ -4467,7 +4467,12 @@ function downloadAdminReport(type, format) {
     const sid = document.getElementById('report-seminar')?.value;
     if (!sid) return alert('Select a seminar');
     const fmt = format || 'xlsx';
-    window.location.href = `/api/admin/reports/${sid}/${type}?format=${encodeURIComponent(fmt)}`;
+    const url = `/api/admin/reports/${sid}/${type}?format=${encodeURIComponent(fmt)}`;
+    if (fmt === 'pdf') {
+        window.open(url, '_blank');
+    } else {
+        window.location.href = url;
+    }
 }
 
 async function saveAdminRegistrationOverride() {
