@@ -338,7 +338,8 @@ function adminCanAccessTab(tabId) {
         'tab-announcements',
         'tab-prereg-tracking',
         'tab-final-tracking',
-        'tab-competition-tracking'
+        'tab-competition-tracking',
+        'tab-admin-checkin'
     ]);
     const globalPages = window.__adminEnabledPages || {};
     const globalKeys = Object.keys(globalPages);
