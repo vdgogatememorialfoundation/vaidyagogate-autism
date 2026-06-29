@@ -6932,24 +6932,81 @@ function handleFlowAction(payload, cb) {
                         return loadUserHubData(userRow.id, eventTitle, seminarId, cb);
                     }
                     
-                    if (screen === 'SIGN_IN') {
+                    if (action === 'REQUEST_OTP') {
                         const emailInput = String(data.email || '').trim().toLowerCase();
-                        const passwordInput = String(data.password || '').trim();
-                        
-                        if (!emailInput || !passwordInput) {
-                            return cb(new Error('Email/Phone and Password are required.'));
+                        if (!emailInput) {
+                            return cb(new Error('Email address is required.'));
                         }
                         
                         db.get(
-                            `SELECT id, password FROM users WHERE (LOWER(email) = ? OR phone = ? OR whatsapp = ?)`,
-                            [emailInput, emailInput, emailInput],
+                            `SELECT * FROM users WHERE LOWER(email) = ?`,
+                            [emailInput],
                             (errLook, rowLook) => {
                                 if (errLook) return cb(errLook);
-                                if (!rowLook || rowLook.password !== passwordInput) {
-                                    return cb(new Error('Invalid email/phone or password. Please try again.'));
+                                if (!rowLook) {
+                                    return cb(new Error('No account found with this email. Please sign up first.'));
                                 }
                                 
-                                return loadUserHubData(rowLook.id, eventTitle, seminarId, cb);
+                                const authLoginOtp = require('./lib/auth-login-otp');
+                                authLoginOtp.sendLoginOtpChannel(db, rowLook, 'email', (errOtp, resOtp) => {
+                                    if (errOtp || !resOtp.ok) {
+                                        return cb(new Error((resOtp && resOtp.error) || 'Failed to send OTP email.'));
+                                    }
+                                    
+                                    cb(null, {
+                                        version: "2.1",
+                                        screen: "SIGN_IN",
+                                        data: {
+                                            event_title: eventTitle,
+                                            otp_requested: true,
+                                            email: emailInput,
+                                            message: "OTP sent successfully! Please check your email inbox."
+                                        }
+                                    });
+                                }, { forceResend: true });
+                            }
+                        );
+                        return;
+                    }
+                    
+                    if (action === 'VERIFY_OTP') {
+                        const emailInput = String(data.email || '').trim().toLowerCase();
+                        const otpCodeInput = String(data.otp_code || '').trim();
+                        
+                        if (!emailInput || !otpCodeInput) {
+                            return cb(new Error('Email and OTP code are required.'));
+                        }
+                        
+                        db.get(
+                            `SELECT * FROM users WHERE LOWER(email) = ?`,
+                            [emailInput],
+                            (errLook, rowLook) => {
+                                if (errLook) return cb(errLook);
+                                if (!rowLook) {
+                                    return cb(new Error('User not found.'));
+                                }
+                                
+                                const otpLib = require('./lib/otp');
+                                const meta = { userId: rowLook.id };
+                                otpLib.verifyOtp(
+                                    db,
+                                    {
+                                        channel: 'email',
+                                        destination: rowLook.email,
+                                        purpose: 'login',
+                                        code: otpCodeInput,
+                                        meta,
+                                        userId: rowLook.id,
+                                        seminarId: null
+                                    },
+                                    (verr, result) => {
+                                        if (verr || !result || !result.ok) {
+                                            return cb(new Error((result && result.error) || 'Invalid or expired OTP code.'));
+                                        }
+                                        
+                                        return loadUserHubData(rowLook.id, eventTitle, seminarId, cb);
+                                    }
+                                );
                             }
                         );
                         return;
