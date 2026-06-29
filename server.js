@@ -5753,7 +5753,11 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
             }
 
                 function checkPreregThenSubmit() {
-                    if (!portalProduct.FEATURES.hasPreregistration || !flow.preregistrationRequired) {
+                    const preWin = seminarRegFlow.preregistrationWindowState(sem, seminarDt);
+                    const preEnded = preWin.state === 'closed';
+                    const forcePrereg = flow.preregistrationRequired || preEnded;
+
+                    if (!portalProduct.FEATURES.hasPreregistration || !forcePrereg) {
                         return continueApplicationSubmit();
                     }
                     db.get(
@@ -5763,7 +5767,9 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
                             if (preErr) return res.status(500).json({ error: preErr.message });
                             if (!preRow) {
                                 return res.status(400).json({
-                                    error: 'Complete pre-registration for this event first, then submit main registration.'
+                                    error: preEnded
+                                        ? 'Pre-registration has ended for this event. Only pre-registered users are allowed to complete main registration.'
+                                        : 'Complete pre-registration for this event first, then submit main registration.'
                                 });
                             }
                             const pst = String(preRow.status || '').toLowerCase();
@@ -8456,10 +8462,12 @@ app.get('/api/admin/applications', (req, res) => {
     let sql = `
         SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
                u.first_name, u.middle_name, u.last_name, u.email, u.phone, u.user_id_string,
-               s.title AS seminar_title
+               s.title AS seminar_title, t.is_scanned, t.scan_time
         FROM registrations a
         JOIN users u ON a.user_id = u.id
-        LEFT JOIN seminars s ON s.id = a.seminar_id`;
+        LEFT JOIN seminars s ON s.id = a.seminar_id
+        LEFT JOIN orders o ON o.registration_id = a.id AND o.status = 'success'
+        LEFT JOIN tickets t ON t.order_id = o.id`;
     const params = [];
     const where = [];
     if (Number.isInteger(seminarId) && seminarId > 0) {
@@ -8523,6 +8531,119 @@ function promoteRegistrationToCertificateIssued(registrationId, cb) {
         }
     );
 }
+
+// Admin direct check-in/checkout for a participant
+app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
+    const regId = parseInt(req.params.registrationId, 10);
+    const { isScanned } = req.body || {};
+    const scanFlag = isScanned ? 1 : 0;
+    
+    db.get(
+        `SELECT t.id, t.scan_count, r.user_id, r.seminar_id
+         FROM registrations r
+         LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
+         LEFT JOIN tickets t ON t.order_id = o.id
+         WHERE r.id = ?`,
+        [regId],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!row) return res.status(404).json({ error: 'Registration not found' });
+            
+            const staffId = req.session && req.session.userId ? req.session.userId : 1;
+            const scanAtIst = seminarDt.scanTimeNowForStorage();
+            
+            if (!row.id) {
+                const regStatus = scanFlag ? 'checked_in' : 'completed';
+                db.run(
+                    `UPDATE registrations SET status = ? WHERE id = ?`,
+                    [regStatus, regId],
+                    (errReg) => {
+                        if (errReg) return res.status(500).json({ error: errReg.message });
+                        res.json({ success: true, message: scanFlag ? 'Check-in recorded.' : 'Check-in removed.' });
+                    }
+                );
+            } else {
+                db.run(
+                    `UPDATE tickets SET is_scanned = ?, scan_count = CASE WHEN ? = 1 THEN IFNULL(scan_count, 0) + 1 ELSE 0 END, scan_time = ?, scanned_by = ? WHERE id = ?`,
+                    [scanFlag, scanFlag, scanFlag ? scanAtIst : null, staffId, row.id],
+                    (err2) => {
+                        if (err2) return res.status(500).json({ success: false, error: err2.message });
+                        
+                        const regStatus = scanFlag ? 'checked_in' : 'completed';
+                        db.run(
+                            `UPDATE registrations SET status = ? WHERE id = ?`,
+                            [regStatus, regId],
+                            (err3) => {
+                                if (err3) return res.status(500).json({ error: err3.message });
+                                
+                                syncCertificateEligibilityForTicket(row.id, () => {
+                                    res.json({ success: true, message: scanFlag ? 'Checked in successfully.' : 'Check-in removed.' });
+                                });
+                            }
+                        );
+                    }
+                );
+            }
+        }
+    );
+});
+
+// Public search for pre-registration status
+app.get('/api/public/preregistrations/search', (req, res) => {
+    const q = String(req.query.q || '').trim();
+    if (!q || q.length < 3) {
+        return res.status(400).json({ error: 'Search query must be at least 3 characters' });
+    }
+    
+    const sql = `
+        SELECT p.application_no, p.status, p.created_at,
+               u.first_name, u.last_name, u.email, u.phone,
+               s.title AS seminar_title
+        FROM preregistrations p
+        JOIN users u ON u.id = p.user_id
+        LEFT JOIN seminars s ON s.id = p.seminar_id
+        WHERE LOWER(u.first_name || ' ' || u.last_name) LIKE ?
+           OR LOWER(u.email) = ?
+           OR u.phone LIKE ?
+           OR LOWER(p.application_no) = ?
+        LIMIT 10`;
+    
+    const searchLike = `%${q.toLowerCase()}%`;
+    const searchEmail = q.toLowerCase();
+    const searchPhone = `%${q}%`;
+    const searchApp = q.toLowerCase();
+    
+    db.all(sql, [searchLike, searchEmail, searchPhone, searchApp], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const masked = (rows || []).map(r => {
+            const email = String(r.email || '');
+            let maskedEmail = '';
+            if (email.includes('@')) {
+                const parts = email.split('@');
+                maskedEmail = parts[0].slice(0, 2) + '***@' + parts[1];
+            } else {
+                maskedEmail = '***';
+            }
+            
+            const phone = String(r.phone || '');
+            const maskedPhone = phone.length > 6 ? phone.slice(0, 3) + '******' + phone.slice(-3) : '******';
+            
+            return {
+                application_no: r.application_no,
+                status: r.status,
+                created_at: r.created_at,
+                first_name: r.first_name,
+                last_name: r.last_name,
+                email: maskedEmail,
+                phone: maskedPhone,
+                seminar_title: r.seminar_title
+            };
+        });
+        
+        res.json(masked);
+    });
+});
 
 function enableCertificateForRegistration(registrationId, cb) {
     db.get(
@@ -9182,66 +9303,79 @@ app.get('/api/admin/users/:userId/detail', (req, res) => {
                                     [uid],
                                     (e5, abstracts) => {
                                         if (e5) return res.status(500).json({ error: e5.message });
-
                                         db.all(
                                             `SELECT * FROM support_tickets st WHERE st.user_id = ? ORDER BY st.created_at DESC LIMIT 20`,
                                             [uid],
                                             (e6, supportTickets) => {
                                                 if (e6) return res.status(500).json({ error: e6.message });
 
-                                                const finishDetail = (certificates, certErr, cancellationRequests) => {
-                                                    if (certErr) {
-                                                        console.warn('[admin] user_certificates:', certErr.message);
-                                                    }
-                                                    res.json({
-                                                        user,
-                                                        profile: profile || null,
-                                                        registrations: registrations || [],
-                                                        orders: orders || [],
-                                                        abstracts: abstracts || [],
-                                                        supportTickets: supportTickets || [],
-                                                        certificates: certificates || [],
-                                                        cancellationRequests: cancellationRequests || [],
-                                                        certificatesError:
-                                                            certErr &&
-                                                            /user_certificates|certificate_templates/i.test(
-                                                                certErr.message
-                                                            )
-                                                                ? certErr.message
-                                                                : undefined
-                                                    });
-                                                };
                                                 db.all(
-                                                    `SELECT uc.*, s.title AS seminar_title, ct.file_path AS template_path
-                                                     FROM user_certificates uc
-                                                     LEFT JOIN seminars s ON s.id = uc.seminar_id
-                                                     LEFT JOIN certificate_templates ct ON ct.id = uc.template_id
-                                                     WHERE uc.user_id = ?`,
+                                                    `SELECT p.id, p.application_no, p.status, p.form_data, p.created_at,
+                                                            s.title AS seminar_title, s.id AS seminar_id
+                                                     FROM preregistrations p
+                                                     LEFT JOIN seminars s ON s.id = p.seminar_id
+                                                     WHERE p.user_id = ?
+                                                     ORDER BY p.created_at DESC`,
                                                     [uid],
-                                                    (e7, certificates) => {
-                                                        if (
-                                                            e7 &&
-                                                            /relation .* does not exist/i.test(e7.message)
-                                                        ) {
-                                                            return finishDetail([], e7, []);
-                                                        }
-                                                        if (e7) return res.status(500).json({ error: e7.message });
+                                                    (ePrereg, preregistrations) => {
+                                                        if (ePrereg) return res.status(500).json({ error: ePrereg.message });
+
+                                                        const finishDetail = (certificates, certErr, cancellationRequests) => {
+                                                            if (certErr) {
+                                                                console.warn('[admin] user_certificates:', certErr.message);
+                                                            }
+                                                            res.json({
+                                                                user,
+                                                                profile: profile || null,
+                                                                registrations: registrations || [],
+                                                                preregistrations: preregistrations || [],
+                                                                orders: orders || [],
+                                                                abstracts: abstracts || [],
+                                                                supportTickets: supportTickets || [],
+                                                                certificates: certificates || [],
+                                                                cancellationRequests: cancellationRequests || [],
+                                                                certificatesError:
+                                                                    certErr &&
+                                                                    /user_certificates|certificate_templates/i.test(
+                                                                        certErr.message
+                                                                    )
+                                                                        ? certErr.message
+                                                                        : undefined
+                                                            });
+                                                        };
                                                         db.all(
-                                                            `SELECT cr.*, r.application_no, s.title AS seminar_title
-                                                             FROM cancellation_requests cr
-                                                             JOIN registrations r ON r.id = cr.registration_id
-                                                             LEFT JOIN seminars s ON s.id = r.seminar_id
-                                                             WHERE cr.user_id = ?
-                                                             ORDER BY cr.id DESC`,
+                                                            `SELECT uc.*, s.title AS seminar_title, ct.file_path AS template_path
+                                                             FROM user_certificates uc
+                                                             LEFT JOIN seminars s ON s.id = uc.seminar_id
+                                                             LEFT JOIN certificate_templates ct ON ct.id = uc.template_id
+                                                             WHERE uc.user_id = ?`,
                                                             [uid],
-                                                            (eCr, cancelRows) => {
-                                                                if (eCr && /no such table|does not exist/i.test(eCr.message)) {
-                                                                    return finishDetail(certificates || [], null, []);
+                                                            (e7, certificates) => {
+                                                                if (
+                                                                    e7 &&
+                                                                    /relation .* does not exist/i.test(e7.message)
+                                                                ) {
+                                                                    return finishDetail([], e7, []);
                                                                 }
-                                                                if (eCr) {
-                                                                    return finishDetail(certificates || [], null, []);
-                                                                }
-                                                                finishDetail(certificates || [], null, cancelRows || []);
+                                                                if (e7) return res.status(500).json({ error: e7.message });
+                                                                db.all(
+                                                                    `SELECT cr.*, r.application_no, s.title AS seminar_title
+                                                                     FROM cancellation_requests cr
+                                                                     JOIN registrations r ON r.id = cr.registration_id
+                                                                     LEFT JOIN seminars s ON s.id = r.seminar_id
+                                                                     WHERE cr.user_id = ?
+                                                                     ORDER BY cr.id DESC`,
+                                                                    [uid],
+                                                                    (eCr, cancelRows) => {
+                                                                        if (eCr && /no such table|does not exist/i.test(eCr.message)) {
+                                                                            return finishDetail(certificates || [], null, []);
+                                                                        }
+                                                                        if (eCr) {
+                                                                            return finishDetail(certificates || [], null, []);
+                                                                        }
+                                                                        finishDetail(certificates || [], null, cancelRows || []);
+                                                                    }
+                                                                );
                                                             }
                                                         );
                                                     }

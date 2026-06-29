@@ -159,6 +159,7 @@
                 <a class="menu-item" data-admin-module="tab-etickets" onclick="switchTab('tab-etickets'); initAdminEticketsTab();"><i class="fas fa-ticket-alt"></i> E-tickets</a>
                 <a class="menu-item" data-admin-module="tab-scanner-logs" onclick="switchTab('tab-scanner-logs'); initAdminScannerLogsTab();"><i class="fas fa-qrcode"></i> Scanner Activity</a>
                 <a class="menu-item" data-admin-module="tab-live-scanner" onclick="openAdminLiveScannerBoard();"><i class="fas fa-tv"></i> Live check-in board</a>
+                <a class="menu-item" data-admin-module="tab-admin-checkin" onclick="switchTab('tab-admin-checkin'); initAdminCheckinTab();"><i class="fas fa-user-check"></i> Admin Check-in</a>
                 <a class="menu-item" data-admin-module="tab-pos" onclick="switchTab('tab-pos'); initAdminPosTab();"><i class="fas fa-cash-register"></i> On-spot POS</a>
                 <a class="menu-item" data-admin-module="tab-feedback-form" onclick="switchTab('tab-feedback-form'); loadAdminFeedbackFormConfig();"><i class="fas fa-edit"></i> Feedback form editor</a>
                 <a class="menu-item" data-admin-module="tab-activity-logs" onclick="switchTab('tab-activity-logs'); initAdminActivityLogsTab();"><i class="fas fa-history"></i> User activity</a>
@@ -1814,6 +1815,37 @@
                 </div>
             </div>
 
+            <div id="tab-admin-checkin" class="tab-pane hidden">
+                <h2 style="margin-bottom: 20px;">Admin Direct Check-in</h2>
+                <div class="card">
+                    <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
+                        <div style="min-width:240px;flex:1;">
+                            <label for="ak-admin-checkin-seminar">Event</label>
+                            <select id="ak-admin-checkin-seminar" style="width:100%;padding:8px;margin-top:6px;" onchange="loadAdminCheckinList()"></select>
+                        </div>
+                        <div style="min-width:240px;flex:1;">
+                            <label for="ak-admin-checkin-search">Search Participant</label>
+                            <input type="search" id="ak-admin-checkin-search" placeholder="Search by name, email, ID..." style="width:100%;padding:8px;margin-top:6px;" oninput="renderAdminCheckinTable()">
+                        </div>
+                        <button type="button" class="btn-primary" onclick="loadAdminCheckinList()" style="height:36px;"><i class="fas fa-sync"></i> Refresh</button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Participant</th>
+                                <th>Contact details</th>
+                                <th>Status</th>
+                                <th>Checked in</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ak-admin-checkin-tbody">
+                            <tr><td colspan="5" style="text-align:center;padding:24px;color:#64748b;">Select an event to load registrations.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- User & doctor activity -->
             <div id="tab-activity-logs" class="tab-pane hidden">
                 <h2 style="margin-bottom: 20px;">User &amp; doctor activity</h2>
@@ -2600,6 +2632,7 @@
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
+    <script src="/js/admin-checkin.js"></script>
     <script src="/js/admin-competition.js?v=7"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
     <script src="/js/admin-autism.js?v=autism54"></script>

@@ -2654,14 +2654,21 @@ function renderAdminUserDetailTab() {
 
     if (__adminUserDetailTab === 'registrations') {
         let rows = '';
+        (d.preregistrations || []).forEach((r) => {
+            const createdLabel =
+                window.PortalDateTime && r.created_at
+                    ? window.PortalDateTime.format(r.created_at)
+                    : r.created_at || '—';
+            rows += `<tr style="background:#fdf2f8;"><td>${escAdmin(r.application_no)} <span style="font-size:0.75rem;color:#db2777;font-weight:600;">(Pre-reg)</span></td><td>${escAdmin(r.seminar_title)}</td><td>${escAdmin(r.status)}</td><td>${escAdmin(createdLabel)}</td><td>Pre-registration</td></tr>`;
+        });
         (d.registrations || []).forEach((r) => {
             const createdLabel =
                 window.PortalDateTime && r.created_at
                     ? window.PortalDateTime.format(r.created_at)
                     : r.created_at || '—';
-            rows += `<tr><td>${escAdmin(r.application_no)}</td><td>${escAdmin(r.seminar_title)}</td><td>${escAdmin(r.status)}</td><td>${escAdmin(createdLabel)}</td><td>${escAdmin(r.registration_source || '')}</td></tr>`;
+            rows += `<tr><td>${escAdmin(r.application_no)}</td><td>${escAdmin(r.seminar_title)}</td><td>${escAdmin(r.status)}</td><td>${escAdmin(createdLabel)}</td><td>${escAdmin(r.registration_source || 'Main-reg')}</td></tr>`;
         });
-        body.innerHTML = `<table class="data-table"><thead><tr><th>App no.</th><th>Seminar</th><th>Status</th><th>Created</th><th>Source</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No applications</td></tr>'}</tbody></table>`;
+        body.innerHTML = `<table class="data-table"><thead><tr><th>App no.</th><th>Seminar</th><th>Status</th><th>Created</th><th>Type/Source</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No applications</td></tr>'}</tbody></table>`;
         return;
     }
 

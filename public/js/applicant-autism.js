@@ -3862,6 +3862,11 @@
             (window.__akAllSeminars || []).find((x) => Number(x.id) === sid) ||
             (window.activeSeminars || []).find((x) => Number(x.id) === sid);
         const flags = seminar ? seminarFlowFlags(seminar) : { preregistrationRequired: false };
+        const preWin = seminar ? preregWindowStateClient(seminar) : { state: 'closed' };
+        const preEnded = preWin.state === 'closed';
+        if (preEnded) {
+            flags.preregistrationRequired = true;
+        }
         if (!flags.preregistrationRequired) {
             hideMainRegPreregLookupPanel();
             hideMainRegPrefillBanner();
