@@ -627,8 +627,13 @@
         function applyWebsiteMenuVisibility() {
             const pages = (window.__portalAuth && window.__portalAuth.websiteMenuPages) || {};
             const keys = Object.keys(pages);
-            const restrict = keys.length && keys.some((k) => pages[k] === true);
-            const isShown = (key) => !restrict || pages[key] === true;
+            // If no pages configured, all are visible. If some configured, only enabled ones show.
+            const restrict = keys.length > 0;
+            const isShown = (key) => {
+                if (!restrict) return true; // All visible if nothing configured
+                if (pages[key] === true) return true;
+                return false;
+            };
             document
                 .querySelectorAll('#cg-nav-menu-links a[data-nav-section], #cg-nav-menu-links a[data-menu-key]')
                 .forEach((a) => {
@@ -642,10 +647,9 @@
                 const li = a.closest('li');
                 if (li) li.style.display = isShown(key) ? '' : 'none';
             });
-            // Check prereg-search visibility based on API
+            // Check prereg-search visibility based on API (overrides menu setting)
             const preregSearchNav = document.getElementById('nav-verify');
             if (preregSearchNav && preregSearchNav.getAttribute('data-menu-key') === 'prereg-search') {
-                // Show by default, hide only if API says disabled
                 fetch('/api/public/preregistrations/search/enabled')
                     .then(r => r.json())
                     .then(data => {

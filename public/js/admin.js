@@ -9960,6 +9960,7 @@ const CMS_MENU_SECTIONS = [
     { value: 'schedule', label: 'Agenda / Schedule' },
     { value: 'gallery', label: 'Gallery' },
     { value: 'verify', label: 'Delegates / Verify' },
+    { value: 'prereg-search', label: 'Find Registration' },
     { value: 'contact', label: 'Contact' },
     { value: '', label: 'External page (use URL)' }
 ];
@@ -11538,6 +11539,13 @@ async function loadPortalAuthAdminForm() {
         window.__websiteMenuPages = d.config.websiteMenuPages || {};
         renderAdminGlobalPagesCheckboxes();
         renderWebsiteMenuPagesCheckboxes();
+        // Also update the prereg-search visibility checkbox in the visible section
+        const preregCheck = document.getElementById("ak-prereg-search-visible");
+        if (preregCheck) {
+            const pages = window.__websiteMenuPages || {};
+            const preregVisible = pages["prereg-search"] !== false;
+            preregCheck.checked = preregVisible;
+        }
         if (eff) {
             const env = d.envOverrides || {};
             let envNote = '';
@@ -11846,6 +11854,30 @@ async function saveAboutFoundationCms() {
     }
 }
 window.saveAboutFoundationCms = saveAboutFoundationCms;
+
+async function savePreregSearchVisibility() {
+    const adm = getStoredAdminUser();
+    const msg = document.getElementById("prereg-search-vis-msg");
+    if (!adm || !adm.id) return;
+    const visible = !!(document.getElementById("ak-prereg-search-visible") || {}).checked;
+    const config = { websiteMenuPages: { "prereg-search": visible } };
+    try {
+        const res = await fetch("/api/admin/portal-auth-config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ actingAdminId: adm.id, config })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (msg) { msg.textContent = "Saved!"; msg.style.color = "#15803d"; }
+        } else {
+            if (msg) { msg.textContent = data.error || "Error saving"; msg.style.color = "#b91c1c"; }
+        }
+    } catch (e) {
+        if (msg) { msg.textContent = "Network error"; msg.style.color = "#b91c1c"; }
+    }
+}
+window.savePreregSearchVisibility = savePreregSearchVisibility;
 
 async function saveHomepageCmsOnly() {
     setCmsSaveMessage('');

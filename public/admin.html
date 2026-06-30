@@ -1418,6 +1418,16 @@
                         <button type="button" class="btn-primary" style="margin-top:8px;padding:8px 14px;font-size:0.9rem;background:#64748b;" onclick="cmsAddSocialRow()">+ Add link</button>
                     </div>
                     <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <label style="font-weight:700;">Find registration (public search)</label>
+                        <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Show the "Find registration" link in the website header navigation. The search page itself must also be enabled (auto-enabled when registration is open).</p>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-bottom:12px;">
+                            <input type="checkbox" id="ak-prereg-search-visible" checked>
+                            Show "Find registration" in header menu
+                        </label>
+                        <button type="button" class="btn-primary" style="background:#0369a1;" onclick="savePreregSearchVisibility()"><i class="fas fa-save"></i> Save navigation setting</button>
+                        <p id="prereg-search-vis-msg" style="margin-top:8px;font-weight:600;font-size:0.88rem;"></p>
+                    </div>
+                    <div style="margin-top:22px;padding-top:16px;border-top:1px solid #e2e8f0;">
                         <label style="font-weight:700;">Homepage reviews / testimonials</label>
                         <p style="color:#64748b;font-size:0.88rem;margin:6px 0 10px;">Name, role, quote, and star rating (1-5).</p>
                         <div id="cms-review-rows"></div>
