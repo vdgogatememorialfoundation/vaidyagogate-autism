@@ -354,7 +354,8 @@
         schedule: 'fa-calendar-days',
         verify: 'fa-search',
         contact: 'fa-envelope',
-        certificate: 'fa-award'
+        certificate: 'fa-award',
+        'prereg-search': 'fa-search'
     };
 
     window.applySiteMenu = function applySiteMenu(cms) {
@@ -375,7 +376,7 @@
                 const label = esc(item.label || '');
                 const href = String(item.href || '').trim();
                 const section = String(item.section || '').trim().toLowerCase();
-                const iconCls = NAV_ICONS[section] || NAV_ICONS[String(item.key || '').toLowerCase()] || 'fa-circle';
+                const iconCls = NAV_ICONS[section] || (item.key && NAV_ICONS[String(item.key).toLowerCase()]) || 'fa-circle';
                 const iconHtml = '<i class="fas ' + iconCls + '" aria-hidden="true"></i> ';
                 if (href && (href.startsWith('/') || href.startsWith('http'))) {
                     const ext = href.startsWith('http') ? ' target="_blank" rel="noopener noreferrer"' : '';

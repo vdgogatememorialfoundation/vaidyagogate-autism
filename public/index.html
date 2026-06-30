@@ -626,8 +626,6 @@
 
         function applyWebsiteMenuVisibility() {
             const pages = (window.__portalAuth && window.__portalAuth.websiteMenuPages) || {};
-            // If a page key exists in pages object, show only if explicitly true
-            // If key doesn't exist, show by default
             const isShown = (key) => {
                 if (pages.hasOwnProperty(key)) return pages[key] === true;
                 return true; // Show by default if not configured
@@ -637,23 +635,25 @@
                 .forEach((a) => {
                     const key = a.getAttribute('data-menu-key') || a.getAttribute('data-nav-section');
                     if (!key) return;
+                    // prereg-search visibility is controlled by the search enabled API
+                    if (key === 'prereg-search') return;
                     a.style.display = isShown(key) ? '' : 'none';
                 });
             document.querySelectorAll('footer a[data-menu-key]').forEach((a) => {
                 const key = a.getAttribute('data-menu-key');
                 if (!key) return;
+                if (key === 'prereg-search') return;
                 const li = a.closest('li');
                 if (li) li.style.display = isShown(key) ? '' : 'none';
             });
-            // Check prereg-search visibility based on API (overrides menu setting)
-            const preregSearchNav = document.getElementById('nav-verify');
-            if (preregSearchNav && preregSearchNav.getAttribute('data-menu-key') === 'prereg-search') {
+            // Check prereg-search visibility based on API
+            const preregSearchNav = document.getElementById('nav-verify') || 
+                document.querySelector('#cg-nav-menu-links a[href="/preregister/search"]');
+            if (preregSearchNav) {
                 fetch('/api/public/preregistrations/search/enabled')
                     .then(r => r.json())
                     .then(data => {
-                        if (!data.enabled) {
-                            preregSearchNav.style.display = 'none';
-                        }
+                        preregSearchNav.style.display = data.enabled ? '' : 'none';
                     })
                     .catch(() => {});
             }

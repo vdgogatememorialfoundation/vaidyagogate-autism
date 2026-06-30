@@ -22,15 +22,26 @@
 
     function filterCmsMenu(cms) {
         if (!cms || !Array.isArray(cms.siteMenu)) return cms;
-        return {
-            ...cms,
-            siteMenu: cms.siteMenu.filter((i) => String((i && i.section) || '').toLowerCase() !== 'gallery')
-        };
+        const filtered = cms.siteMenu.filter((i) => String((i && i.section) || '').toLowerCase() !== 'gallery');
+        // Always add prereg-search item if not present
+        const hasPrereg = filtered.some((i) => String((i.section || '')).toLowerCase() === 'prereg-search');
+        if (!hasPrereg) {
+            filtered.push({
+                label: 'Find registration',
+                section: 'prereg-search',
+                href: '/preregister/search',
+                visible: true,
+                order: 4,
+                key: 'prereg-search'
+            });
+        }
+        return { ...cms, siteMenu: filtered };
     }
 
     const NAV_ICONS = {
         about: 'fa-heart',
         schedule: 'fa-calendar-days',
+        'prereg-search': 'fa-search',
         verify: 'fa-search',
         contact: 'fa-envelope',
         home: 'fa-home'
