@@ -14369,12 +14369,6 @@ app.use((err, req, res, next) => {
 module.exports = app;
 
 if (!process.env.VERCEL) {
-    const urlCheck = validateDatabaseUrl();
-    if (!urlCheck.ok) {
-        console.error('[db] DATABASE_URL invalid:', urlCheck.message);
-        console.error('[db] Hint:', publicDatabaseHint(urlCheck.code));
-        process.exit(1);
-    }
     db.connect((err) => {
         if (err) {
             const code = classifyDbConnectError(err);
