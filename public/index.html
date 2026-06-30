@@ -645,10 +645,13 @@
             // Check prereg-search visibility based on API
             const preregSearchNav = document.getElementById('nav-verify');
             if (preregSearchNav && preregSearchNav.getAttribute('data-menu-key') === 'prereg-search') {
+                // Show by default, hide only if API says disabled
                 fetch('/api/public/preregistrations/search/enabled')
                     .then(r => r.json())
                     .then(data => {
-                        preregSearchNav.style.display = data.enabled ? '' : 'none';
+                        if (!data.enabled) {
+                            preregSearchNav.style.display = 'none';
+                        }
                     })
                     .catch(() => {});
             }
