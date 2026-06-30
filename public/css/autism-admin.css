@@ -49,8 +49,9 @@ body.autism-admin {
     border-bottom: 1px solid #e9e5ff !important;
 }
 
-/* Autism CMS tab: hide policy/advanced blocks; homepage editor stays visible */
-body.autism-admin #tab-site-cms > .ak-cms-advanced,
+/* Autism CMS tab: hide policy blocks; homepage editor stays visible */
+/* Exception: website menu pages and portal auth policy should be visible */
+body.autism-admin #tab-site-cms > .ak-cms-advanced:not(#website-menu-policy-card):not(#ak-portal-auth-card),
 body.autism-admin #tab-site-cms > h2,
 body.autism-admin #tab-site-cms > p {
     display: none !important;
