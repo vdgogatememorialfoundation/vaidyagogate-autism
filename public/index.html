@@ -626,13 +626,11 @@
 
         function applyWebsiteMenuVisibility() {
             const pages = (window.__portalAuth && window.__portalAuth.websiteMenuPages) || {};
-            const keys = Object.keys(pages);
-            // If no pages configured, all are visible. If some configured, only enabled ones show.
-            const restrict = keys.length > 0;
+            // If a page key exists in pages object, show only if explicitly true
+            // If key doesn't exist, show by default
             const isShown = (key) => {
-                if (!restrict) return true; // All visible if nothing configured
-                if (pages[key] === true) return true;
-                return false;
+                if (pages.hasOwnProperty(key)) return pages[key] === true;
+                return true; // Show by default if not configured
             };
             document
                 .querySelectorAll('#cg-nav-menu-links a[data-nav-section], #cg-nav-menu-links a[data-menu-key]')
