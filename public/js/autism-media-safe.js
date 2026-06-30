@@ -6,6 +6,7 @@
     if (!document.body.classList.contains('autism-kids')) return;
 
     const ALLOWED_IMG = /^\/images\/autism\/[^?#]+\.(jpe?g|png|webp|avif)$/i;
+    const ALLOWED_CMS_ASSET = /^\/api\/assets\//i;
 
     function initials(name) {
         const p = String(name || '?')
@@ -19,6 +20,8 @@
     function isAllowedSrc(src) {
         if (!src) return false;
         if (src.endsWith('.svg') && src.includes('/images/autism/')) return true;
+        // Allow CMS assets for speaker/faculty photos
+        if (ALLOWED_CMS_ASSET.test(src)) return true;
         return ALLOWED_IMG.test(src.split('?')[0]);
     }
 
