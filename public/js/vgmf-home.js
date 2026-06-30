@@ -162,10 +162,11 @@
                 '<p class="speakers-placeholder muted" style="text-align:center;max-width:42rem;margin:0 auto;padding:24px 16px;">Faculty lineup will be announced shortly. Session speakers also appear on the <a href="#" data-nav-section="schedule">programme</a> page.</p>';
             return;
         }
-        const autismNoPhotos = document.body && document.body.classList.contains('autism-kids');
+        // Allow speaker photos on all sites (removed autism-kids restriction)
+        const autismNoPhotos = false;
         grid.innerHTML = speakers
             .map((s) => {
-                const imgSrc = !autismNoPhotos && mediaUrl(s.image || s.imagePath);
+                const imgSrc = mediaUrl(s.image || s.imagePath);
                 const initial = escHtml(
                     String(s.name || '?')
                         .trim()
