@@ -2,134 +2,640 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0d9488">
-    <meta name="description" content="Search your pre-registration status by name, email, phone, or application ID. No sign-in required.">
+    <title>Find Your Registration | Autism Awareness Programme</title>
     <link rel="icon" href="/favicon.ico" type="image/png" sizes="32x32">
-    <title>Search Pre-registration Status | Autism Awareness Programme</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
-    <link rel="stylesheet" href="/css/public-prereg-search-enhanced.css?v=1">
+    <link rel="stylesheet" href="/css/autism-clean-portals.css">
+    <style>
+        :root {
+            --teal-50: #f0fdfa;
+            --teal-100: #ccfbf1;
+            --teal-200: #99f6e4;
+            --teal-300: #5eead4;
+            --teal-400: #2dd4bf;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-700: #0f766e;
+            --teal-800: #115e59;
+            --amber-400: #fbbf24;
+            --amber-500: #f59e0b;
+            --rose-400: #fb7185;
+            --rose-500: #f43f5e;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 30%, #f0fdfa 70%, #ecfeff 100%);
+            min-height: 100vh;
+            color: var(--slate-800);
+            overflow-x: hidden;
+        }
+        
+        .bg-shapes {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.12;
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        .shape-1 { width: 350px; height: 350px; background: linear-gradient(135deg, var(--teal-400), var(--teal-600)); top: -120px; right: -100px; }
+        .shape-2 { width: 200px; height: 200px; background: linear-gradient(135deg, var(--amber-400), var(--amber-500)); bottom: 15%; left: -60px; animation-delay: -5s; }
+        .shape-3 { width: 120px; height: 120px; background: linear-gradient(135deg, var(--rose-400), var(--rose-500)); top: 45%; right: 8%; animation-delay: -10s; }
+        .shape-4 { width: 80px; height: 80px; background: linear-gradient(135deg, var(--teal-300), var(--teal-500)); bottom: 35%; right: 25%; animation-delay: -15s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -30px) rotate(5deg); }
+            50% { transform: translate(-10px, -50px) rotate(-5deg); }
+            75% { transform: translate(30px, -20px) rotate(3deg); }
+        }
+        
+        .search-container {
+            position: relative;
+            z-index: 1;
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+        
+        .search-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--teal-500), var(--teal-700));
+            color: white;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(13, 148, 136, 0.3);
+        }
+        
+        .logo-badge i { font-size: 0.9rem; }
+        
+        .search-header h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+            color: var(--teal-800);
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+        
+        .search-header p {
+            font-size: 1rem;
+            color: var(--slate-600);
+            max-width: 450px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .search-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.08), 0 10px 30px rgba(13, 148, 136, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .search-icon-wrap {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--teal-100), var(--teal-200));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .search-icon-wrap i {
+            font-size: 1.8rem;
+            color: var(--teal-600);
+        }
+        
+        .search-card h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--slate-800);
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        
+        .search-card .hint {
+            text-align: center;
+            color: var(--slate-600);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        
+        .search-input-group {
+            position: relative;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-input-wrapper i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--teal-500);
+            font-size: 1rem;
+        }
+        
+        #pub-search-input {
+            width: 100%;
+            padding: 18px 18px 18px 50px;
+            border: 2px solid var(--teal-100);
+            border-radius: 14px;
+            font-size: 1rem;
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.3s ease;
+            background: var(--teal-50);
+        }
+        
+        #pub-search-input:focus {
+            outline: none;
+            border-color: var(--teal-500);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12);
+        }
+        
+        #pub-search-input::placeholder { color: var(--slate-400); }
+        
+        .search-btn {
+            padding: 18px 30px;
+            background: linear-gradient(135deg, var(--teal-500), var(--teal-700));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(13, 148, 136, 0.3);
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(13, 148, 136, 0.4);
+        }
+        
+        .search-btn.loading { opacity: 0.85; pointer-events: none; }
+        .search-btn.loading i { animation: spin 1s linear infinite; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        #pub-search-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        #pub-search-error.show { display: block; animation: shake 0.4s ease-in-out; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        #pub-search-schedule-info {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #fbbf24;
+            color: #92400e;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #pub-search-schedule-info.show { display: flex; }
+        #pub-search-schedule-info i { color: #f59e0b; font-size: 1.1rem; }
+        
+        #pub-search-results { margin-top: 28px; }
+        
+        .result-card {
+            background: var(--teal-50);
+            border: 1px solid var(--teal-100);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 14px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+        
+        .result-card:last-child { margin-bottom: 0; }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .result-name { font-size: 1.1rem; font-weight: 700; color: var(--slate-800); }
+        
+        .result-app-id {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+            font-family: monospace;
+            background: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        
+        .result-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        
+        .status-approved { background: #dcfce7; color: #16a34a; }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-submitted { background: #dbeafe; color: #2563eb; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
+        .status-default { background: #f1f5f9; color: #64748b; }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        
+        .result-detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-detail i {
+            width: 34px;
+            height: 34px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--teal-600);
+            font-size: 0.85rem;
+        }
+        
+        .result-detail span { color: var(--slate-600); font-size: 0.9rem; }
+        .result-detail .masked { color: var(--slate-400); font-style: italic; }
+        
+        .result-seminar {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--teal-100);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--slate-600);
+            font-size: 0.9rem;
+        }
+        
+        .result-seminar i { color: var(--teal-500); }
+        
+        .loading-state {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--teal-100);
+            border-top-color: var(--teal-500);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        .loading-state p { color: var(--slate-500); font-size: 0.95rem; }
+        
+        .unavailable-card {
+            text-align: center;
+            padding: 40px 24px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .unavailable-icon {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .unavailable-icon i { font-size: 2.2rem; color: var(--rose-500); }
+        
+        .unavailable-card h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.3rem;
+            color: var(--slate-800);
+            margin-bottom: 10px;
+        }
+        
+        .unavailable-card p { color: var(--slate-600); margin-bottom: 24px; line-height: 1.6; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--teal-500), var(--teal-700));
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.25);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.35);
+        }
+        
+        .btn-secondary {
+            padding: 12px 24px;
+            background: white;
+            color: var(--slate-700);
+            border: 2px solid var(--teal-200);
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover { background: var(--teal-50); border-color: var(--teal-300); }
+        
+        .contact-info {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+        
+        .contact-info a { color: var(--teal-600); text-decoration: none; font-weight: 600; }
+        .contact-info a:hover { text-decoration: underline; }
+        
+        .help-section { margin-top: 32px; animation: fadeInUp 0.8s ease-out 0.4s both; }
+        
+        .help-section h3 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1rem;
+            color: var(--slate-700);
+            text-align: center;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .help-section h3 i { color: var(--teal-500); }
+        
+        .help-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+        }
+        
+        .help-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--slate-700);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+        }
+        
+        .help-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .help-card i {
+            width: 44px;
+            height: 44px;
+            background: var(--teal-100);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 1rem;
+            color: var(--teal-600);
+            transition: all 0.3s ease;
+        }
+        
+        .help-card:hover i { background: var(--teal-500); color: white; }
+        .help-card span { font-weight: 600; font-size: 0.9rem; }
+        
+        .search-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--teal-100);
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+        
+        .search-footer a { color: var(--teal-600); text-decoration: none; font-weight: 600; }
+        .search-footer a:hover { text-decoration: underline; }
+        
+        @media (max-width: 600px) {
+            .search-container { padding: 20px 16px 60px; }
+            .search-card { padding: 28px 20px; border-radius: 20px; }
+            .search-input-group { flex-direction: column; }
+            .search-btn { width: 100%; justify-content: center; }
+            .action-buttons { flex-direction: column; }
+            .action-buttons a { width: 100%; justify-content: center; }
+        }
+        
+        .hidden { display: none !important; }
+    </style>
 </head>
-<body class="ak-pub-search-page">
-    <div class="ak-pub-search-wrap">
-        <header class="ak-pub-search-hero">
-            <div class="ak-pub-search-badge"><i class="fas fa-search"></i> Public Status Check</div>
-            <h1>Check Your Pre-registration Status</h1>
-            <p>Enter your Name, Email, Phone, or Application ID to instantly check your registration status. No login required.</p>
+<body>
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+    
+    <div class="search-container">
+        <header class="search-header">
+            <div class="logo-badge">
+                <i class="fas fa-search"></i>
+                Public Status Check
+            </div>
+            <h1>Find Your Registration</h1>
+            <p>Search using your name, email, phone, or application ID</p>
         </header>
-
-        <!-- Quick Tips Cards -->
-        <div class="ak-pub-search-tips">
-            <div class="ak-pub-search-tip-card">
-                <div class="tip-icon"><i class="fas fa-user"></i></div>
-                <div class="tip-content">
-                    <strong>Name Search</strong>
-                    <span>Enter your full name as registered</span>
+        
+        <div class="search-card">
+            <div id="pub-search-loading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Checking availability...</p>
+            </div>
+            
+            <div id="pub-search-unavailable" class="unavailable-card hidden">
+                <div class="unavailable-icon">
+                    <i class="fas fa-search-minus"></i>
+                </div>
+                <h2>Search Currently Unavailable</h2>
+                <p>Public pre-registration search is not enabled at the moment. Please contact the organizers or use another method to check your status.</p>
+                <div class="action-buttons">
+                    <a href="/preregister/track" class="btn-secondary">
+                        <i class="fas fa-qrcode"></i>
+                        Track with ID
+                    </a>
+                    <a href="/preregister" class="btn-primary">
+                        <i class="fas fa-clipboard-check"></i>
+                        Pre-register Now
+                    </a>
+                </div>
+                <div class="contact-info">
+                    Need help? Email <a href="mailto:support@vaidyagogate.org">support@vaidyagogate.org</a>
                 </div>
             </div>
-            <div class="ak-pub-search-tip-card">
-                <div class="tip-icon"><i class="fas fa-envelope"></i></div>
-                <div class="tip-content">
-                    <strong>Email Search</strong>
-                    <span>Use the email you registered with</span>
+            
+            <div id="pub-search-form-wrap" class="hidden">
+                <div class="search-icon-wrap">
+                    <i class="fas fa-user-magnifying-glass"></i>
                 </div>
-            </div>
-            <div class="ak-pub-search-tip-card">
-                <div class="tip-icon"><i class="fas fa-mobile-alt"></i></div>
-                <div class="tip-content">
-                    <strong>Phone Search</strong>
-                    <span>Enter your registered phone number</span>
-                </div>
-            </div>
-            <div class="ak-pub-search-tip-card">
-                <div class="tip-icon"><i class="fas fa-id-badge"></i></div>
-                <div class="tip-content">
-                    <strong>App ID Search</strong>
-                    <span>Find it in your confirmation message</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="pub-search-loading" class="ak-pub-search-card" style="text-align:center;padding:32px;">
-            <div class="ak-pub-search-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-            </div>
-            <p style="margin-top:16px;color:#64748b;font-size:0.95rem;">Checking availability…</p>
-        </div>
-
-        <div id="pub-search-unavailable" class="ak-pub-search-card ak-pub-search-unavailable hidden">
-            <div class="unavailable-icon">
-                <i class="fas fa-search-minus"></i>
-            </div>
-            <h2>Search Currently Unavailable</h2>
-            <p>Public pre-registration search is not enabled at the moment. Please contact the organizers or use the tracking page with your Tracking ID.</p>
-            <div class="unavailable-actions">
-                <a href="/preregister/track" class="ak-pub-search-btn-secondary">
-                    <i class="fas fa-track"></i> Track with Tracking ID
-                </a>
-                <a href="/preregister" class="ak-pub-search-btn-primary">
-                    <i class="fas fa-clipboard-check"></i> Pre-register Now
-                </a>
-            </div>
-            <div class="contact-info">
-                <p>Need help? Contact us at <a href="mailto:support@vaidyagogate.org">support@vaidyagogate.org</a></p>
-            </div>
-        </div>
-
-        <div id="pub-search-form-wrap" class="ak-pub-search-card hidden">
-            <div class="search-form-header">
-                <h2><i class="fas fa-search" style="color:#0d9488;"></i> Find Your Registration</h2>
-                <p class="hint">Type any of the following to search: your full name, email address, phone number, or application ID</p>
-            </div>
-            <div id="pub-search-schedule-info" class="hidden" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.9rem;color:#92400e;"></div>
-            <form id="pub-search-form" autocomplete="on">
-                <div class="ak-pub-search-input-wrapper">
-                    <div class="search-input-icon">
-                        <i class="fas fa-search"></i>
+                <h2>Enter Your Details</h2>
+                <p class="hint">Search by name, email, phone, or application ID</p>
+                
+                <form id="pub-search-form" autocomplete="on">
+                    <div class="search-input-group">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="pub-search-input" required placeholder="Enter name, email, phone, or App ID..." autocomplete="off" minlength="3">
+                        </div>
+                        <button type="submit" class="search-btn" id="pub-search-submit">
+                            <i class="fas fa-magnifying-glass"></i>
+                            Search
+                        </button>
                     </div>
-                    <input type="text" id="pub-search-input" required placeholder="Enter name, email, phone, or App ID..." autocomplete="off" minlength="3">
-                    <button type="submit" class="ak-pub-search-btn" id="pub-search-submit">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                </div>
-                <p id="pub-search-error" class="ak-pub-search-error hidden"></p>
-            </form>
-            <div id="pub-search-results"></div>
+                    <div id="pub-search-error"></div>
+                    <div id="pub-search-schedule-info">
+                        <i class="fas fa-clock"></i>
+                        <span></span>
+                    </div>
+                </form>
+                
+                <div id="pub-search-results"></div>
+            </div>
         </div>
-
-        <div class="ak-pub-search-help-card">
-            <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
-            <div class="help-options">
-                <a href="/preregister" class="help-option">
+        
+        <div class="help-section">
+            <h3><i class="fas fa-circle-question"></i> Need Help?</h3>
+            <div class="help-cards">
+                <a href="/preregister" class="help-card">
                     <i class="fas fa-clipboard-check"></i>
-                    <span>New Pre-registration</span>
+                    <span>New Registration</span>
                 </a>
-                <a href="/preregister/track" class="help-option">
+                <a href="/preregister/track" class="help-card">
                     <i class="fas fa-qrcode"></i>
                     <span>Track with ID</span>
                 </a>
-                <a href="/" class="help-option">
+                <a href="/" class="help-card">
                     <i class="fas fa-home"></i>
                     <span>Programme Home</span>
                 </a>
             </div>
         </div>
-
-        <p class="ak-pub-search-footer">
-            <a href="/preregister">Pre-register</a>
-            &nbsp;·&nbsp;
-            <a href="/preregister/track">Track Status</a>
-            &nbsp;·&nbsp;
+        
+        <footer class="search-footer">
+            <a href="/preregister">Pre-register</a> · 
+            <a href="/preregister/track">Track Status</a> · 
             <a href="/">Home</a>
-            &nbsp;·&nbsp;
-            <a href="/dashboard">Applicant Portal</a>
-        </p>
+        </footer>
     </div>
-
-    <script src="/js/public-prereg-search.js?v=2"></script>
-    <script src="/js/portal-content-protection.js?v=4"></script>
+    
+    <script src="/js/public-prereg-search.js"></script>
 </body>
 </html>
