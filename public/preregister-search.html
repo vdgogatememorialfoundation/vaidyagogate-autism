@@ -11,55 +11,125 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=2">
-    <link rel="stylesheet" href="/css/public-prereg-search.css?v=1">
+    <link rel="stylesheet" href="/css/public-prereg-search-enhanced.css?v=1">
 </head>
 <body class="ak-pub-search-page">
     <div class="ak-pub-search-wrap">
         <header class="ak-pub-search-hero">
-            <div class="ak-pub-search-badge"><i class="fas fa-search"></i> Public lookup</div>
-            <h1>Search pre-registration status</h1>
-            <p>Enter your Name, Email, Phone, or Application ID to find your pre-registration. Private contact info will be masked for privacy.</p>
+            <div class="ak-pub-search-badge"><i class="fas fa-search"></i> Public Status Check</div>
+            <h1>Check Your Pre-registration Status</h1>
+            <p>Enter your Name, Email, Phone, or Application ID to instantly check your registration status. No login required.</p>
         </header>
 
+        <!-- Quick Tips Cards -->
+        <div class="ak-pub-search-tips">
+            <div class="ak-pub-search-tip-card">
+                <div class="tip-icon"><i class="fas fa-user"></i></div>
+                <div class="tip-content">
+                    <strong>Name Search</strong>
+                    <span>Enter your full name as registered</span>
+                </div>
+            </div>
+            <div class="ak-pub-search-tip-card">
+                <div class="tip-icon"><i class="fas fa-envelope"></i></div>
+                <div class="tip-content">
+                    <strong>Email Search</strong>
+                    <span>Use the email you registered with</span>
+                </div>
+            </div>
+            <div class="ak-pub-search-tip-card">
+                <div class="tip-icon"><i class="fas fa-mobile-alt"></i></div>
+                <div class="tip-content">
+                    <strong>Phone Search</strong>
+                    <span>Enter your registered phone number</span>
+                </div>
+            </div>
+            <div class="ak-pub-search-tip-card">
+                <div class="tip-icon"><i class="fas fa-id-badge"></i></div>
+                <div class="tip-content">
+                    <strong>App ID Search</strong>
+                    <span>Find it in your confirmation message</span>
+                </div>
+            </div>
+        </div>
+
         <div id="pub-search-loading" class="ak-pub-search-card" style="text-align:center;padding:32px;">
-            <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#0d9488;"></i>
-            <p style="margin-top:12px;color:#64748b;">Checking availability…</p>
+            <div class="ak-pub-search-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p style="margin-top:16px;color:#64748b;font-size:0.95rem;">Checking availability…</p>
         </div>
 
         <div id="pub-search-unavailable" class="ak-pub-search-card ak-pub-search-unavailable hidden">
-            <i class="fas fa-search-minus"></i>
-            <h2><i class="fas fa-info-circle" style="color:#94a3b8;margin-right:6px;font-size:1rem;"></i> Search not available</h2>
-            <p>Public pre-registration search is not currently enabled. Please contact the organisers or use the tracking page if you have a tracking ID.</p>
-            <p style="margin-top:14px;">
-                <a href="/preregister/track" style="color:#2563eb;font-weight:600;text-decoration:none;">Track with your Tracking ID →</a>
-            </p>
+            <div class="unavailable-icon">
+                <i class="fas fa-search-minus"></i>
+            </div>
+            <h2>Search Currently Unavailable</h2>
+            <p>Public pre-registration search is not enabled at the moment. Please contact the organizers or use the tracking page with your Tracking ID.</p>
+            <div class="unavailable-actions">
+                <a href="/preregister/track" class="ak-pub-search-btn-secondary">
+                    <i class="fas fa-track"></i> Track with Tracking ID
+                </a>
+                <a href="/preregister" class="ak-pub-search-btn-primary">
+                    <i class="fas fa-clipboard-check"></i> Pre-register Now
+                </a>
+            </div>
+            <div class="contact-info">
+                <p>Need help? Contact us at <a href="mailto:support@vaidyagogate.org">support@vaidyagogate.org</a></p>
+            </div>
         </div>
 
         <div id="pub-search-form-wrap" class="ak-pub-search-card hidden">
-            <h2><i class="fas fa-search" style="color:#0d9488;"></i> Look up pre-registration</h2>
-            <p class="hint">Search by your name, email address, phone number, or application ID.</p>
+            <div class="search-form-header">
+                <h2><i class="fas fa-search" style="color:#0d9488;"></i> Find Your Registration</h2>
+                <p class="hint">Type any of the following to search: your full name, email address, phone number, or application ID</p>
+            </div>
+            <div id="pub-search-schedule-info" class="hidden" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.9rem;color:#92400e;"></div>
             <form id="pub-search-form" autocomplete="on">
-                <div class="ak-pub-search-input-row">
-                    <input type="text" id="pub-search-input" required placeholder="Search by name, email, phone, app ID..." autocomplete="off" minlength="3">
-                    <button type="submit" class="ak-pub-search-btn" id="pub-search-submit"><i class="fas fa-search"></i> Search</button>
+                <div class="ak-pub-search-input-wrapper">
+                    <div class="search-input-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input type="text" id="pub-search-input" required placeholder="Enter name, email, phone, or App ID..." autocomplete="off" minlength="3">
+                    <button type="submit" class="ak-pub-search-btn" id="pub-search-submit">
+                        <i class="fas fa-search"></i> Search
+                    </button>
                 </div>
                 <p id="pub-search-error" class="ak-pub-search-error hidden"></p>
             </form>
             <div id="pub-search-results"></div>
         </div>
 
+        <div class="ak-pub-search-help-card">
+            <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
+            <div class="help-options">
+                <a href="/preregister" class="help-option">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>New Pre-registration</span>
+                </a>
+                <a href="/preregister/track" class="help-option">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Track with ID</span>
+                </a>
+                <a href="/" class="help-option">
+                    <i class="fas fa-home"></i>
+                    <span>Programme Home</span>
+                </a>
+            </div>
+        </div>
+
         <p class="ak-pub-search-footer">
-            <a href="/preregister">Pre-register for an event</a>
+            <a href="/preregister">Pre-register</a>
             &nbsp;·&nbsp;
-            <a href="/preregister/track">Track with Tracking ID</a>
+            <a href="/preregister/track">Track Status</a>
             &nbsp;·&nbsp;
-            <a href="/">Programme home</a>
+            <a href="/">Home</a>
             &nbsp;·&nbsp;
-            <a href="/dashboard">Applicant portal</a>
+            <a href="/dashboard">Applicant Portal</a>
         </p>
     </div>
 
-    <script src="/js/public-prereg-search.js?v=1"></script>
-    <script src="/js/portal-content-protection.js?v=3"></script>
+    <script src="/js/public-prereg-search.js?v=2"></script>
+    <script src="/js/portal-content-protection.js?v=4"></script>
 </body>
 </html>
