@@ -38,17 +38,18 @@
         (root || document).querySelectorAll('img').forEach(stripImg);
     }
 
-    function speakerAvatarsOnly() {
-        document.querySelectorAll('#speakers-grid .speaker-photo-wrap').forEach((wrap) => {
-            const card = wrap.closest('.speaker-card');
-            const name = card && card.querySelector('h3') ? card.querySelector('h3').textContent : '';
-            const div = document.createElement('div');
-            div.className = 'speaker-avatar ak-speaker-initial';
-            div.setAttribute('aria-hidden', 'true');
-            div.textContent = initials(name);
-            wrap.replaceWith(div);
-        });
-    }
+    // Allow faculty/speaker photos - REMOVED blocking
+    // function speakerAvatarsOnly() {
+    //     document.querySelectorAll('#speakers-grid .speaker-photo-wrap').forEach((wrap) => {
+    //         const card = wrap.closest('.speaker-card');
+    //         const name = card && card.querySelector('h3') ? card.querySelector('h3').textContent : '';
+    //         const div = document.createElement('div');
+    //         div.className = 'speaker-avatar ak-speaker-initial';
+    //         div.setAttribute('aria-hidden', 'true');
+    //         div.textContent = initials(name);
+    //         wrap.replaceWith(div);
+    //     });
+    // }
 
     function hideGallery() {
         document.getElementById('gallerySection')?.remove();
@@ -75,7 +76,7 @@
         window.applySiteCms = function (cms) {
             orig(cms);
             stripAll();
-            speakerAvatarsOnly();
+            // speakerAvatarsOnly(); // Allow speaker photos to show
             hideGallery();
             sanitizeHeroBanners();
         };
@@ -89,7 +90,7 @@
         patchApplyCms();
         const obs = new MutationObserver(() => {
             stripAll();
-            speakerAvatarsOnly();
+            // speakerAvatarsOnly(); // Allow speaker photos
         });
         obs.observe(document.body, { childList: true, subtree: true });
     }
