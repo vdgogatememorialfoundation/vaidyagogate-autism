@@ -1230,6 +1230,7 @@ const WEBSITE_MENU_PAGE_DEFS = [
     ['schedule', 'Agenda'],
     ['gallery', 'Gallery'],
     ['verify', 'Delegates (participant search)'],
+    ['prereg-search', 'Find registration'],
     ['certificate', 'Certificate verification'],
     ['contact', 'Contact']
 ];
