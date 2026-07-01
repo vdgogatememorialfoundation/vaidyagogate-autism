@@ -445,6 +445,11 @@
                     : 'Competition turned off — only registration forms apply for this event.';
                 msg.style.color = '#047857';
             }
+            // Update cached seminar data with new settings
+            const cachedSem = compSeminars.find((x) => Number(x.id) === sid);
+            if (cachedSem) {
+                cachedSem.registration_form_json = JSON.stringify(cfg);
+            }
             await loadCompetitionSeminars();
             const sel = document.getElementById('ak-comp-event-select');
             if (sel) sel.value = String(sid);
