@@ -622,6 +622,11 @@ app.get(/\.html$/i, (req, res, next) => {
     return next();
 });
 
+// Serve admin.html for /staff route (staff portal)
+app.get('/staff', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.use((req, res, next) => {
     if (!requestNeedsBootstrap(req)) return next();
     return ensureAppReady(req, res, next);
