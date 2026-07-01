@@ -11073,6 +11073,66 @@ app.post('/api/admin/notification-templates/seed', (req, res) => {
     });
 });
 
+app.post('/api/admin/notifications/resend-bulk', (req, res) => {
+    const { actingAdminId, seminarId, type, eventKey } = req.body || {};
+    const aid = parseInt(actingAdminId, 10);
+    if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId is required' });
+    if (!['preregistration', 'registration'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration" or "registration"' });
+    if (!eventKey) return res.status(400).json({ error: 'eventKey is required' });
+    assertAdminPortalActor(aid, (e, adm) => {
+        if (e && e.message === 'BAD_ACTOR') return res.status(400).json({ error: 'actingAdminId is required' });
+        if (e && e.message === 'FORBIDDEN') return res.status(403).json({ error: 'Administrator access required' });
+        if (e) return res.status(500).json({ error: e.message });
+        if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
+        const sid = parseInt(seminarId, 10);
+        const table = type === 'preregistration' ? 'preregistrations' : 'registrations';
+        const userField = 'user_id';
+        const appField = 'application_no';
+        let sql = `SELECT r.${userField} AS userId, r.${appField} AS applicationNo, u.email, u.first_name, u.last_name
+                   FROM ${table} r
+                   JOIN users u ON u.id = r.${userField}
+                   WHERE r.${userField} IS NOT NULL AND r.${userField} > 0`;
+        const params = [];
+        if (sid > 0) { sql += ' AND r.seminar_id = ?'; params.push(sid); }
+        db.all(sql, params, (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!rows.length) return res.json({ success: true, sent: 0, message: 'No records found' });
+            let sent = 0, failed = 0;
+            const total = rows.length;
+            rows.forEach((row, idx) => {
+                notifEngine.notifyUserEvent(db, eventKey, {
+                    userId: row.userId,
+                    seminarId: sid > 0 ? sid : null,
+                    vars: { application_no: row.applicationNo || '', full_name: ((row.first_name || '') + ' ' + (row.last_name || '')).trim() },
+                    immediate: true
+                }, (nErr) => {
+                    if (nErr) { console.warn('[bulk-resend]', eventKey, 'for user', row.userId, nErr.message); failed++; }
+                    else sent++;
+                    if (idx === total - 1) {
+                        res.json({ success: true, total, sent, failed, message: `Sent ${sent}/${total}, failed ${failed}` });
+                    }
+                });
+            });
+        });
+    });
+});
+
+app.get('/api/admin/notifications/pending-resend', (req, res) => {
+    const { seminarId, type } = req.query || {};
+    if (!['preregistration', 'registration'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration" or "registration"' });
+    const sid = parseInt(seminarId, 10);
+    const table = type === 'preregistration' ? 'preregistrations' : 'registrations';
+    const userField = 'user_id';
+    const appField = 'application_no';
+    let sql = `SELECT COUNT(*) AS count FROM ${table} r WHERE r.${userField} IS NOT NULL AND r.${userField} > 0`;
+    const params = [];
+    if (sid > 0) { sql += ' AND r.seminar_id = ?'; params.push(sid); }
+    db.get(sql, params, (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ count: row ? row.count : 0, seminarId: sid > 0 ? sid : null, type });
+    });
+});
+
 app.post('/api/admin/designated-notify-config', (req, res) => {
     const { actingAdminId, config } = req.body || {};
     const aid = parseInt(actingAdminId, 10);

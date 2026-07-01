@@ -303,3 +303,34 @@ async function notifRetryFailed() {
         alert('Retry failed');
     }
 }
+
+async function bulkResendNotifications() {
+    const type = document.getElementById('bulk-notif-type').value;
+    const eventKey = document.getElementById('bulk-notif-event').value;
+    const seminarRaw = document.getElementById('bulk-notif-seminar').value;
+    const seminarId = seminarRaw ? parseInt(seminarRaw, 10) : 0;
+    const statusEl = document.getElementById('bulk-notif-status');
+    if (!window.__adminActorId) {
+        statusEl.innerHTML = '<span style="color:red;">Error: Not logged in as admin.</span>';
+        return;
+    }
+    const confirmed = confirm(`Send "${eventKey}" to ALL ${type} records${seminarId > 0 ? ' for seminar ' + seminarId : ''}?`);
+    if (!confirmed) return;
+    statusEl.innerHTML = '<span style="color:#92400e;">Sending...</span>';
+    try {
+        const res = await fetch('/api/admin/notifications/resend-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: window.__adminActorId, type, eventKey, seminarId: seminarId > 0 ? seminarId : null })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            statusEl.innerHTML = '<span style="color:red;">Error: ' + escNotif(data.error) + '</span>';
+            return;
+        }
+        statusEl.innerHTML = '<span style="color:green;">' + escNotif(data.message) + '</span>';
+        loadNotificationLogs();
+    } catch (e) {
+        statusEl.innerHTML = '<span style="color:red;">Request failed: ' + escNotif(e.message) + '</span>';
+    }
+}
