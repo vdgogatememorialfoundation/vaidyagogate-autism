@@ -939,6 +939,89 @@ async function sendWelcomeToSelected() {
     }
 }
 
+async function notifyMainRegistrationOpen() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    if (!confirm('Notify all approved pre-registered users that main registration is now open?')) return;
+    
+    try {
+        const res = await fetch('/api/admin/preregistrations/notify-main-registration-open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+    } catch (e) {
+        alert(e.message || 'Failed to send notifications');
+    }
+}
+
+async function resendRegistrationConfirmation() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    if (!confirm('Resend registration confirmation emails to all registered users?')) return;
+    
+    try {
+        const res = await fetch('/api/admin/registrations/resend-confirmation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+    } catch (e) {
+        alert(e.message || 'Failed to resend confirmations');
+    }
+}
+
+async function resendQRTicket() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    if (!confirm('Resend QR ticket emails to all registered users?')) return;
+    
+    try {
+        const res = await fetch('/api/admin/registrations/resend-qr-ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+    } catch (e) {
+        alert(e.message || 'Failed to resend QR tickets');
+    }
+}
+
+async function sendWhatsAppGroupLink() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    const url = prompt('Enter WhatsApp group invite link:');
+    if (!url || !url.trim()) return;
+    
+    if (!confirm('Send WhatsApp group link to all registered users with phone numbers?')) return;
+    
+    try {
+        const res = await fetch('/api/admin/registrations/send-whatsapp-group-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id, whatsappGroupUrl: url.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+    } catch (e) {
+        alert(e.message || 'Failed to send WhatsApp group link');
+    }
+}
+
 let adminAutoRefreshInterval = null;
 
 function startAdminAutoRefresh() {
