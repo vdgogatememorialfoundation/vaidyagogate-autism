@@ -314,7 +314,8 @@ async function bulkResendNotifications() {
         statusEl.innerHTML = '<span style="color:red;">Error: Not logged in as admin.</span>';
         return;
     }
-    const confirmed = confirm(`Send "${eventKey}" to ALL ${type} records${seminarId > 0 ? ' for seminar ' + seminarId : ''}?`);
+    const typeLabels = { preregistration: 'pre-registered candidates', registration: 'main registrations', users: 'all account holders', all_candidates: 'ALL candidates (pre-reg + registered)' };
+    const confirmed = confirm(`Send "${eventKey}" email to ${typeLabels[type] || type}${seminarId > 0 ? ' for seminar ' + seminarId : ''}?`);
     if (!confirmed) return;
     statusEl.innerHTML = '<span style="color:#92400e;">Sending...</span>';
     try {
@@ -332,5 +333,21 @@ async function bulkResendNotifications() {
         loadNotificationLogs();
     } catch (e) {
         statusEl.innerHTML = '<span style="color:red;">Request failed: ' + escNotif(e.message) + '</span>';
+    }
+}
+
+function bulkNotifTypeChanged() {
+    const type = document.getElementById('bulk-notif-type').value;
+    const eventSelect = document.getElementById('bulk-notif-event');
+    const seminarInput = document.getElementById('bulk-notif-seminar');
+    // For all_candidates, suggest events that work for both pre-reg and registrations
+    if (type === 'all_candidates') {
+        eventSelect.value = 'ACCOUNT_CREATED';
+    } else if (type === 'users') {
+        eventSelect.value = 'ACCOUNT_CREATED';
+    } else if (type === 'preregistration') {
+        if (eventSelect.value === 'SEMINAR_REGISTRATION_SUCCESS') eventSelect.value = 'PREREGISTRATION_SUBMITTED';
+    } else if (type === 'registration') {
+        if (eventSelect.value === 'PREREGISTRATION_SUBMITTED') eventSelect.value = 'SEMINAR_REGISTRATION_SUCCESS';
     }
 }
