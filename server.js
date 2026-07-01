@@ -6924,16 +6924,22 @@ app.post('/api/auth/staff/reset-password', withAuxiliaryTables, (req, res) => {
 
 // Forgot password — email + WhatsApp (no plain password stored)
 app.post('/api/auth/forgot-password', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
-    const forgotEmailV = contactValidation.validateEmail((req.body && req.body.email) || '');
-    if (!forgotEmailV.valid) return res.status(400).json({ error: forgotEmailV.message });
-    const emailNorm = forgotEmailV.cleanedEmail;
+    const emailInput = String((req.body && req.body.email) || '').trim();
+    // Support both email and staff portal ID
+    let emailNorm = emailInput;
+    let foundByStaffId = false;
     const respond = () => res.json({ success: true, message: 'If an account exists, reset instructions were sent.' });
     const portalProduct = require('./lib/portal-product');
     const defaultReturnTo = portalProduct.FEATURES.applicantPortal ? '/dashboard' : 'index.html';
     let returnTo = String((req.body && req.body.returnTo) || defaultReturnTo).trim();
+    // Support portal parameter to redirect to admin/staff login
+    const portal = String((req.body && req.body.portal) || '').toLowerCase();
+    if (portal === 'staff' || portal === 'admin') {
+        returnTo = '/staff';
+    }
     if (!returnTo) returnTo = defaultReturnTo;
-    authUsers.findUserByEmail(db, emailNorm, (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
+    
+    const trySendReset = (user) => {
         if (!user) return respond();
         const token = crypto.randomBytes(32).toString('hex');
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -6958,7 +6964,28 @@ app.post('/api/auth/forgot-password', withIntegrationSettingsLoaded, withAuxilia
                 }
             );
         });
-    });
+    };
+
+    // Try to find user by email first
+    const emailV = contactValidation.validateEmail(emailInput);
+    if (emailV.valid) {
+        emailNorm = emailV.cleanedEmail;
+        authUsers.findUserByEmail(db, emailNorm, (err, user) => {
+            if (err) return res.status(500).json({ error: err.message });
+            trySendReset(user);
+        });
+    } else {
+        // Try to find by staff portal ID (numeric string)
+        const staffId = emailInput.replace(/\D/g, '');
+        if (staffId.length >= 10) {
+            db.get(`SELECT * FROM users WHERE user_id_string = ? AND IFNULL(is_disabled,0) = 0`, [staffId], (err, user) => {
+                if (err) return res.status(500).json({ error: err.message });
+                trySendReset(user);
+            });
+        } else {
+            respond();
+        }
+    }
 });
 
 app.post('/api/auth/reset-password', withAuxiliaryTables, (req, res) => {

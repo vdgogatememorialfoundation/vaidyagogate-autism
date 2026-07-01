@@ -620,6 +620,63 @@ async function adminLoginFormSubmit(e) {
 
 bindAdminLoginForm();
 
+// Forgot password overlay
+document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const overlay = document.getElementById('forgot-password-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        document.getElementById('forgot-pw-email')?.focus();
+        document.getElementById('forgot-pw-err')?.classList.add('hidden');
+        document.getElementById('forgot-pw-ok')?.classList.add('hidden');
+    }
+});
+
+function closeForgotPasswordOverlay() {
+    document.getElementById('forgot-password-overlay')?.classList.add('hidden');
+}
+window.closeForgotPasswordOverlay = closeForgotPasswordOverlay;
+
+document.getElementById('forgot-password-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeForgotPasswordOverlay();
+});
+
+document.getElementById('forgot-pw-submit')?.addEventListener('click', async () => {
+    const emailOrId = document.getElementById('forgot-pw-email')?.value?.trim() || '';
+    const errEl = document.getElementById('forgot-pw-err');
+    const okEl = document.getElementById('forgot-pw-ok');
+    errEl?.classList.add('hidden');
+    okEl?.classList.add('hidden');
+    if (!emailOrId) {
+        errEl.textContent = 'Please enter your email or staff ID.';
+        errEl?.classList.remove('hidden');
+        return;
+    }
+    const btn = document.getElementById('forgot-pw-submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+    try {
+        const res = await fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailOrId, portal: 'staff' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            okEl.textContent = 'Password reset link sent! Check your email.';
+            okEl?.classList.remove('hidden');
+            document.getElementById('forgot-pw-email').value = '';
+        } else {
+            errEl.textContent = data.error || 'Could not find an account with that email.';
+            errEl?.classList.remove('hidden');
+        }
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl?.classList.remove('hidden');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send reset link'; }
+    }
+});
+
 document.getElementById('btn-logout').addEventListener('click', () => {
     localStorage.removeItem('admin_auth');
     localStorage.removeItem('admin_user');
