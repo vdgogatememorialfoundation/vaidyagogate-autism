@@ -650,6 +650,9 @@ function switchTab(tabId) {
     if (tabId === 'tab-support-tickets') {
         loadSupportTickets(true);
     }
+    if (tabId === 'tab-competition-tracking' && typeof initAdminCompetitionTracking === 'function') {
+        initAdminCompetitionTracking();
+    }
 }
 
 let adminAutoRefreshInterval = null;

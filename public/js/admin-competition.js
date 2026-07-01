@@ -715,6 +715,13 @@
         if (window.__akCompInit) {
             loadCompetitionSeminars();
             refresh();
+            // Re-apply the currently selected event's settings to restore checkbox state
+            const sel = document.getElementById('ak-comp-event-select');
+            const sid = sel && sel.value;
+            if (sid) {
+                const sem = compSeminars.find((x) => String(x.id) === String(sid));
+                if (sem) applyCompSettingsToForm(sem);
+            }
             return;
         }
         window.__akCompInit = true;
