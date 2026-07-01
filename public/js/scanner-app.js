@@ -509,7 +509,7 @@
         if (html5QrCode) html5QrCode.stop().catch(() => {});
     }
 
-    function showScan(u) {
+    function showScan(u, loginData) {
         user = u;
         authOverlay.classList.add('hidden');
         ui.classList.remove('hidden');
@@ -517,6 +517,13 @@
             (u.first_name || '') + ' ' + (u.last_name || '') + ' · ID ' + (u.user_id_string || u.id);
         if (typeof PortalAuth !== 'undefined' && PortalAuth.renderLoginTime) {
             PortalAuth.renderLoginTime('scanner-login-time', u);
+        }
+        const requiresReset = (loginData && loginData.requiresPasswordReset) || Number(u.require_password_reset) === 1;
+        if (requiresReset) {
+            const overlay = document.getElementById('password-reset-overlay');
+            if (overlay) overlay.classList.remove('hidden');
+            if (html5QrCode) html5QrCode.stop().catch(() => {});
+            return;
         }
         loadCheckinSeminars().then(() => startCam()).catch(console.error);
     }
@@ -574,6 +581,109 @@
     document.getElementById('btn-logout')?.addEventListener('click', () => {
         PortalAuth.clearUser('scanner');
         showLogin();
+    });
+
+    document.getElementById('btn-change-password')?.addEventListener('click', () => {
+        const overlay = document.getElementById('change-password-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+        document.getElementById('scanner-chg-err')?.classList.add('hidden');
+        document.getElementById('scanner-chg-ok')?.classList.add('hidden');
+    });
+
+    document.getElementById('change-password-overlay')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            e.currentTarget.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('scanner-chg-submit')?.addEventListener('click', async () => {
+        const currentPw = document.getElementById('scanner-chg-current-pw')?.value || '';
+        const newPw = document.getElementById('scanner-chg-new-pw')?.value || '';
+        const confirmPw = document.getElementById('scanner-chg-confirm-pw')?.value || '';
+        const errEl = document.getElementById('scanner-chg-err');
+        const okEl = document.getElementById('scanner-chg-ok');
+        errEl?.classList.add('hidden');
+        okEl?.classList.add('hidden');
+        if (!currentPw) {
+            errEl.textContent = 'Enter your current password.';
+            errEl?.classList.remove('hidden');
+            return;
+        }
+        if (!newPw || newPw.length < 4) {
+            errEl.textContent = 'New password must be at least 4 characters.';
+            errEl?.classList.remove('hidden');
+            return;
+        }
+        if (newPw !== confirmPw) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl?.classList.remove('hidden');
+            return;
+        }
+        try {
+            const res = await fetch('/api/auth/staff/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, currentPassword: currentPw, newPassword: newPw })
+            });
+            const data = await res.json();
+            if (data.success) {
+                okEl.textContent = 'Password updated successfully.';
+                okEl?.classList.remove('hidden');
+                document.getElementById('scanner-chg-current-pw').value = '';
+                document.getElementById('scanner-chg-new-pw').value = '';
+                document.getElementById('scanner-chg-confirm-pw').value = '';
+                if (user) user.require_password_reset = 0;
+                setTimeout(() => {
+                    document.getElementById('change-password-overlay')?.classList.add('hidden');
+                }, 1500);
+            } else {
+                errEl.textContent = data.error || 'Failed to change password.';
+                errEl?.classList.remove('hidden');
+            }
+        } catch (e) {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl?.classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('password-reset-overlay')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+    });
+
+    document.getElementById('scanner-reset-submit')?.addEventListener('click', async () => {
+        const newPw = document.getElementById('scanner-reset-new-pw')?.value || '';
+        const confirmPw = document.getElementById('scanner-reset-confirm-pw')?.value || '';
+        const errEl = document.getElementById('scanner-reset-err');
+        errEl?.classList.add('hidden');
+        if (!newPw || newPw.length < 4) {
+            errEl.textContent = 'New password must be at least 4 characters.';
+            errEl?.classList.remove('hidden');
+            return;
+        }
+        if (newPw !== confirmPw) {
+            errEl.textContent = 'Passwords do not match.';
+            errEl?.classList.remove('hidden');
+            return;
+        }
+        try {
+            const res = await fetch('/api/auth/staff/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, newPassword: newPw })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (user) user.require_password_reset = 0;
+                document.getElementById('password-reset-overlay')?.classList.add('hidden');
+                alert('Password set successfully. You can continue.');
+            } else {
+                errEl.textContent = data.error || 'Failed to reset password.';
+                errEl?.classList.remove('hidden');
+            }
+        } catch (e) {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl?.classList.remove('hidden');
+        }
     });
 
     document.addEventListener('keydown', (e) => {

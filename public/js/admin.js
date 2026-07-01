@@ -626,6 +626,53 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     location.reload();
 });
 
+document.getElementById('btn-change-password')?.addEventListener('click', () => {
+    const overlay = document.getElementById('change-password-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    document.getElementById('admin-chg-err')?.classList.add('hidden');
+    document.getElementById('admin-chg-ok')?.classList.add('hidden');
+});
+
+document.getElementById('change-password-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
+
+document.getElementById('admin-chg-submit')?.addEventListener('click', async () => {
+    const currentPw = document.getElementById('admin-chg-current-pw')?.value || '';
+    const newPw = document.getElementById('admin-chg-new-pw')?.value || '';
+    const confirmPw = document.getElementById('admin-chg-confirm-pw')?.value || '';
+    const errEl = document.getElementById('admin-chg-err');
+    const okEl = document.getElementById('admin-chg-ok');
+    errEl?.classList.add('hidden');
+    okEl?.classList.add('hidden');
+    if (!currentPw) { errEl.textContent = 'Enter your current password.'; errEl?.classList.remove('hidden'); return; }
+    if (!newPw || newPw.length < 4) { errEl.textContent = 'New password must be at least 4 characters.'; errEl?.classList.remove('hidden'); return; }
+    if (newPw !== confirmPw) { errEl.textContent = 'Passwords do not match.'; errEl?.classList.remove('hidden'); return; }
+    const user = getStoredAdminUser();
+    try {
+        const res = await fetch('/api/auth/staff/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, currentPassword: currentPw, newPassword: newPw })
+        });
+        const data = await res.json();
+        if (data.success) {
+            okEl.textContent = 'Password updated successfully.';
+            okEl?.classList.remove('hidden');
+            document.getElementById('admin-chg-current-pw').value = '';
+            document.getElementById('admin-chg-new-pw').value = '';
+            document.getElementById('admin-chg-confirm-pw').value = '';
+            setTimeout(() => document.getElementById('change-password-overlay')?.classList.add('hidden'), 1500);
+        } else {
+            errEl.textContent = data.error || 'Failed to change password.';
+            errEl?.classList.remove('hidden');
+        }
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl?.classList.remove('hidden');
+    }
+});
+
 function switchTab(tabId) {
     if (!adminCanAccessTab(tabId)) {
         alert(
@@ -2705,6 +2752,18 @@ function renderAdminUserDetailTab() {
     }
 
     if (__adminUserDetailTab === 'password') {
+        const isStaffUser = !isDoctorAccount(u);
+        let sendResetLinkSection = '';
+        if (isStaffUser) {
+            sendResetLinkSection = `
+                <div style="margin-top:16px;padding:12px;border:1px solid #dbeafe;border-radius:8px;background:#eff6ff;">
+                    <p style="margin:0 0 8px;font-size:0.85rem;color:#1e40af;"><i class="fas fa-envelope"></i> <strong>Password reset link</strong></p>
+                    <p style="margin:0 0 10px;font-size:0.82rem;color:#64748b;">Send a password reset link to the staff member's email. They can use it to set a new password.</p>
+                    <button type="button" class="btn-primary" style="background:#2563eb;" onclick="adminSendPasswordResetLink(${u.id})" id="admin-send-reset-btn">Send reset link via email</button>
+                    <p id="admin-pw-reset-link-result" style="margin-top:8px;font-weight:600;"></p>
+                </div>
+            `;
+        }
         body.innerHTML = `
             <p style="margin-bottom:12px;color:#64748b;">Set a custom password or generate a new one. The new value is shown once after save.</p>
             <label><input type="checkbox" id="admin-pw-generate" checked onchange="document.getElementById('admin-pw-custom-wrap').style.display=this.checked?'none':'block'"> Auto-generate password</label>
@@ -2713,6 +2772,7 @@ function renderAdminUserDetailTab() {
             </div>
             <button type="button" class="btn-primary" onclick="adminResetUserPassword(${u.id})">Save password</button>
             <p id="admin-pw-result" style="margin-top:12px;font-weight:600;"></p>
+            ${sendResetLinkSection}
         `;
     }
 }
@@ -2743,6 +2803,29 @@ async function adminResetUserPassword(userId) {
     } catch (e) {
         console.error(e);
         alert('Network error');
+    }
+}
+
+async function adminSendPasswordResetLink(userId) {
+    const btn = document.getElementById('admin-send-reset-btn');
+    const el = document.getElementById('admin-pw-reset-link-result');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/send-password-reset-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (el) { el.style.color = '#15803d'; el.textContent = data.message || 'Reset link sent successfully.'; }
+        } else {
+            if (el) { el.style.color = '#b91c1c'; el.textContent = data.error || 'Failed to send reset link.'; }
+        }
+    } catch (e) {
+        console.error(e);
+        if (el) { el.style.color = '#b91c1c'; el.textContent = 'Network error. Please try again.'; }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send reset link via email'; }
     }
 }
 

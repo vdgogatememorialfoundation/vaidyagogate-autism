@@ -67,11 +67,49 @@
                 <div class="jp-header-actions">
                     <span class="jp-pill" id="whoami"><i class="fas fa-user-tie"></i> Judge</span>
                     <span class="jp-pill jp-pill-time hidden" id="judge-login-time"></span>
+                    <button type="button" class="btn btn-ghost" id="btn-change-password" title="Change password"><i class="fas fa-key"></i></button>
                     <button type="button" class="btn btn-ghost" id="btn-refresh" title="Refresh list"><i class="fas fa-arrows-rotate"></i> Refresh</button>
                     <button type="button" class="btn btn-logout" id="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
                 </div>
             </div>
         </header>
+        <div id="password-reset-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9001;display:flex;align-items:center;justify-content:center;padding:16px;">
+            <div style="background:#fff;border-radius:12px;padding:24px;max-width:400px;width:100%;">
+                <h3 style="color:#0c4a6e;margin:0 0 8px;"><i class="fas fa-key"></i> Reset your password</h3>
+                <p style="color:#64748b;font-size:0.9rem;margin:0 0 16px;">Your administrator has requested that you set a new password before continuing.</p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;">New password</label>
+                    <input type="password" id="judge-reset-new-pw" placeholder="Min 4 characters" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;">Confirm password</label>
+                    <input type="password" id="judge-reset-confirm-pw" placeholder="Re-enter password" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                </div>
+                <button type="button" class="btn-primary" id="judge-reset-submit" style="width:100%;padding:10px;">Set password</button>
+                <p id="judge-reset-err" style="color:#b91c1c;font-size:0.85rem;margin:8px 0 0;display:none;"></p>
+            </div>
+        </div>
+        <div id="change-password-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9001;display:flex;align-items:center;justify-content:center;padding:16px;">
+            <div style="background:#fff;border-radius:12px;padding:24px;max-width:400px;width:100%;">
+                <h3 style="color:#0c4a6e;margin:0 0 8px;"><i class="fas fa-key"></i> Change password</h3>
+                <p style="color:#64748b;font-size:0.9rem;margin:0 0 16px;">Enter your current password and choose a new one.</p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;">Current password</label>
+                    <input type="password" id="judge-chg-current-pw" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;">New password</label>
+                    <input type="password" id="judge-chg-new-pw" placeholder="Min 4 characters" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;">Confirm password</label>
+                    <input type="password" id="judge-chg-confirm-pw" placeholder="Re-enter password" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                </div>
+                <button type="button" class="btn-primary" id="judge-chg-submit" style="width:100%;padding:10px;">Save password</button>
+                <p id="judge-chg-err" style="color:#b91c1c;font-size:0.85rem;margin:8px 0 0;display:none;"></p>
+                <p id="judge-chg-ok" style="color:#15803d;font-size:0.85rem;margin:8px 0 0;display:none;"></p>
+            </div>
+        </div>
 
         <main class="jp-main">
             <div class="jp-stats">
@@ -234,7 +272,7 @@
                 app.classList.add('hidden');
             }
 
-            function showApp(u) {
+            function showApp(u, loginData) {
                 user = u;
                 overlay.classList.add('hidden');
                 app.classList.remove('hidden');
@@ -242,6 +280,12 @@
                 whoami.innerHTML = '<i class="fas fa-user-tie"></i> ' + name;
                 if (typeof PortalAuth !== 'undefined' && PortalAuth.renderLoginTime) {
                     PortalAuth.renderLoginTime('judge-login-time', u);
+                }
+                const requiresReset = (loginData && loginData.requiresPasswordReset) || Number(u.require_password_reset) === 1;
+                if (requiresReset) {
+                    const resetOverlay = document.getElementById('password-reset-overlay');
+                    if (resetOverlay) resetOverlay.classList.remove('hidden');
+                    return;
                 }
                 loadCaseAssignments();
                 loadJudgePeerList();
@@ -795,6 +839,82 @@
             document.getElementById('btn-logout').addEventListener('click', () => {
                 PortalAuth.clearUser('judge');
                 showLogin();
+            });
+            document.getElementById('btn-change-password')?.addEventListener('click', () => {
+                const overlay = document.getElementById('change-password-overlay');
+                if (overlay) overlay.classList.remove('hidden');
+                document.getElementById('judge-chg-err')?.classList.add('hidden');
+                document.getElementById('judge-chg-ok')?.classList.add('hidden');
+            });
+            document.getElementById('change-password-overlay')?.addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+            });
+            document.getElementById('judge-chg-submit')?.addEventListener('click', async () => {
+                const currentPw = document.getElementById('judge-chg-current-pw')?.value || '';
+                const newPw = document.getElementById('judge-chg-new-pw')?.value || '';
+                const confirmPw = document.getElementById('judge-chg-confirm-pw')?.value || '';
+                const errEl = document.getElementById('judge-chg-err');
+                const okEl = document.getElementById('judge-chg-ok');
+                errEl?.classList.add('hidden');
+                okEl?.classList.add('hidden');
+                if (!currentPw) { errEl.textContent = 'Enter your current password.'; errEl?.classList.remove('hidden'); return; }
+                if (!newPw || newPw.length < 4) { errEl.textContent = 'New password must be at least 4 characters.'; errEl?.classList.remove('hidden'); return; }
+                if (newPw !== confirmPw) { errEl.textContent = 'Passwords do not match.'; errEl?.classList.remove('hidden'); return; }
+                try {
+                    const res = await fetch('/api/auth/staff/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id, currentPassword: currentPw, newPassword: newPw })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        okEl.textContent = 'Password updated successfully.';
+                        okEl?.classList.remove('hidden');
+                        document.getElementById('judge-chg-current-pw').value = '';
+                        document.getElementById('judge-chg-new-pw').value = '';
+                        document.getElementById('judge-chg-confirm-pw').value = '';
+                        if (user) user.require_password_reset = 0;
+                        setTimeout(() => document.getElementById('change-password-overlay')?.classList.add('hidden'), 1500);
+                    } else {
+                        errEl.textContent = data.error || 'Failed to change password.';
+                        errEl?.classList.remove('hidden');
+                    }
+                } catch (e) {
+                    errEl.textContent = 'Network error. Please try again.';
+                    errEl?.classList.remove('hidden');
+                }
+            });
+            document.getElementById('password-reset-overlay')?.addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+            });
+            document.getElementById('judge-reset-submit')?.addEventListener('click', async () => {
+                const newPw = document.getElementById('judge-reset-new-pw')?.value || '';
+                const confirmPw = document.getElementById('judge-reset-confirm-pw')?.value || '';
+                const errEl = document.getElementById('judge-reset-err');
+                errEl?.classList.add('hidden');
+                if (!newPw || newPw.length < 4) { errEl.textContent = 'New password must be at least 4 characters.'; errEl?.classList.remove('hidden'); return; }
+                if (newPw !== confirmPw) { errEl.textContent = 'Passwords do not match.'; errEl?.classList.remove('hidden'); return; }
+                try {
+                    const res = await fetch('/api/auth/staff/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id, newPassword: newPw })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        if (user) user.require_password_reset = 0;
+                        document.getElementById('password-reset-overlay')?.classList.add('hidden');
+                        alert('Password set successfully. You can continue.');
+                        loadCaseAssignments();
+                        loadJudgePeerList();
+                    } else {
+                        errEl.textContent = data.error || 'Failed to reset password.';
+                        errEl?.classList.remove('hidden');
+                    }
+                } catch (e) {
+                    errEl.textContent = 'Network error. Please try again.';
+                    errEl?.classList.remove('hidden');
+                }
             });
 
             if (user) showApp(user);

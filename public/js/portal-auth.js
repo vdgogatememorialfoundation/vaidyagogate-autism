@@ -585,7 +585,7 @@
                 setUser(portal, data.user);
                 phoneOtpToken = null;
                 emailOtpToken = null;
-                opts.onSuccess(data.user);
+                opts.onSuccess(data.user, data);
             } catch (err) {
                 console.error(err);
                 const msg = 'Could not reach the server.';

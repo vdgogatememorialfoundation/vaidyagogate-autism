@@ -864,7 +864,10 @@ function ensureCriticalUserColumns(callback) {
                             ignoreDup(err5);
                             db.run(`ALTER TABLE users ADD COLUMN doctor_modules TEXT`, (err6) => {
                                 ignoreDup(err6);
-                                afterUsers();
+                                db.run(`ALTER TABLE users ADD COLUMN require_password_reset INTEGER DEFAULT 0`, (err7) => {
+                                    ignoreDup(err7);
+                                    afterUsers();
+                                });
                             });
                         });
                     });
@@ -1209,6 +1212,19 @@ function ensureMessagingOtpSchema(next) {
             )`,
             (evtErr) => {
                 ignoreSchemaMigrationErr(evtErr);
+            }
+        );
+        db.run(
+            `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )`,
+            (prtErr) => {
+                ignoreSchemaMigrationErr(prtErr);
             }
         );
         db.run(`CREATE TABLE IF NOT EXISTS notification_queue (
@@ -4737,7 +4753,12 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         });
                         delete row.password;
                         normalizeAuthUserRow(row);
-        res.json({ success: true, user: row });
+                        const isStaffLogin = loginPortal === 'admin' || loginPortal === 'staff';
+                        const requiresReset = isStaffLogin && Number(row.require_password_reset) === 1;
+                        if (requiresReset) {
+                            row.require_password_reset = 1;
+                        }
+        res.json({ success: true, user: row, requiresPasswordReset: requiresReset });
                     });
                 }
 
@@ -6796,6 +6817,109 @@ app.post('/api/auth/change-password', (req, res) => {
             res.json({ success: true, message: 'Password updated successfully.' });
         });
     });
+});
+
+// Staff user change password (requires current password verification)
+app.post('/api/auth/staff/change-password', withAuxiliaryTables, (req, res) => {
+    const { userId, currentPassword, newPassword } = req.body;
+    const uid = parseInt(userId, 10);
+    if (Number.isNaN(uid) || uid < 1) {
+        return res.status(400).json({ error: 'Invalid user ID.' });
+    }
+    if (!currentPassword) {
+        return res.status(400).json({ error: 'Current password is required.' });
+    }
+    if (!newPassword || String(newPassword).length < 4) {
+        return res.status(400).json({ error: 'New password must be at least 4 characters.' });
+    }
+    db.get(
+        `SELECT id, user_role, role FROM users WHERE id = ? AND password = ? AND IFNULL(is_disabled, 0) = 0`,
+        [uid, currentPassword],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!row) return res.status(401).json({ error: 'Current password is incorrect.' });
+            const userRoles = require('./lib/user-roles');
+            const isStaff = userRoles.isStaffPortalAccount(row);
+            if (!isStaff) {
+                return res.status(403).json({ error: 'This endpoint is for staff accounts only.' });
+            }
+            db.run(`UPDATE users SET password = ?, require_password_reset = 0 WHERE id = ?`, [newPassword, uid], function (e2) {
+                if (e2) return res.status(500).json({ error: e2.message });
+                activityLog.logFromRequest(db, req, {
+                    user_id: uid,
+                    user_role: row.user_role || row.role,
+                    action: 'auth.staff_password_changed',
+                    meta: {}
+                });
+                res.json({ success: true, message: 'Password updated successfully.' });
+            });
+        }
+    );
+});
+
+// Staff user reset password (admin or self-service from require_password_reset)
+app.post('/api/auth/staff/reset-password', withAuxiliaryTables, (req, res) => {
+    const { userId, newPassword, token } = req.body;
+    const uid = parseInt(userId, 10);
+    if (Number.isNaN(uid) || uid < 1) {
+        return res.status(400).json({ error: 'Invalid user ID.' });
+    }
+    if (!newPassword || String(newPassword).length < 4) {
+        return res.status(400).json({ error: 'New password must be at least 4 characters.' });
+    }
+    db.get(
+        `SELECT id, user_role, role, require_password_reset FROM users WHERE id = ? AND IFNULL(is_disabled, 0) = 0`,
+        [uid],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!row) return res.status(404).json({ error: 'User not found.' });
+            const userRoles = require('./lib/user-roles');
+            const isStaff = userRoles.isStaffPortalAccount(row);
+            if (!isStaff) {
+                return res.status(403).json({ error: 'This endpoint is for staff accounts only.' });
+            }
+            // If require_password_reset is set, no token needed (self-service reset after admin trigger)
+            // If token provided, verify it
+            if (token) {
+                const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+                db.get(
+                    `SELECT id FROM password_reset_tokens WHERE user_id = ? AND token_hash = ? AND used = 0 AND expires_at > ?`,
+                    [uid, tokenHash, new Date().toISOString()],
+                    (tErr, tokRow) => {
+                        if (tErr) return res.status(500).json({ error: tErr.message });
+                        if (!tokRow) return res.status(400).json({ error: 'Invalid or expired reset token.' });
+                        doReset(tokRow.id);
+                    }
+                );
+            } else {
+                // Self-service reset when require_password_reset is set
+                if (Number(row.require_password_reset) !== 1) {
+                    return res.status(400).json({ error: 'No reset token provided and no reset required.' });
+                }
+                doReset(null);
+            }
+
+            function doReset(tokenId) {
+                db.run(
+                    `UPDATE users SET password = ?, require_password_reset = 0 WHERE id = ?`,
+                    [newPassword, uid],
+                    function (e2) {
+                        if (e2) return res.status(500).json({ error: e2.message });
+                        if (tokenId) {
+                            db.run(`UPDATE password_reset_tokens SET used = 1 WHERE id = ?`, [tokenId], () => {});
+                        }
+                        activityLog.logFromRequest(db, req, {
+                            user_id: uid,
+                            user_role: row.user_role || row.role,
+                            action: 'auth.staff_password_reset',
+                            meta: { byToken: !!tokenId }
+                        });
+                        res.json({ success: true, message: 'Password reset successfully. You can now sign in.' });
+                    }
+                );
+            }
+        }
+    );
 });
 
 // Forgot password — email + WhatsApp (no plain password stored)
@@ -9764,7 +9888,8 @@ app.get('/api/admin/users/:userId/detail', (req, res) => {
                 doctor_category, doctor_modules,
                 is_disabled, IFNULL(is_banned,0) AS is_banned, ban_reason, banned_at,
                 IFNULL(is_demo,0) AS is_demo, created_at, activated_at, last_login_at,
-                IFNULL(email_verified,1) AS email_verified FROM users WHERE id = ?`,
+                IFNULL(email_verified,1) AS email_verified,
+                IFNULL(require_password_reset,0) AS require_password_reset FROM users WHERE id = ?`,
         [uid],
         (e, user) => {
             if (e) return res.status(500).json({ error: e.message });
@@ -9916,6 +10041,52 @@ app.post('/api/admin/users/:userId/password', (req, res) => {
             flushNotificationQueue();
         });
         res.json({ success: true, password: newPass });
+    });
+});
+
+// Admin: send password reset link via email to staff user
+app.post('/api/admin/users/:userId/send-password-reset-link', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
+    const uid = parseInt(req.params.userId, 10);
+    if (!Number.isInteger(uid) || uid < 1) return res.status(400).json({ error: 'Invalid user id' });
+
+    db.get(`SELECT id, email, first_name, user_role, role FROM users WHERE id = ? AND IFNULL(is_disabled,0) = 0`, [uid], (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!user) return res.status(404).json({ error: 'User not found or disabled.' });
+
+        const userRoles = require('./lib/user-roles');
+        if (!userRoles.isStaffPortalAccount(user)) {
+            return res.status(400).json({ error: 'Password reset link can only be sent to staff accounts.' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+        db.run(`UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0`, [uid], () => {
+            db.run(
+                `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
+                [uid, tokenHash, expiresAt],
+                (ierr) => {
+                    if (ierr) {
+                        console.error('[admin-send-reset-link] token insert failed:', ierr.message || ierr);
+                        return res.status(500).json({ error: 'Could not create reset link. Try again.' });
+                    }
+                    const link = notifEngine.buildForgotPasswordLink('/scanner.html', token);
+                    notifEngine.sendForgotPasswordEmail(db, uid, link, (nErr, result) => {
+                        if (nErr) console.error('[admin-send-reset-link] send failed:', nErr.message || nErr);
+                        else if (result && !result.ok && !result.skipped) {
+                            console.error('[admin-send-reset-link]', result.error || result);
+                        }
+                        activityLog.logFromRequest(db, req, {
+                            user_id: uid,
+                            action: 'admin.staff_password_reset_link_sent',
+                            meta: { email: user.email }
+                        });
+                        res.json({ success: true, message: 'Password reset link sent to ' + user.email });
+                    });
+                }
+            );
+        });
     });
 });
 
@@ -11309,7 +11480,8 @@ app.get('/api/admin/users', (req, res) => {
     };
     const fullCols = `id, user_id_string, first_name, middle_name, last_name, email, phone, role, user_role, doctor_category, doctor_modules, is_disabled,
                 IFNULL(is_banned,0) AS is_banned, ban_reason, IFNULL(is_demo,0) AS is_demo, admin_modules,
-                created_at, activated_at, last_login_at, IFNULL(email_verified,1) AS email_verified`;
+                created_at, activated_at, last_login_at, IFNULL(email_verified,1) AS email_verified,
+                IFNULL(require_password_reset,0) AS require_password_reset`;
     if (filterQ) {
         return adminUserLookup.searchAdminUsers(db, filterQ, (sErr, matched) => {
             if (sErr) return res.status(500).json({ error: sErr.message });
