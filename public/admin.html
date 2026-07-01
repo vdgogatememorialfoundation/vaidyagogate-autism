@@ -2092,23 +2092,24 @@
                 </div>
                 <div class="card" style="background: #fffbeb; border: 1px solid #f59e0b; margin-bottom: 20px;">
                     <h3 style="color:#92400e;"><i class="fas fa-bolt"></i> Bulk Resend Notifications</h3>
-                    <p style="font-size:0.85rem; color:#92400e; margin:8px 0 16px;">Send notifications to all existing pre-registrations, registrations, or all users. Use this if emails were not sent earlier.</p>
+                    <p style="font-size:0.85rem; color:#92400e; margin:8px 0 16px;">Send emails to registered candidates — includes public form submissions, account holders, and registrations. Use this if emails were not sent earlier.</p>
                     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-                        <div class="form-group" style="min-width:160px;">
-                            <label>Type</label>
-                            <select id="bulk-notif-type" class="form-control">
-                                <option value="preregistration">Pre-registrations</option>
-                                <option value="registration">Registrations</option>
-                                <option value="users">All Users</option>
+                        <div class="form-group" style="min-width:180px;">
+                            <label>Send To</label>
+                            <select id="bulk-notif-type" class="form-control" onchange="bulkNotifTypeChanged()">
+                                <option value="preregistration">Pre-registered Candidates (public form)</option>
+                                <option value="registration">Main Registrations</option>
+                                <option value="users">All Account Holders</option>
+                                <option value="all_candidates">ALL Candidates (pre-reg + registered)</option>
                             </select>
                         </div>
-                        <div class="form-group" style="min-width:200px;">
-                            <label>Event</label>
+                        <div class="form-group" style="min-width:240px;">
+                            <label>Email Type</label>
                             <select id="bulk-notif-event" class="form-control">
                                 <option value="ACCOUNT_CREATED">Account Created / Welcome Email</option>
-                                <option value="PREREGISTRATION_SUBMITTED">Pre-registration Submitted</option>
+                                <option value="PREREGISTRATION_SUBMITTED">Pre-registration Received</option>
                                 <option value="PREREGISTRATION_APPROVED">Pre-registration Approved</option>
-                                <option value="SEMINAR_REGISTRATION_SUCCESS">Registration Success</option>
+                                <option value="SEMINAR_REGISTRATION_SUCCESS">Registration Confirmed</option>
                                 <option value="APPLICATION_UNDER_REVIEW">Application Under Review</option>
                                 <option value="APPLICATION_APPROVED">Application Approved</option>
                                 <option value="PAYMENT_SUCCESS">Payment Success</option>
@@ -2118,7 +2119,7 @@
                             <label>Seminar ID</label>
                             <input id="bulk-notif-seminar" class="form-control" type="number" placeholder="All" min="1">
                         </div>
-                        <button type="button" class="btn btn-warning" onclick="bulkResendNotifications()" style="background:#d97706; border-color:#d97706; color:#fff;"><i class="fas fa-paper-plane"></i> Resend to All</button>
+                        <button type="button" class="btn btn-warning" onclick="bulkResendNotifications()" style="background:#d97706; border-color:#d97706; color:#fff;"><i class="fas fa-paper-plane"></i> Send Emails</button>
                     </div>
                     <div id="bulk-notif-status" style="margin-top:12px; font-size:0.85rem;"></div>
                 </div>
