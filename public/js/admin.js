@@ -757,6 +757,63 @@ function switchTab(tabId) {
     if (tabId === 'tab-competition-tracking' && typeof initAdminCompetitionTracking === 'function') {
         initAdminCompetitionTracking();
     }
+    if (tabId === 'tab-prereg-tracking') {
+        initPreregTrackingTab();
+    }
+}
+
+// Initialize pre-registration tracking tab with seminar dropdown
+let preregTrackingTabInitialized = false;
+function initPreregTrackingTab() {
+    if (preregTrackingTabInitialized) return;
+    preregTrackingTabInitialized = true;
+    
+    // Populate the resend seminar dropdown
+    const resendSel = document.getElementById('ak-prereg-resend-seminar');
+    const mainSel = document.getElementById('ak-prereg-seminar');
+    if (resendSel && globalSeminars && globalSeminars.length) {
+        const opts = globalSeminars.map(s => `<option value="${s.id}">${escHtml(s.title)}</option>`).join('');
+        resendSel.innerHTML = '<option value="">All events</option>' + opts;
+    }
+    
+    // Wire up the resend button
+    const resendBtn = document.getElementById('ak-prereg-resend-emails');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', resendPreregConfirmationEmails);
+    }
+}
+
+async function resendPreregConfirmationEmails() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    const resendSel = document.getElementById('ak-prereg-resend-seminar');
+    const seminarId = resendSel?.value ? parseInt(resendSel.value, 10) : null;
+    const msgEl = document.getElementById('ak-prereg-resend-msg');
+    
+    if (!confirm('Resend confirmation emails to all approved pre-registrations?')) return;
+    
+    if (msgEl) msgEl.textContent = 'Sending...';
+    
+    try {
+        const body = seminarId ? { seminarId } : {};
+        const res = await fetch('/api/admin/preregistrations/resend-confirmation-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id, ...body })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        if (msgEl) {
+            msgEl.textContent = data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`;
+            msgEl.style.color = '#15803d';
+        }
+    } catch (e) {
+        if (msgEl) {
+            msgEl.textContent = e.message || 'Failed';
+            msgEl.style.color = '#b91c1c';
+        }
+    }
 }
 
 let adminAutoRefreshInterval = null;

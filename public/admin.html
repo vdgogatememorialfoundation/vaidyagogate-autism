@@ -309,6 +309,14 @@
                         <div class="ak-prereg-stat stat-public" data-filter="public"><div class="num" id="ak-stat-public_form">0</div><div class="lbl">Public form</div></div>
                     </div>
                     <div class="card">
+                        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;padding:12px;background:#fef3c7;border-radius:8px;border:1px solid #fcd34d;">
+                            <span style="font-size:0.9rem;color:#92400e;"><i class="fas fa-envelope"></i> <strong>Bulk action:</strong></span>
+                            <button type="button" class="btn-primary" id="ak-prereg-resend-emails" style="background:#0f766e;"><i class="fas fa-paper-plane"></i> Resend confirmation emails to approved</button>
+                            <select id="ak-prereg-resend-seminar" style="padding:6px 8px;border-radius:6px;border:1px solid #d97706;">
+                                <option value="">All events</option>
+                            </select>
+                            <span id="ak-prereg-resend-msg" style="font-size:0.85rem;color:#92400e;"></span>
+                        </div>
                         <div class="ak-prereg-toolbar">
                             <div><label for="ak-prereg-seminar">Event</label><select id="ak-prereg-seminar"><option value="">All events</option></select></div>
                             <div><label for="ak-prereg-status-filter">Status</label><select id="ak-prereg-status-filter"><option value="all">All</option><option value="submitted">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="revision_required">Revision required</option></select></div>
@@ -696,6 +704,9 @@
                         <div><label>Audience</label>
                             <select id="mail-bulk-audience" style="width:100%;padding:8px;" onchange="onMailBulkAudienceChange()">
                                 <option value="all_doctors">All doctors</option>
+                                <option value="all_registered_users">All registered users (accounts)</option>
+                                <option value="registered_candidates">Registered candidates (with registrations)</option>
+                                <option value="public_form_registrants">Public form registrants</option>
                                 <option value="seminar_paid">Paid registrants ... seminar</option>
                                 <option value="seminar_all">All registrants ... seminar</option>
                                 <option value="seminar_single">Single registrant ... seminar</option>
