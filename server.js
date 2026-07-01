@@ -1715,7 +1715,7 @@ function autismApplicantFormFields(fields) {
             f.key !== 'qual' &&
             !f.onlyWhenAdvancedQual &&
             !f.onlyWhenPgCollege &&
-            !['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate', 'photo'].includes(String(f.key || ''))
+            !['ncism', 'certificate', 'cpin', 'college', 'ccity', 'cstate', 'photo', 'participant_type', 'competition_category'].includes(String(f.key || ''))
     );
 }
 
@@ -4944,16 +4944,19 @@ function mergeAutismMainRegFieldsWithPrereg(seminarId, mainFields, callback) {
     });
 }
 
-// Filter competition fields when competition is not enabled for the seminar
+// Filter competition and unwanted fields when not enabled for the seminar
 function filterOutCompetitionFieldsWhenDisabled(fields, registrationFormJson) {
     if (!Array.isArray(fields)) return fields;
     if (!registrationFormJson) return fields;
     try {
         const parsed = JSON.parse(registrationFormJson);
         const flow = parsed && parsed.flow;
+        // Filter out competition_category field if competition is not enabled
         if (flow && flow.competitionEnabled !== true) {
-            return fields.filter(f => f.key !== 'competition_category');
+            fields = fields.filter(f => f.key !== 'competition_category');
         }
+        // Filter out participant_type if it's in the main registration form (should only be in prereg)
+        fields = fields.filter(f => f.key !== 'participant_type');
     } catch (_) {}
     return fields;
 }
