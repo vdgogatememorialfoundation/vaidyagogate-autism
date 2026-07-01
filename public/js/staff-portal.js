@@ -28,7 +28,6 @@
         'tab-volunteer-assignments',
         'tab-certificates',
         'tab-transfer',
-        'tab-behalf-reg',
         'tab-email-compose'
     ]);
 
