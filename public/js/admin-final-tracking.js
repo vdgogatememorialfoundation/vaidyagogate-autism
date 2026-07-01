@@ -110,20 +110,61 @@
         return data;
     }
 
+    function seminarFlowFlags(seminar) {
+        try {
+            const parsed = seminar && seminar.registration_form_json ? JSON.parse(seminar.registration_form_json) : {};
+            const flow = parsed && typeof parsed.flow === 'object' ? parsed.flow : {};
+            const hasFlow =
+                Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
+                Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
+            if (!hasFlow) {
+                return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true, competitionEnabled: false };
+            }
+            const preregistrationRequired = flow.preregistrationRequired === true;
+            const mainRegistrationRequired = flow.mainRegistrationRequired === true;
+            const competitionEnabled = flow.competitionEnabled === true;
+            let mainRegistrationOpen = true;
+            if (mainRegistrationRequired && !preregistrationRequired) {
+                mainRegistrationOpen = true;
+            } else if (mainRegistrationRequired && preregistrationRequired) {
+                mainRegistrationOpen = Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationOpen')
+                    ? flow.mainRegistrationOpen === true
+                    : false;
+            } else {
+                mainRegistrationOpen = false;
+            }
+            return { preregistrationRequired, mainRegistrationRequired, mainRegistrationOpen, competitionEnabled };
+        } catch (_) {
+            return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true, competitionEnabled: false };
+        }
+    }
+
     async function loadSeminarsSelect() {
         const sel = document.getElementById('ak-final-seminar');
         if (!sel || sel.dataset.loaded) return;
         try {
             const list = await api('/api/admin/seminars');
             const seminars = Array.isArray(list) ? list : list.seminars || [];
+            // Only show events with main registration enabled
+            const mainRegEvents = seminars.filter((s) => seminarFlowFlags(s).mainRegistrationRequired);
             sel.innerHTML = '<option value="">All events</option>';
-            seminars.forEach((s) => {
+            mainRegEvents.forEach((s) => {
                 const o = document.createElement('option');
                 o.value = s.id;
                 o.textContent = s.title || 'Event ' + s.id;
                 sel.appendChild(o);
             });
             sel.dataset.loaded = '1';
+            // Update badge to show number of main reg events
+            const badge = document.getElementById('final-tab-badge');
+            if (badge) {
+                if (mainRegEvents.length > 0) {
+                    badge.textContent = mainRegEvents.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
         } catch (_) {}
     }
 

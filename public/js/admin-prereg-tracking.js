@@ -118,10 +118,11 @@
                 Object.prototype.hasOwnProperty.call(flow, 'preregistrationRequired') ||
                 Object.prototype.hasOwnProperty.call(flow, 'mainRegistrationRequired');
             if (!hasFlow) {
-                return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
+                return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true, competitionEnabled: false };
             }
             const preregistrationRequired = flow.preregistrationRequired === true;
             const mainRegistrationRequired = flow.mainRegistrationRequired === true;
+            const competitionEnabled = flow.competitionEnabled === true;
             let mainRegistrationOpen = true;
             if (mainRegistrationRequired && !preregistrationRequired) {
                 mainRegistrationOpen = true;
@@ -132,9 +133,9 @@
             } else {
                 mainRegistrationOpen = false;
             }
-            return { preregistrationRequired, mainRegistrationRequired, mainRegistrationOpen };
+            return { preregistrationRequired, mainRegistrationRequired, mainRegistrationOpen, competitionEnabled };
         } catch (_) {
-            return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true };
+            return { preregistrationRequired: true, mainRegistrationRequired: true, mainRegistrationOpen: true, competitionEnabled: false };
         }
     }
 
@@ -248,14 +249,26 @@
             const list = await api('/api/admin/seminars');
             const seminars = Array.isArray(list) ? list : list.seminars || [];
             cachedSeminars = seminars;
+            // Only show events with pre-registration enabled
+            const preregEvents = seminars.filter((s) => seminarFlowFlags(s).preregistrationRequired);
             sel.innerHTML = '<option value="">All events</option>';
-            seminars.forEach((s) => {
+            preregEvents.forEach((s) => {
                 const o = document.createElement('option');
                 o.value = s.id;
                 o.textContent = s.title || 'Event ' + s.id;
                 sel.appendChild(o);
             });
             sel.dataset.loaded = '1';
+            // Update badge to show number of prereg events
+            const badge = document.getElementById('prereg-tab-badge');
+            if (badge) {
+                if (preregEvents.length > 0) {
+                    badge.textContent = preregEvents.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
             updateMainRegOpenPanel();
         } catch (_) {}
     }
