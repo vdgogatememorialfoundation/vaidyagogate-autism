@@ -757,21 +757,6 @@
             ]
         },
         {
-            key: 'competition_category',
-            label: 'Competition category',
-            type: 'select',
-            step: 3,
-            enabled: true,
-            required: true,
-            options: [
-                { value: 'art', label: 'Art & Drawing' },
-                { value: 'essay', label: 'Essay / Creative Writing' },
-                { value: 'video', label: 'Short Video' },
-                { value: 'presentation', label: 'Presentation (PPT)' },
-                { value: 'none', label: 'Participation only (no competition)' }
-            ]
-        },
-        {
             key: 'agree_terms',
             label: 'I confirm the information is accurate and consent to programme terms',
             type: 'boolean',
