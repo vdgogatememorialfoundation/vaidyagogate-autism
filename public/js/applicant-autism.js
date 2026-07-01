@@ -1311,7 +1311,11 @@
                     mainRegistrationRequired: true,
                     mainRegistrationOpen: true,
                     autoAcceptPreregistration: false,
-                    autoAcceptRegistration: false
+                    autoAcceptRegistration: false,
+                    competitionEnabled: false,
+                    preregOpen: true,
+                    mainOpen: true,
+                    competitionOpen: false
                 };
             }
             const preregistrationRequired = flow.preregistrationRequired === true;
@@ -1326,12 +1330,21 @@
             } else {
                 mainRegistrationOpen = false;
             }
+            const competitionEnabled = flow.competitionEnabled === true;
+            // For now, preregOpen is true if preregistrationRequired (schedule check would need more logic)
+            const preregOpen = !preregistrationRequired || seminarRow.registration_start == null || new Date() >= new Date(seminarRow.registration_start);
+            const mainOpen = mainRegistrationOpen;
+            const competitionOpen = competitionEnabled;
             return {
                 preregistrationRequired,
                 mainRegistrationRequired,
                 mainRegistrationOpen,
                 autoAcceptPreregistration: flow.autoAcceptPreregistration === true,
-                autoAcceptRegistration: flow.autoAcceptRegistration === true
+                autoAcceptRegistration: flow.autoAcceptRegistration === true,
+                competitionEnabled,
+                preregOpen,
+                mainOpen,
+                competitionOpen
             };
         } catch (_) {
             return {
@@ -1339,7 +1352,11 @@
                 mainRegistrationRequired: true,
                 mainRegistrationOpen: true,
                 autoAcceptPreregistration: false,
-                autoAcceptRegistration: false
+                autoAcceptRegistration: false,
+                competitionEnabled: false,
+                preregOpen: true,
+                mainOpen: true,
+                competitionOpen: false
             };
         }
     }
@@ -4074,5 +4091,42 @@
         }
         setTimeout(updateProfileDisplayName, 400);
         setTimeout(updateProfileDisplayName, 2500);
+        // Show registration status banner
+        setTimeout(showRegistrationStatusBanner, 1500);
     });
+
+    // Show registration status banner based on current open forms
+    async function showRegistrationStatusBanner() {
+        const banner = document.getElementById('registration-status-banner');
+        const text = document.getElementById('registration-status-text');
+        if (!banner || !text) return;
+        try {
+            const data = await fetchJson('/api/seminars?bucket=current');
+            const seminars = Array.isArray(data) ? data : (data.seminars || []);
+            const parts = [];
+            // Check for pre-registration open events
+            const preregOpen = seminars.some(s => {
+                const f = seminarFlowFlags(s);
+                return f.preregistrationRequired && f.preregOpen;
+            });
+            // Check for main registration open events
+            const mainOpen = seminars.some(s => {
+                const f = seminarFlowFlags(s);
+                return f.mainRegistrationRequired && f.mainOpen;
+            });
+            // Check for competition open events
+            const compOpen = seminars.some(s => {
+                const f = seminarFlowFlags(s);
+                return f.competitionEnabled && f.competitionOpen;
+            });
+            if (preregOpen) parts.push('Pre-registration is open');
+            if (mainOpen) parts.push('Main registration is open');
+            if (compOpen) parts.push('Competition submission is open');
+            if (parts.length) {
+                text.textContent = parts.join(' · ');
+                banner.style.display = 'flex';
+            }
+        } catch (_) {}
+    }
+    window.showRegistrationStatusBanner = showRegistrationStatusBanner;
 })();

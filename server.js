@@ -4944,6 +4944,20 @@ function mergeAutismMainRegFieldsWithPrereg(seminarId, mainFields, callback) {
     });
 }
 
+// Filter competition fields when competition is not enabled for the seminar
+function filterOutCompetitionFieldsWhenDisabled(fields, registrationFormJson) {
+    if (!Array.isArray(fields)) return fields;
+    if (!registrationFormJson) return fields;
+    try {
+        const parsed = JSON.parse(registrationFormJson);
+        const flow = parsed && parsed.flow;
+        if (flow && flow.competitionEnabled !== true) {
+            return fields.filter(f => f.key !== 'competition_category');
+        }
+    } catch (_) {}
+    return fields;
+}
+
 app.get('/api/registration-form-config', (req, res) => {
     const raw = req.query && req.query.seminarId;
     const sid = raw != null && String(raw).trim() !== '' ? parseInt(raw, 10) : null;
@@ -4967,7 +4981,7 @@ app.get('/api/registration-form-config', (req, res) => {
                 };
                 if (sidNum != null) {
                     db.get(
-                        `SELECT otp_on_application, otp_on_step1, otp_on_submit FROM seminars WHERE id = ?`,
+                        `SELECT otp_on_application, otp_on_step1, otp_on_submit, registration_form_json FROM seminars WHERE id = ?`,
                         [sidNum],
                         (e2, row) => {
                             if (e2) return res.status(500).json({ error: e2.message });
@@ -4975,8 +4989,11 @@ app.get('/api/registration-form-config', (req, res) => {
                                 !portalProduct.FEATURES.noFees && !!(row && Number(row.otp_on_application) === 1);
                             const otpStep1 = otpOn && row && Number(row.otp_on_step1) !== 0;
                             const otpSubmit = otpOn && row && Number(row.otp_on_submit) !== 0;
+                            // Filter out competition_category field if competition is not enabled
+                            const filteredFields = filterOutCompetitionFieldsWhenDisabled(base.fields, row && row.registration_form_json);
                             res.json({
                                 ...base,
+                                fields: filteredFields,
                                 otpOnApplication: otpOn,
                                 otpOnStep1: otpStep1,
                                 otpOnSubmit: otpSubmit,
@@ -5012,7 +5029,7 @@ app.get('/api/admin/registration-form-config', (req, res) => {
                 ...flags
             };
             db.get(
-                `SELECT otp_on_submit, otp_channels_json FROM seminars WHERE id = ?`,
+                `SELECT otp_on_submit, otp_channels_json, registration_form_json FROM seminars WHERE id = ?`,
                 [Number.isInteger(sid) && sid > 0 ? sid : -1],
                 (es, srow) => {
                     if (es || !srow) return res.json(base);
@@ -5036,7 +5053,9 @@ app.get('/api/admin/registration-form-config', (req, res) => {
                         otpRequiresEmail: emailOnly || both,
                         otpRequiresPhone: phoneOnly || both
                     };
-                    res.json({ ...base, ...seminarFlags });
+                    // Filter out competition_category field if competition is not enabled
+                    const filteredFields = filterOutCompetitionFieldsWhenDisabled(base.fields, srow && srow.registration_form_json);
+                    res.json({ ...base, fields: filteredFields, ...seminarFlags });
                 }
             );
         });
