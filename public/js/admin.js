@@ -2189,8 +2189,11 @@ function openBehalfRegistrationForCurrentSeminar() {
     switchTab('tab-behalf-reg');
     initAdminBehalfRegTab();
     const ss = document.getElementById('behalf-seminar-select');
-    if (ss) ss.value = String(sid);
-    onAdminBehalfDoctorOrSeminarChange();
+    if (ss) {
+        ss.value = String(sid);
+        // Programmatically changing value doesn't fire onchange, so call directly
+        onAdminBehalfDoctorOrSeminarChange();
+    }
 }
 window.openBehalfRegistrationForCurrentSeminar = openBehalfRegistrationForCurrentSeminar;
 
