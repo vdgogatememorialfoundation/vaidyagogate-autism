@@ -2092,18 +2092,20 @@
                 </div>
                 <div class="card" style="background: #fffbeb; border: 1px solid #f59e0b; margin-bottom: 20px;">
                     <h3 style="color:#92400e;"><i class="fas fa-bolt"></i> Bulk Resend Notifications</h3>
-                    <p style="font-size:0.85rem; color:#92400e; margin:8px 0 16px;">Send notifications to all existing pre-registrations or registrations. Use this if emails were not sent earlier.</p>
+                    <p style="font-size:0.85rem; color:#92400e; margin:8px 0 16px;">Send notifications to all existing pre-registrations, registrations, or all users. Use this if emails were not sent earlier.</p>
                     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
                         <div class="form-group" style="min-width:160px;">
                             <label>Type</label>
                             <select id="bulk-notif-type" class="form-control">
                                 <option value="preregistration">Pre-registrations</option>
                                 <option value="registration">Registrations</option>
+                                <option value="users">All Users</option>
                             </select>
                         </div>
                         <div class="form-group" style="min-width:200px;">
                             <label>Event</label>
                             <select id="bulk-notif-event" class="form-control">
+                                <option value="ACCOUNT_CREATED">Account Created / Welcome Email</option>
                                 <option value="PREREGISTRATION_SUBMITTED">Pre-registration Submitted</option>
                                 <option value="PREREGISTRATION_APPROVED">Pre-registration Approved</option>
                                 <option value="SEMINAR_REGISTRATION_SUCCESS">Registration Success</option>

@@ -11077,7 +11077,7 @@ app.post('/api/admin/notifications/resend-bulk', (req, res) => {
     const { actingAdminId, seminarId, type, eventKey } = req.body || {};
     const aid = parseInt(actingAdminId, 10);
     if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId is required' });
-    if (!['preregistration', 'registration'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration" or "registration"' });
+    if (!['preregistration', 'registration', 'users'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration", "registration", or "users"' });
     if (!eventKey) return res.status(400).json({ error: 'eventKey is required' });
     assertAdminPortalActor(aid, (e, adm) => {
         if (e && e.message === 'BAD_ACTOR') return res.status(400).json({ error: 'actingAdminId is required' });
@@ -11085,6 +11085,34 @@ app.post('/api/admin/notifications/resend-bulk', (req, res) => {
         if (e) return res.status(500).json({ error: e.message });
         if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
         const sid = parseInt(seminarId, 10);
+
+        // Special handling for ACCOUNT_CREATED - send to all users
+        if (eventKey === 'ACCOUNT_CREATED') {
+            let sql = `SELECT id AS userId, email, first_name, last_name FROM users WHERE email IS NOT NULL AND email != '' AND role IN ('doctor', 'patient', 'volunteer')`;
+            const params = [];
+            db.all(sql, params, (err, rows) => {
+                if (err) return res.status(500).json({ error: err.message });
+                if (!rows.length) return res.json({ success: true, sent: 0, message: 'No users found' });
+                let sent = 0, failed = 0;
+                const total = rows.length;
+                rows.forEach((row, idx) => {
+                    notifEngine.notifyUserEvent(db, eventKey, {
+                        userId: row.userId,
+                        vars: { full_name: ((row.first_name || '') + ' ' + (row.last_name || '')).trim() },
+                        immediate: true
+                    }, (nErr) => {
+                        if (nErr) { console.warn('[bulk-resend]', eventKey, 'for user', row.userId, nErr.message); failed++; }
+                        else sent++;
+                        if (idx === total - 1) {
+                            res.json({ success: true, total, sent, failed, message: `Sent ${sent}/${total}, failed ${failed}` });
+                        }
+                    });
+                });
+            });
+            return;
+        }
+
+        // Preregistration or registration
         const table = type === 'preregistration' ? 'preregistrations' : 'registrations';
         const userField = 'user_id';
         const appField = 'application_no';
@@ -11119,11 +11147,17 @@ app.post('/api/admin/notifications/resend-bulk', (req, res) => {
 
 app.get('/api/admin/notifications/pending-resend', (req, res) => {
     const { seminarId, type } = req.query || {};
-    if (!['preregistration', 'registration'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration" or "registration"' });
+    if (!['preregistration', 'registration', 'users'].includes(type)) return res.status(400).json({ error: 'type must be "preregistration", "registration", or "users"' });
     const sid = parseInt(seminarId, 10);
+    if (type === 'users') {
+        db.get(`SELECT COUNT(*) AS count FROM users WHERE email IS NOT NULL AND email != '' AND role IN ('doctor', 'patient', 'volunteer')`, [], (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ count: row ? row.count : 0, type });
+        });
+        return;
+    }
     const table = type === 'preregistration' ? 'preregistrations' : 'registrations';
     const userField = 'user_id';
-    const appField = 'application_no';
     let sql = `SELECT COUNT(*) AS count FROM ${table} r WHERE r.${userField} IS NOT NULL AND r.${userField} > 0`;
     const params = [];
     if (sid > 0) { sql += ' AND r.seminar_id = ?'; params.push(sid); }
