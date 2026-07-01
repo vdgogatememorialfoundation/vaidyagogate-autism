@@ -11057,6 +11057,22 @@ app.post('/api/admin/notification-delivery-config', (req, res) => {
     });
 });
 
+app.post('/api/admin/notification-templates/seed', (req, res) => {
+    const { actingAdminId } = req.body || {};
+    const aid = parseInt(actingAdminId, 10);
+    if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId is required' });
+    assertAdminPortalActor(aid, (e, adm) => {
+        if (e && e.message === 'BAD_ACTOR') return res.status(400).json({ error: 'actingAdminId is required' });
+        if (e && e.message === 'FORBIDDEN') return res.status(403).json({ error: 'Administrator access required' });
+        if (e) return res.status(500).json({ error: e.message });
+        if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
+        notifEngine.seedDefaultTemplates(db, (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, message: 'Default templates seeded' });
+        });
+    });
+});
+
 app.post('/api/admin/designated-notify-config', (req, res) => {
     const { actingAdminId, config } = req.body || {};
     const aid = parseInt(actingAdminId, 10);
@@ -14469,7 +14485,7 @@ function startBackgroundWorkers() {
         });
         db.get(`SELECT value FROM global_settings WHERE key = ?`, ['notification_templates_sync_v'], (eSync, row) => {
             if (eSync) return;
-            if (row && row.value === '20260615b') return;
+            if (row && row.value === '20260615e') return;
             notifEngine.syncDefaultNotificationTemplates(db, (syncErr) => {
                 if (syncErr) console.warn('[notifications] template sync failed:', syncErr.message);
                 else {
