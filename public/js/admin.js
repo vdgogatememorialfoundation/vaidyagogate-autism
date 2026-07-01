@@ -772,7 +772,7 @@ function initPreregTrackingTab() {
     const resendSel = document.getElementById('ak-prereg-resend-seminar');
     const mainSel = document.getElementById('ak-prereg-seminar');
     if (resendSel && globalSeminars && globalSeminars.length) {
-        const opts = globalSeminars.map(s => `<option value="${s.id}">${escHtml(s.title)}</option>`).join('');
+        const opts = globalSeminars.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
         resendSel.innerHTML = '<option value="">All events</option>' + opts;
     }
     
@@ -780,6 +780,12 @@ function initPreregTrackingTab() {
     const resendBtn = document.getElementById('ak-prereg-resend-emails');
     if (resendBtn) {
         resendBtn.addEventListener('click', resendPreregConfirmationEmails);
+    }
+    
+    // Wire up the "Create accounts & send to ALL" button
+    const sendAllBtn = document.getElementById('ak-prereg-send-all-account-emails');
+    if (sendAllBtn) {
+        sendAllBtn.addEventListener('click', sendAllAccountEmails);
     }
 }
 
@@ -813,6 +819,123 @@ async function resendPreregConfirmationEmails() {
             msgEl.textContent = e.message || 'Failed';
             msgEl.style.color = '#b91c1c';
         }
+    }
+}
+
+async function sendAllAccountEmails() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    const resendSel = document.getElementById('ak-prereg-resend-seminar');
+    const seminarId = resendSel?.value ? parseInt(resendSel.value, 10) : null;
+    const msgEl = document.getElementById('ak-prereg-resend-msg');
+    
+    if (!confirm('This will create portal accounts for pre-registrations who don\'t have one, and send welcome emails to ALL pre-registrations (including pending, rejected, revision). Continue?')) return;
+    
+    if (msgEl) msgEl.textContent = 'Processing... Creating accounts and sending emails...';
+    
+    try {
+        const body = seminarId ? { seminarId } : {};
+        const res = await fetch('/api/admin/preregistrations/send-all-account-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id, ...body })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        if (msgEl) {
+            msgEl.textContent = data.message || `Done. Sent: ${data.sent}, Created: ${data.accounts_created}, Failed: ${data.failed}`;
+            msgEl.style.color = '#15803d';
+        }
+    } catch (e) {
+        if (msgEl) {
+            msgEl.textContent = e.message || 'Failed';
+            msgEl.style.color = '#b91c1c';
+        }
+    }
+}
+
+async function sendAllWelcomeEmails() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    if (!confirm('Send welcome/confirmation email to ALL 197 registered participants? This will send emails to all accounts in the Participants list.')) return;
+    
+    try {
+        const res = await fetch('/api/admin/users/send-all-welcome-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+    } catch (e) {
+        alert(e.message || 'Failed to send welcome emails');
+    }
+}
+
+// Track selected user IDs
+let selectedUserIds = new Set();
+
+function toggleSelectAllUsers(checkbox) {
+    const checkboxes = document.querySelectorAll('.user-select-checkbox');
+    if (checkbox.checked) {
+        checkboxes.forEach(cb => {
+            cb.checked = true;
+            selectedUserIds.add(cb.dataset.userId);
+        });
+    } else {
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            selectedUserIds.delete(cb.dataset.userId);
+        });
+    }
+    updateSelectedCount();
+}
+
+function toggleUserSelection(checkbox, userId) {
+    if (checkbox.checked) {
+        selectedUserIds.add(userId);
+    } else {
+        selectedUserIds.delete(userId);
+    }
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const countEl = document.getElementById('selected-count');
+    if (countEl) {
+        countEl.textContent = selectedUserIds.size;
+    }
+}
+
+async function sendWelcomeToSelected() {
+    const admin = getStoredAdminUser();
+    if (!admin?.id) return alert('Admin session required');
+    
+    if (selectedUserIds.size === 0) {
+        return alert('Please select at least one participant to send email.');
+    }
+    
+    if (!confirm(`Send welcome/confirmation email to ${selectedUserIds.size} selected participant(s)?`)) return;
+    
+    try {
+        const res = await fetch('/api/admin/users/send-welcome-to-selected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: admin.id, userIds: Array.from(selectedUserIds) })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        alert(data.message || `Done. Sent: ${data.sent}, Failed: ${data.failed}`);
+        // Clear selection after sending
+        selectedUserIds.clear();
+        document.querySelectorAll('.user-select-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('select-all-users').checked = false;
+        updateSelectedCount();
+    } catch (e) {
+        alert(e.message || 'Failed to send welcome emails');
     }
 }
 
@@ -5188,6 +5311,7 @@ function renderDoctorsUsersTable() {
         const cat = String(u.doctor_category || 'regular').toLowerCase() === 'volunteer' ? 'volunteer' : 'regular';
         doctorsBody.innerHTML += `
                 <tr${hi}>
+                    <td><input type="checkbox" class="user-select-checkbox" data-user-id="${u.id}" onchange="toggleUserSelection(this, ${u.id})"></td>
                     <td><strong>${u.user_id_string}</strong></td>
                     <td>${escAdmin(u.first_name)} ${escAdmin(u.last_name)}</td>
                     <td>${escAdmin(u.email)}</td>
