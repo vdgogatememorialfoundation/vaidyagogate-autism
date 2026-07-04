@@ -11566,9 +11566,14 @@ app.post('/api/admin/users/create', (req, res) => {
                             (eVerify, saved) => {
                                 if (eVerify) return res.status(500).json({ error: eVerify.message });
                                 if (!saved || !saved.id) {
+                                    console.error('[admin-create-user] User not found after insert:', {
+                                        userIdStr,
+                                        insertedId,
+                                        query: `SELECT id, user_id_string, user_role, role FROM users WHERE user_id_string = '${userIdStr}'`
+                                    });
                                     return res.status(500).json({
                                         error:
-                                            'Account was not saved to the database. Wait a few seconds and try again, or check Vercel DATABASE_URL for Production.'
+                                            'Account was not saved to the database. Please wait a few seconds and try again, or contact support if the problem persists.'
                                     });
                                 }
                                 const newId = saved.id || insertedId;
