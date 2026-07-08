@@ -200,6 +200,11 @@
         }
         el.textContent = msg;
         el.classList.remove('hidden');
+        try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (_) {
+            el.scrollIntoView();
+        }
     }
 
     function showUnavailable(msg) {
@@ -315,18 +320,20 @@
         if (showEventPicker) {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.dataset.step = String(idx);
+            const stepIdx = idx;
+            btn.dataset.step = String(stepIdx);
             btn.textContent = 'Event';
-            btn.addEventListener('click', () => goToStep(idx));
+            btn.addEventListener('click', () => goToStep(stepIdx));
             nav.appendChild(btn);
             idx++;
         }
         {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.dataset.step = String(idx);
+            const stepIdx = idx;
+            btn.dataset.step = String(stepIdx);
             btn.textContent = 'Contact';
-            btn.addEventListener('click', () => goToStep(idx));
+            btn.addEventListener('click', () => goToStep(stepIdx));
             nav.appendChild(btn);
             idx++;
         }
@@ -334,9 +341,10 @@
             if (!fieldsForStep(s).length) continue;
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.dataset.step = String(idx);
+            const stepIdx = idx;
+            btn.dataset.step = String(stepIdx);
             btn.textContent = (s + '. ' + stepTitle(s));
-            btn.addEventListener('click', () => goToStep(idx));
+            btn.addEventListener('click', () => goToStep(stepIdx));
             nav.appendChild(btn);
             idx++;
         }
@@ -417,7 +425,7 @@
             }
             return true;
         }
-        const formStep = step - (showEventPicker ? 2 : 1);
+        const formStep = step - (showEventPicker ? 1 : 0);
         const fields = fieldsForStep(formStep);
         for (const f of fields) {
             const el = qs('pub-field-' + f.key);
