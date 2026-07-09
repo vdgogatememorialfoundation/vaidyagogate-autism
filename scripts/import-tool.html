@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Pre-registrations</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        textarea { width: 100%; height: 300px; font-family: monospace; }
+        button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .progress { margin-top: 10px; }
+        #log { height: 200px; overflow-y: auto; background: #f5f5f5; padding: 10px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Import Pre-registrations from TSV</h1>
+    
+    <div class="info">
+        <strong>Instructions:</strong><br>
+        1. Make sure the import-tsv API is deployed on your server<br>
+        2. Login to admin panel first, then open this page<br>
+        3. Copy the TSV data and paste below<br>
+        4. Click Import
+    </div>
+    
+    <br>
+    <label for="tsvData"><strong>Paste TSV Data (with header row):</strong></label><br><br>
+    <textarea id="tsvData" placeholder="Paste TSV data here..."></textarea>
+    
+    <br><br>
+    <button id="importBtn" onclick="doImport()">Import Data</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <div id="progress" class="progress" style="display:none;">
+        <strong>Processing...</strong>
+    </div>
+    
+    <div id="result"></div>
+    
+    <h3>Log:</h3>
+    <div id="log"></div>
+    
+    <script>
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').innerHTML = '';
+        }
+        
+        async function doImport() {
+            const tsvData = document.getElementById('tsvData').value.trim();
+            const resultDiv = document.getElementById('result');
+            const progressDiv = document.getElementById('progress');
+            
+            if (!tsvData) {
+                resultDiv.innerHTML = '<div class="error">Please paste TSV data first!</div>';
+                return;
+            }
+            
+            const lines = tsvData.split('\n');
+            log(`Starting import of ${lines.length - 1} records...`);
+            
+            progressDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/admin/preregistrations/import-tsv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tsvData: tsvData })
+                });
+                
+                const data = await response.json();
+                
+                progressDiv.style.display = 'none';
+                
+                if (data.success) {
+                    let resultHTML = '<div class="success"><strong>Import Completed!</strong><br>';
+                    resultHTML += `Total records: ${data.total}<br>`;
+                    resultHTML += `Users created: ${data.users_created}<br>`;
+                    resultHTML += `Users skipped (already exist): ${data.users_skipped}<br>`;
+                    resultHTML += `Preregistrations created: ${data.preregs_created}<br>`;
+                    resultHTML += `Preregistrations updated: ${data.preregs_updated}<br>`;
+                    resultHTML += `Errors: ${data.errors}</div>`;
+                    resultDiv.innerHTML = resultHTML;
+                    
+                    log(`Import complete: ${data.preregs_created} created, ${data.preregs_updated} updated, ${data.errors} errors`);
+                    
+                    if (data.errors > 0 && data.errorDetails) {
+                        log('Errors:');
+                        data.errorDetails.forEach(e => log('  - ' + e));
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Import failed: ' + (data.error || 'Unknown error') + '</div>';
+                    log('Import failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                progressDiv.style.display = 'none';
+                resultDiv.innerHTML = '<div class="error">Error: ' + err.message + '</div>';
+                log('Error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
