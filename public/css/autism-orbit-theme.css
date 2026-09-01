@@ -1,0 +1,169 @@
+/* Orbit Light — a new homepage composition, not a recolor of the legacy theme.
+ * Existing content, links, forms, and behavior remain unchanged.
+ */
+body.autism-kids.ak-v2 {
+    --orbit-ink: #183b56;
+    --orbit-muted: #60788b;
+    --orbit-teal: #078b83;
+    --orbit-coral: #ec7758;
+    --orbit-yellow: #f0b84c;
+    --orbit-blue: #5489e8;
+    --orbit-paper: #ffffff;
+    --orbit-bg: #f4fbfc;
+    background: var(--orbit-bg) !important;
+    color: var(--orbit-ink) !important;
+}
+body.autism-kids.ak-v2 .ak-bg-shapes { display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape { display: block; position: absolute; border-radius: 999px; opacity: .55; filter: blur(1px); }
+body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape-1 { width: 280px; height: 280px; right: -120px; top: 18%; background: #e0f5ef; animation: orbit-drift 16s ease-in-out infinite alternate; }
+body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape-2 { width: 180px; height: 180px; left: -90px; top: 42%; background: #fff0d8; animation: orbit-drift 20s ease-in-out -4s infinite alternate-reverse; }
+body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape-3 { width: 110px; height: 110px; right: 19%; bottom: 16%; background: #e8e4ff; animation: orbit-drift 14s ease-in-out -2s infinite alternate; }
+body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape-4 { width: 74px; height: 74px; left: 26%; top: 17%; border: 13px solid #dff3ef; background: transparent; }
+body.autism-kids.ak-v2 .cg-shell { position: relative; z-index: 10; }
+body.autism-kids.ak-v2 .cg-utility {
+    background: #ffffff !important;
+    border-bottom: 1px solid #deedf1 !important;
+    color: var(--orbit-muted) !important;
+}
+body.autism-kids.ak-v2 .cg-utility-inner { max-width: 1280px; min-height: 34px; }
+body.autism-kids.ak-v2 .cg-utility-link,
+body.autism-kids.ak-v2 .cg-utility-auth a { color: #42677c !important; }
+body.autism-kids.ak-v2 .cg-utility-item i { color: var(--orbit-teal); }
+body.autism-kids.ak-v2 .cg-header-row {
+    max-width: 1280px;
+    margin: 14px auto 0;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: minmax(260px, .86fr) minmax(0, 1.14fr);
+    align-items: center;
+    gap: 20px;
+}
+body.autism-kids.ak-v2 .cg-header {
+    grid-column: 1;
+    border: 1px solid #d9ebf0 !important;
+    border-radius: 18px !important;
+    background: rgba(255,255,255,.88) !important;
+    box-shadow: 0 12px 28px rgba(42,91,115,.06) !important;
+    backdrop-filter: blur(14px);
+}
+body.autism-kids.ak-v2 .cg-header-inner { padding: 12px 16px; }
+body.autism-kids.ak-v2 .cg-logo-zone { gap: 12px; }
+body.autism-kids.ak-v2 .cg-logo-text h1 { font-size: clamp(.92rem, 1.4vw, 1.08rem); color: var(--orbit-ink) !important; }
+body.autism-kids.ak-v2 .cg-logo-text p { color: var(--orbit-teal) !important; }
+body.autism-kids.ak-v2 .cg-nav {
+    grid-column: 2;
+    display: flex !important;
+    position: static !important;
+    inset: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 7px !important;
+    border: 1px solid #d9ebf0 !important;
+    border-radius: 18px !important;
+    background: rgba(255,255,255,.88) !important;
+    box-shadow: 0 12px 28px rgba(42,91,115,.06) !important;
+    backdrop-filter: blur(14px);
+}
+body.autism-kids.ak-v2 .cg-nav > span { display: flex; width: 100%; justify-content: flex-end; gap: 5px; }
+body.autism-kids.ak-v2 .cg-nav a { color: #42677c; border-radius: 12px; padding: 11px 13px; font-size: .86rem; font-weight: 700; }
+body.autism-kids.ak-v2 .cg-nav a i { color: var(--orbit-teal); }
+body.autism-kids.ak-v2 .cg-nav a.active,
+body.autism-kids.ak-v2 .cg-nav a:hover { background: #e5f7f3; color: #086f69; }
+body.autism-kids.ak-v2 .cg-nav-close,
+body.autism-kids.ak-v2 .cg-nav-backdrop { display: none !important; }
+body.autism-kids.ak-v2 .cg-menu-toggle { display: none !important; }
+body.autism-kids.ak-v2 .cg-ticker { margin-top: 14px; border-top: 1px solid #f0dfb6; border-bottom: 1px solid #f0dfb6; background: #fff8e8; }
+body.autism-kids.ak-v2 .cg-ticker-inner { max-width: 1280px; }
+body.autism-kids.ak-v2 .cg-ticker-badge { background: var(--orbit-coral); }
+body.autism-kids.ak-v2 .ak-hero-v2 {
+    max-width: 1280px;
+    margin: 28px auto 0;
+    padding: clamp(24px, 4vw, 54px);
+    border: 1px solid #d9ebf0;
+    border-radius: 38px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1fbfa 63%, #fff5ea 100%);
+    box-shadow: 0 24px 70px rgba(42,91,115,.10);
+    overflow: hidden;
+    position: relative;
+}
+body.autism-kids.ak-v2 .ak-hero-v2::before {
+    content: 'AUTISM AWARENESS';
+    position: absolute;
+    right: 26px;
+    top: 26px;
+    color: rgba(8,127,115,.24);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .22em;
+    writing-mode: vertical-rl;
+}
+body.autism-kids.ak-v2 .ak-hero-v2-grid { grid-template-columns: 1fr 1.06fr; grid-template-areas: 'art copy'; gap: clamp(28px, 5vw, 74px); position: relative; z-index: 1; }
+body.autism-kids.ak-v2 .ak-hero-v2-copy { grid-area: copy; align-self: center; animation: orbit-copy-in .65s both; }
+body.autism-kids.ak-v2 .ak-hero-v2-art { grid-area: art; align-self: center; animation: orbit-art-in .75s .08s both; background: transparent; padding: 0; border: 0; box-shadow: none; }
+body.autism-kids.ak-v2 .ak-hero-v2-art::before { content: ''; position: absolute; inset: 8% 4%; border-radius: 34px; background: #dff3ef; transform: rotate(-5deg); z-index: -1; }
+body.autism-kids.ak-v2 .ak-hero-photo-stack { min-height: 390px; display: grid; place-items: center; }
+body.autism-kids.ak-v2 .ak-hero-photo-main { width: min(100%, 500px); max-width: none; aspect-ratio: 1.08; border: 12px solid #fff; border-radius: 34px; box-shadow: 0 24px 44px rgba(42,91,115,.15); object-fit: cover; transform: rotate(2deg); }
+body.autism-kids.ak-v2 .ak-hero-photo-sub { width: 128px; height: 128px; bottom: 18px; left: -12px; border: 7px solid #fff; border-radius: 26px; transform: rotate(-8deg); }
+body.autism-kids.ak-v2 .ak-hero-photo-sub-b { left: auto; right: -12px; bottom: auto; top: 26px; transform: rotate(8deg); }
+body.autism-kids.ak-v2 .ak-hero-v2-badge { background: #ffe8dd; color: #a84b38; border: 1px solid #f7c5b5; }
+body.autism-kids.ak-v2 .ak-hero-v2 h1 { max-width: 700px; color: var(--orbit-ink); font-size: clamp(2.35rem, 5vw, 4.65rem); line-height: 1.02; letter-spacing: -.065em; }
+body.autism-kids.ak-v2 .ak-hero-v2 h1 em { background: linear-gradient(120deg, var(--orbit-teal), var(--orbit-blue)); -webkit-background-clip: text; background-clip: text; }
+body.autism-kids.ak-v2 .ak-hero-v2-lead { max-width: 620px; font-size: 1.03rem; color: var(--orbit-muted); }
+body.autism-kids.ak-v2 .ak-hero-v2-cta { gap: 10px; }
+body.autism-kids.ak-v2 .ak-btn-v2-primary { background: linear-gradient(135deg, var(--orbit-teal), #0aa99a); box-shadow: 0 12px 26px rgba(8,127,115,.25); }
+body.autism-kids.ak-v2 .ak-btn-v2-ghost { color: var(--orbit-teal); border: 1px solid #a9d9d0; background: #ffffff; }
+body.autism-kids.ak-v2 .ak-hero-chips { gap: 8px; }
+body.autism-kids.ak-v2 .ak-hero-chip { background: #fff; border: 1px solid #d9ebf0; box-shadow: 0 7px 16px rgba(42,91,115,.05); }
+body.autism-kids.ak-v2 .nx-ai-stats { border-color: #cfe7e1; background: rgba(255,255,255,.66); }
+body.autism-kids.ak-v2 .ak-pillars { margin-top: 32px; }
+body.autism-kids.ak-v2 .ak-pillars-grid { gap: 14px; }
+body.autism-kids.ak-v2 .ak-pillar { border-radius: 20px; padding: 24px 22px; border: 1px solid #d9ebf0 !important; border-top: 4px solid var(--orbit-teal) !important; box-shadow: 0 12px 26px rgba(42,91,115,.06) !important; }
+body.autism-kids.ak-v2 .ak-pillar:nth-child(2) { border-top-color: var(--orbit-blue) !important; }
+body.autism-kids.ak-v2 .ak-pillar:nth-child(3) { border-top-color: var(--orbit-coral) !important; }
+body.autism-kids.ak-v2 .ak-pillar-icon { border-radius: 16px; box-shadow: 0 8px 18px rgba(42,91,115,.08); }
+body.autism-kids.ak-v2 .ak-journey { max-width: 1240px; margin: 40px auto 54px; padding: 36px 24px; border: 1px solid #d9ebf0; border-radius: 28px; background: #ffffff; box-shadow: 0 16px 36px rgba(42,91,115,.06); }
+body.autism-kids.ak-v2 .ak-journey-head { text-align: left; margin-bottom: 28px; }
+body.autism-kids.ak-v2 .ak-steps { position: relative; gap: 14px; }
+body.autism-kids.ak-v2 .ak-steps::before { content: ''; position: absolute; left: 10%; right: 10%; top: 35px; border-top: 2px dashed #b7ded7; }
+body.autism-kids.ak-v2 .ak-step { position: relative; z-index: 1; border: 1px solid #d9ebf0; border-radius: 18px; background: #f8fcfd; padding: 22px 18px; }
+body.autism-kids.ak-v2 .ak-step-icon { border: 5px solid #fff; box-shadow: 0 6px 16px rgba(8,127,115,.18); }
+body.autism-kids.ak-v2 .ak-bento-head { text-align: left; max-width: 620px; margin-left: 0; }
+body.autism-kids.ak-v2 .ak-bento-grid { gap: 14px; }
+body.autism-kids.ak-v2 .ak-bento-card { border-radius: 22px; border: 1px solid #d9ebf0 !important; box-shadow: 0 12px 26px rgba(42,91,115,.06) !important; }
+body.autism-kids.ak-v2 .ak-bento-card.wide { background: linear-gradient(135deg,#e5f7f3,#f4fbff) !important; }
+body.autism-kids.ak-v2 .ak-bento-icon { border-radius: 15px; box-shadow: 0 8px 16px rgba(42,91,115,.08); }
+body.autism-kids.ak-v2 .ak-quick-band { margin-top: 48px; background: linear-gradient(135deg, #e5f7f3, #eef4ff) !important; border-top: 1px solid #c9e7e0; border-bottom: 1px solid #d7e3f5; }
+body.autism-kids.ak-v2 .ak-quick-link { background: #fff; border: 1px solid #c9e7e0; color: var(--orbit-ink); box-shadow: 0 10px 20px rgba(42,91,115,.06); }
+body.autism-kids.ak-v2 .ak-quick-link i { color: var(--orbit-teal); }
+body.autism-kids.ak-v2 .footer { background: #edf8f7 !important; color: var(--orbit-ink) !important; border-top: 1px solid #d4e9e8; }
+body.autism-kids.ak-v2 .footer a { color: var(--orbit-teal); }
+body.autism-kids.ak-v2 .cg-fab-register { background: linear-gradient(135deg, var(--orbit-coral), #f29973); }
+@keyframes orbit-copy-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes orbit-art-in { from { opacity: 0; transform: translateX(-22px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes orbit-drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(16px,-20px,0); } }
+@media (max-width: 960px) {
+    body.autism-kids.ak-v2 .cg-header-row { display: block; margin-top: 10px; }
+    body.autism-kids.ak-v2 .cg-nav { display: none !important; }
+    body.autism-kids.ak-v2 .cg-nav.mobile-open { display: flex !important; }
+    body.autism-kids.ak-v2 .cg-menu-toggle { display: inline-flex !important; }
+    body.autism-kids.ak-v2 .ak-hero-v2-grid { grid-template-columns: 1fr; grid-template-areas: 'copy' 'art'; }
+    body.autism-kids.ak-v2 .ak-hero-v2-copy { text-align: center; }
+    body.autism-kids.ak-v2 .ak-hero-v2-lead { margin-inline: auto; }
+    body.autism-kids.ak-v2 .ak-hero-v2-cta,
+    body.autism-kids.ak-v2 .ak-hero-chips { justify-content: center; }
+}
+@media (max-width: 700px) {
+    body.autism-kids.ak-v2 .ak-hero-v2 { margin: 16px 10px 0; border-radius: 25px; padding: 28px 16px; }
+    body.autism-kids.ak-v2 .ak-hero-v2::before { display: none; }
+    body.autism-kids.ak-v2 .ak-hero-photo-stack { min-height: 280px; }
+    body.autism-kids.ak-v2 .ak-hero-photo-sub { width: 88px; height: 88px; border-width: 5px; }
+    body.autism-kids.ak-v2 .ak-journey { margin-inline: 10px; padding-inline: 16px; }
+    body.autism-kids.ak-v2 .ak-steps::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.autism-kids.ak-v2 .ak-bg-shapes .ak-shape,
+    body.autism-kids.ak-v2 .ak-hero-v2-copy,
+    body.autism-kids.ak-v2 .ak-hero-v2-art { animation: none !important; }
+}
