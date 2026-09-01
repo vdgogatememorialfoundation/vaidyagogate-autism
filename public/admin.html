@@ -858,8 +858,12 @@
                     <div class="card">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label>Doctor account</label>
-                            <select id="behalf-doctor-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">... Select doctor ...</option></select>
+                            <label for="behalf-doctor-search">Search applicant</label>
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                                <input type="search" id="behalf-doctor-search" placeholder="Name, phone, email, or portal ID..." oninput="filterAdminBehalfDoctorOptions()" style="flex:1;min-width:160px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
+                                <button type="button" class="btn-secondary" style="padding:7px 10px;" onclick="document.getElementById('behalf-doctor-search').value='';filterAdminBehalfDoctorOptions();">Clear</button>
+                            </div>
+                            <select id="behalf-doctor-select" style="margin-top:8px;" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">... Select doctor ...</option></select>
                         </div>
                         <div>
                             <label>Seminar</label>
@@ -875,6 +879,7 @@
                     <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                         <button type="button" class="btn-primary" onclick="flushBehalfRegistrationSave(true)">Save application</button>
                         <span id="behalf-save-status" style="font-weight:600;color:#0d9488;font-size:0.9rem;"></span>
+                        <span style="font-size:0.82rem;color:#64748b;">Admin override: saving remains available after public registration closes.</span>
                     </div>
                     <details style="margin-top:16px;">
                         <summary style="cursor:pointer;font-size:0.88rem;color:#64748b;">Advanced: raw JSON</summary>
@@ -2579,8 +2584,13 @@
             <button onclick="document.getElementById('admin-proxy-modal').classList.add('hidden');" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
             <h2 style="color: #1a237e; margin-bottom: 20px;">Proxy Application Creation</h2>
             <p style="color: #64748b; margin-bottom: 20px;">Register a doctor on their behalf. You send OTP to <strong>their</strong> phone and email (not your admin login). If they are not in CRM, create the account first.</p>
-            <label>Select User (Target ID)</label>
-            <select id="proxy-user-select" style="margin-bottom: 12px;" onchange="onProxyUserSelected()"><option>Loading...</option></select>
+            <label for="proxy-applicant-search">Search applicant</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px;margin-bottom:10px;">
+                <input type="search" id="proxy-applicant-search" placeholder="Name, phone, email, or portal ID..." oninput="filterProxyApplicantOptions()" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
+                <button type="button" class="btn-secondary" style="padding:7px 10px;" onclick="document.getElementById('proxy-applicant-search').value='';filterProxyApplicantOptions();">Clear</button>
+            </div>
+            <label for="proxy-user-select">Select applicant</label>
+            <select id="proxy-user-select" style="margin-bottom: 12px;" onchange="onProxyUserSelected()"><option value="">Loading...</option></select>
             <div id="proxy-capacity-banner" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:8px;font-size:0.9rem;"></div>
             <div id="proxy-applicant-otp-wrap" style="margin-bottom:14px;padding:14px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;">
                 <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the doctor registering (their phone &amp; email below)</strong>

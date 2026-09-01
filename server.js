@@ -9102,7 +9102,7 @@ app.get('/api/admin/applications', (req, res) => {
     const seminarId = parseInt(req.query.seminarId, 10);
     const statusFilter = String(req.query.status || '').toLowerCase();
     let sql = `
-        SELECT a.id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
+        SELECT a.id, a.user_id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
                u.first_name, u.middle_name, u.last_name, u.email, u.phone, u.user_id_string,
                s.title AS seminar_title, t.is_scanned, t.scan_time
         FROM registrations a
@@ -9181,7 +9181,7 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
     const scanFlag = isScanned ? 1 : 0;
     
     db.get(
-        `SELECT t.id, t.scan_count, r.user_id, r.seminar_id
+        `SELECT t.id, r.user_id, r.seminar_id
          FROM registrations r
          LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
          LEFT JOIN tickets t ON t.order_id = o.id
@@ -9205,21 +9205,29 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
                     }
                 );
             } else {
-                db.run(
-                    `UPDATE tickets SET is_scanned = ?, scan_count = CASE WHEN ? = 1 THEN IFNULL(scan_count, 0) + 1 ELSE 0 END, scan_time = ?, scanned_by = ? WHERE id = ?`,
-                    [scanFlag, scanFlag, scanFlag ? scanAtIst : null, staffId, row.id],
+                                db.run(
+                    `UPDATE tickets SET is_scanned = ?, scan_time = ? WHERE id = ?`,
+                    [scanFlag, scanFlag ? scanAtIst : null, row.id],
                     (err2) => {
                         if (err2) return res.status(500).json({ success: false, error: err2.message });
-                        
-                        const regStatus = scanFlag ? 'checked_in' : 'completed';
+                        // These columns are optional on older deployments. The required
+                        // check-in update above must not fail because of either one.
                         db.run(
-                            `UPDATE registrations SET status = ? WHERE id = ?`,
-                            [regStatus, regId],
-                            (err3) => {
-                                if (err3) return res.status(500).json({ error: err3.message });
-                                
-                                syncCertificateEligibilityForTicket(row.id, () => {
-                                    res.json({ success: true, message: scanFlag ? 'Checked in successfully.' : 'Check-in removed.' });
+                            `UPDATE tickets SET scan_count = CASE WHEN ? = 1 THEN 1 ELSE 0 END WHERE id = ?`,
+                            [scanFlag, row.id],
+                            () => {
+                                db.run(`UPDATE tickets SET scanned_by = ? WHERE id = ?`, [staffId, row.id], () => {
+                                    const regStatus = scanFlag ? 'checked_in' : 'completed';
+                                    db.run(
+                                        `UPDATE registrations SET status = ? WHERE id = ?`,
+                                        [regStatus, regId],
+                                        (err3) => {
+                                            if (err3) return res.status(500).json({ error: err3.message });
+                                            syncCertificateEligibilityForTicket(row.id, () => {
+                                                res.json({ success: true, message: scanFlag ? 'Checked in successfully.' : 'Check-in removed.' });
+                                            });
+                                        }
+                                    );
                                 });
                             }
                         );
@@ -12386,7 +12394,11 @@ function respondAdminRegUpsertWithVolunteerTicket(res, payload, tid, sid, regist
     );
 }
 
-function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData) {
+function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, options) {
+    // This route is already protected by adminLiveEdit.assertAdminAccess. Admin-created
+    // applications intentionally bypass the public registration start/end window; normal
+    // form validation and seminar-capacity checks still apply.
+    const allowClosedEvent = !options || options.allowClosedEvent !== false;
     const stored =
         formData && typeof formData === 'object'
             ? sanitizeFormDataForStorage(formData)
@@ -12427,7 +12439,8 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData) {
                                 success: true,
                                 registrationId: reg.id,
                                 applicationNo: result.applicationNo,
-                                created: false
+                                created: false,
+                                adminOverride: allowClosedEvent
                             },
                             tid,
                             sid,
@@ -12465,7 +12478,8 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData) {
                                 success: true,
                                 registrationId: newRegId,
                                 applicationNo,
-                                created: true
+                                created: true,
+                                adminOverride: allowClosedEvent
                             },
                             tid,
                             sid,
@@ -12488,7 +12502,8 @@ app.post('/api/admin/registrations/upsert', (req, res) => {
         adminPhoneOtpToken,
         adminEmailOtpToken,
         applicantPhoneOtpToken,
-        applicantEmailOtpToken
+        applicantEmailOtpToken,
+        adminOverride
     } = req.body || {};
     const tid = parseInt(targetUserId, 10);
     const sid = parseInt(seminarId, 10);
@@ -12521,11 +12536,11 @@ app.post('/api/admin/registrations/upsert', (req, res) => {
                                 'Verify applicant phone and email OTP before saving this application.'
                         });
                     }
-                    runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData);
+                    runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, { allowClosedEvent: adminOverride !== false });
                 }
             );
         }
-        runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData);
+        runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, { allowClosedEvent: adminOverride !== false });
     });
 });
 

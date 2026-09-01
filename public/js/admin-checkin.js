@@ -95,10 +95,10 @@ function renderAdminCheckinTable() {
             </td>
             <td>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.8rem;background:${isCheckedIn ? '#991b1b' : '#166534'};" onclick="toggleAdminCheckin(${p.id}, ${isCheckedIn ? 0 : 1})">
+                    <button type="button" class="btn-primary" data-registration-id="${escAdmin(p.id)}" style="padding:4px 10px;font-size:0.8rem;background:${isCheckedIn ? '#991b1b' : '#166534'};" onclick="toggleAdminCheckin(${p.id}, ${isCheckedIn ? 0 : 1}, this)">
                         ${isCheckedIn ? 'Undo Check-in' : 'Check in'}
                     </button>
-                    <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.8rem;background:#0284c7;" onclick="adminOpenCheckinUserDetail(${p.user_id})">
+                    <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.8rem;background:#0284c7;" onclick="adminOpenCheckinUserDetail(${Number(p.user_id) || 0})">
                         View details
                     </button>
                 </div>
@@ -108,31 +108,50 @@ function renderAdminCheckinTable() {
     });
 }
 
-async function toggleAdminCheckin(registrationId, checkinFlag) {
+async function toggleAdminCheckin(registrationId, checkinFlag, button) {
+    const rid = Number(registrationId);
+    if (!Number.isInteger(rid) || rid < 1) {
+        alert('Check-in failed: invalid registration ID. Refresh the event list and try again.');
+        return;
+    }
+    if (button) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = 'Saving…';
+    }
     try {
-        const res = await fetch(`/api/admin/registrations/${registrationId}/checkin`, {
+        const res = await fetch(`/api/admin/registrations/${encodeURIComponent(rid)}/checkin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isScanned: checkinFlag })
+            body: JSON.stringify({ isScanned: Number(checkinFlag) === 1 })
         });
-        const data = await res.json();
-        if (data.success) {
-            alert(data.message);
-            loadAdminCheckinList();
-        } else {
-            alert('Error: ' + (data.error || 'Failed to update check-in status'));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+            alert('Check-in failed: ' + (data.error || `Request failed (${res.status})`));
+            return;
         }
+        await loadAdminCheckinList();
     } catch (err) {
         console.error(err);
-        alert('Network error while toggling check-in.');
+        alert('Check-in failed: network error while updating registration.');
+    } finally {
+        if (button) {
+            button.disabled = false;
+            if (button.dataset.originalText) button.textContent = button.dataset.originalText;
+        }
     }
 }
 
 function adminOpenCheckinUserDetail(userId) {
+    const uid = Number(userId);
+    if (!Number.isInteger(uid) || uid < 1) {
+        alert('Applicant account ID is unavailable. Refresh the event list and try again.');
+        return;
+    }
     if (typeof openAdminUserDetail === 'function') {
-        openAdminUserDetail(userId);
+        openAdminUserDetail(uid);
     } else {
-        alert('Error: openAdminUserDetail function not found. User ID: ' + userId);
+        alert('Error: openAdminUserDetail function not found. User ID: ' + uid);
     }
 }
 

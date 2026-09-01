@@ -111,10 +111,85 @@ function resetProxyApplicantOtpTokens() {
     });
 }
 
+function adminApplicantSearchBlob(u) {
+    return [
+        u && u.user_id_string,
+        u && u.first_name,
+        u && u.middle_name,
+        u && u.last_name,
+        u && u.email,
+        u && u.phone,
+        u && u.doctor_category
+    ]
+        .filter((v) => v != null)
+        .join(' ')
+        .toLowerCase();
+}
+
+function getAdminApplicantAccounts() {
+    const doctors = Array.isArray(window.__adminDoctorUsers) ? window.__adminDoctorUsers : [];
+    if (doctors.length) return doctors;
+    return Object.values(window.__adminUsersById || {}).filter((u) => isDoctorAccount(u));
+}
+
+function renderAdminApplicantOptions(selectId, searchId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const current = String(select.value || '');
+    const q = String((document.getElementById(searchId) || {}).value || '')
+        .trim()
+        .toLowerCase();
+    const all = getAdminApplicantAccounts();
+    const rows = q ? all.filter((u) => adminApplicantSearchBlob(u).includes(q)) : all;
+    select.innerHTML = '<option value="">— Select applicant —</option>';
+    rows.forEach((u) => {
+        const label = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || 'Unnamed applicant';
+        const contact = [u.phone, u.email].filter(Boolean).join(' · ');
+        const id = u.user_id_string ? ` · ID ${u.user_id_string}` : '';
+        select.innerHTML += `<option value="${u.id}">${escAdmin(label)}${escAdmin(id)}${contact ? ` · ${escAdmin(contact)}` : ''}</option>`;
+    });
+    if (current && rows.some((u) => String(u.id) === current)) select.value = current;
+}
+
+function renderProxyApplicantOptions() {
+    renderAdminApplicantOptions('proxy-user-select', 'proxy-applicant-search');
+}
+
+function filterProxyApplicantOptions() {
+    renderProxyApplicantOptions();
+}
+
+function renderAdminBehalfDoctorOptions() {
+    renderAdminApplicantOptions('behalf-doctor-select', 'behalf-doctor-search');
+}
+
+function filterAdminBehalfDoctorOptions() {
+    renderAdminBehalfDoctorOptions();
+}
+
 function onProxyUserSelected() {
     const uid = parseInt((document.getElementById('proxy-user-select') || {}).value, 10);
     const u = window.__adminUsersById && window.__adminUsersById[uid];
-    if (!u) return;
+    if (!u) {
+        __proxyLastUserId = null;
+        __proxyLastRegId = null;
+        __proxyLastOrderDbId = null;
+        stopProxyPaymentPoll();
+        document.getElementById('proxy-payment-wrap')?.classList.add('hidden');
+        ['proxy-fname', 'proxy-lname', 'proxy-email', 'proxy-phone'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        resetProxyApplicantOtpTokens();
+        return;
+    }
+    if (__proxyLastUserId !== uid) {
+        __proxyLastRegId = null;
+        __proxyLastOrderDbId = null;
+        stopProxyPaymentPoll();
+        document.getElementById('proxy-payment-wrap')?.classList.add('hidden');
+    }
+    __proxyLastUserId = uid;
     const set = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = val || '';
@@ -2520,6 +2595,7 @@ async function flushBehalfRegistrationSave(manual) {
                 seminarId: sid,
                 formData,
                 adminUserId: adm.id,
+                adminOverride: true,
                 applicantPhoneOtpToken: __behalfApplicantPhoneOtpToken,
                 applicantEmailOtpToken: __behalfApplicantEmailOtpToken
             })
@@ -2549,15 +2625,8 @@ function initAdminBehalfRegTab() {
     refreshAdminSensitiveOtpRequirement();
     const prevDoc = ds.value;
     const prevSem = ss.value;
-    ds.innerHTML = '<option value="">— Select doctor —</option>';
-    Object.values(window.__adminUsersById || {}).forEach((u) => {
-        const ur = String(u.user_role || '').toLowerCase();
-        const r = String(u.role || '').toLowerCase();
-        if (ur === 'co_admin' || ur === 'judge_user' || ur === 'scanner_portal_user' || ur === 'reviewer') return;
-        if (r === 'admin' && ur !== 'doctor') return;
-        ds.innerHTML += `<option value="${u.id}">${u.first_name} ${u.last_name} (${u.user_id_string})</option>`;
-    });
     if (prevDoc) ds.value = prevDoc;
+    renderAdminBehalfDoctorOptions();
     ss.innerHTML = '<option value="">— Select seminar —</option>';
     (globalSeminars || []).forEach((s) => {
         ss.innerHTML += `<option value="${s.id}">${s.title}</option>`;
@@ -5358,9 +5427,9 @@ function adminSearchSetCount(countId, q, shown, total, noun) {
 
 function renderDoctorsUsersTable() {
     const doctorsBody = document.getElementById('doctors-list');
-    const proxySelect = document.getElementById('proxy-user-select');
     if (!doctorsBody) return;
     const all = window.__adminDoctorUsers || [];
+    renderProxyApplicantOptions();
     const q = adminSearchQ('doctors-search');
     const rows = adminSearchFilter(all, q, (u) =>
         [u.user_id_string, u.first_name, u.last_name, u.email, u.phone, u.doctor_category]
@@ -5382,9 +5451,6 @@ function renderDoctorsUsersTable() {
         doctorsBody.innerHTML =
             '<tr><td colspan="8" style="text-align:center;">No doctors match your search.</td></tr>';
         return;
-    }
-    if (proxySelect) {
-        proxySelect.innerHTML = '<option value="">Select a user...</option>';
     }
     rows.forEach((u) => {
         const hi =
@@ -5417,9 +5483,6 @@ function renderDoctorsUsersTable() {
                         }
                     </td>
                 </tr>`;
-        if (proxySelect) {
-            proxySelect.innerHTML += `<option value="${u.id}">${u.first_name} ${u.last_name} (${u.user_id_string})</option>`;
-        }
     });
 }
 
@@ -7764,11 +7827,12 @@ async function submitProxyApp() {
         const res = await fetch('/api/admin/registrations/upsert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                targetUserId: userId,
-                seminarId: sid,
-                formData: formDataObj,
-                adminUserId: adm.id,
+                body: JSON.stringify({
+                    targetUserId: userId,
+                    seminarId: sid,
+                    formData: formDataObj,
+                    adminUserId: adm.id,
+                    adminOverride: true,
                 applicantPhoneOtpToken: __proxyApplicantPhoneOtpToken,
                 applicantEmailOtpToken: __proxyApplicantEmailOtpToken
             })
