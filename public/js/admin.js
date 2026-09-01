@@ -2111,6 +2111,22 @@ function adminQualFromRegistrationFormData(raw) {
     }
 }
 
+function adminNormalizeDateInputValue(value) {
+    if (value == null || value === '') return '';
+    const s = String(value).trim();
+    let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+    if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+    m = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/.exec(s);
+    if (m) return `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+    return '';
+}
+
+function adminIsDateField(field) {
+    const key = String((field && field.key) || '').toLowerCase();
+    const type = String((field && field.type) || '').toLowerCase();
+    return type === 'date' || key === 'dob' || key === 'date_of_birth' || key === 'date-of-birth' || key.endsWith('_dob');
+}
+
 function renderAdminBehalfFormFields() {
     const host = document.getElementById('behalf-form-fields');
     if (!host) return;
@@ -2139,7 +2155,7 @@ function renderAdminBehalfFormFields() {
             });
             html += '</select>';
         } else {
-            const ty = f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : 'text';
+            const ty = adminIsDateField(f) ? 'date' : f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : 'text';
             html += '<input type="' + ty + '" id="' + id + '" style="width:100%;padding:8px;">';
         }
         html += '</div>';
@@ -2282,6 +2298,11 @@ async function onAdminBehalfDoctorOrSeminarChange() {
             set('phone', u.phone);
         }
     }
+    (__behalfFormFields || []).forEach((f) => {
+        if (!adminIsDateField(f)) return;
+        const el = document.getElementById('behalf-f-' + f.key);
+        if (el && el.value) el.value = adminNormalizeDateInputValue(el.value);
+    });
     syncBehalfJsonFromForm();
     if (!Number.isInteger(docId) || docId < 1) {
         if (summary) summary.textContent = 'Select a doctor account.';
@@ -2297,7 +2318,9 @@ async function onAdminBehalfDoctorOrSeminarChange() {
             (__behalfFormFields || []).forEach((f) => {
                 const el = document.getElementById('behalf-f-' + f.key);
                 if (el && data.registration.formData[f.key] != null) {
-                    el.value = data.registration.formData[f.key];
+                    el.value = adminIsDateField(f)
+                        ? adminNormalizeDateInputValue(data.registration.formData[f.key])
+                        : data.registration.formData[f.key];
                 }
             });
             syncBehalfJsonFromForm();
