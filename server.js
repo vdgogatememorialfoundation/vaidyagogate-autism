@@ -12438,9 +12438,10 @@ function respondAdminRegUpsertWithVolunteerTicket(res, payload, tid, sid, regist
 
 function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, options) {
     // This route is already protected by adminLiveEdit.assertAdminAccess. Admin-created
-    // applications intentionally bypass the public registration start/end window; normal
-    // form validation and seminar-capacity checks still apply.
+    // applications intentionally bypass the public registration window and seat cap;
+    // normal form validation, account checks, and audit fields still apply.
     const allowClosedEvent = !options || options.allowClosedEvent !== false;
+    const allowCapacityOverride = !options || options.allowCapacityOverride !== false;
     const stored =
         formData && typeof formData === 'object'
             ? sanitizeFormDataForStorage(formData)
@@ -12491,14 +12492,7 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, optio
                     }
                 );
             }
-            seminarCapacity.assertSeminarHasCapacity(db, sid, (capErr, cap) => {
-                if (capErr) return res.status(500).json({ error: capErr.message });
-                if (!cap || !cap.ok) {
-                    return res.status(400).json({
-                        error: (cap && cap.error) || 'Seminar is full.',
-                        capacity: cap && cap.capacity
-                    });
-                }
+            const persistNewRegistration = () => {
                 const applicationNo = generateId();
                 db.run(
                     `INSERT INTO registrations (user_id, seminar_id, application_no, status, form_data, registration_source, admin_editor_user_id) VALUES (?, ?, ?, 'submitted', ?, 'admin', ?)`,
@@ -12521,7 +12515,8 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, optio
                                 registrationId: newRegId,
                                 applicationNo,
                                 created: true,
-                                adminOverride: allowClosedEvent
+                                adminOverride: allowClosedEvent,
+                                capacityOverride: allowCapacityOverride
                             },
                             tid,
                             sid,
@@ -12529,6 +12524,20 @@ function runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, optio
                         );
                     }
                 );
+            };
+
+            // Public registration keeps the normal seat limit. Admin workspace saves
+            // are authenticated and audited, so they may intentionally exceed it.
+            if (allowCapacityOverride) return persistNewRegistration();
+            seminarCapacity.assertSeminarHasCapacity(db, sid, (capErr, cap) => {
+                if (capErr) return res.status(500).json({ error: capErr.message });
+                if (!cap || !cap.ok) {
+                    return res.status(400).json({
+                        error: (cap && cap.error) || 'Seminar is full.',
+                        capacity: cap && cap.capacity
+                    });
+                }
+                persistNewRegistration();
             });
         });
     });
@@ -12578,11 +12587,17 @@ app.post('/api/admin/registrations/upsert', (req, res) => {
                                 'Verify applicant phone and email OTP before saving this application.'
                         });
                     }
-                    runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, { allowClosedEvent: adminOverride !== false });
+                    runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, {
+                        allowClosedEvent: adminOverride !== false,
+                        allowCapacityOverride: adminOverride !== false
+                    });
                 }
             );
         }
-        runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, { allowClosedEvent: adminOverride !== false });
+        runAdminRegistrationUpsertBody(req, res, tid, sid, aid, formData, {
+            allowClosedEvent: adminOverride !== false,
+            allowCapacityOverride: adminOverride !== false
+        });
     });
 });
 

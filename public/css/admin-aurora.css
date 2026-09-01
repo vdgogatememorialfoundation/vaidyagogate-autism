@@ -1,0 +1,158 @@
+/* Aurora Operations — admin visual refresh
+ * Layout, labels, forms, and functionality remain unchanged.
+ */
+body.autism-admin {
+    --aurora-ink: #182230;
+    --aurora-muted: #64748b;
+    --aurora-bg: #f4f7fb;
+    --aurora-surface: #ffffff;
+    --aurora-line: #dbe4ee;
+    --aurora-teal: #0f766e;
+    --aurora-coral: #f06b4f;
+    --aurora-violet: #6457d7;
+    background:
+        radial-gradient(circle at 8% 0%, rgba(15, 118, 110, 0.10), transparent 28rem),
+        radial-gradient(circle at 94% 8%, rgba(240, 107, 79, 0.09), transparent 24rem),
+        var(--aurora-bg) !important;
+    color: var(--aurora-ink) !important;
+    font-family: 'DM Sans', 'Nunito', system-ui, sans-serif !important;
+}
+
+body.autism-admin .dashboard-container { align-items: stretch; }
+body.autism-admin .sidebar {
+    width: 254px;
+    flex: 0 0 254px;
+    padding: 18px 0 24px;
+    background: linear-gradient(180deg, #182230 0%, #202b3a 60%, #25384a 100%) !important;
+    border: 0 !important;
+    box-shadow: 14px 0 42px rgba(15, 23, 42, 0.14) !important;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+body.autism-admin .sidebar-header {
+    padding: 4px 22px 22px;
+    border-bottom: 1px solid rgba(255,255,255,.12) !important;
+    margin-bottom: 14px;
+}
+body.autism-admin .sidebar-header h2 { color: #f8fafc !important; letter-spacing: .01em; }
+body.autism-admin .sidebar-header p { color: #aab8c8 !important; }
+body.autism-admin .sidebar-header [data-site-logo] { filter: saturate(.9) brightness(1.2); }
+body.autism-admin .menu-item {
+    color: #bfccd8 !important;
+    margin: 3px 12px 3px 10px;
+    padding: 11px 14px;
+    border-radius: 12px !important;
+    font-size: .88rem;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+body.autism-admin .menu-item:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,.09) !important;
+    transform: translateX(2px);
+}
+body.autism-admin .menu-item.active {
+    color: #fff !important;
+    background: linear-gradient(100deg, rgba(240,107,79,.96), rgba(240,107,79,.72)) !important;
+    border-left: 0 !important;
+    box-shadow: 0 8px 20px rgba(240,107,79,.20);
+}
+body.autism-admin .menu-item i,
+body.autism-admin .menu-item.active i { color: inherit !important; opacity: .9; }
+body.autism-admin .ak-tab-badge { background: #80e1c1 !important; color: #12312e !important; }
+body.autism-admin .main-content {
+    max-width: 1680px;
+    padding: 28px clamp(18px, 3vw, 48px) 56px;
+}
+body.autism-admin .top-header {
+    position: sticky;
+    top: 18px;
+    z-index: 20;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    border: 1px solid rgba(219,228,238,.9) !important;
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.88) !important;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 16px 34px rgba(24,34,48,.08) !important;
+}
+body.autism-admin .top-header h2 { color: var(--aurora-ink) !important; font-size: 1.22rem; }
+body.autism-admin .card {
+    border: 1px solid var(--aurora-line) !important;
+    border-left: 0 !important;
+    border-radius: 18px !important;
+    padding: 24px clamp(18px, 2vw, 30px);
+    box-shadow: 0 14px 36px rgba(24,34,48,.055) !important;
+    background: rgba(255,255,255,.96) !important;
+}
+body.autism-admin .card h2,
+body.autism-admin .card h3 { color: var(--aurora-ink) !important; letter-spacing: -.015em; }
+body.autism-admin input,
+body.autism-admin select,
+body.autism-admin textarea {
+    border: 1px solid #cbd7e3 !important;
+    border-radius: 11px !important;
+    background: #fbfdff !important;
+    color: var(--aurora-ink) !important;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+body.autism-admin input:hover,
+body.autism-admin select:hover,
+body.autism-admin textarea:hover { border-color: #9db4c7 !important; }
+body.autism-admin input:focus,
+body.autism-admin select:focus,
+body.autism-admin textarea:focus {
+    border-color: var(--aurora-teal) !important;
+    box-shadow: 0 0 0 4px rgba(15,118,110,.13) !important;
+    background: #fff !important;
+}
+body.autism-admin label { color: #415064 !important; letter-spacing: .01em; }
+body.autism-admin .btn,
+body.autism-admin button { transition: transform .16s ease, box-shadow .18s ease, filter .18s ease; }
+body.autism-admin .btn:active,
+body.autism-admin button:active { transform: scale(.98); }
+body.autism-admin .btn-primary {
+    background: linear-gradient(135deg, var(--aurora-coral), #dc5546) !important;
+    box-shadow: 0 8px 18px rgba(240,107,79,.25) !important;
+    border-radius: 11px !important;
+}
+body.autism-admin .btn-primary:hover { filter: brightness(1.04); box-shadow: 0 10px 22px rgba(240,107,79,.32) !important; }
+body.autism-admin .btn-secondary { color: var(--aurora-teal) !important; background: #e9f7f4 !important; border-color: #b8e3dc !important; }
+body.autism-admin .btn-outline { color: var(--aurora-violet) !important; border-color: #c9c3f5 !important; }
+body.autism-admin .data-table { border-spacing: 0 7px; border-collapse: separate; }
+body.autism-admin .data-table th { background: #eef3f7 !important; color: #526276 !important; border: 0 !important; }
+body.autism-admin .data-table td { background: #fff; border-top: 1px solid #e5ebf1; border-bottom: 1px solid #e5ebf1; }
+body.autism-admin .data-table td:first-child { border-left: 1px solid #e5ebf1; border-radius: 10px 0 0 10px; }
+body.autism-admin .data-table td:last-child { border-right: 1px solid #e5ebf1; border-radius: 0 10px 10px 0; }
+body.autism-admin .data-table tr:hover td { background: #f7fbfb !important; }
+body.autism-admin .modal-content,
+body.autism-admin [role="dialog"] > div {
+    border: 1px solid var(--aurora-line) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 26px 70px rgba(15,23,42,.22) !important;
+}
+body.autism-admin .ak-admin-auth {
+    background:
+        radial-gradient(circle at 18% 12%, rgba(240,107,79,.20), transparent 22rem),
+        radial-gradient(circle at 84% 82%, rgba(15,118,110,.20), transparent 24rem),
+        #182230 !important;
+}
+body.autism-admin .ak-login-card { border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 28px 90px rgba(0,0,0,.28) !important; }
+@media (max-width: 900px) {
+    body.autism-admin .sidebar { width: 214px; flex-basis: 214px; }
+    body.autism-admin .menu-item { font-size: .8rem; padding-inline: 11px; }
+    body.autism-admin .top-header { position: static; }
+}
+@media (max-width: 700px) {
+    body.autism-admin .dashboard-container { display: block; }
+    body.autism-admin .sidebar { position: static; width: 100%; height: auto; padding-bottom: 10px; }
+    body.autism-admin .menu-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px; }
+    body.autism-admin .menu-item { margin: 0; border-radius: 10px !important; }
+    body.autism-admin .main-content { padding: 16px 12px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.autism-admin .menu-item,
+    body.autism-admin .btn,
+    body.autism-admin button { transition: none !important; }
+}

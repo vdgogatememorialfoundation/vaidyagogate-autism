@@ -7551,10 +7551,10 @@ async function loadProxyCapacityBanner() {
             banner.style.color = '#166534';
             banner.textContent = `Seats: ${cap.filled} registered (no capacity limit set).`;
         } else if (cap.full) {
-            banner.style.background = '#fef2f2';
-            banner.style.border = '1px solid #fecaca';
-            banner.style.color = '#b91c1c';
-            banner.textContent = `Seminar FULL — ${cap.filled}/${cap.capacity} seats. New proxy registrations are blocked.`;
+            banner.style.background = '#fff7e6';
+            banner.style.border = '1px solid #f5c98b';
+            banner.style.color = '#8a4b08';
+            banner.textContent = `Public capacity reached (${cap.filled}/${cap.capacity} seats). Admin override is enabled — you can still save this applicant application.`;
         } else {
             banner.style.background = '#eff6ff';
             banner.style.border = '1px solid #bfdbfe';
