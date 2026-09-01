@@ -2649,21 +2649,47 @@ async function flushBehalfRegistrationSave(manual) {
     }
 }
 
+function ensureAdminBehalfSearchUi() {
+    const select = document.getElementById('behalf-doctor-select');
+    if (!select || document.getElementById('behalf-doctor-search')) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:6px;margin-bottom:8px;';
+    wrap.innerHTML = '<input type="search" id="behalf-doctor-search" placeholder="Name, phone, email, ticket ID, user ID, or application ID..." style="flex:1;min-width:160px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" aria-label="Search applicant">' +
+        '<button type="button" class="btn-secondary" style="padding:7px 10px;">Clear</button>';
+    const input = wrap.querySelector('#behalf-doctor-search');
+    const clear = wrap.querySelector('button');
+    if (input) input.addEventListener('input', filterAdminBehalfDoctorOptions);
+    if (clear) clear.addEventListener('click', () => {
+        if (input) input.value = '';
+        filterAdminBehalfDoctorOptions();
+    });
+    select.parentElement.insertBefore(wrap, select);
+}
+
+function renderAdminBehalfSeminarOptions() {
+    const ss = document.getElementById('behalf-seminar-select');
+    if (!ss) return;
+    const prevSem = ss.value;
+    ss.innerHTML = '<option value="">— Select seminar —</option>';
+    (Array.isArray(globalSeminars) ? globalSeminars : []).forEach((s) => {
+        if (!s || !s.id) return;
+        ss.innerHTML += `<option value="${s.id}">${escAdmin(s.title || 'Untitled event')}</option>`;
+    });
+    if (prevSem && Array.from(ss.options).some((o) => o.value === String(prevSem))) ss.value = prevSem;
+}
+
 function initAdminBehalfRegTab() {
     const ds = document.getElementById('behalf-doctor-select');
     const ss = document.getElementById('behalf-seminar-select');
     const ta = document.getElementById('behalf-form-json');
     if (!ds || !ss) return;
     refreshAdminSensitiveOtpRequirement();
+    ensureAdminBehalfSearchUi();
     const prevDoc = ds.value;
     const prevSem = ss.value;
     if (prevDoc) ds.value = prevDoc;
     renderAdminBehalfDoctorOptions();
-    ss.innerHTML = '<option value="">— Select seminar —</option>';
-    (globalSeminars || []).forEach((s) => {
-        ss.innerHTML += `<option value="${s.id}">${s.title}</option>`;
-    });
-    if (prevSem) ss.value = prevSem;
+    renderAdminBehalfSeminarOptions();
     if (!window.__behalfWired && ta) {
         window.__behalfWired = true;
         ta.addEventListener('input', () => {
@@ -8614,10 +8640,17 @@ async function saveAdminPortalYear() {
 async function loadSeminars() {
     try {
         await loadAdminPortalYear();
-        const res = await fetch('/api/admin/seminars/all');
-        globalSeminars = await res.json();
+        const res = await fetch('/api/admin/seminars/all', { cache: 'no-store' });
+        const data = await res.json();
+        globalSeminars = Array.isArray(data) ? data : [];
         renderSeminarsTable();
-    } catch (err) { console.error(err); }
+        // The workspace can be opened before this async request finishes.
+        // Re-render its event selector when the list becomes available.
+        renderAdminBehalfSeminarOptions();
+    } catch (err) {
+        console.error(err);
+        renderAdminBehalfSeminarOptions();
+    }
 }
 
 function editSeminar(index) {
