@@ -587,11 +587,17 @@ app.use((req, res, next) => {
     const p = String(req.path || '');
     if (
         /^\/js\/(applicant-auth-ui|portal-auth|applicant|otp-ui|doctor-auth-ui|doctor)\.js/i.test(p) ||
+        /^\/js\/admin(?:[-a-z]*)?\.js/i.test(p) ||
+        p === '/admin' ||
+        p === '/admin.html' ||
+        p === '/staff' ||
+        p === '/staff.html' ||
         p === '/dashboard' ||
         p.startsWith('/dashboard/')
     ) {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
     }
     next();
 });
