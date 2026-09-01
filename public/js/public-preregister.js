@@ -236,6 +236,19 @@
         return formStep;
     }
 
+    function normalizeDateInputValue(value) {
+        if (value == null || String(value).trim() === '') return '';
+        const s = String(value).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        const isoPrefix = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (isoPrefix) return isoPrefix[1];
+        const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+        if (dmy) {
+            return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
+        }
+        return s;
+    }
+
     function createFieldInput(f) {
         let input;
         if (f.type === 'textarea') {
@@ -267,7 +280,12 @@
         input.id = 'pub-field-' + f.key;
         input.dataset.fieldKey = f.key;
         if (f.required && f.type !== 'boolean') input.required = true;
-        if (f.defaultValue != null && f.type !== 'boolean') input.value = String(f.defaultValue);
+        if (f.defaultValue != null && f.type !== 'boolean') {
+            input.value =
+                f.type === 'date' || String(f.key || '').endsWith('_dob') || f.key === 'dob'
+                    ? normalizeDateInputValue(f.defaultValue)
+                    : String(f.defaultValue);
+        }
         return input;
     }
 

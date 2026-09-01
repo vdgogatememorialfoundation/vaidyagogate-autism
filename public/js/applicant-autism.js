@@ -1190,7 +1190,13 @@
         input.id = 'prereg-field-' + f.key;
         input.dataset.fieldKey = f.key;
         if (f.required && f.type !== 'boolean') input.required = true;
-        if (f.defaultValue != null && f.type !== 'boolean') input.value = String(f.defaultValue);
+        if (f.defaultValue != null && f.type !== 'boolean') {
+            const defaultValue =
+                f.type === 'date' || String(f.key || '').endsWith('_dob') || f.key === 'dob'
+                    ? normalizeRegDateValue(f.defaultValue)
+                    : String(f.defaultValue);
+            input.value = defaultValue;
+        }
         return input;
     }
 

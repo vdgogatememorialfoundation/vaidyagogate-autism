@@ -275,8 +275,11 @@
                         </div>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label for="doctors-search" style="font-weight:600;font-size:0.9rem;">Search participants</label>
-                        <input type="search" id="doctors-search" placeholder="Portal ID, name, email, or phone..." oninput="renderDoctorsUsersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <label for="doctors-search" style="font-weight:600;font-size:0.9rem;">Search applicant accounts</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+                            <input type="search" id="doctors-search" placeholder="Search by portal ID, name, email, phone, or category..." oninput="renderDoctorsUsersTable()" style="flex:1;min-width:220px;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;">
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('doctors-search').value='';renderDoctorsUsersTable();">Clear search</button>
+                        </div>
                         <p id="doctors-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
