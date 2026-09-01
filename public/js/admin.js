@@ -119,7 +119,11 @@ function adminApplicantSearchBlob(u) {
         u && u.last_name,
         u && u.email,
         u && u.phone,
-        u && u.doctor_category
+        u && u.id,
+        u && u.doctor_category,
+        ...(Array.isArray(u && u.applicant_refs)
+            ? u.applicant_refs.flatMap((ref) => [ref.applicationId, ref.applicationNo, ref.ticketId, ref.ticketDbId])
+            : [])
     ]
         .filter((v) => v != null)
         .join(' ')
@@ -145,8 +149,13 @@ function renderAdminApplicantOptions(selectId, searchId) {
     rows.forEach((u) => {
         const label = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ') || 'Unnamed applicant';
         const contact = [u.phone, u.email].filter(Boolean).join(' · ');
-        const id = u.user_id_string ? ` · ID ${u.user_id_string}` : '';
-        select.innerHTML += `<option value="${u.id}">${escAdmin(label)}${escAdmin(id)}${contact ? ` · ${escAdmin(contact)}` : ''}</option>`;
+        const id = u.user_id_string ? ` · User ID ${u.user_id_string}` : '';
+        const refs = Array.isArray(u.applicant_refs) ? u.applicant_refs : [];
+        const ref = refs[0] || {};
+        const refText = [ref.applicationNo || ref.applicationId ? `Application ID ${ref.applicationNo || ref.applicationId}` : '', ref.ticketId ? `Ticket ID ${ref.ticketId}` : '']
+            .filter(Boolean)
+            .join(' · ');
+        select.innerHTML += `<option value="${u.id}">${escAdmin(label)}${escAdmin(id)}${contact ? ` · ${escAdmin(contact)}` : ''}${refText ? ` · ${escAdmin(refText)}` : ''}</option>`;
     });
     if (current && rows.some((u) => String(u.id) === current)) select.value = current;
 }
@@ -2305,7 +2314,7 @@ async function onAdminBehalfDoctorOrSeminarChange() {
     });
     syncBehalfJsonFromForm();
     if (!Number.isInteger(docId) || docId < 1) {
-        if (summary) summary.textContent = 'Select a doctor account.';
+        if (summary) summary.textContent = 'Select an applicant account.';
         return;
     }
     try {
@@ -2864,15 +2873,22 @@ function closeAdminUserDetailModal() {
 }
 
 async function openAdminUserDetail(userId) {
+    const uid = Number(userId);
     const body = document.getElementById('admin-user-detail-body');
-    if (body) body.innerHTML = '<p>Loading…</p>';
+    if (!Number.isInteger(uid) || uid < 1) {
+        __adminUserDetailCache = null;
+        if (body) body.innerHTML = '<p style="color:#b91c1c;">Applicant ID is missing or invalid. Refresh the applicant list and try again.</p>';
+        return;
+    }
+    __adminUserDetailCache = null;
+    if (body) body.innerHTML = '<p>Loading applicant details…</p>';
     const modal = document.getElementById('admin-user-detail-modal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
     }
     try {
-        const res = await fetch(`/api/admin/users/${userId}/detail`);
+        const res = await fetch(`/api/admin/users/${encodeURIComponent(uid)}/detail`);
         const data = await res.json();
         if (!res.ok) {
             if (body) body.innerHTML = `<p style="color:#b91c1c;">${data.error || 'Failed to load'}</p>`;
@@ -2882,9 +2898,9 @@ async function openAdminUserDetail(userId) {
         __adminUserDetailTab = 'profile';
         const u = data.user;
         document.getElementById('admin-user-detail-title').textContent =
-            `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'User details';
+            `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Applicant details';
         document.getElementById('admin-user-detail-sub').textContent =
-            `ID: ${u.user_id_string} · ${u.email} · Role: ${u.user_role || u.role}`;
+            `Applicant ID: ${u.id} · User ID: ${u.user_id_string} · ${u.email}`;
         renderAdminUserDetailActions();
         switchAdminUserDetailTab('profile');
     } catch (e) {

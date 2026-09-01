@@ -9102,9 +9102,9 @@ app.get('/api/admin/applications', (req, res) => {
     const seminarId = parseInt(req.query.seminarId, 10);
     const statusFilter = String(req.query.status || '').toLowerCase();
     let sql = `
-        SELECT a.id, a.user_id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
+        SELECT a.id, a.user_id AS applicant_id, a.id AS registration_id, a.application_no, a.status, a.form_data, a.created_at, a.seminar_id,
                u.first_name, u.middle_name, u.last_name, u.email, u.phone, u.user_id_string,
-               s.title AS seminar_title, t.is_scanned, t.scan_time
+               s.title AS seminar_title, t.id AS ticket_db_id, t.ticket_id_string, t.is_scanned, t.scan_time
         FROM registrations a
         JOIN users u ON a.user_id = u.id
         LEFT JOIN seminars s ON s.id = a.seminar_id
@@ -11651,15 +11651,51 @@ app.get('/api/admin/users', (req, res) => {
     const adminUserLookup = require('./lib/admin-user-lookup');
     const filterQ = String(req.query.q || req.query.search || '').trim();
     const sendList = (list) => {
-        res.json(
-            (list || []).map((r) => {
-                const eff = userRoles.effectiveUserRole(r);
-                return {
-                    ...r,
-                    effective_user_role: eff || r.user_role || r.role,
-                    account_list: userRoles.isDoctorPortalAccount(r) ? 'doctors' : 'staff'
-                };
-            })
+        const rows = Array.isArray(list) ? list : [];
+        const ids = rows.map((r) => Number(r.id)).filter((id) => Number.isInteger(id) && id > 0);
+        const finish = (refs) => {
+            const refsByUser = {};
+            (refs || []).forEach((ref) => {
+                const uid = Number(ref.user_id);
+                if (!Number.isInteger(uid) || uid < 1) return;
+                if (!refsByUser[uid]) refsByUser[uid] = [];
+                refsByUser[uid].push({
+                    applicationId: ref.application_id,
+                    applicationNo: ref.application_no,
+                    ticketId: ref.ticket_id,
+                    ticketDbId: ref.ticket_db_id
+                });
+            });
+            res.json(
+                rows.map((r) => {
+                    const eff = userRoles.effectiveUserRole(r);
+                    return {
+                        ...r,
+                        effective_user_role: eff || r.user_role || r.role,
+                        account_list: userRoles.isDoctorPortalAccount(r) ? 'doctors' : 'staff',
+                        applicant_refs: refsByUser[Number(r.id)] || []
+                    };
+                })
+            );
+        };
+        if (!ids.length) return finish([]);
+        const placeholders = ids.map(() => '?').join(',');
+        db.all(
+            `SELECT r.user_id, r.id AS application_id, r.application_no,
+                    t.id AS ticket_db_id, t.ticket_id_string AS ticket_id
+             FROM registrations r
+             LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
+             LEFT JOIN tickets t ON t.order_id = o.id
+             WHERE r.user_id IN (${placeholders})
+             ORDER BY r.id DESC`,
+            ids,
+            (refErr, refs) => {
+                if (refErr) {
+                    console.warn('[admin] applicant reference lookup:', refErr.message);
+                    return finish([]);
+                }
+                finish(refs);
+            }
         );
     };
     const fullCols = `id, user_id_string, first_name, middle_name, last_name, email, phone, role, user_role, doctor_category, doctor_modules, is_disabled,

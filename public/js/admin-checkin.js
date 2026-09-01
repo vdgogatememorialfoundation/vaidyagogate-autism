@@ -49,8 +49,11 @@ function renderAdminCheckinTable() {
             const email = String(p.email || '').toLowerCase();
             const phone = String(p.phone || '').toLowerCase();
             const appNo = String(p.application_no || '').toLowerCase();
+            const applicationId = String(p.application_id || p.registration_id || p.id || '').toLowerCase();
             const userId = String(p.user_id_string || '').toLowerCase();
-            return name.includes(searchVal) || email.includes(searchVal) || phone.includes(searchVal) || appNo.includes(searchVal) || userId.includes(searchVal);
+            const applicantId = String(p.applicant_id || p.user_id || '').toLowerCase();
+            const ticketId = String(p.ticket_id_string || p.ticket_id || p.ticket_db_id || '').toLowerCase();
+            return [name, email, phone, appNo, applicationId, userId, applicantId, ticketId].some((value) => value.includes(searchVal));
         });
     }
     
@@ -62,6 +65,7 @@ function renderAdminCheckinTable() {
     tbody.innerHTML = '';
     filtered.forEach(p => {
         const name = [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ');
+        const applicantId = Number(p.applicant_id || p.user_id || 0);
         const isCheckedIn = p.is_scanned === 1 || p.status === 'checked_in';
         
         let checkinTimeStr = '—';
@@ -77,7 +81,7 @@ function renderAdminCheckinTable() {
         tr.innerHTML = `
             <td>
                 <strong>${escAdmin(name)}</strong><br>
-                <span style="font-size:0.8rem;color:#64748b;">App ID: ${escAdmin(p.application_no)} | User ID: ${escAdmin(p.user_id_string)}</span>
+                <span style="font-size:0.8rem;color:#64748b;">Application ID: ${escAdmin(p.application_no || p.registration_id || p.id)} | Applicant ID: ${escAdmin(p.id)} | User ID: ${escAdmin(p.user_id_string)}${p.ticket_id_string ? ` | Ticket ID: ${escAdmin(p.ticket_id_string)}` : ''}</span>
             </td>
             <td>
                 <span style="font-size:0.85rem;">Email: ${escAdmin(p.email)}</span><br>
@@ -98,8 +102,8 @@ function renderAdminCheckinTable() {
                     <button type="button" class="btn-primary" data-registration-id="${escAdmin(p.id)}" style="padding:4px 10px;font-size:0.8rem;background:${isCheckedIn ? '#991b1b' : '#166534'};" onclick="toggleAdminCheckin(${p.id}, ${isCheckedIn ? 0 : 1}, this)">
                         ${isCheckedIn ? 'Undo Check-in' : 'Check in'}
                     </button>
-                    <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.8rem;background:#0284c7;" onclick="adminOpenCheckinUserDetail(${Number(p.user_id) || 0})">
-                        View details
+                    <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.8rem;background:#0284c7;" onclick="adminOpenCheckinUserDetail(${applicantId})" ${applicantId > 0 ? '' : 'disabled title="Applicant account ID unavailable"'}>
+                        Applicant details
                     </button>
                 </div>
             </td>

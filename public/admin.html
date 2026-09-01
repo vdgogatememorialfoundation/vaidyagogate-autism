@@ -835,10 +835,10 @@
 
             <!-- Admin: seminar application on behalf of doctor (live save) -->
             <div id="tab-behalf-reg" class="tab-pane hidden">
-                <h2 style="margin-bottom: 12px;">Create doctor application (admin workspace)</h2>
+                <h2 style="margin-bottom: 12px;">Create applicant application (admin workspace)</h2>
                 <p style="color:#64748b;margin-bottom:18px;max-width:920px;">Create or update an application using the <strong>same form configured for that event</strong> (from <em>Seminar registration form</em>). Data is stored in <code>registrations.form_data</code>. After saving, use <strong>Process application</strong> below for review, payment, and e-ticket.</p>
                 <div id="behalf-applicant-otp-wrap" class="card" style="margin-bottom:16px;padding:14px;border:1px solid #bfdbfe;background:#eff6ff;">
-                    <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the doctor (phone &amp; email on the form below)</strong>
+                    <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the applicant (phone &amp; email on the form below)</strong>
                     <p style="font-size:0.85rem;color:#475569;margin:0 0 10px;">Send codes to the applicant ... not your admin login. Verify both before saving.</p>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;">
                         <span style="font-size:0.85rem;">Applicant email</span>
@@ -860,7 +860,7 @@
                         <div>
                             <label for="behalf-doctor-search">Search applicant</label>
                             <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-                                <input type="search" id="behalf-doctor-search" placeholder="Name, phone, email, or portal ID..." oninput="filterAdminBehalfDoctorOptions()" style="flex:1;min-width:160px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
+                                <input type="search" id="behalf-doctor-search" placeholder="Name, phone, email, ticket ID, user ID, or application ID..." oninput="filterAdminBehalfDoctorOptions()" style="flex:1;min-width:160px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
                                 <button type="button" class="btn-secondary" style="padding:7px 10px;" onclick="document.getElementById('behalf-doctor-search').value='';filterAdminBehalfDoctorOptions();">Clear</button>
                             </div>
                             <select id="behalf-doctor-select" style="margin-top:8px;" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">... Select applicant ...</option></select>
@@ -1895,7 +1895,7 @@
             </div>
 
             <div id="tab-admin-checkin" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Admin Direct Check-in</h2>
+                <h2 style="margin-bottom: 20px;">Admin Direct Applicant Check-in</h2>
                 <div class="card">
                     <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
                         <div style="min-width:240px;flex:1;">
@@ -1903,15 +1903,15 @@
                             <select id="ak-admin-checkin-seminar" style="width:100%;padding:8px;margin-top:6px;" onchange="loadAdminCheckinList()"></select>
                         </div>
                         <div style="min-width:240px;flex:1;">
-                            <label for="ak-admin-checkin-search">Search Participant</label>
-                            <input type="search" id="ak-admin-checkin-search" placeholder="Search by name, email, ID..." style="width:100%;padding:8px;margin-top:6px;" oninput="renderAdminCheckinTable()">
+                            <label for="ak-admin-checkin-search">Search applicant</label>
+                            <input type="search" id="ak-admin-checkin-search" placeholder="Name, phone, email, ticket ID, user ID, or application ID..." style="width:100%;padding:8px;margin-top:6px;" oninput="renderAdminCheckinTable()">
                         </div>
                         <button type="button" class="btn-primary" onclick="loadAdminCheckinList()" style="height:36px;"><i class="fas fa-sync"></i> Refresh</button>
                     </div>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Participant</th>
+                                <th>Applicant</th>
                                 <th>Contact details</th>
                                 <th>Status</th>
                                 <th>Checked in</th>
@@ -2583,17 +2583,17 @@
         <div style="background: white; padding: 30px; border-radius: 12px; width: 600px; max-height: 90vh; overflow-y: auto; position: relative;">
             <button onclick="document.getElementById('admin-proxy-modal').classList.add('hidden');" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
             <h2 style="color: #1a237e; margin-bottom: 20px;">Proxy Application Creation</h2>
-            <p style="color: #64748b; margin-bottom: 20px;">Register a doctor on their behalf. You send OTP to <strong>their</strong> phone and email (not your admin login). If they are not in CRM, create the account first.</p>
+            <p style="color: #64748b; margin-bottom: 20px;">Register an applicant on their behalf. You send OTP to <strong>their</strong> phone and email (not your admin login). If they are not in CRM, create the account first.</p>
             <label for="proxy-applicant-search">Search applicant</label>
             <div style="display:flex;gap:8px;align-items:center;margin-top:6px;margin-bottom:10px;">
-                <input type="search" id="proxy-applicant-search" placeholder="Name, phone, email, or portal ID..." oninput="filterProxyApplicantOptions()" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
+                <input type="search" id="proxy-applicant-search" placeholder="Name, phone, email, ticket ID, user ID, or application ID..." oninput="filterProxyApplicantOptions()" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
                 <button type="button" class="btn-secondary" style="padding:7px 10px;" onclick="document.getElementById('proxy-applicant-search').value='';filterProxyApplicantOptions();">Clear</button>
             </div>
             <label for="proxy-user-select">Select applicant</label>
             <select id="proxy-user-select" style="margin-bottom: 12px;" onchange="onProxyUserSelected()"><option value="">Loading...</option></select>
             <div id="proxy-capacity-banner" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:8px;font-size:0.9rem;"></div>
             <div id="proxy-applicant-otp-wrap" style="margin-bottom:14px;padding:14px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;">
-                <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the doctor registering (their phone &amp; email below)</strong>
+                <strong style="display:block;margin-bottom:8px;color:#1e40af;">OTP to the applicant registering (their phone &amp; email below)</strong>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;">
                     <span style="font-size:0.85rem;">Applicant email</span>
                     <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.8rem;background:#64748b;" onclick="proxySendApplicantOtp('email')">Send OTP</button>
@@ -2638,7 +2638,7 @@
                 <div id="proxy-qr-block" class="hidden" style="text-align:center;">
                     <p id="proxy-qr-amount" style="font-weight:700;color:#1a237e;margin-bottom:8px;"></p>
                     <img id="proxy-qr-img" alt="Payment QR" style="max-width:220px;border:1px solid #cbd5e1;border-radius:8px;">
-                    <p style="font-size:0.8rem;color:#64748b;margin-top:8px;">Doctor pays by scan; Razorpay DQR confirms automatically.</p>
+                    <p style="font-size:0.8rem;color:#64748b;margin-top:8px;">Applicant pays by scan; Razorpay DQR confirms automatically.</p>
                 </div>
                 <div id="proxy-razorpay-checkout" class="hidden" style="margin-top:10px;"></div>
             </div>
@@ -2716,7 +2716,7 @@
     <div id="admin-user-detail-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 10002; display: flex; align-items: center; justify-content: center;">
         <div style="background: white; padding: 28px; border-radius: 16px; width: 920px; max-width: 96vw; max-height: 92vh; overflow-y: auto; position: relative;">
             <button type="button" onclick="closeAdminUserDetailModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            <h2 style="color:#0c4a6e;margin-bottom:4px;" id="admin-user-detail-title">User details</h2>
+            <h2 style="color:#0c4a6e;margin-bottom:4px;" id="admin-user-detail-title">Applicant details</h2>
             <p id="admin-user-detail-sub" style="color:#64748b;font-size:0.88rem;margin-bottom:16px;"></p>
             <div id="admin-user-detail-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
@@ -2745,11 +2745,11 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260621b"></script>
+    <script src="/js/admin.js?v=20260901d"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
-    <script src="/js/admin-checkin.js"></script>
+    <script src="/js/admin-checkin.js?v=20260901c"></script>
     <script src="/js/admin-competition.js?v=7"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
     <script src="/js/admin-autism.js?v=autism54"></script>
