@@ -55,13 +55,13 @@
         return true;
     }
 
-    const LOGIN_AUTH_UI_VERSION = 'phone-v2';
+    const LOGIN_AUTH_UI_VERSION = 'email-otp-v1';
 
     const PHONE_LOGIN_FORM_INNER =
-        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email or Phone (WhatsApp)</label>' +
-        '<input type="text" id="doctor-login-phone" required autocomplete="username" inputmode="text" placeholder="Email or 10-digit mobile number" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email</label>' +
+        '<input type="text" id="doctor-login-phone" required autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:12px;">' +
         '<div id="doctor-login-otp-wrap">' +
-        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">WhatsApp OTP</label>' +
+        '<label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:0 0 6px;">Email OTP</label>' +
         '<div class="ak-login-otp-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +
         '<input type="text" id="doctor-phone-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter code" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">' +
         '<button type="button" id="doctor-send-otp-phone" class="ak-otp-action-btn" style="padding:10px 14px;border-radius:10px;border:1px solid #99f6e4;background:#f0fdfa;cursor:pointer;font-weight:700;color:#0f766e;white-space:nowrap;">Send OTP</button>' +
@@ -100,7 +100,7 @@
 
         const intro = panel.querySelector('p');
         if (intro) {
-            intro.textContent = 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.';
+            intro.textContent = 'Enter your email, tap Send OTP, enter the code from your inbox, then sign in.';
         }
         if (legacyPanel) legacyPanel.remove();
         form.setAttribute('data-auth-ui', LOGIN_AUTH_UI_VERSION);
@@ -239,20 +239,6 @@
             sendBtn.textContent = 'Sending…';
         }
         signupOtpInflight = true;
-        // #region agent log
-        fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-            body: JSON.stringify({
-                sessionId: '7880d4',
-                location: 'applicant-auth-ui.js:sendSignupOtp',
-                message: 'signup otp send click',
-                data: { channel, forceResend: !!opts.forceResend },
-                timestamp: Date.now(),
-                hypothesisId: 'B'
-            })
-        }).catch(() => {});
-        // #endregion
         if (statusEl) {
             statusEl.classList.remove('hidden');
             statusEl.style.color = '#64748b';
@@ -461,7 +447,7 @@
             const loginIntro = document.querySelector('#doctor-auth-login-panel > p');
             if (loginIntro) {
                 loginIntro.textContent = otpOn
-                    ? 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.'
+                    ? 'Enter your email, tap Send OTP, enter the code from your inbox, then sign in.'
                     : 'Sign in with your email and password.';
             }
         } catch (_) {}
@@ -663,13 +649,14 @@
 
     function validatedLoginPhoneValue() {
         const raw = String((document.getElementById('doctor-login-phone') || {}).value || '').trim();
-        if (typeof validatePhoneClient === 'function') {
-            return validatePhoneClient(raw, 'Phone');
+        if (typeof validateEmailClient === 'function') {
+            const ev = validateEmailClient(raw, 'Email');
+            return ev.valid ? { valid: true, cleanedEmail: ev.cleanedEmail } : ev;
         }
-        const digits = raw.replace(/\D/g, '');
-        return digits.length >= 10
-            ? { valid: true, cleanedPhone: digits.slice(-10) }
-            : { valid: false, message: 'Enter your 10-digit WhatsApp number.' };
+        const email = raw.toLowerCase();
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+            ? { valid: true, cleanedEmail: email }
+            : { valid: false, message: 'Enter the email address on your account.' };
     }
 
     function bindPhoneLogin(onSuccess, onError) {
@@ -724,29 +711,16 @@
                 sendBtn.disabled = true;
                 sendBtn.textContent = 'Sending…';
             }
-            setStatus('Sending OTP to WhatsApp…', '#64748b');
+            setStatus('Sending OTP to your email…', '#64748b');
             loginOtpInflight = true;
-            // #region agent log
-            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-                body: JSON.stringify({
-                    sessionId: '7880d4',
-                    location: 'applicant-auth-ui.js:sendLoginOtp',
-                    message: 'login otp send click',
-                    data: { forceResend: !!forceResend },
-                    timestamp: Date.now(),
-                    hypothesisId: 'B'
-                })
-            }).catch(() => {});
-            // #endregion
             try {
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        phone: pv.cleanedPhone,
-                        channel: 'phone',
+                        email: pv.cleanedEmail,
+                        channel: 'email',
+                        portal: 'doctor',
                         forceResend: !!forceResend
                     })
                 });
@@ -754,10 +728,10 @@
                 if (parseFailed || !res.ok) {
                     if (data.needsSignup) {
                         switchDoctorAuthTab('signup');
-                        const sp = document.getElementById('doctor-signup-phone');
-                        if (sp) sp.value = pv.cleanedPhone;
+                        const se = document.getElementById('doctor-signup-email');
+                        if (se) se.value = pv.cleanedEmail;
                         return showErr(
-                            (data.error || 'No account with this number.') + ' Switch to Create account.'
+                            (data.error || 'No account with this email.') + ' Switch to Create account.'
                         );
                     }
                     const msg =
@@ -769,21 +743,21 @@
                 }
                 if (global.OtpUi) {
                     if (!data.reused) {
-                        global.OtpUi.cooldownLoginChannel('phone', 'doctor', 'doctor-resend-otp-phone', 60);
+                        global.OtpUi.cooldownLoginChannel('email', 'doctor', 'doctor-resend-otp-phone', 60);
                     }
-                    global.OtpUi.notifyOtpSent('phone', data, {
+                    global.OtpUi.notifyOtpSent('email', data, {
                         silent: true,
                         inlineEl: statusEl,
                         customMessage: data.reused
                             ? data.message ||
-                              'Sign-in code still valid. Use the code from your latest sign-in WhatsApp message (not a registration code).'
-                            : 'Code sent to WhatsApp. Enter it above and tap Sign in.'
+                              'Sign-in code still valid. Use the code from your latest sign-in email (not a registration code).'
+                            : 'Code sent to your email. Enter it above and tap Sign in (check spam if missing).'
                     });
                 } else {
                     setStatus(
                         data.reused
-                            ? data.message || 'Code still valid. Check your latest WhatsApp message.'
-                            : 'Code sent to WhatsApp.',
+                            ? data.message || 'Code still valid. Check your latest sign-in email.'
+                            : 'Code sent to your email.',
                         data.reused ? '#b45309' : '#059669'
                     );
                 }
@@ -870,7 +844,7 @@
             const code = String((document.getElementById('doctor-phone-otp') || {}).value || '')
                 .replace(/\D/g, '')
                 .trim();
-            if (!code) return showErr('Enter the OTP code from WhatsApp.');
+            if (!code) return showErr('Enter the OTP code from your email.');
             loginSubmitInflight = true;
             if (submitBtn) {
                 submitBtn.disabled = true;
@@ -878,17 +852,36 @@
             }
             setStatus('Verifying and signing you in…', '#64748b');
             try {
-                const res = await fetch('/api/auth/login-phone-otp', {
+                const vRes = await fetch('/api/auth/login-otp/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: pv.cleanedPhone, code, portal: 'doctor' })
+                    body: JSON.stringify({ email: pv.cleanedEmail, channel: 'email', code, portal: 'doctor' })
+                });
+                const v = await readApiJson(vRes);
+                if (v.parseFailed || !vRes.ok || !v.data.token) {
+                    if (v.data.needsSignup) {
+                        switchDoctorAuthTab('signup');
+                        const se = document.getElementById('doctor-signup-email');
+                        if (se) se.value = pv.cleanedEmail;
+                    }
+                    const msg =
+                        v.parseFailed && global.HttpJson
+                            ? global.HttpJson.apiErrorMessage(vRes, v.data, true)
+                            : v.data.error || 'Invalid or expired code.';
+                    setStatus('', '#64748b');
+                    return showErr(msg);
+                }
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pv.cleanedEmail, emailOtpToken: v.data.token, portal: 'doctor' })
                 });
                 const { data, parseFailed } = await readApiJson(res);
                 if (!res.ok || !data.success) {
                     if (data.needsSignup) {
                         switchDoctorAuthTab('signup');
-                        const sp = document.getElementById('doctor-signup-phone');
-                        if (sp) sp.value = pv.cleanedPhone;
+                        const se = document.getElementById('doctor-signup-email');
+                        if (se) se.value = pv.cleanedEmail;
                     }
                     const msg =
                         parseFailed && global.HttpJson

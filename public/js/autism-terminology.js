@@ -154,6 +154,7 @@
         });
         const hideModules = ['tab-admin-payments', 'tab-pos', 'tab-case-mgmt'];
         hideModules.forEach((mod) => {
+            if (window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned(mod)) return;
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
                 el.classList.add('hidden');
                 el.style.display = 'none';

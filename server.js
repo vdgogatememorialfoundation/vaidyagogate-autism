@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('./lib/db');
+const adminModuleAccess = require('./lib/admin-module-access');
 const {
     isPostgresConfigured,
     validateDatabaseUrl,
@@ -125,6 +126,7 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/admin', adminModuleAccess.createModuleAccessMiddleware(db));
 
 function getReadApiCache(key) {
     const hit = READ_API_CACHE.get(key);
@@ -3597,10 +3599,14 @@ app.get('/api/auth/signup-otp-required', withIntegrationSettingsLoaded, (req, re
 
 app.get('/api/auth/login-otp-required', withIntegrationSettingsLoaded, (req, res) => {
     const portal = portalAuthPolicy.normalizeLoginPortal(req.query && req.query.portal);
-    const channels = portalAuthPolicy.loginOtpChannels();
-    const passwordless = portalAuthPolicy.passwordlessLoginEnabled() && !portalAuthPolicy.isStaffPortal(portal);
+    const required = portalAuthPolicy.applicantLoginOtpRequired(portal);
+    const staffOtp = portalAuthPolicy.isStaffPortal(portal);
+    const channels = staffOtp
+        ? { whatsapp: false, email: required }
+        : portalAuthPolicy.loginOtpChannels();
+    const passwordless = portalAuthPolicy.passwordlessLoginEnabled() && required;
     res.json({
-        required: portalAuthPolicy.applicantLoginOtpRequired(portal),
+        required,
         passwordless,
         whatsapp: channels.whatsapp,
         email: channels.email,
@@ -3728,11 +3734,48 @@ app.post('/api/auth/login-otp/precheck', (req, res) => {
     });
 });
 
+/** Portal-specific account gate shared by password/OTP login. Returns null when the account may sign in. */
+function loginPortalAccountRejection(row, loginPortal) {
+    const userRoles = require('./lib/user-roles');
+    if (loginPortal === 'admin') {
+        const rCol = String(row.role || '').toLowerCase();
+        const ur = userRoles.normalizeUserRole(row.user_role);
+        const adminPortalOk = rCol === 'admin' && (userRoles.isSuperAdminAccount(row) || ur === 'co_admin');
+        if (!adminPortalOk) {
+            return {
+                status: 403,
+                error: 'This account cannot sign in to the admin console.',
+                hint: 'Sign in with a staff admin email. Public applicant accounts cannot access this console.'
+            };
+        }
+    }
+    if (loginPortal === 'staff') {
+        if (userRoles.isSuperAdminAccount(row)) {
+            return {
+                status: 403,
+                error: 'Super administrators use the full admin console.',
+                hint: 'Sign in at /admin for full administrator access.'
+            };
+        }
+        if (!userRoles.isStaffPortalAccount(row)) {
+            return {
+                status: 403,
+                error: 'This account cannot sign in to the staff portal.',
+                hint:
+                    'Use a co-admin or staff account created by your programme administrator. Applicant accounts sign in at /dashboard.'
+            };
+        }
+    }
+    return null;
+}
+
 function resolveLoginUserForOtp(email, password, cb, options) {
     const requirePassword = options && options.requirePassword === true;
     const phoneRaw = options && options.phone;
     const phoneOnly = !!(options && options.phoneOnly);
     const channel = String((options && options.channel) || '').toLowerCase();
+    const loginPortal = portalAuthPolicy.normalizeLoginPortal((options && options.portal) || 'public');
+    const staffOtpPortal = portalAuthPolicy.staffEmailOtpLogin(loginPortal);
 
     if (phoneOnly) {
         const phoneV = contactValidation.validatePhone(phoneRaw);
@@ -3760,19 +3803,36 @@ function resolveLoginUserForOtp(email, password, cb, options) {
         });
     }
 
-    const loginOtpEmailV = contactValidation.validateEmail(email);
-    if (!loginOtpEmailV.valid) {
-        return cb(null, { status: 400, error: loginOtpEmailV.message });
+    const usersEmailPolicy = require('./lib/users-email-policy');
+    const portalIdLogin = staffOtpPortal && usersEmailPolicy.isPortalIdLogin(email);
+    let emailNorm = String(email || '').trim();
+    if (!portalIdLogin) {
+        const loginOtpEmailV = contactValidation.validateEmail(email);
+        if (!loginOtpEmailV.valid) {
+            return cb(null, { status: 400, error: loginOtpEmailV.message });
+        }
+        emailNorm = loginOtpEmailV.cleanedEmail;
     }
-    const emailNorm = loginOtpEmailV.cleanedEmail;
-    authUsers.findUserByEmail(db, emailNorm, (err, row) => {
+    usersEmailPolicy.findUserForOtpLogin(db, { identifier: emailNorm, portal: loginPortal }, (err, row, extra) => {
         if (err) return cb(err);
+        if (extra && extra.ambiguous) {
+            return cb(null, { status: 400, error: extra.hint });
+        }
         if (!row) {
             return cb(null, {
                 status: 401,
-                error: 'No account found with this email. Please create an account first.',
-                needsSignup: true
+                error: staffOtpPortal
+                    ? 'No staff account found with this email or portal ID.'
+                    : 'No account found with this email. Please create an account first.',
+                needsSignup: !staffOtpPortal
             });
+        }
+        if (Number(row.is_banned) === 1) {
+            return cb(null, { status: 403, error: 'Your account has been banned. Please contact the foundation office.' });
+        }
+        if (staffOtpPortal) {
+            const rejection = loginPortalAccountRejection(row, loginPortal);
+            if (rejection) return cb(null, rejection);
         }
         if (requirePassword) {
             const pw = password != null && password !== undefined ? String(password) : '';
@@ -3864,13 +3924,14 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
     if (!portalAuthPolicy.applicantLoginOtpRequired(loginPortal)) {
         return res.status(400).json({ error: 'Login OTP is disabled. Sign in with your email and password.' });
     }
-    const phoneOnly = !email && !!phone;
+    const staffOtpPortal = portalAuthPolicy.staffEmailOtpLogin(loginPortal);
+    const phoneOnly = !staffOtpPortal && !email && !!phone;
     if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
     if (!channel) return res.status(400).json({ error: 'channel is required' });
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
-    const loginChannels = portalAuthPolicy.loginOtpChannels();
+    const loginChannels = staffOtpPortal ? { whatsapp: false, email: true } : portalAuthPolicy.loginOtpChannels();
     if (channel === 'phone' && !loginChannels.whatsapp) {
         return res.status(400).json({ error: 'WhatsApp login OTP is disabled.' });
     }
@@ -3886,10 +3947,9 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         if (out.status !== 200) {
             return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
         }
-        if (portalAuthPolicy.isStaffPortalAccount(out.row)) {
+        if (!staffOtpPortal && portalAuthPolicy.isStaffPortalAccount(out.row)) {
             return res.status(400).json({
-                error:
-                    'Login OTP is not used for staff accounts. Sign in with email and password at the admin, judge, or scanner portal.'
+                error: 'Staff accounts sign in at the admin console (/admin) or staff portal (/staff).'
             });
         }
         authLoginOtp.sendLoginOtpChannel(
@@ -3913,13 +3973,14 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
             { forceResend: !!(req.body && req.body.forceResend), channel }
         );
     },
-        { requirePassword, phone, phoneOnly, channel }
+        { requirePassword, phone, phoneOnly, channel, portal: loginPortal }
     );
 });
 
 app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
     const { email, password, channel, code, phone } = req.body || {};
-    const phoneOnly = !email && !!phone;
+    const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
+    const phoneOnly = !portalAuthPolicy.staffEmailOtpLogin(loginPortal) && !email && !!phone;
     if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
     if (!channel || !code) {
         return res.status(400).json({ error: 'channel and code are required' });
@@ -3960,7 +4021,7 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
                 }
             );
         },
-        { requirePassword, phone, phoneOnly, channel }
+        { requirePassword, phone, phoneOnly, channel, portal: loginPortal }
     );
 });
 
@@ -4585,9 +4646,9 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         const loginPortal = portalAuthPolicy.normalizeLoginPortal(
             (req.body && req.body.portal) || 'public'
         );
-        const applicantPasswordless =
-            passwordless && loginPortal !== 'admin' && loginPortal !== 'staff';
-        const phoneOnlyLogin = applicantPasswordless && !email && phone;
+        const staffOtpLogin = portalAuthPolicy.staffEmailOtpLogin(loginPortal);
+        const applicantPasswordless = passwordless && (staffOtpLogin || !portalAuthPolicy.isStaffPortal(loginPortal));
+        const phoneOnlyLogin = applicantPasswordless && !staffOtpLogin && !email && phone;
         let phoneNorm = null;
         if (phoneOnlyLogin) {
             const phoneV = contactValidation.validatePhone(phone);
@@ -4596,7 +4657,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         } else if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
-        if (!passwordless && !phoneOnlyLogin && (password === undefined || password === null)) {
+        if (!applicantPasswordless && !phoneOnlyLogin && (password === undefined || password === null)) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
         const portalIdLogin = email ? usersEmailPolicy.isPortalIdLogin(email) : false;
@@ -4650,6 +4711,18 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                                 needsSignup: loginPortal !== 'admin'
                             });
                         }
+                        if (applicantPasswordless) {
+                            return res.status(403).json({
+                                error:
+                                    loginPortal === 'admin'
+                                        ? 'This account cannot sign in to the admin console.'
+                                        : loginPortal === 'staff'
+                                          ? 'This account cannot sign in to the staff portal.'
+                                          : 'This account cannot sign in here.',
+                                needsLogin: true,
+                                accountExists: true
+                            });
+                        }
                         return res.status(401).json({
                             error: 'Invalid password. Use Forgot password or sign in with OTP if enabled.',
                             hint:
@@ -4683,35 +4756,12 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     }
                 }
 
-                const userRoles = require('./lib/user-roles');
-                if (loginPortal === 'admin') {
-                    const rCol = String(row.role || '').toLowerCase();
-                    const ur = userRoles.normalizeUserRole(row.user_role);
-                    const adminPortalOk =
-                        rCol === 'admin' && (userRoles.isSuperAdminAccount(row) || ur === 'co_admin');
-                    if (!adminPortalOk) {
-                        return res.status(403).json({
-                            error: 'This account cannot sign in to the admin console.',
-                            hint:
-                                'Sign in with a staff admin email and password. Public applicant accounts cannot access this console.'
-                        });
-                    }
-                }
-
-                if (loginPortal === 'staff') {
-                    if (userRoles.isSuperAdminAccount(row)) {
-                        return res.status(403).json({
-                            error: 'Super administrators use the full admin console.',
-                            hint: 'Sign in at /admin for full administrator access.'
-                        });
-                    }
-                    if (!userRoles.isStaffPortalAccount(row)) {
-                        return res.status(403).json({
-                            error: 'This account cannot sign in to the staff portal.',
-                            hint:
-                                'Use a co-admin or staff account created by your programme administrator. Applicant accounts sign in at /dashboard.'
-                        });
-                    }
+                const portalRejection = loginPortalAccountRejection(row, loginPortal);
+                if (portalRejection) {
+                    return res.status(portalRejection.status).json({
+                        error: portalRejection.error,
+                        hint: portalRejection.hint
+                    });
                 }
 
                 function markEmailVerifiedFromOtp(cb) {
@@ -4760,7 +4810,8 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         delete row.password;
                         normalizeAuthUserRow(row);
                         const isStaffLogin = loginPortal === 'admin' || loginPortal === 'staff';
-                        const requiresReset = isStaffLogin && Number(row.require_password_reset) === 1;
+                        const requiresReset =
+                            isStaffLogin && !staffOtpLogin && Number(row.require_password_reset) === 1;
                         if (requiresReset) {
                             row.require_password_reset = 1;
                         }
@@ -4768,11 +4819,13 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     });
                 }
 
-                if (loginOtpRequired(loginPortal) && !portalAuthPolicy.isStaffPortalAccount(row)) {
-                    if (loginChannels.whatsapp && !phoneOtpToken) {
+                if (staffOtpLogin || (loginOtpRequired(loginPortal) && !portalAuthPolicy.isStaffPortalAccount(row))) {
+                    const needPhone = !staffOtpLogin && loginChannels.whatsapp;
+                    const needEmail = staffOtpLogin || loginChannels.email;
+                    if (needPhone && !phoneOtpToken) {
                         return res.status(400).json({ error: 'WhatsApp OTP verification is required to log in.' });
                     }
-                    if (loginChannels.email && !emailOtpToken) {
+                    if (needEmail && !emailOtpToken) {
                         return res.status(400).json({ error: 'Email OTP verification is required to log in.' });
                     }
                     otpLib.validateLoginOtpTokensFlexible(
@@ -4781,8 +4834,8 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         {
                             phoneToken: phoneOtpToken,
                             emailToken: emailOtpToken,
-                            needPhone: loginChannels.whatsapp,
-                            needEmail: loginChannels.email
+                            needPhone,
+                            needEmail
                         },
                         (verr, vr) => {
                             if (verr) return res.status(500).json({ error: verr.message });
@@ -9187,8 +9240,10 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
     const scanFlag = isScanned ? 1 : 0;
     
     db.get(
-        `SELECT t.id, r.user_id, r.seminar_id
+        `SELECT t.id, t.ticket_id_string, r.user_id, r.seminar_id, r.application_no, r.form_data,
+                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name
          FROM registrations r
+         LEFT JOIN users u ON u.id = r.user_id
          LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
          LEFT JOIN tickets t ON t.order_id = o.id
          WHERE r.id = ?`,
@@ -9197,8 +9252,20 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             if (!row) return res.status(404).json({ error: 'Registration not found' });
             
-            const staffId = req.session && req.session.userId ? req.session.userId : 1;
+            const staffId = adminModuleAccess.actingAdminIdFromRequest(req) || 1;
             const scanAtIst = seminarDt.scanTimeNowForStorage();
+            const logManualCheckin = () => {
+                if (!scanFlag) return;
+                logScanDashboard(row.seminar_id, staffId, 'success', 'Checked in manually (Admin Check-in)', {
+                    ticket_id: row.id,
+                    ticket_id_string: row.ticket_id_string,
+                    application_no: row.application_no,
+                    doctor_user_id: row.user_id,
+                    form_data: row.form_data,
+                    doctor_first_name: row.doctor_first_name,
+                    doctor_last_name: row.doctor_last_name
+                });
+            };
             
             if (!row.id) {
                 const regStatus = scanFlag ? 'checked_in' : 'completed';
@@ -9207,6 +9274,7 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
                     [regStatus, regId],
                     (errReg) => {
                         if (errReg) return res.status(500).json({ error: errReg.message });
+                        logManualCheckin();
                         res.json({ success: true, message: scanFlag ? 'Check-in recorded.' : 'Check-in removed.' });
                     }
                 );
@@ -9230,6 +9298,7 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
                                         (err3) => {
                                             if (err3) return res.status(500).json({ error: err3.message });
                                             syncCertificateEligibilityForTicket(row.id, () => {
+                                                logManualCheckin();
                                                 res.json({ success: true, message: scanFlag ? 'Checked in successfully.' : 'Check-in removed.' });
                                             });
                                         }
@@ -12228,6 +12297,26 @@ app.get('/api/judge/abstracts', (req, res) => {
 });
 
 // Super admin: set co-admin module visibility (JSON map of tab id -> boolean)
+app.get('/api/admin/my-modules', (req, res) => {
+    const actorId = adminModuleAccess.actingAdminIdFromRequest(req);
+    if (!actorId) return res.status(400).json({ error: 'actingAdminId is required' });
+    db.get(
+        `SELECT id, role, user_role, admin_modules, is_disabled FROM users WHERE id = ?`,
+        [actorId],
+        (e, row) => {
+            if (e) return res.status(500).json({ error: e.message });
+            if (!row || Number(row.is_disabled) === 1) return res.status(403).json({ error: 'Account not active' });
+            res.json({
+                id: row.id,
+                role: row.role,
+                user_role: row.user_role,
+                admin_modules: row.admin_modules || '',
+                restricted: adminModuleAccess.hasModuleRestrictions(row)
+            });
+        }
+    );
+});
+
 app.post('/api/admin/users/:userId/modules', (req, res) => {
     const targetId = parseInt(req.params.userId, 10);
     const { admin_modules, actingAdminId } = req.body || {};

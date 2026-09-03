@@ -5,7 +5,7 @@
     function isPrivatePortalPath() {
         const p = String(window.location.pathname || '');
         return (
-            /^\/(admin|applicant|doctor|scanner|judge|admin-live-scanner)(\.html)?$/i.test(p) ||
+            /^\/(admin|applicant|doctor|scanner|judge|admin-live-scanner|live-checkin)(\.html)?$/i.test(p) ||
             p === '/dashboard' ||
             p.startsWith('/dashboard/') ||
             p.startsWith('/admin') ||

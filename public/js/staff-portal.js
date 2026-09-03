@@ -12,23 +12,9 @@
 
     /** Super-admin-only modules — never shown on the staff portal. */
     window.STAFF_PORTAL_SUPER_ADMIN_ONLY = new Set([
-        'tab-staff-users',
         'tab-settings',
         'tab-system-platform',
-        'tab-system-users',
-        'tab-site-cms',
-        'tab-notifications',
-        'tab-reg-form',
-        'tab-feedback-form',
-        'tab-activity-logs',
-        'tab-reports',
-        'tab-analytics',
-        'tab-case-mgmt',
-        'tab-volunteers',
-        'tab-volunteer-assignments',
-        'tab-certificates',
-        'tab-transfer',
-        'tab-email-compose'
+        'tab-system-users'
     ]);
 
     function staffPortalAccountOk(user) {

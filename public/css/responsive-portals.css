@@ -314,3 +314,47 @@ body.doctor-nav-open {
     .hero-buttons, .portal-links { flex-direction: column; width: 100%; }
     .hero-buttons a, .hero-buttons button { width: 100%; text-align: center; }
 }
+
+/* Horizontal scroll slider (top + bottom) for wide admin tables */
+.ak-hscroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: auto;
+    scrollbar-color: #0d9488 #e2e8f0;
+}
+.ak-hscroll::-webkit-scrollbar,
+.ak-hscroll-top::-webkit-scrollbar {
+    height: 12px;
+}
+.ak-hscroll::-webkit-scrollbar-track,
+.ak-hscroll-top::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 8px;
+}
+.ak-hscroll::-webkit-scrollbar-thumb,
+.ak-hscroll-top::-webkit-scrollbar-thumb {
+    background: #0d9488;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+}
+.ak-hscroll .ak-hscroll-table {
+    display: table !important;
+    width: max-content;
+    min-width: 100%;
+}
+.ak-hscroll-top {
+    display: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin-bottom: 6px;
+    scrollbar-width: auto;
+    scrollbar-color: #0d9488 #e2e8f0;
+}
+.ak-hscroll-top.is-scrollable {
+    display: block;
+}
+.ak-hscroll-top > div {
+    height: 1px;
+}

@@ -17,6 +17,7 @@
 
     function hideMenuItems() {
         HIDE_MODULES.forEach((mod) => {
+            if (window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned(mod)) return;
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
                 el.classList.add('hidden');
                 el.style.display = 'none';
@@ -24,6 +25,8 @@
         });
         document.querySelectorAll('a, button, .menu-item').forEach((el) => {
             const t = (el.textContent || '').toLowerCase();
+            const mod = el.getAttribute && el.getAttribute('data-admin-module');
+            if (mod && window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned(mod)) return;
             if (HIDE_TEXT.some((k) => t.includes(k))) {
                 el.classList.add('hidden');
                 el.style.display = 'none';
@@ -1729,10 +1732,12 @@
     }
 
     function patchApplicationsMenu() {
-        document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
-            el.classList.add('hidden');
-            el.style.display = 'none';
-        });
+        if (!(window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned('tab-applications'))) {
+            document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+        }
         document.querySelectorAll('[data-admin-module="tab-final-tracking"]').forEach((el) => {
             if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Main registration';
         });
@@ -1853,10 +1858,13 @@
             '<form id="admin-login-form" class="ak-login-form" autocomplete="off">' +
             '<div class="ak-login-field"><label for="admin-email">Email or staff ID</label>' +
             '<input type="text" id="admin-email" name="admin-portal-email" placeholder="you@organisation.org" required autocomplete="username"></div>' +
-            '<div class="ak-login-field"><label for="admin-password">Password</label>' +
-            '<input type="password" id="admin-password" name="admin-portal-password" placeholder="Enter your password" required autocomplete="current-password"></div>' +
-            '<div id="admin_login_otp_panel" class="ak-login-otp" style="display:none"></div>' +
-            '<button type="submit" class="btn-primary ak-login-submit"><i class="fas fa-right-to-bracket"></i> Sign in</button>' +
+            '<div id="admin_login_otp_panel" class="ak-login-otp">' +
+            '<div class="ak-login-otp-row"><span class="ak-login-otp-label">Email code</span>' +
+            '<button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-email-otp">Send code</button>' +
+            '<button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-email-otp" style="display:none;">Resend</button>' +
+            '<input type="text" id="admin_login_email_otp" class="ak-login-otp-code" placeholder="6-digit code" autocomplete="one-time-code" inputmode="numeric">' +
+            '<span id="admin_login_email_otp_ok" class="ak-login-otp-ok"></span></div></div>' +
+            '<button type="submit" class="btn-primary ak-login-submit"><i class="fas fa-right-to-bracket"></i> Verify code &amp; sign in</button>' +
             '</form>' +
             '<footer class="ak-login-footer"><a href="/"><i class="fas fa-house"></i> Return to public website</a></footer>' +
             '</div>';

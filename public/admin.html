@@ -12,8 +12,8 @@
     <title>Admin | Autism Awareness Programme</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/responsive-portals.css">
-    <link rel="stylesheet" href="/css/autism-admin.css?v=5">
+    <link rel="stylesheet" href="/css/responsive-portals.css?v=3">
+    <link rel="stylesheet" href="/css/autism-admin.css?v=6">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=4">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
@@ -88,38 +88,23 @@
                     <input type="text" id="admin-email" name="admin-portal-email" placeholder="you@organisation.org" required autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email">
                 </div>
 
-                <div class="ak-login-field">
-                    <label for="admin-password">Password</label>
-                    <input type="password" id="admin-password" name="admin-portal-password" placeholder="Enter your password" required autocomplete="current-password">
-                </div>
-
                 <div id="admin_login_otp_panel" class="ak-login-otp">
-                    <p class="ak-login-otp-lead">Enter the verification codes sent to your email and phone.</p>
+                    <p class="ak-login-otp-lead">We will email a one-time sign-in code to the address on your staff account. No password needed.</p>
                     <div class="ak-login-otp-row">
-                        <span class="ak-login-otp-label">Email</span>
-                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-email-otp">Send</button>
-                        <button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-email-otp">Resend</button>
-                        <input type="text" id="admin_login_email_otp" class="ak-login-otp-code" placeholder="Code" autocomplete="one-time-code">
-                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-verify-login-email-otp">Verify</button>
+                        <span class="ak-login-otp-label">Email code</span>
+                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-email-otp">Send code</button>
+                        <button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-email-otp" style="display:none;">Resend</button>
+                        <input type="text" id="admin_login_email_otp" class="ak-login-otp-code" placeholder="6-digit code" autocomplete="one-time-code" inputmode="numeric">
                         <span id="admin_login_email_otp_ok" class="ak-login-otp-ok"></span>
-                    </div>
-                    <div class="ak-login-otp-row">
-                        <span class="ak-login-otp-label">Phone</span>
-                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-send-login-phone-otp">Send</button>
-                        <button type="button" class="btn-success ak-login-otp-btn ak-login-otp-btn-muted" id="admin-resend-login-phone-otp">Resend</button>
-                        <input type="text" id="admin_login_phone_otp" class="ak-login-otp-code" placeholder="Code" autocomplete="one-time-code">
-                        <button type="button" class="btn-success ak-login-otp-btn" id="admin-verify-login-phone-otp">Verify</button>
-                        <span id="admin_login_phone_otp_ok" class="ak-login-otp-ok"></span>
                     </div>
                 </div>
 
                 <button type="submit" class="btn-primary ak-login-submit">
-                    <i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in
+                    <i class="fas fa-right-to-bracket" aria-hidden="true"></i> Verify code &amp; sign in
                 </button>
             </form>
 
             <footer class="ak-login-footer">
-                <a href="/" id="forgot-password-link" style="color:#2563eb;font-size:0.85rem;cursor:pointer;"><i class="fas fa-key" aria-hidden="true"></i> Forgot password?</a>
                 <a href="/" style="margin-top:10px;"><i class="fas fa-house" aria-hidden="true"></i> Return to public website</a>
                 <a href="/staff" id="ak-admin-staff-link" style="display:block;margin-top:10px;color:#64748b;font-size:0.85rem;"><i class="fas fa-users-gear" aria-hidden="true"></i> Co-admin or staff? Use the staff portal</a>
             </footer>
@@ -143,7 +128,7 @@
     </div>
 
     <div class="dashboard-container hidden" id="dashboard-main">
-        <aside class="sidebar">
+        <aside class="sidebar" id="admin-sidebar-menu">
             <div class="sidebar-header">
                 <div data-site-logo data-logo-height="44px" data-logo-fallback="icon" style="margin-bottom:8px;"></div>
                 <h2>VGMF CMS</h2>
@@ -189,15 +174,17 @@
             </div>
         </aside>
 
+        <div id="doctor-nav-backdrop" class="doctor-nav-backdrop" aria-hidden="true"></div>
         <main class="main-content">
             <header class="top-header">
+                <button type="button" class="admin-menu-toggle" id="admin-menu-toggle" aria-label="Open menu" aria-controls="admin-sidebar-menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                 <h2>Admin Control Panel <span id="admin-portal-year-badge" style="font-size:0.85rem;color:#0d9488;font-weight:600;"></span></h2>
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <label style="font-size:0.85rem;color:#475569;font-weight:600;">Portal year
                         <select id="admin-portal-year-select" style="width:auto;min-width:88px;margin-left:6px;" onchange="saveAdminPortalYear()"></select>
                     </label>
                     <a href="/" target="_blank" style="margin-right: 20px; color: #0d9488; font-weight: 600; text-decoration: none;"><i class="fas fa-external-link-alt"></i> View Live Site</a>
-                    <button type="button" class="btn-primary" id="btn-change-password" style="background:#2563eb;font-size:0.85rem;padding:7px 14px;"><i class="fas fa-key"></i> Change password</button>
+                    <button type="button" class="btn-primary hidden" id="btn-change-password" style="background:#2563eb;font-size:0.85rem;padding:7px 14px;display:none;"><i class="fas fa-key"></i> Change password</button>
                     <button class="btn-danger" id="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </header>
@@ -249,10 +236,13 @@
                         <input type="search" id="staff-users-search" placeholder="Search staff by name, email, phone, portal ID, or role..." oninput="adminFilterStaffUsersList()" style="flex:1;min-width:200px;max-width:520px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;">
                         <button type="button" class="btn-secondary" onclick="adminClearStaffUsersSearch()">Clear search</button>
                     </div>
-                    <table class="data-table">
+                    <div class="ak-hscroll-top" id="staff-users-hscroll-top" aria-hidden="true"><div></div></div>
+                    <div class="ak-hscroll" id="staff-users-hscroll">
+                    <table class="data-table ak-hscroll-table">
                         <thead><tr><th>12-Digit ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Created</th><th>Activated</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody id="staff-users-list"><tr><td colspan="9" style="text-align: center;">Loading...</td></tr></tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 
@@ -379,6 +369,7 @@
                             <div><label for="ak-final-status-filter">Status</label><select id="ak-final-status-filter"><option value="all">All</option><option value="submitted">Submitted</option><option value="pending_approval">Pending approval</option><option value="revision_required">Revision required</option><option value="e_ticket_issued">E-ticket issued</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select></div>
                             <div style="flex:1;min-width:200px;"><label for="ak-final-search">Search</label><input type="search" id="ak-final-search" placeholder="Name, email, application no..."></div>
                             <button type="button" class="btn-primary" id="ak-final-refresh" style="align-self:flex-end;"><i class="fas fa-sync"></i> Refresh</button>
+                            <button type="button" class="btn-primary" id="ak-final-download-main" style="align-self:flex-end;background:#0d9488;" onclick="downloadMainRegistrationList(document.getElementById('ak-final-seminar')?.value)"><i class="fas fa-file-excel"></i> Download main registration list</button>
                         </div>
                         <table class="data-table">
                             <thead><tr><th>Barcode / ID</th><th>Applicant</th><th>Event</th><th>Status</th><th>Submitted</th><th>Update</th><th></th></tr></thead>
@@ -1853,7 +1844,16 @@
 
             <div id="tab-reports" class="tab-pane hidden">
                 <h2 style="margin-bottom: 20px;">Reports &amp; exports</h2>
-                <div class="card">
+                <div class="card" id="report-main-registration-card" style="border-left:4px solid #0d9488;">
+                    <h3 style="margin:0 0 6px;"><i class="fas fa-file-signature" aria-hidden="true"></i> Main registration list</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Only applicants who have submitted the main (final) registration form for the selected event. Pre-registration-only applicants are not included.</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadMainRegistrationList(null, 'xlsx')"><i class="fas fa-file-excel" aria-hidden="true"></i> Main registration (Excel)</button>
+                        <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadMainRegistrationList(null, 'csv')"><i class="fas fa-file-csv" aria-hidden="true"></i> Main registration (CSV)</button>
+                        <button type="button" class="btn-primary" style="background:#115e59;" onclick="downloadMainRegistrationList(null, 'pdf')"><i class="fas fa-print" aria-hidden="true"></i> Main registration (PDF)</button>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px;">
                     <label>Seminar</label>
                     <select id="report-seminar" style="width:100%;max-width:400px;padding:8px;margin:8px 0 16px;"></select>
                     <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Exports include all registration form fields. Confirmed = approved + paid + verified. Pick Excel, CSV, or PDF (printable HTML).</p>
@@ -1995,21 +1995,17 @@
 
             <div id="tab-pos" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;">On-spot POS registration</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Register a doctor at the venue, record cash payment, and issue an e-ticket immediately. They must complete their profile later in the doctor portal.</p>
+                <p style="color:#64748b;margin-bottom:16px;">Register a walk-in at the venue and issue an e-ticket immediately. The fee follows the event settings (free events need no payment); the e-ticket is emailed straight away when an email is given. Works even when the event is full.</p>
                 <div class="card" style="max-width:640px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (?)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div><label>Amount (as per event)</label><input type="text" id="pos-amount" readonly value="—" style="width:100%;padding:8px;background:#f1f5f9;"></div>
                         <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
                         <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
                         <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
                         <div><label>Phone</label><input type="text" id="pos-phone" style="width:100%;padding:8px;"></div>
                         <div><label>Email (optional)</label><input type="email" id="pos-email" style="width:100%;padding:8px;"></div>
                     </div>
-                    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
-                        <input type="checkbox" id="pos-send-ticket-email" style="margin-top:3px;">
-                        <span>Queue ticket email after registration (off by default ... use printed QR at venue; avoids Zoho rate limits)</span>
-                    </label>
                     <button type="button" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
                     <p id="pos-status" style="margin-top:12px;font-weight:600;"></p>
                 </div>
@@ -2746,16 +2742,16 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260901f"></script>
+    <script src="/js/staff-portal.js?v=20260903e"></script>
+    <script src="/js/admin.js?v=20260903j"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
-    <script src="/js/admin-checkin.js?v=20260901c"></script>
+    <script src="/js/admin-checkin.js?v=20260903a"></script>
     <script src="/js/admin-competition.js?v=7"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism54"></script>
+    <script src="/js/admin-autism.js?v=autism55"></script>
     <script src="/js/autism-theme.js?v=3"></script>
-    <script src="/js/autism-terminology.js?v=4"></script>
+    <script src="/js/autism-terminology.js?v=5"></script>
 </body>
 </html>

@@ -66,7 +66,7 @@ function renderAdminCheckinTable() {
     filtered.forEach(p => {
         const name = [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ');
         const applicantId = Number(p.applicant_id || p.user_id || 0);
-        const isCheckedIn = p.is_scanned === 1 || p.status === 'checked_in';
+        const isCheckedIn = p.is_scanned === true || Number(p.is_scanned) === 1 || p.status === 'checked_in';
         
         let checkinTimeStr = '—';
         if (isCheckedIn && p.scan_time) {
