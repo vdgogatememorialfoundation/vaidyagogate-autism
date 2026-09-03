@@ -314,3 +314,54 @@ body.doctor-nav-open {
     .hero-buttons, .portal-links { flex-direction: column; width: 100%; }
     .hero-buttons a, .hero-buttons button { width: 100%; text-align: center; }
 }
+
+/* Scrolling announcement strip under the admin/staff header */
+.admin-announcement-slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 20px;
+    padding: 8px 12px;
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 10px;
+    color: #0f766e;
+    font-size: 0.88rem;
+    font-weight: 600;
+    overflow: hidden;
+}
+.admin-announcement-slider-icon {
+    flex-shrink: 0;
+}
+.admin-announcement-slider-viewport {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.admin-announcement-slider-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: admin-announcement-scroll 30s linear infinite;
+    will-change: transform;
+}
+.admin-announcement-slider:hover .admin-announcement-slider-track {
+    animation-play-state: paused;
+}
+.admin-announcement-slider-item {
+    padding-right: 64px;
+}
+@keyframes admin-announcement-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+@media (max-width: 768px) {
+    .admin-announcement-slider {
+        margin: 10px 14px 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-announcement-slider-track {
+        animation: none;
+    }
+}

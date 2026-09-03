@@ -433,7 +433,8 @@ function adminCanAccessTab(tabId) {
         if (anyOn && globalPages[checkId] !== true && !autismBypass) return false;
     }
     const u = getStoredAdminUser();
-    if (String(u.user_role || '').toLowerCase() !== 'co_admin') return true;
+    if (!adminUserHasModuleRestrictions(u)) return true;
+    if (checkId === 'tab-dashboard' || checkId === 'tab-seminars') return true;
     let raw = {};
     try {
         if (u.admin_modules && String(u.admin_modules).trim()) raw = JSON.parse(u.admin_modules);
@@ -444,6 +445,38 @@ function adminCanAccessTab(tabId) {
     const keys = Object.keys(raw);
     if (keys.length === 0) return true;
     return raw[checkId] === true;
+}
+
+function adminUserHasModuleRestrictions(u) {
+    if (!u || !u.id) return false;
+    if (typeof UserRoles !== 'undefined' && UserRoles.isSuperAdminAccount && UserRoles.isSuperAdminAccount(u)) return false;
+    const ur = String(u.user_role || '').toLowerCase();
+    if (!ur || ur === 'doctor' || ur === 'event_attendee') return false;
+    const mods = parseAdminModulesObject(u.admin_modules);
+    return Object.keys(mods).length > 0;
+}
+
+/** Re-read this staff account's module map from the server so access updates apply without re-login. */
+async function refreshStoredAdminModules() {
+    const u = getStoredAdminUser();
+    if (!u || !u.id) return;
+    if (typeof UserRoles !== 'undefined' && UserRoles.isSuperAdminAccount && UserRoles.isSuperAdminAccount(u)) return;
+    try {
+        const res = await fetch(`/api/admin/my-modules?actingAdminId=${encodeURIComponent(u.id)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (typeof data.admin_modules !== 'string') return;
+        if (String(u.admin_modules || '') === data.admin_modules) return;
+        u.admin_modules = data.admin_modules;
+        localStorage.setItem('admin_user', JSON.stringify(u));
+        applyCoAdminSidebarVisibility();
+        const active = document.querySelector('.tab-pane:not(.hidden)');
+        if (active && !adminCanAccessTab(active.id)) {
+            active.classList.add('hidden');
+            const first = document.querySelector('.menu-item[data-admin-module]:not(.hidden)');
+            if (first) first.click();
+        }
+    } catch (_) {}
 }
 
 function applyCoAdminSidebarVisibility() {
@@ -458,10 +491,92 @@ function applyCoAdminSidebarVisibility() {
     }
 }
 
+function closeAdminMobileNav() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('doctor-nav-backdrop');
+    const toggle = document.getElementById('admin-menu-toggle');
+    sidebar?.classList.remove('mobile-open');
+    if (backdrop) {
+        backdrop.classList.remove('is-open');
+        backdrop.setAttribute('aria-hidden', 'true');
+    }
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('doctor-nav-open');
+}
+window.closeAdminMobileNav = closeAdminMobileNav;
+
+function initAdminMobileNav() {
+    const toggle = document.getElementById('admin-menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('doctor-nav-backdrop');
+    if (!toggle || !sidebar || toggle.dataset.navInited === '1') return;
+    toggle.dataset.navInited = '1';
+    const open = () => {
+        sidebar.classList.add('mobile-open');
+        if (backdrop) {
+            backdrop.classList.add('is-open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+        toggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('doctor-nav-open');
+    };
+    toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (sidebar.classList.contains('mobile-open')) closeAdminMobileNav();
+        else open();
+    });
+    backdrop?.addEventListener('click', closeAdminMobileNav);
+    sidebar.addEventListener('click', (e) => {
+        if (e.target.closest('.menu-item') && window.matchMedia('(max-width: 768px)').matches) closeAdminMobileNav();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) closeAdminMobileNav();
+    });
+}
+
+async function initAdminAnnouncementSlider() {
+    const wrap = document.getElementById('admin-announcement-slider');
+    const track = document.getElementById('admin-announcement-slider-track');
+    if (!wrap || !track) return;
+    try {
+        const res = await fetch('/api/public/announcements');
+        if (!res.ok) return;
+        const data = await res.json();
+        const items = [];
+        (Array.isArray(data.scrollingAnnouncements) ? data.scrollingAnnouncements : []).forEach((a) => {
+            const t = String((a && a.title) || '').trim();
+            const b = String((a && a.body) || '').trim();
+            const txt = [t, b].filter(Boolean).join(' — ');
+            if (txt) items.push(txt);
+        });
+        if (!items.length && data.ticker) items.push(String(data.ticker).trim());
+        if (!items.length) {
+            wrap.classList.add('hidden');
+            return;
+        }
+        const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        const html = items.map((s) => `<span class="admin-announcement-slider-item">${esc(s)}</span>`).join('');
+        track.innerHTML = html + html;
+        track.style.animationDuration = `${Math.max(18, items.join(' ').length * 0.35)}s`;
+        wrap.classList.remove('hidden');
+    } catch (_) {
+        wrap.classList.add('hidden');
+    }
+}
+
 async function refreshAdminLoginOtpPanel() {
     const panel = document.getElementById('admin_login_otp_panel');
     if (!panel) return;
-    panel.style.display = 'none';
+    panel.style.display = '';
+}
+
+function adminLoginPortalName() {
+    return window.PORTAL_IS_STAFF ? 'staff' : 'admin';
+}
+
+function adminLoginIdentifier() {
+    const rawId = String((document.getElementById('admin-email') || {}).value || '').trim();
+    return rawId.includes('@') ? rawId.toLowerCase() : rawId.replace(/\s/g, '');
 }
 
 window.onload = () => {
@@ -485,10 +600,14 @@ window.onload = () => {
     if (localStorage.getItem('admin_auth') && hasValidAdminSession()) {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
+        initAdminMobileNav();
+        initAdminAnnouncementSlider();
         loadAllData();
         loadPortalAuthAdminForm()
             .then(() => applyCoAdminSidebarVisibility())
             .catch(() => applyCoAdminSidebarVisibility());
+        refreshStoredAdminModules();
+        setInterval(refreshStoredAdminModules, 60000);
         refreshAdminSensitiveOtpRequirement();
     } else {
         clearAdminSession();
@@ -536,41 +655,68 @@ function wireAdminLoginOtpButtons() {
 wireAdminLoginOtpButtons();
 
 async function adminSendLoginOtp(channel) {
-    const email = String((document.getElementById('admin-email') || {}).value || '')
-        .trim()
-        .toLowerCase();
-    const password = (document.getElementById('admin-password') || {}).value;
-    if (!email || !password) return alert('Enter email and password first.');
-    const res = await fetch('/api/auth/login-otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, channel })
-    });
-    const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Could not send code.');
-    if (data.debugCode) console.info('Admin login OTP debug:', data.debugCode);
-    if (data.warning) alert(data.warning);
+    clearAdminLoginError();
+    const email = adminLoginIdentifier();
+    if (!email) return showAdminLoginError('Enter your staff email or portal ID first.');
+    const sendBtn = document.getElementById('admin-send-login-email-otp');
+    const resendBtn = document.getElementById('admin-resend-login-email-otp');
+    const okEl = document.getElementById('admin_login_email_otp_ok');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending…';
+    }
+    try {
+        const res = await fetch('/api/auth/login-otp/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, channel, portal: adminLoginPortalName(), forceResend: !!(resendBtn && resendBtn.dataset.sent) })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return showAdminLoginError(formatAdminApiError(data, res.status));
+        if (data.debugCode) console.info('Admin login OTP debug:', data.debugCode);
+        if (okEl) {
+            okEl.textContent = data.reused
+                ? data.message || 'Your earlier code is still valid — check your inbox.'
+                : 'Code sent — check your email inbox (and spam folder).';
+        }
+        if (data.warning) showAdminLoginError(data.warning);
+        if (sendBtn) sendBtn.style.display = 'none';
+        if (resendBtn) {
+            resendBtn.style.display = '';
+            resendBtn.dataset.sent = '1';
+        }
+        document.getElementById('admin_login_email_otp')?.focus();
+    } finally {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send code';
+        }
+    }
 }
 
 async function adminVerifyLoginOtp(channel) {
-    const email = String((document.getElementById('admin-email') || {}).value || '')
-        .trim()
-        .toLowerCase();
-    const password = (document.getElementById('admin-password') || {}).value;
+    const email = adminLoginIdentifier();
     const codeEl = document.getElementById(channel === 'email' ? 'admin_login_email_otp' : 'admin_login_phone_otp');
     const okEl = document.getElementById(channel === 'email' ? 'admin_login_email_otp_ok' : 'admin_login_phone_otp_ok');
     const code = String((codeEl || {}).value || '').trim();
-    if (!email || !password || !code) return alert('Enter email, password, and the code.');
+    if (!email || !code) {
+        showAdminLoginError('Enter your email and the 6-digit code we sent you.');
+        return false;
+    }
     const res = await fetch('/api/auth/login-otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, channel, code })
+        body: JSON.stringify({ email, channel, code, portal: adminLoginPortalName() })
     });
-    const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Invalid code.');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        showAdminLoginError(formatAdminApiError(data, res.status) || 'Invalid code.');
+        return false;
+    }
     if (channel === 'email') __adminLoginEmailOtpToken = data.token;
     else __adminLoginPhoneOtpToken = data.token;
     if (okEl) okEl.textContent = 'Verified';
+    return true;
 }
 
 function showAdminLoginError(message) {
@@ -615,10 +761,7 @@ window.__akRebindAdminLoginForm = bindAdminLoginForm;
 async function adminLoginFormSubmit(e) {
     e.preventDefault();
     clearAdminLoginError();
-    const rawId = document.getElementById('admin-email').value.trim();
-    const email = rawId.includes('@') ? rawId.toLowerCase() : rawId.replace(/\s/g, '');
-    const password = document.getElementById('admin-password').value;
-    const body = { email, password, portal: window.PORTAL_IS_STAFF ? 'staff' : 'admin' };
+    const email = adminLoginIdentifier();
     const submitBtn = e.target.querySelector('button[type="submit"]');
     let submitBtnLabel = submitBtn ? submitBtn.textContent : '';
     if (submitBtn) {
@@ -626,6 +769,16 @@ async function adminLoginFormSubmit(e) {
         submitBtn.textContent = 'Signing in…';
     }
     try {
+        if (!__adminLoginEmailOtpToken) {
+            const codeTyped = String((document.getElementById('admin_login_email_otp') || {}).value || '').trim();
+            if (!codeTyped) {
+                showAdminLoginError('Click "Send code" and enter the 6-digit code from your email to sign in.');
+                return;
+            }
+            const verified = await adminVerifyLoginOtp('email');
+            if (!verified) return;
+        }
+        const body = { email, emailOtpToken: __adminLoginEmailOtpToken, portal: adminLoginPortalName() };
         const res = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -653,6 +806,7 @@ async function adminLoginFormSubmit(e) {
             return;
         }
         if (!res.ok) {
+            __adminLoginEmailOtpToken = null;
             showAdminLoginError(formatAdminApiError(data, res.status));
             return;
         }
@@ -687,8 +841,11 @@ async function adminLoginFormSubmit(e) {
         __adminLoginEmailOtpToken = null;
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
+        initAdminMobileNav();
+        initAdminAnnouncementSlider();
         loadAllData();
         applyCoAdminSidebarVisibility();
+        refreshStoredAdminModules();
     } catch (err) {
         console.error(err);
         showAdminLoginError(
@@ -697,12 +854,20 @@ async function adminLoginFormSubmit(e) {
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = submitBtnLabel || 'Sign in';
+            submitBtn.textContent = submitBtnLabel || 'Verify code & sign in';
         }
     }
 }
 
 bindAdminLoginForm();
+document.getElementById('admin-email')?.addEventListener('input', () => {
+    __adminLoginEmailOtpToken = null;
+    const okEl = document.getElementById('admin_login_email_otp_ok');
+    if (okEl) okEl.textContent = '';
+});
+document.getElementById('admin_login_email_otp')?.addEventListener('input', () => {
+    __adminLoginEmailOtpToken = null;
+});
 
 // Forgot password overlay
 document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
@@ -1448,8 +1613,8 @@ function renderStaffUsersTable(staffList) {
                 ? '<span style="font-weight:700;color:#0f766e;">Super Admin</span><br><span style="font-size:0.78rem;color:#64748b;">Not listed here — use your admin login</span>'
                 : `<select onchange="updateUserRole(${u.id}, this.value)" style="width:100%;padding:5px;border-radius:4px;border:1px solid #ccc;">${adminStaffRoleOptionsHtml(userRole)}</select>`;
         const modulesBtn =
-            isSuperAdminUser() && String(userRole).toLowerCase() === 'co_admin'
-                ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#0d9488;" onclick="openAdminModulesModal(${u.id})">Modules</button>`
+            isSuperAdminUser() && String(userRole).toLowerCase() !== 'super_admin'
+                ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#0d9488;" onclick="openAdminModulesModal(${u.id})"><i class="fas fa-key" aria-hidden="true"></i> Access modules</button>`
                 : '';
         staffBody.innerHTML += `
                 <tr${hi}>
@@ -1991,7 +2156,7 @@ async function saveAdminFeedbackFormConfig() {
 
 function openAdminModulesModal(userId) {
     if (!isSuperAdminUser()) {
-        alert('Only the super administrator can configure co-admin modules.');
+        alert('Only the super administrator can configure staff access modules.');
         return;
     }
     const u = window.__adminUsersById[userId];
@@ -5027,6 +5192,33 @@ function downloadAdminReport(type, format) {
         window.location.href = url;
     }
 }
+
+function downloadMainRegistrationList(seminarId, format) {
+    let sid = String(seminarId || '').trim();
+    if (!sid) {
+        const candidates = ['report-seminar', 'ak-final-seminar', 'ak-prereg-seminar'];
+        for (const id of candidates) {
+            const v = String(document.getElementById(id)?.value || '').trim();
+            if (v) {
+                sid = v;
+                break;
+            }
+        }
+    }
+    if (!sid) {
+        const opts = Array.from(document.querySelectorAll('#report-seminar option, #ak-final-seminar option'))
+            .map((o) => String(o.value || '').trim())
+            .filter(Boolean);
+        const uniq = Array.from(new Set(opts));
+        if (uniq.length === 1) sid = uniq[0];
+    }
+    if (!sid) return alert('Select an event first, then download the main registration list.');
+    const fmt = format || window.__reportFmt || 'xlsx';
+    const url = `/api/admin/reports/${encodeURIComponent(sid)}/main_registrations?format=${encodeURIComponent(fmt)}`;
+    if (fmt === 'pdf') window.open(url, '_blank');
+    else window.location.href = url;
+}
+window.downloadMainRegistrationList = downloadMainRegistrationList;
 
 async function saveAdminRegistrationOverride() {
     const userIdString = String(document.getElementById('reg-ov-user-id')?.value || '').trim();
