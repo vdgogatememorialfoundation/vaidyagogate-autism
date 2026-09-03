@@ -1996,16 +1996,33 @@ async function initAdminPosTab() {
             const o = document.createElement('option');
             o.value = s.id;
             o.textContent = s.title;
-            if (s.price) o.dataset.price = s.price;
             sel.appendChild(o);
         });
-        sel.onchange = () => {
-            const opt = sel.selectedOptions[0];
-            const priceEl = document.getElementById('pos-amount');
-            if (priceEl && opt && opt.dataset.price) priceEl.value = opt.dataset.price;
-        };
+        sel.onchange = () => loadAdminPosFee(sel.value);
+        loadAdminPosFee(sel.value);
     } catch (e) {
         console.warn(e);
+    }
+}
+
+async function loadAdminPosFee(seminarId) {
+    const priceEl = document.getElementById('pos-amount');
+    if (!priceEl) return;
+    const actor = getStoredAdminUser();
+    if (!seminarId || !actor) {
+        priceEl.value = '—';
+        return;
+    }
+    priceEl.value = '…';
+    try {
+        const res = await fetch(
+            `/api/admin/pos/fee/${encodeURIComponent(seminarId)}?actingAdminId=${encodeURIComponent(actor.id)}`
+        );
+        const fee = await res.json();
+        if (!res.ok) throw new Error(fee.error || 'Failed');
+        priceEl.value = fee.paymentRequired ? '₹' + Number(fee.amount).toFixed(0) + ' (cash)' : 'Free — no payment';
+    } catch (e) {
+        priceEl.value = '—';
     }
 }
 
@@ -2025,15 +2042,15 @@ async function submitAdminPosRegistration() {
                 lastName: document.getElementById('pos-lname').value,
                 phone: document.getElementById('pos-phone').value,
                 email: document.getElementById('pos-email').value,
-                amount: document.getElementById('pos-amount').value,
-                paymentMethod: 'cash',
-                sendTicketEmail: !!(document.getElementById('pos-send-ticket-email') || {}).checked
+                paymentMethod: 'cash'
             })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        let note =
-            'Done. Ticket ' + (data.ticketId || '—') + ' — doctor must complete profile in portal.';
+        let note = 'Done. Ticket ' + (data.ticketId || '—') + '.';
+        note += data.paymentRequired
+            ? ' Collected ₹' + Number(data.amount).toFixed(0) + ' (cash).'
+            : ' Free event — no payment.';
         if (data.emailNote) note += ' ' + data.emailNote;
         status.textContent = note;
         status.style.color = '#059669';

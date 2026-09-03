@@ -1995,21 +1995,17 @@
 
             <div id="tab-pos" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;">On-spot POS registration</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Register a doctor at the venue, record cash payment, and issue an e-ticket immediately. They must complete their profile later in the doctor portal.</p>
+                <p style="color:#64748b;margin-bottom:16px;">Register a walk-in at the venue and issue an e-ticket immediately. The fee follows the event settings (free events need no payment); the e-ticket is emailed straight away when an email is given. Works even when the event is full.</p>
                 <div class="card" style="max-width:640px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (?)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div><label>Amount (as per event)</label><input type="text" id="pos-amount" readonly value="—" style="width:100%;padding:8px;background:#f1f5f9;"></div>
                         <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
                         <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
                         <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
                         <div><label>Phone</label><input type="text" id="pos-phone" style="width:100%;padding:8px;"></div>
                         <div><label>Email (optional)</label><input type="email" id="pos-email" style="width:100%;padding:8px;"></div>
                     </div>
-                    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
-                        <input type="checkbox" id="pos-send-ticket-email" style="margin-top:3px;">
-                        <span>Queue ticket email after registration (off by default ... use printed QR at venue; avoids Zoho rate limits)</span>
-                    </label>
                     <button type="button" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
                     <p id="pos-status" style="margin-top:12px;font-weight:600;"></p>
                 </div>
@@ -2747,7 +2743,7 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260903e"></script>
-    <script src="/js/admin.js?v=20260903i"></script>
+    <script src="/js/admin.js?v=20260903j"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
