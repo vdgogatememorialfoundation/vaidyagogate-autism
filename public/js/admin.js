@@ -427,7 +427,7 @@ function adminCanAccessTab(tabId) {
     ]);
     const u = getStoredAdminUser();
     if (adminUserHasModuleRestrictions(u)) {
-        if (checkId === 'tab-dashboard' || checkId === 'tab-seminars') return true;
+        if (checkId === 'tab-dashboard') return true;
         const raw = parseAdminModulesObject(u.admin_modules);
         return raw[checkId] === true;
     }
@@ -482,6 +482,25 @@ function applyCoAdminSidebarVisibility() {
     });
     if (window.PORTAL_IS_STAFF && typeof window.ensureStaffPortalLandingTab === 'function') {
         window.ensureStaffPortalLandingTab();
+    }
+    ensureAllowedActivePane();
+}
+
+/** Hide any visible pane the user may not access and land on the first allowed module. */
+function ensureAllowedActivePane() {
+    const u = getStoredAdminUser();
+    if (!adminUserHasModuleRestrictions(u)) return;
+    const panes = Array.from(document.querySelectorAll('.tab-pane:not(.hidden)'));
+    const blocked = panes.filter((p) => p.id && !adminCanAccessTab(p.id));
+    if (!blocked.length) return;
+    blocked.forEach((p) => p.classList.add('hidden'));
+    document.querySelectorAll('.menu-item').forEach((m) => m.classList.remove('active'));
+    const first = document.querySelector('.menu-item[data-admin-module]:not(.hidden)');
+    if (!first) return;
+    const tabId = first.getAttribute('data-admin-module');
+    if (tabId && document.getElementById(tabId)) {
+        switchTab(tabId);
+        first.classList.add('active');
     }
 }
 
