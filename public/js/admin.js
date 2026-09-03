@@ -2567,6 +2567,26 @@ function openBehalfRegistrationForCurrentSeminar() {
 }
 window.openBehalfRegistrationForCurrentSeminar = openBehalfRegistrationForCurrentSeminar;
 
+async function openMainRegistrationFromReports() {
+    const sid = parseInt(document.getElementById('report-seminar')?.value, 10);
+    if (!Number.isInteger(sid) || sid < 1) {
+        alert('Select a seminar first.');
+        return;
+    }
+
+    switchTab('tab-behalf-reg');
+    document.querySelector('.menu-item[data-admin-module="tab-behalf-reg"]')?.classList.add('active');
+    initAdminBehalfRegTab();
+
+    const ss = document.getElementById('behalf-seminar-select');
+    if (!ss) return;
+    ss.value = String(sid);
+    await loadAdminBehalfFormConfig(sid);
+    // Programmatically changing the seminar does not fire onchange.
+    await onAdminBehalfDoctorOrSeminarChange();
+}
+window.openMainRegistrationFromReports = openMainRegistrationFromReports;
+
 async function editVolunteerDuties(assignId, currentDuties) {
     const duties = prompt('Volunteer duties (e.g. Registration desk, Scanner hall)', currentDuties || '');
     if (duties === null) return;

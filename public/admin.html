@@ -1852,7 +1852,10 @@
             </div>
 
             <div id="tab-reports" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Reports &amp; exports</h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+                    <h2 style="margin:0;">Reports &amp; exports</h2>
+                    <button type="button" class="btn-primary" style="background:#0d9488;" onclick="openMainRegistrationFromReports()"><i class="fas fa-file-signature" aria-hidden="true"></i> Add main registration</button>
+                </div>
                 <div class="card">
                     <label>Seminar</label>
                     <select id="report-seminar" style="width:100%;max-width:400px;padding:8px;margin:8px 0 16px;"></select>
