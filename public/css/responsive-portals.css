@@ -315,53 +315,46 @@ body.doctor-nav-open {
     .hero-buttons a, .hero-buttons button { width: 100%; text-align: center; }
 }
 
-/* Scrolling announcement strip under the admin/staff header */
-.admin-announcement-slider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 20px;
-    padding: 8px 12px;
-    background: #f0fdfa;
-    border: 1px solid #99f6e4;
-    border-radius: 10px;
-    color: #0f766e;
-    font-size: 0.88rem;
-    font-weight: 600;
-    overflow: hidden;
+/* Horizontal scroll slider (top + bottom) for wide admin tables */
+.ak-hscroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: auto;
+    scrollbar-color: #0d9488 #e2e8f0;
 }
-.admin-announcement-slider-icon {
-    flex-shrink: 0;
+.ak-hscroll::-webkit-scrollbar,
+.ak-hscroll-top::-webkit-scrollbar {
+    height: 12px;
 }
-.admin-announcement-slider-viewport {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
+.ak-hscroll::-webkit-scrollbar-track,
+.ak-hscroll-top::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 8px;
 }
-.admin-announcement-slider-track {
-    display: inline-flex;
-    white-space: nowrap;
-    animation: admin-announcement-scroll 30s linear infinite;
-    will-change: transform;
+.ak-hscroll::-webkit-scrollbar-thumb,
+.ak-hscroll-top::-webkit-scrollbar-thumb {
+    background: #0d9488;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
 }
-.admin-announcement-slider:hover .admin-announcement-slider-track {
-    animation-play-state: paused;
+.ak-hscroll .ak-hscroll-table {
+    display: table !important;
+    width: max-content;
+    min-width: 100%;
 }
-.admin-announcement-slider-item {
-    padding-right: 64px;
+.ak-hscroll-top {
+    display: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin-bottom: 6px;
+    scrollbar-width: auto;
+    scrollbar-color: #0d9488 #e2e8f0;
 }
-@keyframes admin-announcement-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+.ak-hscroll-top.is-scrollable {
+    display: block;
 }
-@media (max-width: 768px) {
-    .admin-announcement-slider {
-        margin: 10px 14px 0;
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    .admin-announcement-slider-track {
-        animation: none;
-    }
+.ak-hscroll-top > div {
+    height: 1px;
 }

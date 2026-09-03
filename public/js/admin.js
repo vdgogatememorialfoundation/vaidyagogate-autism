@@ -534,35 +534,39 @@ function initAdminMobileNav() {
     });
 }
 
-async function initAdminAnnouncementSlider() {
-    const wrap = document.getElementById('admin-announcement-slider');
-    const track = document.getElementById('admin-announcement-slider-track');
-    if (!wrap || !track) return;
-    try {
-        const res = await fetch('/api/public/announcements');
-        if (!res.ok) return;
-        const data = await res.json();
-        const items = [];
-        (Array.isArray(data.scrollingAnnouncements) ? data.scrollingAnnouncements : []).forEach((a) => {
-            const t = String((a && a.title) || '').trim();
-            const b = String((a && a.body) || '').trim();
-            const txt = [t, b].filter(Boolean).join(' — ');
-            if (txt) items.push(txt);
-        });
-        if (!items.length && data.ticker) items.push(String(data.ticker).trim());
-        if (!items.length) {
-            wrap.classList.add('hidden');
-            return;
-        }
-        const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-        const html = items.map((s) => `<span class="admin-announcement-slider-item">${esc(s)}</span>`).join('');
-        track.innerHTML = html + html;
-        track.style.animationDuration = `${Math.max(18, items.join(' ').length * 0.35)}s`;
-        wrap.classList.remove('hidden');
-    } catch (_) {
-        wrap.classList.add('hidden');
+function initStaffUsersHScroll() {
+    const body = document.getElementById('staff-users-hscroll');
+    const top = document.getElementById('staff-users-hscroll-top');
+    if (!body || !top || body.dataset.hscrollInited === '1') return;
+    body.dataset.hscrollInited = '1';
+    const inner = top.firstElementChild;
+    const sync = () => {
+        const table = body.querySelector('table');
+        const w = table ? table.scrollWidth : body.scrollWidth;
+        if (inner) inner.style.width = `${w}px`;
+        top.classList.toggle('is-scrollable', w > body.clientWidth + 2);
+    };
+    let lock = false;
+    top.addEventListener('scroll', () => {
+        if (lock) return;
+        lock = true;
+        body.scrollLeft = top.scrollLeft;
+        lock = false;
+    });
+    body.addEventListener('scroll', () => {
+        if (lock) return;
+        lock = true;
+        top.scrollLeft = body.scrollLeft;
+        lock = false;
+    });
+    window.addEventListener('resize', sync);
+    if (typeof ResizeObserver !== 'undefined') {
+        const table = body.querySelector('table');
+        if (table) new ResizeObserver(sync).observe(table);
     }
+    sync();
 }
+window.initStaffUsersHScroll = initStaffUsersHScroll;
 
 async function refreshAdminLoginOtpPanel() {
     const panel = document.getElementById('admin_login_otp_panel');
@@ -601,7 +605,7 @@ window.onload = () => {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
         initAdminMobileNav();
-        initAdminAnnouncementSlider();
+        initStaffUsersHScroll();
         loadAllData();
         loadPortalAuthAdminForm()
             .then(() => applyCoAdminSidebarVisibility())
@@ -842,7 +846,7 @@ async function adminLoginFormSubmit(e) {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
         initAdminMobileNav();
-        initAdminAnnouncementSlider();
+        initStaffUsersHScroll();
         loadAllData();
         applyCoAdminSidebarVisibility();
         refreshStoredAdminModules();
