@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/css/nexgen-ai.css?v=8">
     <link rel="stylesheet" href="/css/autism-sunlit-theme.css?v=3">
     <link rel="stylesheet" href="/css/autism-orbit-theme.css?v=1">
+    <link rel="stylesheet" href="/css/autism-bright-2026.css?v=1">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260529b"></script>
     <script src="/js/site-branding.js?v=20260529b"></script>
@@ -227,12 +228,6 @@
                 <div class="ak-bento-icon" style="background:#fef3c7;color:#d97706"><i class="fas fa-bullhorn"></i></div>
                 <h3>Live updates</h3>
                 <p>Watch the announcement ticker and official notices for schedule changes and reminders.</p>
-            </article>
-            <article class="ak-bento-card" id="home-prereg-search-card" style="display:none;">
-                <div class="ak-bento-icon" style="background:#dbeafe;color:#2563eb"><i class="fas fa-magnifying-glass"></i></div>
-                <h3>Find your registration</h3>
-                <p>Already pre-registered? Search by your name, email, phone, or application ID to check your status.</p>
-                <button type="button" class="ak-btn-sm" onclick="window.location.href='/preregister/search'"><i class="fas fa-search"></i> Search now</button>
             </article>
             <article class="ak-bento-card">
                 <div class="ak-bento-icon" style="background:#ffe4e6;color:#e11d48"><i class="fas fa-envelope"></i></div>
@@ -653,18 +648,9 @@
                 const li = a.closest('li');
                 if (li) li.style.display = isShown(key) ? '' : 'none';
             });
-            // Check prereg-search visibility based on API
-            const preregSearchNav = document.getElementById('nav-verify') || 
-                document.querySelector('#cg-nav-menu-links a[href="/preregister/search"]');
-            const preregSearchCard = document.getElementById('home-prereg-search-card');
-            fetch('/api/public/preregistrations/search/enabled')
-                .then(r => r.json())
-                .then(data => {
-                    const enabled = data.enabled;
-                    if (preregSearchNav) preregSearchNav.style.display = enabled ? '' : 'none';
-                    if (preregSearchCard) preregSearchCard.style.display = enabled ? '' : 'none';
-                })
-                .catch(() => {});
+            document
+                .querySelectorAll('#nav-verify, #cg-nav-menu-links a[href="/preregister/search"], footer a[href="/preregister/search"]')
+                .forEach((a) => (a.closest('li') || a).remove());
         }
 
         function setOtpPanelVisible(panel, visible) {
@@ -2197,7 +2183,7 @@
     <script src="/js/name-validation.js"></script>
     <script src="/js/contact-validation.js"></script>
     <script src="/js/autism-kids.js?v=4"></script>
-    <script src="/js/autism-public-ui.js?v=6"></script>
+    <script src="/js/autism-public-ui.js?v=20260903d"></script>
     <script src="/js/autism-public-ticker.js?v=7"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>

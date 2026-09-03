@@ -15,20 +15,7 @@
         'tab-staff-users',
         'tab-settings',
         'tab-system-platform',
-        'tab-system-users',
-        'tab-site-cms',
-        'tab-notifications',
-        'tab-reg-form',
-        'tab-feedback-form',
-        'tab-activity-logs',
-        'tab-reports',
-        'tab-analytics',
-        'tab-case-mgmt',
-        'tab-volunteers',
-        'tab-volunteer-assignments',
-        'tab-certificates',
-        'tab-transfer',
-        'tab-email-compose'
+        'tab-system-users'
     ]);
 
     function staffPortalAccountOk(user) {

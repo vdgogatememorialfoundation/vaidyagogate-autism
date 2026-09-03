@@ -425,6 +425,12 @@ function adminCanAccessTab(tabId) {
         'tab-competition-tracking',
         'tab-admin-checkin'
     ]);
+    const u = getStoredAdminUser();
+    if (adminUserHasModuleRestrictions(u)) {
+        if (checkId === 'tab-dashboard' || checkId === 'tab-seminars') return true;
+        const raw = parseAdminModulesObject(u.admin_modules);
+        return raw[checkId] === true;
+    }
     const globalPages = window.__adminEnabledPages || {};
     const globalKeys = Object.keys(globalPages);
     if (globalKeys.length) {
@@ -432,19 +438,7 @@ function adminCanAccessTab(tabId) {
         const autismBypass = window.PORTAL_IS_AUTISM && autismPortalTabs.has(checkId);
         if (anyOn && globalPages[checkId] !== true && !autismBypass) return false;
     }
-    const u = getStoredAdminUser();
-    if (!adminUserHasModuleRestrictions(u)) return true;
-    if (checkId === 'tab-dashboard' || checkId === 'tab-seminars') return true;
-    let raw = {};
-    try {
-        if (u.admin_modules && String(u.admin_modules).trim()) raw = JSON.parse(u.admin_modules);
-    } catch (_) {
-        raw = {};
-    }
-    if (!raw || typeof raw !== 'object') return true;
-    const keys = Object.keys(raw);
-    if (keys.length === 0) return true;
-    return raw[checkId] === true;
+    return true;
 }
 
 function adminUserHasModuleRestrictions(u) {

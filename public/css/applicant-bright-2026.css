@@ -1,0 +1,442 @@
+/* Applicant portal — bright professional theme + green tracking stepper. Loaded last on applicant.html. */
+body.autism-dashboard.ak-portal-dash {
+    --ap-ink: #10394f;
+    --ap-ink-soft: #35586f;
+    --ap-muted: #5f7a8f;
+    --ap-green: #16a34a;
+    --ap-green-deep: #15803d;
+    --ap-green-soft: #dcfce7;
+    --ap-green-line: #86efac;
+    --ap-teal: #0d9488;
+    --ap-sky: #0ea5e9;
+    --ap-line: #dbeafe;
+    --ap-surface: #ffffff;
+    --ap-shadow: 0 16px 40px -24px rgba(13, 148, 136, 0.45);
+    --ap-shadow-lg: 0 28px 60px -30px rgba(14, 165, 233, 0.4);
+    --doctor-primary: #0d9488 !important;
+    --doctor-primary-dark: #0f766e !important;
+    --ak-blue: #0d9488;
+    --ak-blue-dark: #0f766e;
+    --ak-blue-light: #14b8a6;
+    --ak-blue-pale: #ecfdf5;
+    --ak-text: #10394f;
+    --ak-border: #d1fae5;
+    color: var(--ap-ink) !important;
+    background:
+        radial-gradient(900px 500px at -10% 0%, #e0f2fe 0%, transparent 60%),
+        radial-gradient(800px 500px at 110% 20%, #dcfce7 0%, transparent 60%),
+        linear-gradient(180deg, #f7fbff 0%, #f3fbf7 100%) !important;
+}
+
+body.ak-portal-dash h1,
+body.ak-portal-dash h2,
+body.ak-portal-dash h3,
+body.ak-portal-dash h4,
+body.ak-portal-dash h5 {
+    color: var(--ap-ink);
+}
+
+/* ---------- Sidebar: bright, no dark gradient ---------- */
+body.autism-dashboard.ak-portal-dash .sidebar {
+    background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%) !important;
+    border-right: 1px solid var(--ap-line) !important;
+    color: var(--ap-ink-soft) !important;
+    box-shadow: 12px 0 40px -30px rgba(13, 148, 136, 0.35) !important;
+}
+body.autism-dashboard.ak-portal-dash .sidebar-header {
+    border-bottom: 1px solid var(--ap-line);
+}
+body.autism-dashboard.ak-portal-dash .sidebar-header h2 {
+    color: var(--ap-ink) !important;
+    font-weight: 800 !important;
+}
+body.autism-dashboard.ak-portal-dash .sidebar-header p {
+    color: var(--ap-muted);
+}
+body.autism-dashboard.ak-portal-dash .menu-item {
+    color: var(--ap-ink-soft) !important;
+    font-weight: 600 !important;
+    border-radius: 14px !important;
+    margin: 3px 12px !important;
+    width: calc(100% - 24px) !important;
+    border-left: none !important;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease !important;
+}
+body.autism-dashboard.ak-portal-dash .menu-item i {
+    color: var(--ap-teal) !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+body.autism-dashboard.ak-portal-dash .menu-item:hover {
+    background: #ecfeff !important;
+    color: var(--ap-teal) !important;
+    transform: translateX(2px) !important;
+}
+body.autism-dashboard.ak-portal-dash .menu-item.active {
+    background: linear-gradient(135deg, #ccfbf1, #dcfce7) !important;
+    color: var(--ap-green-deep) !important;
+    box-shadow: 0 8px 18px -14px rgba(22, 163, 74, 0.8) !important;
+}
+body.autism-dashboard.ak-portal-dash .menu-item.active i {
+    color: var(--ap-green-deep) !important;
+}
+
+/* ---------- Header ---------- */
+body.autism-dashboard.ak-portal-dash .top-header {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--ap-line) !important;
+}
+body.ak-portal-dash .header-title {
+    color: var(--ap-ink) !important;
+    font-weight: 800 !important;
+}
+body.ak-portal-dash .hi-user {
+    color: var(--ap-ink) !important;
+    font-weight: 700 !important;
+}
+body.ak-portal-dash .user-id {
+    background: var(--ap-green-soft) !important;
+    color: var(--ap-green-deep) !important;
+    border-radius: 999px !important;
+    padding: 3px 10px !important;
+    font-weight: 700 !important;
+    font-size: 0.78rem !important;
+}
+body.ak-portal-dash .announcements-box {
+    background: linear-gradient(135deg, #ffffff, #f0fdfa) !important;
+    border: 1px solid #ccfbf1 !important;
+    border-radius: 18px !important;
+    box-shadow: var(--ap-shadow) !important;
+}
+
+/* ---------- Cards / buttons ---------- */
+body.autism-dashboard.ak-portal-dash .card {
+    border-radius: 20px !important;
+    border: 1px solid rgba(219, 234, 254, 0.9) !important;
+    box-shadow: var(--ap-shadow) !important;
+    background: var(--ap-surface) !important;
+}
+body.ak-portal-dash .section-title {
+    color: var(--ap-ink) !important;
+    border-bottom: none !important;
+    position: relative !important;
+    padding-bottom: 14px !important;
+}
+body.ak-portal-dash .section-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 64px;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--ap-green), var(--ap-teal), var(--ap-sky));
+}
+body.autism-dashboard.ak-portal-dash .btn-primary {
+    background: linear-gradient(135deg, var(--ap-teal), var(--ap-green)) !important;
+    border-radius: 999px !important;
+    box-shadow: 0 12px 24px -14px rgba(22, 163, 74, 0.8) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+body.autism-dashboard.ak-portal-dash .btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 16px 28px -14px rgba(22, 163, 74, 0.9) !important;
+}
+body.ak-portal-dash .btn-success {
+    border-radius: 999px;
+}
+body.ak-portal-dash .btn-warning {
+    border-radius: 999px;
+}
+body.ak-portal-dash .form-group input,
+body.ak-portal-dash .form-group select,
+body.ak-portal-dash .form-group textarea {
+    border-radius: 12px;
+    border: 1.5px solid var(--ap-line);
+    color: var(--ap-ink);
+}
+body.ak-portal-dash .form-group input:focus,
+body.ak-portal-dash .form-group select:focus,
+body.ak-portal-dash .form-group textarea:focus {
+    border-color: var(--ap-green);
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+}
+
+/* Stats */
+body.ak-portal-dash .stat-card {
+    border-radius: 18px !important;
+    border: 1px solid var(--ap-line) !important;
+    border-top-width: 5px !important;
+    background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+body.ak-portal-dash .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ap-shadow-lg);
+}
+body.ak-portal-dash .stat-card h4 {
+    background: linear-gradient(90deg, var(--ap-teal), var(--ap-green)) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+}
+
+/* Hub tiles */
+body.ak-portal-dash .ak-hub-tile {
+    border: 1.5px solid var(--ap-line);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ffffff, #f0fdfa);
+}
+body.ak-portal-dash .ak-hub-tile:hover {
+    border-color: var(--ap-green-line);
+    box-shadow: 0 14px 30px -18px rgba(22, 163, 74, 0.7);
+    transform: translateY(-3px);
+}
+body.ak-portal-dash .ak-hub-tile i {
+    color: var(--ap-green-deep);
+    background: var(--ap-green-soft);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+body.ak-portal-dash .ak-hub-tile span {
+    color: var(--ap-ink);
+}
+
+/* Tables */
+body.ak-portal-dash .data-table thead th {
+    background: linear-gradient(180deg, #f0fdf4, #dcfce7);
+    border-bottom: 2px solid var(--ap-green-line);
+    color: var(--ap-green-deep);
+}
+
+/* ---------- Auth overlay ---------- */
+body.ak-portal-dash #auth-overlay {
+    background:
+        radial-gradient(60% 80% at 10% 10%, rgba(186, 230, 253, 0.8), transparent 70%),
+        radial-gradient(60% 80% at 90% 90%, rgba(187, 247, 208, 0.8), transparent 70%),
+        rgba(240, 253, 250, 0.92) !important;
+}
+body.ak-portal-dash .doctor-auth-card {
+    border-radius: 24px !important;
+    border: 1px solid #ccfbf1 !important;
+    box-shadow: 0 40px 90px -40px rgba(13, 148, 136, 0.55) !important;
+}
+body.ak-portal-dash #doctor-auth-title {
+    color: var(--ap-ink) !important;
+}
+
+/* ---------- Tracking: green stepper with connecting lines ---------- */
+body.ak-portal-dash .ak-track-page-head {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+    border: 1px solid var(--ap-green-line);
+    border-radius: 18px;
+}
+body.ak-portal-dash .ak-track-page-head h3 {
+    color: var(--ap-green-deep);
+}
+body.ak-portal-dash .ak-track-section-title i {
+    color: var(--ap-green-deep);
+}
+body.ak-portal-dash .ak-track-card-v3,
+body.ak-portal-dash .ak-track-card-v3--event,
+body.ak-portal-dash .ak-track-card-v3--comp,
+body.ak-portal-dash .ak-track-card-v3--prereg {
+    --ak-track-accent: #16a34a;
+    --ak-track-accent-soft: #dcfce7;
+    border-radius: 20px;
+    border: 1px solid #d1fae5;
+    box-shadow: var(--ap-shadow);
+}
+body.ak-portal-dash .ak-track-card-v3__bar {
+    height: 6px;
+    background: linear-gradient(90deg, #22c55e, #10b981, #0ea5e9);
+}
+body.ak-portal-dash .ak-track-card-v3__title {
+    color: var(--ap-ink);
+}
+body.ak-portal-dash .ak-track-card-v3__type {
+    color: var(--ap-green-deep);
+    background: var(--ap-green-soft);
+}
+body.ak-portal-dash .ak-track-card-v3__progress-bar {
+    height: 10px;
+    background: #e5f7ec;
+}
+body.ak-portal-dash .ak-track-card-v3__progress-fill {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    background-size: 200% 100%;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+/* Vertical stepper (mobile default) */
+body.ak-portal-dash .ak-track-v3-step:not(:last-child)::after {
+    width: 4px;
+    left: 20px;
+    top: 46px;
+    background: #d1fae5;
+    border-radius: 999px;
+}
+body.ak-portal-dash .ak-track-v3-step.is-done:not(:last-child)::after {
+    background: linear-gradient(180deg, #16a34a, #22c55e);
+}
+body.ak-portal-dash .ak-track-v3-step.is-current:not(:last-child)::after {
+    background: repeating-linear-gradient(180deg, #86efac 0 8px, transparent 8px 14px);
+}
+body.ak-portal-dash .ak-track-v3-icon {
+    border: 3px solid #bbf7d0;
+    color: #86efac;
+    background: #fff;
+}
+body.ak-portal-dash .ak-track-v3-step.is-done .ak-track-v3-icon {
+    border-color: #16a34a;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    box-shadow: 0 8px 18px -10px rgba(22, 163, 74, 0.9);
+}
+body.ak-portal-dash .ak-track-v3-step.is-current .ak-track-v3-icon {
+    border-color: #16a34a;
+    background: #fff;
+    color: #15803d;
+    box-shadow: 0 0 0 5px #dcfce7;
+    animation: ap-pulse 2s ease-in-out infinite;
+}
+body.ak-portal-dash .ak-track-v3-step.is-fail .ak-track-v3-icon {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: #fff;
+}
+body.ak-portal-dash .ak-track-v3-body strong {
+    color: var(--ap-ink);
+}
+body.ak-portal-dash .ak-track-v3-step.is-done .ak-track-v3-body strong,
+body.ak-portal-dash .ak-track-v3-step.is-current .ak-track-v3-body strong {
+    color: var(--ap-green-deep);
+}
+body.ak-portal-dash .ak-track-v3-when {
+    color: #15803d !important;
+}
+body.ak-portal-dash .ak-track-card-v3__foot {
+    background: #f0fdf4;
+    border-top: 1px solid #d1fae5;
+}
+
+/* Horizontal stepper on wide screens */
+@media (min-width: 820px) {
+    body.ak-portal-dash .ak-track-v3-stepper {
+        display: flex;
+        align-items: flex-start;
+        padding: 10px 22px 18px;
+        position: relative;
+    }
+    body.ak-portal-dash .ak-track-v3-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        flex: 1 1 0;
+        padding: 0 8px;
+        gap: 10px;
+    }
+    body.ak-portal-dash .ak-track-v3-step:not(:last-child)::after {
+        left: 50%;
+        right: -50%;
+        top: 22px;
+        bottom: auto;
+        width: auto;
+        height: 4px;
+        background: #d1fae5;
+    }
+    body.ak-portal-dash .ak-track-v3-step.is-done:not(:last-child)::after {
+        background: linear-gradient(90deg, #16a34a, #22c55e);
+    }
+    body.ak-portal-dash .ak-track-v3-step.is-current:not(:last-child)::after {
+        background: repeating-linear-gradient(90deg, #86efac 0 8px, transparent 8px 14px);
+    }
+    body.ak-portal-dash .ak-track-v3-body strong {
+        font-size: 0.86rem;
+    }
+    body.ak-portal-dash .ak-track-v3-body p {
+        font-size: 0.78rem;
+    }
+}
+
+/* Legacy vertical tracker (competition / case) */
+body.ak-portal-dash .tracker-vertical::before {
+    width: 4px;
+    background: #d1fae5;
+    border-radius: 999px;
+}
+body.ak-portal-dash .track-step.completed .track-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+body.ak-portal-dash .track-step.active .track-icon {
+    background: #16a34a;
+    border-color: #dcfce7;
+    box-shadow: 0 0 0 4px #dcfce7;
+    animation: ap-pulse 2s ease-in-out infinite;
+}
+body.ak-portal-dash .track-step.completed .track-title {
+    color: var(--ap-green-deep);
+}
+
+/* Step indicator in forms */
+body.ak-portal-dash .step-indicator {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+}
+body.ak-portal-dash .step.active {
+    color: var(--ap-green-deep);
+}
+
+@keyframes ap-pulse {
+    0%, 100% { box-shadow: 0 0 0 5px #dcfce7; }
+    50% { box-shadow: 0 0 0 10px rgba(220, 252, 231, 0.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.ak-portal-dash * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@media (max-width: 720px) {
+    body.autism-dashboard.ak-portal-dash .card {
+        border-radius: 16px;
+    }
+    body.ak-portal-dash .stat-card {
+        padding: 14px;
+    }
+    body.ak-portal-dash .stat-card h4 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Password is no longer used for sign-in (email OTP) */
+body.ak-portal-dash .menu-item[data-tab="tab-reset-pwd"],
+body.ak-portal-dash button[onclick="switchTab('tab-reset-pwd')"] {
+    display: none !important;
+}
+
+body.ak-portal-dash #dashboard-live-status,
+body.ak-portal-dash #seminar-track-live,
+body.ak-portal-dash #prereg-track-live,
+body.ak-portal-dash #comp-track-live {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #15803d !important;
+    border-radius: 12px !important;
+}
+body.ak-portal-dash table th {
+    background: linear-gradient(180deg, #f0fdf4, #dcfce7) !important;
+    color: #15803d !important;
+    border-bottom: 2px solid #86efac !important;
+}

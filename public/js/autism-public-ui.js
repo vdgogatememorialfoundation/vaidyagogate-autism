@@ -22,19 +22,8 @@
 
     function filterCmsMenu(cms) {
         if (!cms || !Array.isArray(cms.siteMenu)) return cms;
-        const filtered = cms.siteMenu.filter((i) => String((i && i.section) || '').toLowerCase() !== 'gallery');
-        // Always add prereg-search item if not present
-        const hasPrereg = filtered.some((i) => String((i.section || '')).toLowerCase() === 'prereg-search');
-        if (!hasPrereg) {
-            filtered.push({
-                label: 'Find registration',
-                section: 'prereg-search',
-                href: '/preregister/search',
-                visible: true,
-                order: 4,
-                key: 'prereg-search'
-            });
-        }
+        const hidden = new Set(['gallery', 'prereg-search']);
+        const filtered = cms.siteMenu.filter((i) => !hidden.has(String((i && i.section) || (i && i.key) || '').toLowerCase()));
         return { ...cms, siteMenu: filtered };
     }
 
