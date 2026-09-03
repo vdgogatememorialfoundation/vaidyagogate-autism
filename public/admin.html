@@ -1852,10 +1852,7 @@
             </div>
 
             <div id="tab-reports" class="tab-pane hidden">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
-                    <h2 style="margin:0;">Reports &amp; exports</h2>
-                    <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('all_participants', window.__reportFmt||'xlsx')"><i class="fas fa-file-signature" aria-hidden="true"></i> Main registration</button>
-                </div>
+                <h2 style="margin-bottom: 20px;">Reports &amp; exports</h2>
                 <div class="card">
                     <label>Seminar</label>
                     <select id="report-seminar" style="width:100%;max-width:400px;padding:8px;margin:8px 0 16px;"></select>
@@ -1872,6 +1869,7 @@
                         <button type="button" class="btn-primary" style="background:#b45309;" onclick="downloadAdminReport('unpaid', window.__reportFmt||'xlsx')">Unpaid</button>
                         <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="downloadAdminReport('checked_in', window.__reportFmt||'xlsx')">Checked in</button>
                         <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('cert_eligible', window.__reportFmt||'xlsx')">Certificate eligible</button>
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('main_registrations', window.__reportFmt||'xlsx')"><i class="fas fa-file-signature" aria-hidden="true"></i> Main registration list</button>
                         <button type="button" class="btn-primary" style="background:#1e40af;" onclick="downloadAdminReport('all_participants', window.__reportFmt||'xlsx')">All participants</button>
                         <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadAdminReport('confirmed', window.__reportFmt||'xlsx')">Confirmed list</button>
                         <button type="button" class="btn-primary" style="background:#c2410c;" onclick="downloadAdminReport('pending_verification', window.__reportFmt||'xlsx')">Pending verification</button>
