@@ -571,7 +571,7 @@ window.initStaffUsersHScroll = initStaffUsersHScroll;
 async function refreshAdminLoginOtpPanel() {
     const panel = document.getElementById('admin_login_otp_panel');
     if (!panel) return;
-    panel.style.display = '';
+    panel.style.display = 'block';
 }
 
 function adminLoginPortalName() {

@@ -191,7 +191,7 @@ body.autism-admin .ak-login-error.visible {
 }
 
 body.autism-admin .ak-login-otp {
-    display: none;
+    display: block;
     padding-top: 4px;
     border-top: 1px solid #e2e8f0;
 }
