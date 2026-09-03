@@ -456,7 +456,7 @@ async function refreshStoredAdminModules() {
     if (!u || !u.id) return;
     if (typeof UserRoles !== 'undefined' && UserRoles.isSuperAdminAccount && UserRoles.isSuperAdminAccount(u)) return;
     try {
-        const res = await fetch(`/api/admin/my-modules?actingAdminId=${encodeURIComponent(u.id)}`);
+        const res = await fetch(`/api/admin/my-modules?actingAdminId=${encodeURIComponent(u.id)}`, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         if (typeof data.admin_modules !== 'string') return;
@@ -1003,11 +1003,19 @@ function switchTab(tabId) {
         );
         return;
     }
+    const pane = document.getElementById(tabId);
+    if (!pane) return;
     if (liveScansInterval) clearInterval(liveScansInterval);
     document.querySelectorAll('.tab-pane').forEach((t) => t.classList.add('hidden'));
     document.querySelectorAll('.menu-item').forEach((m) => m.classList.remove('active'));
-    document.getElementById(tabId).classList.remove('hidden');
-    if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+    pane.classList.remove('hidden');
+    const evTarget = typeof event !== 'undefined' && event ? event.currentTarget : null;
+    if (evTarget instanceof Element && evTarget.classList.contains('menu-item')) {
+        evTarget.classList.add('active');
+    } else {
+        const menuEl = document.querySelector(`.menu-item[data-admin-module="${tabId}"]`);
+        if (menuEl) menuEl.classList.add('active');
+    }
     if (tabId === 'tab-behalf-reg' || tabId === 'tab-site-cms') {
         refreshAdminSensitiveOtpRequirement();
     }
@@ -10158,7 +10166,11 @@ function loadAllData() {
     loadEventSchedules();
     loadFeedbackSeminars();
     startAdminAutoRefresh();
-    applyCoAdminSidebarVisibility();
+    try {
+        applyCoAdminSidebarVisibility();
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function downloadParticipantsPdf() {

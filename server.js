@@ -9240,8 +9240,10 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
     const scanFlag = isScanned ? 1 : 0;
     
     db.get(
-        `SELECT t.id, r.user_id, r.seminar_id
+        `SELECT t.id, t.ticket_id_string, r.user_id, r.seminar_id, r.application_no, r.form_data,
+                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name
          FROM registrations r
+         LEFT JOIN users u ON u.id = r.user_id
          LEFT JOIN orders o ON o.registration_id = r.id AND o.status = 'success'
          LEFT JOIN tickets t ON t.order_id = o.id
          WHERE r.id = ?`,
@@ -9250,8 +9252,20 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             if (!row) return res.status(404).json({ error: 'Registration not found' });
             
-            const staffId = req.session && req.session.userId ? req.session.userId : 1;
+            const staffId = adminModuleAccess.actingAdminIdFromRequest(req) || 1;
             const scanAtIst = seminarDt.scanTimeNowForStorage();
+            const logManualCheckin = () => {
+                if (!scanFlag) return;
+                logScanDashboard(row.seminar_id, staffId, 'success', 'Checked in manually (Admin Check-in)', {
+                    ticket_id: row.id,
+                    ticket_id_string: row.ticket_id_string,
+                    application_no: row.application_no,
+                    doctor_user_id: row.user_id,
+                    form_data: row.form_data,
+                    doctor_first_name: row.doctor_first_name,
+                    doctor_last_name: row.doctor_last_name
+                });
+            };
             
             if (!row.id) {
                 const regStatus = scanFlag ? 'checked_in' : 'completed';
@@ -9260,6 +9274,7 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
                     [regStatus, regId],
                     (errReg) => {
                         if (errReg) return res.status(500).json({ error: errReg.message });
+                        logManualCheckin();
                         res.json({ success: true, message: scanFlag ? 'Check-in recorded.' : 'Check-in removed.' });
                     }
                 );
@@ -9283,6 +9298,7 @@ app.post('/api/admin/registrations/:registrationId/checkin', (req, res) => {
                                         (err3) => {
                                             if (err3) return res.status(500).json({ error: err3.message });
                                             syncCertificateEligibilityForTicket(row.id, () => {
+                                                logManualCheckin();
                                                 res.json({ success: true, message: scanFlag ? 'Checked in successfully.' : 'Check-in removed.' });
                                             });
                                         }
