@@ -76,13 +76,31 @@
     </section>
 
     <main class="kiosk-main">
-        <div id="live-scan-empty" class="kiosk-empty">
-            <div class="kiosk-empty-icon"><i class="fas fa-tv"></i></div>
-            <h2>Waiting for scans</h2>
-            <p>Choose an event above. New check-ins appear here in real time as volunteers scan QR codes.</p>
+        <div class="kiosk-board-layout">
+            <section class="kiosk-feed-panel" aria-label="Live scan feed">
+                <div id="live-scan-empty" class="kiosk-empty">
+                    <div class="kiosk-empty-icon"><i class="fas fa-tv"></i></div>
+                    <h2>Waiting for scans</h2>
+                    <p>Choose an event above. New check-ins appear here in real time as volunteers scan QR codes.</p>
+                </div>
+                <div id="live-scan-grid" class="live-scanner-grid" aria-live="polite"></div>
+            </section>
+            <aside class="kiosk-attendance-panel" aria-label="Event attendance">
+                <div class="kiosk-attendance-header">
+                    <div>
+                        <p class="kiosk-attendance-eyebrow">Selected event</p>
+                        <h2 id="live-attendance-title">Attendees</h2>
+                        <p id="live-attendance-date" class="kiosk-attendance-date">Choose an event to view its event date.</p>
+                    </div>
+                    <span id="live-attendance-count" class="kiosk-attendance-count">0</span>
+                </div>
+                <div id="live-attendance-list" class="kiosk-attendance-list" aria-live="polite">
+                    <p class="kiosk-attendance-empty">Choose an event to view checked-in attendees.</p>
+                </div>
+            </aside>
         </div>
-        <div id="live-scan-grid" class="live-scanner-grid" aria-live="polite"></div>
     </main>
+    <script src="/js/portal-datetime.js"></script>
     <script src="/js/admin-live-scanner.js"></script>
     <script src="/js/portal-content-protection.js?v=4"></script>
 </body>

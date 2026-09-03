@@ -178,8 +178,7 @@
                 <a class="menu-item" data-admin-module="tab-etickets" onclick="switchTab('tab-etickets'); initAdminEticketsTab();"><i class="fas fa-ticket-alt"></i> E-tickets</a>
                 <a class="menu-item" data-admin-module="tab-scanner-logs" onclick="switchTab('tab-scanner-logs'); initAdminScannerLogsTab();"><i class="fas fa-qrcode"></i> Scanner Activity</a>
                 <a class="menu-item" data-admin-module="tab-live-scanner" onclick="openAdminLiveScannerBoard();"><i class="fas fa-tv"></i> Live check-in board</a>
-                <a class="menu-item" data-admin-module="tab-admin-checkin" onclick="switchTab('tab-admin-checkin'); initAdminCheckinTab();"><i class="fas fa-user-check"></i> Admin Check-in</a>
-                <a class="menu-item" data-admin-module="tab-pos" onclick="switchTab('tab-pos'); initAdminPosTab();"><i class="fas fa-cash-register"></i> On-spot POS</a>
+                <a class="menu-item" data-admin-module="tab-admin-checkin" onclick="switchTab('tab-admin-checkin'); initAdminCheckinTab();"><i class="fas fa-user-check"></i> Attendees</a>
                 <a class="menu-item" data-admin-module="tab-feedback-form" onclick="switchTab('tab-feedback-form'); loadAdminFeedbackFormConfig();"><i class="fas fa-edit"></i> Feedback form editor</a>
                 <a class="menu-item" data-admin-module="tab-activity-logs" onclick="switchTab('tab-activity-logs'); initAdminActivityLogsTab();"><i class="fas fa-history"></i> User activity</a>
                 <a class="menu-item" data-admin-module="tab-notifications" onclick="switchTab('tab-notifications'); initAdminNotificationsTab();"><i class="fas fa-bell"></i> Notifications</a>
@@ -365,7 +364,7 @@
             <div id="tab-final-tracking" class="tab-pane hidden">
                 <div class="ak-prereg-wrap">
                     <h2 style="margin-bottom: 8px;">Main registration</h2>
-                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">Review main registrations after pre-registration is approved. Request revisions, issue e-tickets, and review application details.</p>
+                    <p style="color:#64748b;margin-bottom:20px;max-width:720px;">All main-registration attendees are listed here. Review registrations after pre-registration is approved, request revisions, issue e-tickets, and review application details.</p>
                     <div class="ak-prereg-stats">
                         <div class="ak-final-stat ak-prereg-stat" data-filter="all"><div class="num" id="ak-final-stat-total">0</div><div class="lbl">Total</div></div>
                         <div class="ak-final-stat ak-prereg-stat stat-pending" data-filter="pending_approval"><div class="num" id="ak-final-stat-pending_approval">0</div><div class="lbl">Pending</div></div>
@@ -1873,7 +1872,7 @@
                         <button type="button" class="btn-primary" style="background:#1e40af;" onclick="downloadAdminReport('all_participants', window.__reportFmt||'xlsx')">All participants</button>
                         <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadAdminReport('confirmed', window.__reportFmt||'xlsx')">Confirmed list</button>
                         <button type="button" class="btn-primary" style="background:#c2410c;" onclick="downloadAdminReport('pending_verification', window.__reportFmt||'xlsx')">Pending verification</button>
-                        <button type="button" class="btn-primary" style="background:#6d28d9;" onclick="downloadAdminReport('attendance', window.__reportFmt||'xlsx')">Attendance sheet</button>
+                        <button type="button" class="btn-primary" style="background:#6d28d9;" onclick="downloadAdminReport('attendance', window.__reportFmt||'xlsx')">Attendees</button>
                         <button type="button" class="btn-primary" style="background:#0369a1;" onclick="downloadAdminReport('check_in', window.__reportFmt||'xlsx')">Check-in report</button>
                         <button type="button" class="btn-primary" style="background:#a16207;" onclick="downloadAdminReport('finance', window.__reportFmt||'xlsx')">Finance report</button>
                         <button type="button" class="btn-primary" style="background:#4d7c0f;" onclick="downloadAdminReport('certificate_report', window.__reportFmt||'xlsx')">Certificate report</button>
@@ -1897,7 +1896,8 @@
             </div>
 
             <div id="tab-admin-checkin" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Admin Direct Applicant Check-in</h2>
+                <h2 style="margin-bottom: 8px;">Attendees</h2>
+                <p style="color:#64748b;margin:0 0 20px;max-width:720px;">View every main-registration attendee for an event and update their check-in when needed.</p>
                 <div class="card">
                     <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
                         <div style="min-width:240px;flex:1;">
@@ -1990,28 +1990,6 @@
                         <button type="button" class="btn-primary" style="background:#b91c1c;" onclick="adminEticketDelete()"><i class="fas fa-trash"></i> Delete ticket</button>
                     </div>
                     <p id="eticket-action-status" class="ak-eticket-action-msg"></p>
-                </div>
-            </div>
-
-            <div id="tab-pos" class="tab-pane hidden">
-                <h2 style="margin-bottom:12px;">On-spot POS registration</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Register a doctor at the venue, record cash payment, and issue an e-ticket immediately. They must complete their profile later in the doctor portal.</p>
-                <div class="card" style="max-width:640px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (?)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
-                        <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
-                        <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
-                        <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
-                        <div><label>Phone</label><input type="text" id="pos-phone" style="width:100%;padding:8px;"></div>
-                        <div><label>Email (optional)</label><input type="email" id="pos-email" style="width:100%;padding:8px;"></div>
-                    </div>
-                    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
-                        <input type="checkbox" id="pos-send-ticket-email" style="margin-top:3px;">
-                        <span>Queue ticket email after registration (off by default ... use printed QR at venue; avoids Zoho rate limits)</span>
-                    </label>
-                    <button type="button" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
-                    <p id="pos-status" style="margin-top:12px;font-weight:600;"></p>
                 </div>
             </div>
 
