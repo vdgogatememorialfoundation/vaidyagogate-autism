@@ -12,7 +12,6 @@
 
     /** Super-admin-only modules — never shown on the staff portal. */
     window.STAFF_PORTAL_SUPER_ADMIN_ONLY = new Set([
-        'tab-staff-users',
         'tab-settings',
         'tab-system-platform',
         'tab-system-users'

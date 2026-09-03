@@ -17,6 +17,7 @@
 
     function hideMenuItems() {
         HIDE_MODULES.forEach((mod) => {
+            if (window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned(mod)) return;
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
                 el.classList.add('hidden');
                 el.style.display = 'none';
@@ -24,6 +25,8 @@
         });
         document.querySelectorAll('a, button, .menu-item').forEach((el) => {
             const t = (el.textContent || '').toLowerCase();
+            const mod = el.getAttribute && el.getAttribute('data-admin-module');
+            if (mod && window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned(mod)) return;
             if (HIDE_TEXT.some((k) => t.includes(k))) {
                 el.classList.add('hidden');
                 el.style.display = 'none';
@@ -1729,10 +1732,12 @@
     }
 
     function patchApplicationsMenu() {
-        document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
-            el.classList.add('hidden');
-            el.style.display = 'none';
-        });
+        if (!(window.adminModuleExplicitlyAssigned && window.adminModuleExplicitlyAssigned('tab-applications'))) {
+            document.querySelectorAll('[data-admin-module="tab-applications"]').forEach((el) => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+        }
         document.querySelectorAll('[data-admin-module="tab-final-tracking"]').forEach((el) => {
             if (el.querySelector('i')) el.innerHTML = '<i class="fas fa-file-signature"></i> Main registration';
         });

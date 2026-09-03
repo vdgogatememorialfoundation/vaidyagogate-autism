@@ -473,12 +473,24 @@ async function refreshStoredAdminModules() {
     } catch (_) {}
 }
 
+/** True when the signed-in staff user has this module explicitly ticked in their assignment map. */
+function adminModuleExplicitlyAssigned(tabId) {
+    const u = getStoredAdminUser();
+    if (!adminUserHasModuleRestrictions(u)) return false;
+    return parseAdminModulesObject(u.admin_modules)[tabId] === true;
+}
+window.adminModuleExplicitlyAssigned = adminModuleExplicitlyAssigned;
+
 function applyCoAdminSidebarVisibility() {
     document.querySelectorAll('.menu-item[data-admin-module]').forEach((el) => {
         const m = el.getAttribute('data-admin-module');
         if (!m) return;
-        if (!adminCanAccessTab(m)) el.classList.add('hidden');
-        else el.classList.remove('hidden');
+        if (!adminCanAccessTab(m)) {
+            el.classList.add('hidden');
+        } else {
+            el.classList.remove('hidden');
+            if (adminModuleExplicitlyAssigned(m) && el.style.display === 'none') el.style.display = '';
+        }
     });
     if (window.PORTAL_IS_STAFF && typeof window.ensureStaffPortalLandingTab === 'function') {
         window.ensureStaffPortalLandingTab();
@@ -1964,10 +1976,10 @@ function openAdminLiveScannerBoard() {
     try {
         sessionStorage.setItem('admin_user', JSON.stringify(actor));
     } catch (_) {}
-    const w = window.open('/admin-live-scanner.html', '_blank', 'noopener,noreferrer');
+    const w = window.open('/live-checkin', '_blank', 'noopener,noreferrer');
     if (!w) {
         if (confirm('Pop-up blocked. Open the live board in this tab instead?')) {
-            location.href = '/admin-live-scanner.html';
+            location.href = '/live-checkin';
         }
     }
 }
