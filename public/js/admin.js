@@ -1718,7 +1718,6 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-etickets', 'E-tickets'],
     ['tab-scanner-logs', 'Scanner activity'],
     ['tab-live-scanner', 'Live check-in board'],
-    ['tab-pos', 'On-spot POS'],
     ['tab-feedback-form', 'Feedback form editor'],
     ['tab-activity-logs', 'User & doctor activity'],
     ['tab-notifications', 'Notifications'],

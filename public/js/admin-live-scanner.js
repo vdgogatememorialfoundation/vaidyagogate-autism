@@ -154,6 +154,56 @@
         empty.classList.toggle('hidden', !hasEvent || hasCards);
     }
 
+    function formatEventDate(value) {
+        if (!value) return 'Event date not set';
+        if (window.PortalDateTime && typeof window.PortalDateTime.formatEvent === 'function') {
+            return window.PortalDateTime.formatEvent(value);
+        }
+        // A date-only value is a calendar date, not a UTC timestamp. Keep its date
+        // portion intact so the board cannot shift it for the display timezone.
+        return String(value).trim().replace('T', ' ').replace(/:00(?:\.\d+)?Z?$/, '');
+    }
+
+    function setAttendanceEvent(seminar) {
+        const title = document.getElementById('live-attendance-title');
+        const date = document.getElementById('live-attendance-date');
+        if (title) title.textContent = seminar ? seminar.title || 'Attendees' : 'Attendees';
+        if (date) date.textContent = seminar ? 'Event date: ' + formatEventDate(seminar.event_date) : 'Choose an event to view its event date.';
+    }
+
+    function renderAttendance(attendees) {
+        const list = document.getElementById('live-attendance-list');
+        const count = document.getElementById('live-attendance-count');
+        if (!list) return;
+        const rows = Array.isArray(attendees) ? attendees : [];
+        if (count) count.textContent = String(rows.length);
+        if (!rows.length) {
+            list.innerHTML = '<p class="kiosk-attendance-empty">No attendees have checked in for this event yet.</p>';
+            return;
+        }
+        list.innerHTML = rows
+            .map((person) => {
+                const name = [person.first_name, person.middle_name, person.last_name].filter(Boolean).join(' ') || 'Attendee';
+                const identifier = person.application_no || person.ticket_id_string || person.user_id_string || '—';
+                return (
+                    '<div class="kiosk-attendance-item">' +
+                    '<span class="kiosk-attendance-avatar" aria-hidden="true">' + esc(initials(name)) + '</span>' +
+                    '<div><strong class="kiosk-attendance-name">' + esc(name) + '</strong>' +
+                    '<span class="kiosk-attendance-meta">' + esc(identifier) +
+                    (person.scan_time ? ' · ' + esc(formatCardTime(person.scan_time)) : '') +
+                    '</span></div></div>'
+                );
+            })
+            .join('');
+    }
+
+    async function refreshAttendance() {
+        const sid = document.getElementById('live-scanner-seminar').value;
+        if (!sid) return;
+        const data = await api('/api/admin/live-scanner/attendance?seminarId=' + encodeURIComponent(sid));
+        renderAttendance(data.attendees);
+    }
+
     function tickClock() {
         const el = document.getElementById('kiosk-clock');
         if (!el) return;
@@ -238,6 +288,7 @@
                 }
             });
             await refreshStats();
+            await refreshAttendance();
             setLiveState(true, 'Live · updating');
         } catch (e) {
             console.warn('[live-scanner]', e.message);
@@ -256,6 +307,7 @@
         lastEventId = 0;
         const grid = document.getElementById('live-scan-grid');
         if (grid) grid.innerHTML = '';
+        renderAttendance([]);
         updateEmptyState();
         setLiveState(true, 'Connecting…');
         pollEvents();
@@ -276,7 +328,7 @@
         (seminars || []).forEach((s) => {
             const o = document.createElement('option');
             o.value = s.id;
-            const date = s.event_date ? String(s.event_date).slice(0, 10) : '';
+            const date = s.event_date ? formatEventDate(s.event_date) : '';
             o.textContent = (s.title || 'Event') + (date ? ' · ' + date : '');
             sel.appendChild(o);
         });
@@ -286,10 +338,16 @@
         }
         sel.addEventListener('change', () => {
             ensureAudio();
+            const seminar = (seminars || []).find((s) => String(s.id) === sel.value);
+            setAttendanceEvent(seminar || null);
             if (sel.value) startPoll();
-            else stopPoll();
+            else {
+                stopPoll();
+                renderAttendance([]);
+            }
             updateEmptyState();
         });
+        if (sel.value) setAttendanceEvent((seminars || []).find((s) => String(s.id) === sel.value));
         const soundBtn = document.getElementById('kiosk-sound-toggle');
         if (soundBtn) {
             soundBtn.addEventListener('click', () => {
