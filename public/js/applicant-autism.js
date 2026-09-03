@@ -174,6 +174,7 @@
             { tab: 'tab-prereg-track', icon: 'fa-route', label: 'Pre-reg tracking' },
             { tab: 'tab-main-reg-hub', icon: 'fa-file-signature', label: 'Main registration' },
             { tab: 'tab-main-reg-track', icon: 'fa-tasks', label: 'Main reg tracking' },
+            { tab: 'tab-app-view', icon: 'fa-file-circle-check', label: 'Application details' },
             { tab: 'tab-comp-register', icon: 'fa-trophy', label: 'Competition' },
             { tab: 'tab-comp-track', icon: 'fa-route', label: 'Track competition' }
         ];
@@ -252,8 +253,23 @@
             legacyAppsTab.classList.add('hidden');
         }
 
+        const appView = document.createElement('div');
+        appView.id = 'tab-app-view';
+        appView.className = 'tab-pane hidden';
+        appView.innerHTML =
+            '<div class="ak-track-page">' +
+            '<div class="ak-track-page-head">' +
+            '<h3><i class="fas fa-file-circle-check" style="color:#15803d;margin-right:8px;"></i> Application details</h3>' +
+            '<p>Your submitted main registration, step-by-step tracking, and downloads.</p>' +
+            '</div>' +
+            '<section class="ak-track-section">' +
+            '<div id="ak-app-view-picker" class="ak-app-picker"></div>' +
+            '<div id="ak-app-view-body"><p style="color:#64748b;">Select an application above, or open one from Main reg tracking → View.</p></div>' +
+            '</section></div>';
+
         parent.insertBefore(preregTrack, anchor);
         parent.insertBefore(mainTrack, anchor);
+        parent.insertBefore(appView, anchor);
 
         preregHub?.querySelector('.ak-prereg-submissions')?.remove();
         mainHub?.querySelector('#ak-main-reg-submissions')?.remove();
@@ -3077,7 +3093,10 @@
                 escapeAkHtml(a.application_no) +
                 '</code></div></div><div class="ak-track-card-v3__actions">' +
                 (appIdx >= 0
-                    ? '<button type="button" class="btn-primary" style="background:#475569;" onclick="downloadApplicationByIndex(' +
+                    ? '<button type="button" class="btn-primary" onclick="viewApplication(' +
+                      appIdx +
+                      ')"><i class="fas fa-file-circle-check"></i> View details</button>' +
+                      '<button type="button" class="btn-primary" style="background:#475569;" onclick="downloadApplicationByIndex(' +
                       appIdx +
                       ')">Download PDF</button>'
                     : '') +
@@ -3096,6 +3115,120 @@
     }
 
     window.renderAutismEventRegistrationCard = renderAutismEventRegistrationCard;
+
+    function appViewSubmittedDetailsHtml(app) {
+        let fd = {};
+        try {
+            fd = typeof app.form_data === 'string' ? JSON.parse(app.form_data || '{}') : app.form_data || {};
+        } catch (_) {
+            fd = {};
+        }
+        const rows = typeof buildSubmittedRowsHtml === 'function' ? buildSubmittedRowsHtml(fd) : '';
+        return (
+            '<div class="card ak-app-view-card">' +
+            '<h4><i class="fas fa-file-alt"></i> Main registration submission</h4>' +
+            rows +
+            '</div>'
+        );
+    }
+
+    function renderApplicationDetails(app) {
+        const body = document.getElementById('ak-app-view-body');
+        if (!body || !app) return;
+        try {
+            currentlyViewedApp = app;
+        } catch (_) {}
+        let html = renderAutismEventRegistrationCard(app);
+        if (typeof renderWhatsappLinkBlock === 'function') html += renderWhatsappLinkBlock(app);
+        html += appViewSubmittedDetailsHtml(app);
+        const pol = typeof summaryCancellationPolicy === 'function' ? summaryCancellationPolicy(app.cancellation_policy_json) : '';
+        if (pol) {
+            html +=
+                '<p style="margin-top:12px;font-size:0.85rem;color:#64748b;"><strong>Cancellation policy:</strong> ' +
+                escapeAkHtml(pol) +
+                '</p>';
+        }
+        if (app.terms_conditions) {
+            html +=
+                '<details class="ak-app-view-terms"><summary><i class="fas fa-scroll"></i> Terms &amp; conditions</summary><pre>' +
+                escapeAkHtml(app.terms_conditions) +
+                '</pre></details>';
+        }
+        body.innerHTML = html;
+        const picker = document.getElementById('ak-app-view-picker');
+        if (picker) {
+            picker.querySelectorAll('button').forEach((b) => {
+                b.classList.toggle('is-active', Number(b.dataset.akAppId) === Number(app.id));
+            });
+        }
+    }
+
+    function renderApplicationPicker(apps) {
+        const picker = document.getElementById('ak-app-view-picker');
+        if (!picker) return;
+        if (!apps.length) {
+            picker.innerHTML = '';
+            return;
+        }
+        picker.innerHTML = apps
+            .map((a) => {
+                const meta = eventRegStatusMeta(String(a.status || 'submitted').toLowerCase());
+                return (
+                    '<button type="button" data-ak-app-id="' +
+                    Number(a.id) +
+                    '"><span class="ak-app-picker__title">' +
+                    escapeAkHtml(a.seminar_title || 'Event registration') +
+                    '</span><span class="ak-app-picker__code">' +
+                    escapeAkHtml(a.application_no || '—') +
+                    '</span><span class="ak-app-picker__pill" style="background:' +
+                    meta.bg +
+                    ';color:' +
+                    meta.color +
+                    '">' +
+                    escapeAkHtml(meta.label) +
+                    '</span></button>'
+                );
+            })
+            .join('');
+        picker.querySelectorAll('button').forEach((b) => {
+            b.addEventListener('click', () => {
+                const a = apps.find((x) => Number(x.id) === Number(b.dataset.akAppId));
+                if (a) renderApplicationDetails(a);
+            });
+        });
+    }
+
+    async function openApplicationDetailsTab(app) {
+        const body = document.getElementById('ak-app-view-body');
+        let apps = typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        if (!apps.length && typeof loadApplications === 'function') {
+            try {
+                await loadApplications(true);
+            } catch (_) {}
+            apps = typeof userApplications !== 'undefined' && Array.isArray(userApplications) ? userApplications : [];
+        }
+        renderApplicationPicker(apps);
+        let viewed = null;
+        try {
+            viewed = currentlyViewedApp;
+        } catch (_) {}
+        const target = app || (viewed && apps.find((x) => Number(x.id) === Number(viewed.id))) || apps[0];
+        if (target) renderApplicationDetails(target);
+        else if (body) body.innerHTML = akTrackEmptyHtml('fa-file-circle-check', 'No main registration applications yet. Complete Main registration to see your details here.');
+    }
+
+    function patchViewApplicationForAutism() {
+        if (typeof window.viewApplication !== 'function' || window.viewApplication.__akHook) return;
+        const orig = window.viewApplication;
+        window.viewApplication = function (index) {
+            if (!document.body.classList.contains('ak-portal-dash')) return orig.apply(this, arguments);
+            const app = typeof userApplications !== 'undefined' ? userApplications[index] : null;
+            if (!app) return orig.apply(this, arguments);
+            if (typeof switchTab === 'function') switchTab('tab-app-view');
+            openApplicationDetailsTab(app);
+        };
+        window.viewApplication.__akHook = true;
+    }
 
     async function loadPreregList() {
         const uid = currentUserId();
@@ -3538,6 +3671,8 @@
                 loadMainRegEvents();
             } else if (tabId === 'tab-main-reg-track') {
                 if (typeof loadApplications === 'function') loadApplications(true);
+            } else if (tabId === 'tab-app-view') {
+                openApplicationDetailsTab();
             } else if (tabId === 'tab-comp-register') {
                 loadCompetitionEvents().then(() => {
                     renderCompetitionSchedulePanel();
@@ -4076,6 +4211,7 @@
         patchNextStepForPreregPrefill();
         patchMainRegistrationOnEventTab();
         patchSubmitApplicationSuccessBanner();
+        patchViewApplicationForAutism();
         patchLoadRegistrationFormConfig();
         patchLoadApplicationsForMainRegUi();
         wireMainRegPreregLookup();
