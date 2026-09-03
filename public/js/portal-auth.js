@@ -209,7 +209,7 @@
             if (loginLead) {
                 if (passwordless) {
                     loginLead.textContent = loginChannels.email
-                        ? 'Sign in with WhatsApp OTP (no password).'
+                        ? 'Sign in with email OTP (no password).'
                         : 'Enter your WhatsApp number, send OTP, verify, then sign in.';
                 } else if (loginChannels.email && loginChannels.whatsapp) {
                     loginLead.textContent = 'Verify email and WhatsApp (both required).';
@@ -235,7 +235,7 @@
             const loginIntro = document.querySelector('#doctor-auth-login-panel > p');
             if (loginIntro) {
                 loginIntro.textContent = loginOtpOn
-                    ? 'Enter your WhatsApp number, tap Send OTP, enter the code, then sign in.'
+                    ? 'Enter your email, tap Send OTP, enter the code from your inbox, then sign in.'
                     : 'Sign in with your email and password.';
             }
         }
