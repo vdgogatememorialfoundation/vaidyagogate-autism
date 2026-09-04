@@ -199,10 +199,10 @@ body.autism-admin .ak-login-card { border: 1px solid #d7e8ef !important; box-sha
 }
 @media (max-width: 700px) {
     body.autism-admin .dashboard-container { display: block; }
-    body.autism-admin .sidebar { position: static; width: 100%; height: auto; padding-bottom: 10px; }
-    body.autism-admin .menu-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px; }
-    body.autism-admin .menu-item { margin: 0; border-radius: 10px !important; }
-    body.autism-admin .main-content { padding: 16px 12px 40px; }
+    body.autism-admin .sidebar { padding-bottom: 10px; }
+    body.autism-admin .menu-items { display: block; padding: 0; }
+    body.autism-admin .menu-item { margin: 0 12px 0 0; border-radius: 0 40px 40px 0 !important; }
+    body.autism-admin .main-content { padding: 0 !important; }
 }
 @media (prefers-reduced-motion: reduce) {
     body.autism-admin .card,

@@ -28,7 +28,8 @@
     visibility: visible;
     pointer-events: auto;
 }
-body.doctor-nav-open {
+body.doctor-nav-open,
+body.admin-nav-open {
     overflow: hidden;
 }
 .top-header {

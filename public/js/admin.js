@@ -423,7 +423,8 @@ function adminCanAccessTab(tabId) {
         'tab-prereg-tracking',
         'tab-final-tracking',
         'tab-competition-tracking',
-        'tab-admin-checkin'
+        'tab-admin-checkin',
+        'tab-pos'
     ]);
     const globalPages = window.__adminEnabledPages || {};
     const globalKeys = Object.keys(globalPages);
@@ -813,6 +814,67 @@ document.getElementById('admin-chg-submit')?.addEventListener('click', async () 
         errEl?.classList.remove('hidden');
     }
 });
+
+function closeAdminMobileNav() {
+    const sidebar = document.getElementById('admin-sidebar') || document.querySelector('.sidebar');
+    const backdrop = document.getElementById('admin-nav-backdrop');
+    const toggle = document.getElementById('admin-menu-toggle');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) {
+        backdrop.classList.remove('is-open');
+        backdrop.setAttribute('aria-hidden', 'true');
+    }
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Open navigation menu');
+    }
+    document.body.classList.remove('admin-nav-open');
+}
+window.closeAdminMobileNav = closeAdminMobileNav;
+
+function initAdminMobileNav() {
+    const toggle = document.getElementById('admin-menu-toggle');
+    const sidebar = document.getElementById('admin-sidebar') || document.querySelector('.sidebar');
+    const backdrop = document.getElementById('admin-nav-backdrop');
+    if (!toggle || !sidebar || toggle.dataset.navInited === '1') return;
+    toggle.dataset.navInited = '1';
+    closeAdminMobileNav();
+
+    const open = () => {
+        sidebar.classList.add('mobile-open');
+        if (backdrop) {
+            backdrop.classList.add('is-open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Close navigation menu');
+        document.body.classList.add('admin-nav-open');
+    };
+
+    toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (sidebar.classList.contains('mobile-open')) closeAdminMobileNav();
+        else open();
+    });
+    if (backdrop) backdrop.addEventListener('click', closeAdminMobileNav);
+    document.querySelectorAll('.menu-item').forEach((item) => {
+        if (item.dataset.adminNavBound === '1') return;
+        item.dataset.adminNavBound = '1';
+        item.addEventListener('click', () => {
+            if (window.matchMedia('(max-width: 768px)').matches) setTimeout(closeAdminMobileNav, 0);
+        });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) closeAdminMobileNav();
+    });
+    window.addEventListener('resize', () => {
+        if (!window.matchMedia('(max-width: 768px)').matches) closeAdminMobileNav();
+    });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAdminMobileNav);
+else initAdminMobileNav();
 
 function switchTab(tabId) {
     if (!adminCanAccessTab(tabId)) {

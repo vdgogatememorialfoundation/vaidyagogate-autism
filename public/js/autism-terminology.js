@@ -152,7 +152,7 @@
         document.querySelectorAll('[data-admin-module="tab-doctors"]').forEach((el) => {
             el.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Applicants';
         });
-        const hideModules = ['tab-admin-payments', 'tab-pos', 'tab-case-mgmt'];
+        const hideModules = ['tab-admin-payments', 'tab-case-mgmt'];
         hideModules.forEach((mod) => {
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
                 el.classList.add('hidden');

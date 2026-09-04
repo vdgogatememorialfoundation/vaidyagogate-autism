@@ -263,6 +263,127 @@
     min-height: 50vh;
 }
 
+.kiosk-board-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    gap: 18px;
+    align-items: start;
+}
+
+.kiosk-feed-panel {
+    min-width: 0;
+}
+
+.kiosk-attendance-panel {
+    position: sticky;
+    top: 112px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 132px);
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.kiosk-attendance-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 17px 18px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f0fdfa;
+}
+
+.kiosk-attendance-eyebrow {
+    margin: 0 0 3px;
+    color: #0f766e;
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+.kiosk-attendance-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.kiosk-attendance-date {
+    margin: 5px 0 0;
+    color: #475569;
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.kiosk-attendance-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: #0f766e;
+    color: #fff;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.kiosk-attendance-list {
+    overflow-y: auto;
+    max-height: calc(100vh - 260px);
+}
+
+.kiosk-attendance-empty {
+    margin: 0;
+    padding: 26px 18px;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.kiosk-attendance-item {
+    display: flex;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.kiosk-attendance-item:last-child {
+    border-bottom: 0;
+}
+
+.kiosk-attendance-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #047857;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.kiosk-attendance-name {
+    display: block;
+    color: #1e293b;
+    font-size: 0.88rem;
+    line-height: 1.25;
+}
+
+.kiosk-attendance-meta {
+    display: block;
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.74rem;
+    line-height: 1.35;
+}
+
 .kiosk-empty {
     text-align: center;
     padding: 48px 24px;
@@ -502,6 +623,19 @@
     margin-top: 10px;
     font-size: 0.78rem;
     color: #64748b;
+}
+
+@media (max-width: 980px) {
+    .kiosk-board-layout {
+        grid-template-columns: 1fr;
+    }
+    .kiosk-attendance-panel {
+        position: static;
+        max-height: none;
+    }
+    .kiosk-attendance-list {
+        max-height: 360px;
+    }
 }
 
 @media (max-width: 640px) {

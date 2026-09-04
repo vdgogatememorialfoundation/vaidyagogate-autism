@@ -9,6 +9,7 @@
     "build": "node scripts/validate-syntax.js && node scripts/build-pg-schema.js",
     "vercel-build": "npm run build",
     "sync-images": "node scripts/sync-autism-images.js",
+    "test:requested-fixes": "node scripts/verify-requested-admin-fixes.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

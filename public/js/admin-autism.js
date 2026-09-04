@@ -6,13 +6,11 @@
 
     window.PORTAL_IS_AUTISM = true;
 
-    const HIDE_MODULES = ['tab-admin-payments', 'tab-pos'];
+    const HIDE_MODULES = ['tab-admin-payments'];
 
     const HIDE_TEXT = [
         'judge',
-        'payment gateway',
-        'pos on-spot',
-        'on-spot pos'
+        'payment gateway'
     ];
 
     function hideMenuItems() {

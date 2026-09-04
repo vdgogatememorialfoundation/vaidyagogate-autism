@@ -12,12 +12,12 @@
     <title>Admin | Autism Awareness Programme</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/responsive-portals.css">
+    <link rel="stylesheet" href="/css/responsive-portals.css?v=20260904a">
     <link rel="stylesheet" href="/css/autism-admin.css?v=5">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=4">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
-    <link rel="stylesheet" href="/css/admin-aurora.css?v=3">
+    <link rel="stylesheet" href="/css/admin-aurora.css?v=4">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', 'Nunito', system-ui, sans-serif; background: #f8fafc; color: #1e3a8a; min-height: 100vh; }
@@ -143,7 +143,7 @@
     </div>
 
     <div class="dashboard-container hidden" id="dashboard-main">
-        <aside class="sidebar">
+        <aside class="sidebar" id="admin-sidebar">
             <div class="sidebar-header">
                 <div data-site-logo data-logo-height="44px" data-logo-fallback="icon" style="margin-bottom:8px;"></div>
                 <h2>VGMF CMS</h2>
@@ -188,9 +188,11 @@
                 <a class="menu-item" data-admin-module="tab-settings" onclick="switchTab('tab-settings'); initAdminBrandingPreview();"><i class="fas fa-cogs"></i> Global Settings</a>
             </div>
         </aside>
+        <div id="admin-nav-backdrop" class="doctor-nav-backdrop" aria-hidden="true"></div>
 
         <main class="main-content">
             <header class="top-header">
+                <button type="button" class="admin-menu-toggle" id="admin-menu-toggle" aria-label="Open navigation menu" aria-controls="admin-sidebar" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                 <h2>Admin Control Panel <span id="admin-portal-year-badge" style="font-size:0.85rem;color:#0d9488;font-weight:600;"></span></h2>
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <label style="font-size:0.85rem;color:#475569;font-weight:600;">Portal year
@@ -1856,7 +1858,7 @@
                 <div class="card">
                     <label>Seminar</label>
                     <select id="report-seminar" style="width:100%;max-width:400px;padding:8px;margin:8px 0 16px;"></select>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Exports include all registration form fields. Confirmed = approved + paid + verified. Pick Excel, CSV, or PDF (printable HTML).</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Choose a report below. <strong>Main registration list</strong> exports only submitted main-registration and participant fields; other buttons remain separate reports. Pick Excel, CSV, or PDF (printable HTML).</p>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
                         <button type="button" id="btn-report-fmt-xlsx" class="btn-primary" style="background:#334155; transition: all 0.2s;" onclick="setReportFormat('xlsx', this)">Excel (.xlsx)</button>
                         <button type="button" id="btn-report-fmt-csv" class="btn-primary" style="background:#475569; transition: all 0.2s;" onclick="setReportFormat('csv', this)">CSV</button>
@@ -1869,7 +1871,7 @@
                         <button type="button" class="btn-primary" style="background:#b45309;" onclick="downloadAdminReport('unpaid', window.__reportFmt||'xlsx')">Unpaid</button>
                         <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="downloadAdminReport('checked_in', window.__reportFmt||'xlsx')">Checked in</button>
                         <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('cert_eligible', window.__reportFmt||'xlsx')">Certificate eligible</button>
-                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('main_registrations', window.__reportFmt||'xlsx')"><i class="fas fa-file-signature" aria-hidden="true"></i> Main registration list</button>
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="downloadAdminReport('main_registrations', window.__reportFmt||'xlsx')"><i class="fas fa-file-signature" aria-hidden="true"></i> Download main registration list only</button>
                         <button type="button" class="btn-primary" style="background:#1e40af;" onclick="downloadAdminReport('all_participants', window.__reportFmt||'xlsx')">All participants</button>
                         <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadAdminReport('confirmed', window.__reportFmt||'xlsx')">Confirmed list</button>
                         <button type="button" class="btn-primary" style="background:#c2410c;" onclick="downloadAdminReport('pending_verification', window.__reportFmt||'xlsx')">Pending verification</button>
@@ -1995,11 +1997,11 @@
 
             <div id="tab-pos" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;">On-spot POS registration</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Register a doctor at the venue, record cash payment, and issue an e-ticket immediately. They must complete their profile later in the doctor portal.</p>
+                <p style="color:#64748b;margin-bottom:16px;">Register an applicant at the venue, record the on-spot payment, and issue an e-ticket immediately. They can complete their profile later in the applicant portal.</p>
                 <div class="card" style="max-width:640px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (?)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div><label>Amount (₹)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
                         <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
                         <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
                         <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
@@ -2747,15 +2749,15 @@
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
     <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260901f"></script>
+    <script src="/js/admin.js?v=20260904a"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>
     <script src="/js/admin-checkin.js?v=20260901c"></script>
     <script src="/js/admin-competition.js?v=7"></script>
     <script src="/js/admin-announcements.js?v=5"></script>
-    <script src="/js/admin-autism.js?v=autism54"></script>
+    <script src="/js/admin-autism.js?v=autism55"></script>
     <script src="/js/autism-theme.js?v=3"></script>
-    <script src="/js/autism-terminology.js?v=4"></script>
+    <script src="/js/autism-terminology.js?v=5"></script>
 </body>
 </html>

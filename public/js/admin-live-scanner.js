@@ -154,6 +154,74 @@
         empty.classList.toggle('hidden', !hasEvent || hasCards);
     }
 
+    function formatEventDate(value) {
+        if (!value) return 'Not set';
+        if (window.PortalDateTime && typeof window.PortalDateTime.formatEvent === 'function') {
+            return window.PortalDateTime.formatEvent(value);
+        }
+        const raw = String(value).trim();
+        const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!match) return raw;
+        return `${match[3]}/${match[2]}/${match[1]}`;
+    }
+
+    function selectedCheckinDate(seminar) {
+        if (!seminar) return '';
+        return seminar.checkin_date || seminar.event_date || '';
+    }
+
+    function setAttendanceEvent(seminar) {
+        const title = document.getElementById('live-attendance-title');
+        const date = document.getElementById('live-attendance-date');
+        if (title) title.textContent = seminar ? seminar.title || 'Attendance list' : 'Attendance list';
+        if (date) {
+            date.textContent = seminar
+                ? 'Check-in date: ' + formatEventDate(selectedCheckinDate(seminar))
+                : 'Choose an event to view its check-in date.';
+        }
+    }
+
+    function renderAttendance(attendees, emptyMessage) {
+        const list = document.getElementById('live-attendance-list');
+        const count = document.getElementById('live-attendance-count');
+        if (!list) return;
+        const rows = Array.isArray(attendees) ? attendees : [];
+        if (count) count.textContent = String(rows.length);
+        if (!rows.length) {
+            list.innerHTML =
+                '<p class="kiosk-attendance-empty">' +
+                esc(emptyMessage || 'No attendees have checked in for this event yet.') +
+                '</p>';
+            return;
+        }
+        list.innerHTML = rows
+            .map((person) => {
+                const name =
+                    [person.first_name, person.middle_name, person.last_name].filter(Boolean).join(' ') || 'Attendee';
+                const identifier = person.application_no || person.ticket_id_string || person.user_id_string || '—';
+                return (
+                    '<div class="kiosk-attendance-item">' +
+                    '<span class="kiosk-attendance-avatar" aria-hidden="true">' +
+                    esc(initials(name)) +
+                    '</span>' +
+                    '<div><strong class="kiosk-attendance-name">' +
+                    esc(name) +
+                    '</strong><span class="kiosk-attendance-meta">' +
+                    esc(identifier) +
+                    (person.scan_time ? ' · ' + esc(formatCardTime(person.scan_time)) : '') +
+                    '</span></div></div>'
+                );
+            })
+            .join('');
+    }
+
+    async function refreshAttendance() {
+        const sid = document.getElementById('live-scanner-seminar').value;
+        if (!sid) return;
+        const data = await api('/api/admin/live-scanner/attendance?seminarId=' + encodeURIComponent(sid));
+        renderAttendance(data.attendees);
+    }
+
     function tickClock() {
         const el = document.getElementById('kiosk-clock');
         if (!el) return;
@@ -237,7 +305,7 @@
                     playScanSound(ev.outcome);
                 }
             });
-            await refreshStats();
+            await Promise.all([refreshStats(), refreshAttendance()]);
             setLiveState(true, 'Live · updating');
         } catch (e) {
             console.warn('[live-scanner]', e.message);
@@ -256,6 +324,7 @@
         lastEventId = 0;
         const grid = document.getElementById('live-scan-grid');
         if (grid) grid.innerHTML = '';
+        renderAttendance([]);
         updateEmptyState();
         setLiveState(true, 'Connecting…');
         pollEvents();
@@ -276,18 +345,25 @@
         (seminars || []).forEach((s) => {
             const o = document.createElement('option');
             o.value = s.id;
-            const date = s.event_date ? String(s.event_date).slice(0, 10) : '';
-            o.textContent = (s.title || 'Event') + (date ? ' · ' + date : '');
+            const checkinDate = selectedCheckinDate(s);
+            o.textContent =
+                (s.title || 'Event') + (checkinDate ? ' · Check-in ' + formatEventDate(checkinDate) : '');
             sel.appendChild(o);
         });
         if ((seminars || []).length === 1) {
             sel.value = String(seminars[0].id);
+            setAttendanceEvent(seminars[0]);
             startPoll();
         }
         sel.addEventListener('change', () => {
             ensureAudio();
+            const seminar = (seminars || []).find((s) => String(s.id) === sel.value) || null;
+            setAttendanceEvent(seminar);
             if (sel.value) startPoll();
-            else stopPoll();
+            else {
+                stopPoll();
+                renderAttendance([], 'Choose an event to view checked-in attendees.');
+            }
             updateEmptyState();
         });
         const soundBtn = document.getElementById('kiosk-sound-toggle');
