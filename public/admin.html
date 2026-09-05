@@ -165,7 +165,7 @@
                 <a class="menu-item" data-admin-module="tab-contact-inquiries" onclick="switchTab('tab-contact-inquiries'); loadContactInquiries();"><i class="fas fa-envelope-open-text"></i> Website contact</a>
                 <a class="menu-item" data-admin-module="tab-email-compose" onclick="switchTab('tab-email-compose'); initAdminEmailComposeTab();"><i class="fas fa-paper-plane"></i> Send email</a>
                 <a class="menu-item" data-admin-module="tab-transfer" onclick="switchTab('tab-transfer')"><i class="fas fa-exchange-alt"></i> Transfer Applications</a>
-                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-file-medical"></i> Doctor applications</a>
+                <a class="menu-item" data-admin-module="tab-behalf-reg" onclick="switchTab('tab-behalf-reg'); initAdminBehalfRegTab();"><i class="fas fa-file-medical"></i> Applicant applications</a>
                 <a class="menu-item" data-admin-module="tab-reg-form" onclick="switchTab('tab-reg-form'); loadAdminRegistrationFormConfig();"><i class="fas fa-list-alt"></i> Registration Form Fields</a>
                 <a class="menu-item" data-admin-module="tab-portal-auth" onclick="openAdminPortalAuthSettings()"><i class="fas fa-shield-alt"></i> Portal sign-in</a>
                 <a class="menu-item" data-admin-module="tab-site-cms" onclick="switchTab('tab-site-cms'); loadAdminSiteCms();"><i class="fas fa-globe"></i> Website &amp; dashboard updates</a>
@@ -570,7 +570,7 @@
                         <span style="background: #e2e8f0; padding: 5px 10px; border-radius: 20px; font-size: 0.9rem;">Auto-updating every 5s <i class="fas fa-sync fa-spin" style="color: #3b82f6;"></i></span>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Time</th><th>Doctor (ID &amp; name)</th><th>Scanned by (scanner staff)</th></tr></thead>
+                        <thead><tr><th>Time</th><th>Applicant (ID &amp; name)</th><th>Scanned by (scanner staff)</th></tr></thead>
                         <tbody id="live-scans-list"><tr><td colspan="3" style="text-align: center;">Waiting for scans...</td></tr></tbody>
                     </table>
                 </div>
@@ -703,7 +703,7 @@
 
             <div id="tab-email-compose" class="tab-pane hidden">
                 <h2 style="margin-bottom:8px;">Send email</h2>
-                <p style="color:#64748b;margin:-4px 0 16px;">Single message or bulk to doctors, seminar registrants, or any email list (max 500 per send).</p>
+                <p style="color:#64748b;margin:-4px 0 16px;">Single message or bulk to applicants, seminar registrants, or any email list (max 500 per send).</p>
                 <div class="card" style="margin-bottom:16px;">
                     <h3 style="margin:0 0 12px;">Single email</h3>
                     <div style="max-width:720px;display:grid;gap:10px;">
@@ -719,7 +719,7 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:900px;">
                         <div><label>Audience</label>
                             <select id="mail-bulk-audience" style="width:100%;padding:8px;" onchange="onMailBulkAudienceChange()">
-                                <option value="all_doctors">All doctors</option>
+                                <option value="all_doctors">All applicants</option>
                                 <option value="all_registered_users">All registered users (accounts)</option>
                                 <option value="registered_candidates">Registered candidates (with registrations)</option>
                                 <option value="public_form_registrants">Public form registrants</option>
@@ -751,15 +751,15 @@
 
             <!-- 5. Support Tickets -->
             <div id="tab-support-tickets" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">Doctor Support Tickets</h2>
+                <h2 style="margin-bottom: 20px;">Applicant Support Tickets</h2>
                 <div class="card" style="margin-bottom: 16px;">
-                    <h3 style="margin:0 0 12px;font-size:1rem;color:#1e40af;">Create ticket for a doctor</h3>
+                    <h3 style="margin:0 0 12px;font-size:1rem;color:#1e40af;">Create ticket for an applicant</h3>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
                         <div style="grid-column:1/-1;">
-                            <label style="font-size:0.82rem;color:#64748b;">Doctor portal user ID (12-digit) or email</label>
+                            <label style="font-size:0.82rem;color:#64748b;">Applicant portal user ID (12-digit) or email</label>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-                                <input type="text" id="admin-st-create-user-id" placeholder="e.g. 155760896418 or doctor@example.com" style="flex:1;min-width:200px;padding:8px;" autocomplete="off">
-                                <button type="button" class="btn-primary" style="padding:8px 14px;" onclick="adminLookupDoctorForSupportTicket()">Look up doctor</button>
+                                <input type="text" id="admin-st-create-user-id" placeholder="e.g. 155760896418 or applicant@example.com" style="flex:1;min-width:200px;padding:8px;" autocomplete="off">
+                                <button type="button" class="btn-primary" style="padding:8px 14px;" onclick="adminLookupDoctorForSupportTicket()">Look up applicant</button>
                             </div>
                             <input type="hidden" id="admin-st-create-resolved-id" value="">
                             <div id="admin-st-doctor-preview" style="display:none;margin-top:12px;padding:12px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-size:0.88rem;"></div>
@@ -780,7 +780,7 @@
                         </div>
                         <div style="grid-column:1/-1;">
                             <label style="font-size:0.82rem;color:#64748b;">Message / description</label>
-                            <textarea id="admin-st-create-description" rows="3" placeholder="Details visible to the doctor in their portal" style="width:100%;"></textarea>
+                            <textarea id="admin-st-create-description" rows="3" placeholder="Details visible to the applicant in their portal" style="width:100%;"></textarea>
                         </div>
                     </div>
                     <button type="button" class="btn-primary" style="margin-top:12px;" onclick="adminCreateSupportTicketForDoctor()">Create support ticket</button>
@@ -805,7 +805,7 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="support-tickets-search" style="font-weight:600;font-size:0.9rem;">Search tickets</label>
-                        <input type="search" id="support-tickets-search" placeholder="Ticket ID, doctor, subject, category, or status..." oninput="renderSupportTicketsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="support-tickets-search" placeholder="Ticket ID, applicant, subject, category, or status..." oninput="renderSupportTicketsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="support-tickets-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
@@ -818,7 +818,7 @@
             <div id="tab-transfer" class="tab-pane hidden">
                 <h2 style="margin-bottom: 20px;">Internal Application Transfer</h2>
                 <div class="card">
-                    <p style="color: #64748b; margin-bottom: 16px;">Move a seminar registration or case presentation to another doctor account (including pending approval). Use the application number shown in the portal.</p>
+                    <p style="color: #64748b; margin-bottom: 16px;">Move a seminar registration or case presentation to another applicant account (including pending approval). Use the application number shown in the portal.</p>
                     <label>Application type</label>
                     <select id="transfer-type" style="margin-bottom:12px;">
                         <option value="auto">Auto-detect (seminar or case)</option>
@@ -828,7 +828,7 @@
                     <label>Application number or internal ID</label>
                     <input type="text" id="transfer-app-id" placeholder="e.g. 123456789012">
                     <label style="margin-top: 12px; display: block;">Target user (portal ID, email, or account number)</label>
-                    <input type="text" id="transfer-user-id" placeholder="e.g. 481938501234 or doctor@email.com">
+                    <input type="text" id="transfer-user-id" placeholder="e.g. 481938501234 or applicant@email.com">
                     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
                         <button type="button" class="btn-primary" style="background:#64748b;" onclick="lookupTransferApplication()">Look up</button>
                         <button type="button" class="btn-primary" onclick="transferApplication()">Execute transfer</button>
@@ -874,7 +874,7 @@
                             <select id="behalf-seminar-select" onchange="onAdminBehalfDoctorOrSeminarChange()"><option value="">... Select seminar ...</option></select>
                     </div>
                     </div>
-                    <p id="behalf-app-summary" style="margin-top:12px;font-size:0.9rem;color:#475569;">Select a doctor and seminar to load or create an application.</p>
+                    <p id="behalf-app-summary" style="margin-top:12px;font-size:0.9rem;color:#475569;">Select an applicant and seminar to load or create an application.</p>
                 </div>
                 <div class="card" style="margin-bottom:16px;">
                     <h3 style="margin:0 0 12px;color:#1a237e;">Application form</h3>
@@ -914,22 +914,22 @@
             <!-- Registration form (seminar application) field configuration -->
             <div id="tab-reg-form" class="tab-pane hidden">
                 <h2 style="margin-bottom: 16px;">Seminar registration form</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Toggle which fields appear for doctors and whether each is required. Changes apply to new submissions and edits.</p>
+                <p style="color:#64748b;margin-bottom:16px;">Toggle which fields appear for applicants and whether each is required. Changes apply to new submissions and edits.</p>
                     <div class="card">
                     <table class="data-table">
-                        <thead><tr><th>Field key</th><th>Label (shown to doctor)</th><th>Type</th><th>Step</th><th>Enabled</th><th>Required</th><th>Options (select)</th><th></th></tr></thead>
+                        <thead><tr><th>Field key</th><th>Label (shown to applicant)</th><th>Type</th><th>Step</th><th>Enabled</th><th>Required</th><th>Options (select)</th><th></th></tr></thead>
                         <tbody id="admin-reg-fields-tbody"></tbody>
                     </table>
                     <div style="margin-top:16px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
                         <label style="font-weight:700;color:#166534;">Qualification options (PG / Practicing Vaidya / Practitioner)</label>
-                        <p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Choose which choices appear in the doctor registration dropdown.</p>
+                        <p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Choose which choices appear in the applicant registration dropdown.</p>
                         <div id="admin-global-qual-options" style="display:flex;flex-wrap:wrap;gap:14px;font-size:0.9rem;"></div>
                     </div>
                     <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;">
                         <div><label style="font-size:0.82rem;font-weight:700;">Earliest birth year allowed</label><input type="number" id="admin-birth-year-min" min="1900" max="2100" placeholder="e.g. 1960" style="width:100%;padding:8px;"></div>
                         <div><label style="font-size:0.82rem;font-weight:700;">Latest birth year allowed</label><input type="number" id="admin-birth-year-max" min="1900" max="2100" placeholder="e.g. 2006" style="width:100%;padding:8px;"></div>
                     </div>
-                    <p style="font-size:0.78rem;color:#64748b;margin-top:6px;">Leave blank for no birth-year restriction. Doctors enter date of birth on step 1.</p>
+                    <p style="font-size:0.78rem;color:#64748b;margin-top:6px;">Leave blank for no birth-year restriction. Applicants enter date of birth on step 1.</p>
                     <button type="button" class="btn-primary" style="margin-top:10px;background:#0d9488;" onclick="adminAddRegistrationFieldRow()">+ Add field</button>
                     <button type="button" class="btn-primary" style="margin-top:16px;margin-left:8px;" onclick="saveAdminRegistrationFormConfig()">Save registration form</button>
                     <p id="admin-reg-form-msg" style="margin-top:10px;font-weight:600;"></p>
@@ -1005,11 +1005,11 @@
                     <button type="button" class="btn-primary" style="margin-top:10px;" id="ak-site-images-upload-btn"><i class="fas fa-upload"></i> Upload to live site</button>
                     <p id="ak-site-images-status" style="margin-top:10px;font-size:0.88rem;font-weight:600;"></p>
                 </div>
-                <h2 style="margin-bottom: 12px; color:#0c4a6e;">Public website &amp; doctor portal content</h2>
+                <h2 style="margin-bottom: 12px; color:#0c4a6e;">Public website &amp; applicant portal content</h2>
                 <p style="color:#475569;margin-bottom:18px;max-width:860px;">Manage the public website: ticker, banner carousel, gallery, about us, social links, and notices. Use <strong>Upload</strong> buttons ... paths are saved automatically. <strong>Final attendee list:</strong> enable <em>Publish participant list</em> per seminar under Event management (after payments are complete).</p>
                 <div id="ak-portal-auth-card" class="card ak-cms-portal-auth" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Public portal sign-in &amp; security</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving doctor applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. After you save here once, these settings control the live site. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> only apply before the first save.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Controls whether the main website shows signup/login, optional email verification after signup, and whether creating users or saving applicant applications on their behalf requires <strong>your</strong> email + WhatsApp OTP. After you save here once, these settings control the live site. Environment variables <code>REQUIRE_SIGNUP_OTP</code> / <code>REQUIRE_LOGIN_OTP</code> only apply before the first save.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:720px;">
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-signup" checked> Show ...Create account... on main site</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-show-login" checked> Show sign-in entry on main site</label>
@@ -1022,7 +1022,7 @@
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-login-otp-email" checked> Login email OTP</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-email-verify"> Require email verification before login</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-admin-sensitive-otp"> Require admin OTP to create users / save behalf applications</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-behalf-applicant-otp" checked> Require applicant OTP (phone + email) when admin saves doctor application</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-behalf-applicant-otp" checked> Require applicant OTP (phone + email) when admin saves applicant application</label>
                             </div>
                     <p id="pa-effective-hint" style="font-size:0.82rem;color:#475569;margin:10px 0 8px;"></p>
                     <button type="button" class="btn-primary" style="background:#0369a1;" onclick="savePortalAuthAdminConfig()">Save portal auth policy</button>
@@ -1084,7 +1084,7 @@
                 </div>
                 <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #bae6fd;background:#f0f9ff;">
                     <h3 style="margin:0 0 10px;color:#0369a1;font-size:1.05rem;">Support ticket response time (SLA)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When a doctor logs a support ticket, they see the expected response time. Default applies to all categories unless overridden below.</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">When an applicant logs a support ticket, they see the expected response time. Default applies to all categories unless overridden below.</p>
                     <label style="font-size:0.82rem;font-weight:700;">Default response time (hours)</label>
                     <input type="number" id="sts-default-hours" min="1" max="720" value="24" style="width:120px;padding:8px;margin:6px 0 14px;">
                     <label style="font-size:0.82rem;font-weight:700;">Hours by category (optional)</label>
@@ -1098,14 +1098,14 @@
                     <p id="sts-save-msg" style="margin-top:8px;font-weight:600;font-size:0.9rem;"></p>
                 </div>
                 <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #ddd6fe;background:#f5f3ff;">
-                    <h3 style="margin:0 0 10px;color:#5b21b6;font-size:1.05rem;">Portal themes (main site, doctor, judge)</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Primary colours and accents for each portal. Doctors and judges see changes after refresh.</p>
+                    <h3 style="margin:0 0 10px;color:#5b21b6;font-size:1.05rem;">Portal themes (main site, applicant, judge)</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Primary colours and accents for each portal. Applicants and judges see changes after refresh.</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
                         <div><strong style="font-size:0.85rem;color:#0f766e;">Public site</strong>
                             <label style="font-size:0.78rem;display:block;margin-top:8px;">Primary</label><input type="color" id="pt-public-primary" value="#0f766e" style="width:100%;height:36px;">
                             <label style="font-size:0.78rem;display:block;margin-top:6px;">Accent (gold)</label><input type="color" id="pt-public-accent" value="#c9a227" style="width:100%;height:36px;">
                         </div>
-                        <div><strong style="font-size:0.85rem;color:#0f766e;">Doctor portal</strong>
+                        <div><strong style="font-size:0.85rem;color:#0f766e;">Applicant portal</strong>
                             <label style="font-size:0.78rem;display:block;margin-top:8px;">Primary / sidebar</label><input type="color" id="pt-doctor-primary" value="#0f766e" style="width:100%;height:36px;">
                             <label style="font-size:0.78rem;display:block;margin-top:6px;">Accent</label><input type="color" id="pt-doctor-accent" value="#fbbf24" style="width:100%;height:36px;">
                         </div>
@@ -1119,7 +1119,7 @@
                 </div>
                 <div class="card ak-cms-advanced" style="margin-bottom:18px;border:1px solid #fecaca;background:#fef2f2;">
                     <h3 style="margin:0 0 10px;color:#b91c1c;font-size:1.05rem;">Pending registration reminders</h3>
-                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Email/WhatsApp nudges for doctors who have not completed documents (uses notification template <code>REGISTRATION_PENDING_REMINDER</code>). Runs daily on server cron (10:00 UTC on Vercel).</p>
+                    <p style="color:#64748b;font-size:0.88rem;margin-bottom:10px;">Email/WhatsApp nudges for applicants who have not completed documents (uses notification template <code>REGISTRATION_PENDING_REMINDER</code>). Runs daily on server cron (10:00 UTC on Vercel).</p>
                     <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-bottom:8px;"><input type="checkbox" id="pr-enabled"> Enable automatic reminders</label>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;max-width:640px;">
                         <div><label style="font-size:0.82rem;">Every N days</label><input type="number" id="pr-interval-days" min="1" max="30" value="3" style="width:100%;padding:8px;"></div>
@@ -1514,17 +1514,17 @@
             <!-- Payments module -->
             <div id="tab-admin-payments" class="tab-pane hidden">
                 <h2 style="margin-bottom: 16px;">Payments &amp; refunds</h2>
-                <p style="color:#64748b;margin-bottom:16px;">View all payments per doctor, issue refunds (full or partial), waive fees and issue e-tickets, and approve cancellation requests with IST-based refund policy. Razorpay and Cashfree refunds are sent automatically; PayU, Easebuzz, Paytm, and PhonePe are recorded for manual completion in the gateway dashboard.</p>
+                <p style="color:#64748b;margin-bottom:16px;">View all payments per applicant, issue refunds (full or partial), waive fees and issue e-tickets, and approve cancellation requests with IST-based refund policy. Razorpay and Cashfree refunds are sent automatically; PayU, Easebuzz, Paytm, and PhonePe are recorded for manual completion in the gateway dashboard.</p>
                 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
                     <button type="button" class="btn-primary admin-payments-subtab active" data-pay-tab="orders" style="background:#0d9488;" onclick="switchAdminPaymentsTab('orders')">Orders</button>
                     <button type="button" class="btn-primary admin-payments-subtab" data-pay-tab="supplemental" style="background:#7c3aed;" onclick="switchAdminPaymentsTab('supplemental')">Additional payments</button>
                     <button type="button" class="btn-primary admin-payments-subtab" data-pay-tab="cancellations" style="background:#64748b;" onclick="switchAdminPaymentsTab('cancellations')">Cancellation requests</button>
                 </div>
                 <div id="admin-payments-panel-supplemental" class="card hidden" style="margin-bottom:16px;border:1px solid #ddd6fe;background:#faf5ff;">
-                    <h3 style="margin:0 0 10px;color:#6d28d9;">Additional payments (doctor portal)</h3>
-                    <p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">Create extra charges (workshop fee, late fee, etc.). Doctors see them under Payments; you can mark cash received at the desk.</p>
+                    <h3 style="margin:0 0 10px;color:#6d28d9;">Additional payments (applicant portal)</h3>
+                    <p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">Create extra charges (workshop fee, late fee, etc.). Applicants see them under Payments; you can mark cash received at the desk.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:960px;">
-                        <div><label>Doctor portal User ID</label><input type="text" id="sup-pay-user-id" placeholder="e.g. USR_TINBS1V70" autocomplete="off" style="width:100%;padding:8px;"></div>
+                        <div><label>Applicant portal User ID</label><input type="text" id="sup-pay-user-id" placeholder="e.g. USR_TINBS1V70" autocomplete="off" style="width:100%;padding:8px;"></div>
                         <div><label>Seminar (optional)</label><select id="sup-pay-seminar" style="width:100%;padding:8px;"><option value="">...</option></select></div>
                         <div><label>Amount (?)</label><input type="number" id="sup-pay-amount" step="0.01" style="width:100%;padding:8px;"></div>
                     </div>
@@ -1542,16 +1542,16 @@
                         <p id="supplemental-payments-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>ID</th><th>Doctor</th><th>Title</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Applicant</th><th>Title</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody id="admin-supplemental-tbody"><tr><td colspan="6" style="text-align:center;">...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:16px;border:1px solid #99f6e4;background:#f0fdfa;">
                     <h3 style="margin:0 0 10px;color:#0f766e;">Create / record order</h3>
-                    <p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">For doctors who paid offline but the system was not updated.</p>
+                    <p style="font-size:0.88rem;color:#64748b;margin:0 0 12px;">For applicants who paid offline but the system was not updated.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:900px;">
                         <div><label>Seminar</label><select id="co-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Doctor (User ID, email, or phone)</label><input type="text" id="co-user-query" style="width:100%;padding:8px;"></div>
+                        <div><label>Applicant (User ID, email, or phone)</label><input type="text" id="co-user-query" style="width:100%;padding:8px;"></div>
                     </div>
                     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
                         <button type="button" class="btn-primary" onclick="lookupAdminCreateOrder()">Look up</button>
@@ -1577,11 +1577,11 @@
                     <button type="button" class="btn-primary" style="margin-bottom:12px;background:#64748b;" onclick="loadAdminEnrichedOrders()">Refresh orders</button>
                     <div style="margin-bottom:12px;">
                         <label for="payments-orders-search" style="font-weight:600;font-size:0.9rem;">Search orders</label>
-                        <input type="search" id="payments-orders-search" placeholder="Order ID, doctor, seminar, application, gateway, or status..." oninput="renderAdminEnrichedOrdersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="payments-orders-search" placeholder="Order ID, applicant, seminar, application, gateway, or status..." oninput="renderAdminEnrichedOrdersTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="payments-orders-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Order</th><th>Doctor</th><th>Seminar</th><th>App</th><th>Gateway</th><th>Amount</th><th>Refunded</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Order</th><th>Applicant</th><th>Seminar</th><th>App</th><th>Gateway</th><th>Amount</th><th>Refunded</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody id="admin-orders-tbody"><tr><td colspan="9" style="text-align:center;">Open this tab or click Refresh</td></tr></tbody>
                     </table>
                 </div>
@@ -1592,11 +1592,11 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label for="cancellation-requests-search" style="font-weight:600;font-size:0.9rem;">Search cancellation requests</label>
-                        <input type="search" id="cancellation-requests-search" placeholder="Doctor, seminar, application, reason, or status..." oninput="renderAdminCancellationRequestsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="cancellation-requests-search" placeholder="Applicant, seminar, application, reason, or status..." oninput="renderAdminCancellationRequestsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="cancellation-requests-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Requested</th><th>Doctor</th><th>Seminar</th><th>App</th><th>Reason</th><th>Policy refund</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Requested</th><th>Applicant</th><th>Seminar</th><th>App</th><th>Reason</th><th>Policy refund</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody id="admin-cancel-req-tbody"><tr><td colspan="8" style="text-align:center;">...</td></tr></tbody>
                     </table>
                 </div>
@@ -1721,7 +1721,7 @@
                     <input type="search" id="vol-assign-search" placeholder="Seminar, name, portal ID, email, ticket, registration status..." oninput="renderAdminVolunteerAssignmentsTable()" style="width:100%;max-width:640px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                     <p id="vol-assign-search-count" style="margin:6px 0 12px;font-size:0.82rem;color:#64748b;"></p>
                     <table class="data-table">
-                        <thead><tr><th>Seminar</th><th>Doctor</th><th>Assignment</th><th>Registration</th><th>Ticket (?0)</th><th>Duties</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Seminar</th><th>Applicant</th><th>Assignment</th><th>Registration</th><th>Ticket (?0)</th><th>Duties</th><th>Actions</th></tr></thead>
                         <tbody id="vol-assign-list"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
                     </table>
                 </div>
@@ -1732,12 +1732,12 @@
                 <div class="card">
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
                         <div><label>Seminar</label><select id="vol-mgmt-seminar" style="width:100%;padding:8px;" onchange="loadAdminVolunteers()"></select></div>
-                        <div><label>Doctor portal User ID</label><input type="text" id="vol-mgmt-user-id" placeholder="e.g. USR_TINBS1V70" style="width:100%;padding:8px;" autocomplete="off"></div>
+                        <div><label>Applicant portal User ID</label><input type="text" id="vol-mgmt-user-id" placeholder="e.g. USR_TINBS1V70" style="width:100%;padding:8px;" autocomplete="off"></div>
                         <div><label>Duties</label><input type="text" id="vol-mgmt-duties" placeholder="e.g. Registration desk" style="width:100%;padding:8px;"></div>
                         <div><label>Admin notes</label><input type="text" id="vol-mgmt-notes" style="width:100%;padding:8px;"></div>
                     </div>
                     <button type="button" class="btn-primary" onclick="addAdminVolunteer()">Add volunteer</button>
-                    <p style="font-size:0.85rem;color:#64748b;margin-top:12px;max-width:720px;">Assigns the doctor as a <strong>volunteer</strong> in the portal. They must complete seminar registration themselves. After registration is submitted, a <strong>free e-ticket (?0)</strong>, dual certificates, and notifications are issued automatically ... not before.</p>
+                    <p style="font-size:0.85rem;color:#64748b;margin-top:12px;max-width:720px;">Assigns the applicant as a <strong>volunteer</strong> in the portal. They must complete seminar registration themselves. After registration is submitted, a <strong>free e-ticket (?0)</strong>, dual certificates, and notifications are issued automatically ... not before.</p>
                 </div>
                 <div class="card" style="margin-top:16px;">
                     <div style="margin-bottom:12px;">
@@ -1746,7 +1746,7 @@
                         <p id="volunteers-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>Doctor</th><th>Status</th><th>Volunteer ticket</th><th>Notes</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Applicant</th><th>Status</th><th>Volunteer ticket</th><th>Notes</th><th>Actions</th></tr></thead>
                         <tbody id="vol-mgmt-list"><tr><td colspan="5" style="text-align:center;">Select a seminar</td></tr></tbody>
                     </table>
                 </div>
@@ -1762,16 +1762,16 @@
                         <div><label>Title *</label><input type="text" id="case-prog-title" style="width:100%;padding:8px;"></div>
                         <div><label>Linked seminar</label><select id="case-prog-seminar" style="width:100%;padding:8px;"><option value="">... None ...</option></select></div>
                         <div style="grid-column:1/-1;"><label>Description</label><textarea id="case-prog-desc" rows="2" style="width:100%;padding:8px;"></textarea></div>
-                        <div style="grid-column:1/-1;"><label>Instructions (shown to doctors)</label><textarea id="case-prog-instructions" rows="2" style="width:100%;padding:8px;"></textarea></div>
+                        <div style="grid-column:1/-1;"><label>Instructions (shown to applicants)</label><textarea id="case-prog-instructions" rows="2" style="width:100%;padding:8px;"></textarea></div>
                         <div><label>Registration opens (IST)</label><input type="datetime-local" id="case-prog-start" style="width:100%;padding:8px;"></div>
                         <div><label>Registration closes (IST)</label><input type="datetime-local" id="case-prog-end" style="width:100%;padding:8px;"></div>
-                        <div><label>Max presentations per doctor</label><input type="number" id="case-prog-max-per-user" min="1" max="10" value="2" style="width:100%;padding:8px;"></div>
+                        <div><label>Max presentations per applicant</label><input type="number" id="case-prog-max-per-user" min="1" max="10" value="2" style="width:100%;padding:8px;"></div>
                         <div>
                             <label>Total presentation slots</label>
                             <input type="number" id="case-prog-max-total" min="1" placeholder="e.g. 50" style="width:100%;padding:8px;">
                             <label style="display:flex;align-items:center;gap:8px;margin-top:6px;font-weight:500;font-size:0.88rem;"><input type="checkbox" id="case-prog-unlimited-capacity" checked> Unlimited (many can apply)</label>
                         </div>
-                        <div style="grid-column:1/-1;"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="case-prog-show-seats" checked> Show seat/slot count to doctors on case registration</label></div>
+                        <div style="grid-column:1/-1;"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="case-prog-show-seats" checked> Show seat/slot count to applicants on case registration</label></div>
                         <div><label>Max files per submission</label><input type="number" id="case-prog-max-files" min="1" max="10" value="5" style="width:100%;padding:8px;"></div>
                         <div><label>Max file size (MB each)</label><input type="number" id="case-prog-max-mb" min="1" max="250" value="100" style="width:100%;padding:8px;"><p style="font-size:0.78rem;color:#64748b;margin:4px 0 0;">Default <strong>100 MB</strong>, max <strong>250 MB</strong> per file when Cloudflare R2 is configured. Without R2, server uploads stay at ~4 MB on Vercel.</p></div>
                         <div style="grid-column:1/-1;">
@@ -1805,10 +1805,10 @@
                     <div id="case-prog-list" style="margin-top:14px;"></div>
                     <hr style="margin:18px 0;">
                     <h4 style="margin:0 0 8px;">Priority select (no application yet)</h4>
-                    <p style="color:#64748b;font-size:0.85rem;margin-bottom:10px;">Creates a pre-filled case application for a doctor who was selected but never applied. They complete missing fields in the doctor portal; review is fast-tracked. Seminar registration override is applied when the program is linked to a seminar.</p>
+                    <p style="color:#64748b;font-size:0.85rem;margin-bottom:10px;">Creates a pre-filled case application for an applicant who was selected but never applied. They complete missing fields in the applicant portal; review is fast-tracked. Seminar registration override is applied when the program is linked to a seminar.</p>
                     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
                         <div><label style="font-size:0.8rem;">Program</label><select id="case-priority-program" style="min-width:220px;padding:8px;"><option value="">... Select program ...</option></select></div>
-                        <div><label style="font-size:0.8rem;">Doctor portal ID / email</label><input type="text" id="case-priority-user" placeholder="USR_... or email" style="padding:8px;min-width:200px;"></div>
+                        <div><label style="font-size:0.8rem;">Applicant portal ID / email</label><input type="text" id="case-priority-user" placeholder="USR_... or email" style="padding:8px;min-width:200px;"></div>
                         <div><label style="font-size:0.8rem;">Category</label><select id="case-priority-category" style="padding:8px;"><option value="agnikarma">Agnikarma</option><option value="viddhakarma">Viddhakarma</option><option value="both">Both</option></select></div>
                         <button type="button" class="btn-primary" style="background:#7c3aed;" onclick="adminPriorityInviteDoctor()">Create priority application</button>
                     </div>
@@ -1818,11 +1818,11 @@
                     <button type="button" class="btn-primary" style="background:#64748b;margin-bottom:12px;" onclick="loadAdminCaseSubmissions()">Refresh submissions</button>
                     <div style="margin-bottom:12px;">
                         <label for="case-submissions-search" style="font-weight:600;font-size:0.9rem;">Search submissions</label>
-                        <input type="search" id="case-submissions-search" placeholder="Application ID, doctor, category, topic, or status..." oninput="renderAdminCaseSubmissionsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
+                        <input type="search" id="case-submissions-search" placeholder="Application ID, applicant, category, topic, or status..." oninput="renderAdminCaseSubmissionsTable()" style="width:100%;max-width:560px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;margin-top:6px;">
                         <p id="case-submissions-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th>App ID</th><th>Doctor</th><th>Category</th><th>Topic</th><th>Status</th><th>Files</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>App ID</th><th>Applicant</th><th>Category</th><th>Topic</th><th>Status</th><th>Files</th><th>Actions</th></tr></thead>
                         <tbody id="case-mgmt-list"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody>
                     </table>
                 </div>
@@ -1838,7 +1838,7 @@
                         <button type="button" class="btn-primary" style="background:#0f766e;" onclick="downloadCaseMarksheet('xlsx')"><i class="fas fa-file-excel"></i> Download Excel marksheet</button>
                         <button type="button" class="btn-primary" style="background:#1e40af;" onclick="downloadCaseMarksheet('pdf')"><i class="fas fa-file-pdf"></i> Download PDF / print</button>
                     </div>
-                    <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Marksheet includes each judge...s criteria scores, totals, doctor &amp; judge IDs, and auto eligibility (=60% of max by default).</p>
+                    <p style="font-size:0.82rem;color:#64748b;margin-bottom:10px;">Marksheet includes each judge...s criteria scores, totals, applicant &amp; judge IDs, and auto eligibility (=60% of max by default).</p>
                     <div id="case-results-panel"><p style="color:#64748b;">Loading results...</p></div>
                     <h4 style="margin:20px 0 10px;">Full marksheet preview</h4>
                     <div id="case-marksheet-panel" style="overflow-x:auto;"><p style="color:#64748b;">Loading marksheet...</p></div>
@@ -1885,15 +1885,15 @@
                 </div>
                 <div class="card" style="margin-top:16px;">
                     <h3>Per-user registration override</h3>
-                    <p style="color:#64748b;font-size:0.88rem;">Allow one doctor to register when the seminar is closed.</p>
+                    <p style="color:#64748b;font-size:0.88rem;">Allow one applicant to register when the seminar is closed.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:12px 0;">
-                        <div><label>Doctor portal User ID</label><input type="text" id="reg-ov-user-id" placeholder="e.g. USR_TINBS1V70" style="width:100%;padding:8px;" autocomplete="off"></div>
+                        <div><label>Applicant portal User ID</label><input type="text" id="reg-ov-user-id" placeholder="e.g. USR_TINBS1V70" style="width:100%;padding:8px;" autocomplete="off"></div>
                         <div><label>Seminar</label><select id="reg-ov-seminar" style="width:100%;padding:8px;"></select></div>
                         <div><label>Note</label><input type="text" id="reg-ov-note" style="width:100%;padding:8px;"></div>
                     </div>
                     <button type="button" class="btn-primary" onclick="saveAdminRegistrationOverride()">Save override</button>
                     <table class="data-table" style="margin-top:16px;">
-                        <thead><tr><th>Doctor</th><th>Seminar</th><th>Enabled</th><th>Note</th></tr></thead>
+                        <thead><tr><th>Applicant</th><th>Seminar</th><th>Enabled</th><th>Note</th></tr></thead>
                         <tbody id="reg-ov-list"><tr><td colspan="4" style="text-align:center;">...</td></tr></tbody>
                     </table>
                 </div>
@@ -1932,7 +1932,7 @@
 
             <!-- User & doctor activity -->
             <div id="tab-activity-logs" class="tab-pane hidden">
-                <h2 style="margin-bottom: 20px;">User &amp; doctor activity</h2>
+                <h2 style="margin-bottom: 20px;">User &amp; applicant activity</h2>
                 <p style="color:#64748b;font-size:0.9rem;margin-bottom:16px;">Audit trail of logins, applications, payments, and support (IST).</p>
                 <div class="card">
                     <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap;">
@@ -1948,7 +1948,7 @@
                             <label>Role</label>
                             <select id="activity-log-role" style="width:100%;padding:8px;">
                                 <option value="">All</option>
-                                <option value="doctor">doctor</option>
+                                <option value="doctor">applicant</option>
                                 <option value="admin">admin</option>
                                 <option value="scanner">scanner</option>
                             </select>
@@ -2054,7 +2054,7 @@
 
             <div id="tab-feedback-form" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;">Feedback form editor</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Build the doctor portal feedback form below, or edit advanced JSON. Click <strong>Save feedback form</strong> when done.</p>
+                <p style="color:#64748b;margin-bottom:16px;">Build the applicant portal feedback form below, or edit advanced JSON. Click <strong>Save feedback form</strong> when done.</p>
                 <div class="card" style="margin-bottom:16px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                         <div><label>Form title</label><input type="text" id="feedback-form-title" style="width:100%;" oninput="syncFeedbackFormJsonFromBuilder()"></div>
@@ -2211,7 +2211,7 @@
 
             <div id="tab-system-platform" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;color:#0c4a6e;">System health ... platform &amp; apps</h2>
-                <p style="color:#475569;margin-bottom:16px;max-width:900px;">Live status for admin backend, doctor/judge/scanner portals, mobile app URLs, database, email/WhatsApp, and notification queue. Refreshes every 12 seconds. Issues trigger automatic remediation where possible.</p>
+                <p style="color:#475569;margin-bottom:16px;max-width:900px;">Live status for admin backend, applicant/judge/scanner portals, mobile app URLs, database, email/WhatsApp, and notification queue. Refreshes every 12 seconds. Issues trigger automatic remediation where possible.</p>
                 <div class="card">
                     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
                         <button type="button" class="btn-primary" onclick="initAdminSystemHealth('platform')">Refresh now</button>
@@ -2268,7 +2268,7 @@
                         </select>
                         <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
                             <input type="checkbox" id="setting-ncism-disable-ocr">
-                            Disable NCISM OCR auto-check in doctor registration (manual review only)
+                            Disable NCISM OCR auto-check in applicant registration (manual review only)
                         </label>
                     </div>
                     <div>
@@ -2297,7 +2297,7 @@
                 <div class="card" style="margin-top: 20px;">
                     <h3><i class="fas fa-plug"></i> Email, SMS (MSG91), WhatsApp &amp; live site URL</h3>
                     <p style="color:#64748b;font-size:0.9rem;margin-bottom:16px;">Saved in the database and applied immediately. Leave password/token blank to keep existing values.</p>
-                    <p style="font-size:0.85rem;margin-bottom:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><strong>Homepage venue</strong> (e.g. Convention Centre, Pune): <a href="#" onclick="switchTab('tab-site-cms');loadAdminSiteCms();return false;">Website &amp; doctor updates</a> &rarr; <em>Venue line</em> + <em>Contact address</em>, then click <strong>Save website &amp; portal content</strong>.</p>
+                    <p style="font-size:0.85rem;margin-bottom:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><strong>Homepage venue</strong> (e.g. Convention Centre, Pune): <a href="#" onclick="switchTab('tab-site-cms');loadAdminSiteCms();return false;">Website &amp; applicant updates</a> &rarr; <em>Venue line</em> + <em>Contact address</em>, then click <strong>Save website &amp; portal content</strong>.</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
                         <p style="font-size:0.85rem;margin-bottom:12px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;"><strong>Wix + subdomains:</strong> Main site on Wix; point seminar, admin, judge DNS to your VPS. See deploy/WIX-DNS.md</p>
                         <div><label>Seminar portal URL</label><input type="url" id="int-public-base-url" placeholder="https://seminar.vaidyagogate.org" style="width:100%"></div>
@@ -2365,7 +2365,7 @@
                 
                 <div class="card" style="margin-top: 20px;">
                     <h3>Payment Gateway Configurations</h3>
-                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Live doctor payments use <strong>Razorpay</strong> or <strong>Cashfree</strong> only. Enable one (or both); saving updates the default gateway in Site configuration for new transactions.</p>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Live applicant payments use <strong>Razorpay</strong> or <strong>Cashfree</strong> only. Enable one (or both); saving updates the default gateway in Site configuration for new transactions.</p>
                     
                     <!-- Razorpay -->
                     <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -2374,12 +2374,12 @@
                             <div><label>Test Key ID</label><input type="text" id="pg-razorpay-test-key-id" placeholder="rzp_test_..."></div>
                             <div><label>Test Key Secret</label><input type="password" id="pg-razorpay-test-key-secret" placeholder="..."></div>
                         </div>
-                        <label style="margin-top: 8px; display:block;"><input type="checkbox" id="pg-razorpay-test-enabled"> Enable Test mode for doctors</label>
+                        <label style="margin-top: 8px; display:block;"><input type="checkbox" id="pg-razorpay-test-enabled"> Enable Test mode for applicants</label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 12px;">
                             <div><label>Live Key ID</label><input type="text" id="pg-razorpay-live-key-id" placeholder="rzp_live_..."></div>
                             <div><label>Live Key Secret</label><input type="password" id="pg-razorpay-live-key-secret" placeholder="..."></div>
                         </div>
-                        <label style="margin-top: 8px; display:block;"><input type="checkbox" id="pg-razorpay-live-enabled"> Enable Live mode for doctors</label>
+                        <label style="margin-top: 8px; display:block;"><input type="checkbox" id="pg-razorpay-live-enabled"> Enable Live mode for applicants</label>
                         <label style="margin-top: 10px; display:block;"><input type="checkbox" id="pg-razorpay-active"> Enable Razorpay gateway</label>
                     </div>
                     
@@ -2390,7 +2390,7 @@
                             <div><label>App ID</label><input type="text" id="pg-cashfree-app-id" placeholder="..."></div>
                             <div><label>Secret Key</label><input type="password" id="pg-cashfree-secret-key" placeholder="..."></div>
                         </div>
-                        <label style="margin-top: 10px; display:block;"><input type="checkbox" id="pg-cashfree-live-enabled"> Enable Live mode for doctors</label>
+                        <label style="margin-top: 10px; display:block;"><input type="checkbox" id="pg-cashfree-live-enabled"> Enable Live mode for applicants</label>
                         <label style="margin-top: 10px; display:block;"><input type="checkbox" id="pg-cashfree-active"> Enable Cashfree gateway</label>
                     </div>
                 </div>
@@ -2466,7 +2466,7 @@
                     <button type="button" style="margin-left:8px;font-size:0.8rem;" onclick="copyNewUserGeneratedPassword()">Copy</button>
                 </div>
                 <p id="newuser-staff-dup-hint" style="display:none;font-size: 0.85rem; color: #0f766e; margin-top: 4px; background: #ecfdf5; padding: 10px; border-radius: 4px;border:1px solid #a7f3d0;">
-                    <strong>Staff testing:</strong> You may use the same email as an existing doctor account (e.g. Nitin). Each staff login needs its own <strong>12-digit portal ID</strong>; sign in with portal ID + password on scanner/judge/admin portals.
+                    <strong>Staff testing:</strong> You may use the same email as an existing applicant account (e.g. Nitin). Each staff login needs its own <strong>12-digit portal ID</strong>; sign in with portal ID + password on scanner/judge/admin portals.
                 </p>
                 <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px; background: #f0f4ff; padding: 10px; border-radius: 4px;">
                     Each role signs in at its own URL:
@@ -2527,7 +2527,7 @@
                 <div><label>Terms and Conditions</label><textarea id="seminar-terms" rows="3"></textarea></div>
                 <div style="background: #eff6ff; padding: 15px; border: 1px solid #bfdbfe; border-radius: 12px;">
                     <h4 style="margin-bottom: 10px; color:#1e40af;">Per-seminar links, policy &amp; form override</h4>
-                    <p style="color:#64748b;font-size:0.85rem;margin-bottom:10px;">WhatsApp link appears to doctors after approval. Cancellation policy is shown to doctors in plain language. Form override adjusts labels and which fields appear for this seminar only.</p>
+                    <p style="color:#64748b;font-size:0.85rem;margin-bottom:10px;">WhatsApp link appears to applicants after approval. Cancellation policy is shown to applicants in plain language. Form override adjusts labels and which fields appear for this seminar only.</p>
                     <div><label>WhatsApp group / invite URL</label><input type="text" id="seminar-whatsapp" placeholder="https://chat.whatsapp.com/..."></div>
                     <div style="margin-top:10px;"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="seminar-otp-app" checked onchange="syncSeminarOtpOptionsUi()"> Enable application OTP verification</label></div>
                     <div id="seminar-otp-subopts" style="margin:8px 0 0 22px;display:grid;gap:6px;">
@@ -2536,10 +2536,10 @@
                     </div>
                     <div style="margin-top:14px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;">
                         <label style="font-weight:600;">Cancellation &amp; refund policy</label>
-                        <p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Control whether doctors can cancel from their portal and until when. Refund tiers apply when they do cancel.</p>
+                        <p style="font-size:0.82rem;color:#64748b;margin:6px 0 10px;">Control whether applicants can cancel from their portal and until when. Refund tiers apply when they do cancel.</p>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-bottom:10px;">
                             <input type="checkbox" id="seminar-cancel-enabled" onchange="updateSeminarPolicyPreviews()">
-                            Allow doctors to cancel their application (self-service)
+                            Allow applicants to cancel their application (self-service)
                         </label>
                         <div style="margin-bottom:12px;">
                             <label style="font-size:0.8rem;">Cancellation window closes at (IST, optional)</label>
@@ -2608,7 +2608,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div><label>Enable Check-in Scanning?</label><select id="seminar-checkin-enabled"><option value="0">No (Disabled)</option><option value="1">Yes (Enabled)</option></select></div>
                         <div><label>Check-in Allowed Date</label><input type="date" id="seminar-checkin-date"></div>
-                        <div><label>Scans required for certificate</label><select id="seminar-cert-scans-required"><option value="1">1 scan (entry only)</option><option value="2">2 scans (entry + exit)</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Doctors need this many ticket scans before a certificate can be enabled.</p></div>
+                        <div><label>Scans required for certificate</label><select id="seminar-cert-scans-required"><option value="1">1 scan (entry only)</option><option value="2">2 scans (entry + exit)</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Applicants need this many ticket scans before a certificate can be enabled.</p></div>
                         <div><label>Publish participant list on website?</label><select id="seminar-public-list-enabled"><option value="0">No ... Verify page hidden</option><option value="1">Yes ... show paid &amp; admitted delegates</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Enable only after verification and payments are complete.</p></div>
                     </div>
                 </div>
@@ -2665,7 +2665,7 @@
                 <button class="btn-primary" style="grid-column: 1 / -1; margin-top: 15px;" onclick="submitProxyApp()">Create Application</button>
             </div>
             <div id="proxy-payment-wrap" class="hidden" style="margin-top:18px;padding:16px;border:1px solid #a7f3d0;border-radius:8px;background:#ecfdf5;">
-                <h4 style="color:#065f46;margin-bottom:10px;">Collect payment (updates doctor dashboard)</h4>
+                <h4 style="color:#065f46;margin-bottom:10px;">Collect payment (updates applicant dashboard)</h4>
                 <p id="proxy-payment-status" style="font-size:0.88rem;color:#047857;margin-bottom:10px;"></p>
                 <div id="proxy-payment-methods" style="display:grid;gap:10px;margin-bottom:12px;"></div>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
@@ -2733,7 +2733,7 @@
             <div id="ticket-info" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;"></div>
             <div style="margin-bottom:15px;padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;">
                 <h4 style="margin:0 0 8px;color:#9a3412;">Transfer ticket to another account</h4>
-                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Portal user ID, email, or internal account number. Doctor and judge accounts are allowed.</p>
+                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Portal user ID, email, or internal account number. Applicant and judge accounts are allowed.</p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <input type="text" id="ticket-transfer-user-ref" placeholder="Target portal user ID" style="flex:1;min-width:180px;padding:8px;border:1px solid #cbd5e1;border-radius:6px;">
                     <button type="button" class="btn-primary" style="background:#b45309;" onclick="adminTransferSupportTicket()">Transfer ticket</button>

@@ -1349,7 +1349,7 @@ function openAdminCreateUserModal(kind) {
         }
     }
     const title = modal.querySelector('h2');
-    if (title) title.textContent = kind === 'doctor' ? 'Register new doctor' : 'Register new staff user';
+    if (title) title.textContent = kind === 'doctor' ? 'Register new applicant' : 'Register new staff user';
     modal.classList.remove('hidden');
 }
 
@@ -1447,7 +1447,7 @@ function adminStaffRoleOptionsHtml(userRole) {
                 `<option value="${val}" ${ur === val ? 'selected' : ''}>${label}</option>`
         )
         .join('') +
-        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>`
+        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Applicant (applicant portal)</option>`
     );
 }
 
@@ -1518,7 +1518,7 @@ function renderStaffUsersTable(staffList) {
         staffBody.innerHTML =
             '<tr><td colspan="9" style="text-align:center;">No staff users match this search. ' +
             (total
-                ? `${total} staff account${total === 1 ? '' : 's'} exist — <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.82rem;" onclick="adminClearStaffUsersSearch()">Clear search</button> to show all. Also check the <strong>Doctors</strong> tab if the account was saved as Doctor.</td></tr>`
+                ? `${total} staff account${total === 1 ? '' : 's'} exist — <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.82rem;" onclick="adminClearStaffUsersSearch()">Clear search</button> to show all. Also check the <strong>Applicants</strong> tab if the account was saved as Doctor.</td></tr>`
                 : '</td></tr>');
         return;
     }
@@ -1680,7 +1680,7 @@ async function updateUserRole(userId, newRole) {
             const tab =
                 newRole === 'doctor' ? 'tab-doctors' : 'tab-staff-users';
             if (newRole === 'doctor') {
-                alert(`Role updated to Doctor. Account is now under the Doctors tab (doctor portal login).`);
+                alert(`Role updated to Doctor. Account is now under the Applicants tab (applicant portal login).`);
             } else {
                 alert(`Role updated to ${newRole}. Account is under Staff users.`);
             }
@@ -1711,7 +1711,7 @@ async function adminMoveUserToStaffRole(userId) {
 }
 
 async function adminMoveUserToDoctorPortal(userId) {
-    if (!confirm('Move this account to the Doctor portal? They will sign in at the doctor login page (not staff portals).')) return;
+    if (!confirm('Move this account to the Applicant portal? They will sign in at the applicant login page (not staff portals).')) return;
     await updateUserRole(userId, 'doctor');
     switchTab('tab-doctors');
     window.__highlightAdminUserId = userId;
@@ -1729,10 +1729,10 @@ async function saveDoctorAccess(userId, doctorCategory, doctorModules) {
             })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.success) return { ok: false, error: data.error || 'Could not save doctor access.' };
+        if (!res.ok || !data.success) return { ok: false, error: data.error || 'Could not save applicant access.' };
         return { ok: true, data };
     } catch (_) {
-        return { ok: false, error: 'Network error saving doctor access.' };
+        return { ok: false, error: 'Network error saving applicant access.' };
     }
 }
 
@@ -1743,7 +1743,7 @@ async function saveDoctorAccessFromList(userId) {
     const r = await saveDoctorAccess(userId, category, {});
     if (!r.ok) return alert(r.error);
     await loadUsers();
-    alert('Doctor access updated.');
+    alert('Applicant access updated.');
 }
 
 async function saveDoctorAccessFromDetail(userId) {
@@ -1761,7 +1761,7 @@ async function saveDoctorAccessFromDetail(userId) {
         __adminUserDetailCache.user.doctor_modules = JSON.stringify(r.data.doctor_modules || modules || {});
     }
     await loadUsers();
-    alert('Doctor access saved.');
+    alert('Applicant access saved.');
 }
 
 const WEBSITE_MENU_PAGE_DEFS = [
@@ -1790,9 +1790,9 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-contact-inquiries', 'Website contact'],
     ['tab-email-compose', 'Send email'],
     ['tab-transfer', 'Transfer applications'],
-    ['tab-behalf-reg', 'Doctor applications'],
+    ['tab-behalf-reg', 'Applicant applications'],
     ['tab-reg-form', 'Registration form fields'],
-    ['tab-site-cms', 'Website & doctor updates'],
+    ['tab-site-cms', 'Website & applicant updates'],
     ['tab-portal-auth', 'Portal sign-in'],
     ['tab-admin-payments', 'Payments'],
     ['tab-certificates', 'Certificate management'],
@@ -1806,7 +1806,7 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-live-scanner', 'Live check-in board'],
     ['tab-pos', 'On-spot POS'],
     ['tab-feedback-form', 'Feedback form editor'],
-    ['tab-activity-logs', 'User & doctor activity'],
+    ['tab-activity-logs', 'User & applicant activity'],
     ['tab-notifications', 'Notifications'],
     ['tab-system-platform', 'System health'],
     ['tab-system-users', 'User health'],
@@ -2959,7 +2959,7 @@ async function flushBehalfRegistrationSave(manual) {
     const sid = parseInt((document.getElementById('behalf-seminar-select') || {}).value, 10);
     const ta = document.getElementById('behalf-form-json');
     if (!Number.isInteger(docId) || docId < 1 || !Number.isInteger(sid) || sid < 1) {
-        if (st) st.textContent = 'Select a doctor and seminar to enable auto-save.';
+        if (st) st.textContent = 'Select an applicant and seminar to enable auto-save.';
         return;
     }
     let formData;
@@ -3107,7 +3107,7 @@ async function adminCreateUser() {
         return;
     }
     if (createKind === 'doctor' && userRole !== 'doctor') {
-        alert('Use “Create doctor” with role Doctor, or use “Create staff user” for other roles.');
+        alert('Use “Create applicant” with role Applicant, or use “Create staff user” for other roles.');
         return;
     }
     
@@ -3132,7 +3132,7 @@ async function adminCreateUser() {
         __requireAdminSensitiveOtp &&
         (!__adminSensitivePhoneOtpToken || !__adminSensitiveEmailOtpToken)
     ) {
-        return alert('Verify both your admin email and WhatsApp OTP before creating a doctor account.');
+        return alert('Verify both your admin email and WhatsApp OTP before creating an applicant account.');
     }
 
     const adm = getStoredAdminUser();
@@ -3435,7 +3435,7 @@ function renderAdminUserDetailTab() {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div>
                     <h4>Account (editable)</h4>
-                    <p class="muted" style="font-size:0.85rem;">Portal login — admin OTP may be required to save doctor accounts only.</p>
+                    <p class="muted" style="font-size:0.85rem;">Portal login — admin OTP may be required to save applicant accounts only.</p>
                     <p><strong>User ID:</strong> ${escAdmin(u.user_id_string)}</p>
                     <p><strong>Account created:</strong> ${formatAdminAccountDateTime(u.created_at)}</p>
                     <p><strong>Account activated:</strong> ${adminAccountActivationLabel(u)}</p>
@@ -3488,7 +3488,7 @@ function renderAdminUserDetailTab() {
                                 }> ${title}</label>`
                         ).join('')}
                     </div>
-                    <button type="button" class="btn-primary" style="margin-top:10px;background:#0f766e;" onclick="saveDoctorAccessFromDetail(${u.id})">Save doctor access</button>
+                    <button type="button" class="btn-primary" style="margin-top:10px;background:#0f766e;" onclick="saveDoctorAccessFromDetail(${u.id})">Save applicant access</button>
                     </div>`
                             : ''
                     }
@@ -3783,7 +3783,7 @@ async function dispatchAllAdminCertificates() {
     if (!sid) return alert('Select a seminar');
     if (
         !confirm(
-            'Send certificate notifications (email + WhatsApp) to every doctor with an enabled certificate for this seminar?'
+            'Send certificate notifications (email + WhatsApp) to every applicant with an enabled certificate for this seminar?'
         )
     ) {
         return;
@@ -4055,13 +4055,13 @@ async function bulkEnableAdminCertificates(enabled) {
                     .map((s) => 'User #' + s.userId + ': ' + (s.error || 'skipped'))
                     .join('\n');
                 alert(
-                    'Some doctors were not enabled (PRN No. and Application No. are required on every certificate):\n\n' +
+                    'Some applicants were not enabled (PRN No. and Application No. are required on every certificate):\n\n' +
                         lines
                 );
             }
             if (enabled && data.templateMissing) {
                 alert(
-                    'Certificate enabled for selected doctors.\n\nApply the VGMF certificate design (or upload a custom template) in this tab — until then, doctors will see “approved” but cannot view the certificate yet.'
+                    'Certificate enabled for selected doctors.\n\nApply the VGMF certificate design (or upload a custom template) in this tab — until then, applicants will see “approved” but cannot view the certificate yet.'
                 );
             }
         } else alert(data.error || 'Failed');
@@ -4297,7 +4297,7 @@ async function addAdminVolunteer() {
     const userIdString = String(document.getElementById('vol-mgmt-user-id')?.value || '').trim();
     const notes = document.getElementById('vol-mgmt-notes')?.value || '';
     const duties = document.getElementById('vol-mgmt-duties')?.value || '';
-    if (!sid || !userIdString) return alert('Seminar and doctor portal User ID required');
+    if (!sid || !userIdString) return alert('Seminar and applicant portal User ID required');
     try {
         const admin = getStoredAdminUser();
         const res = await fetch('/api/admin/volunteers', {
@@ -4317,7 +4317,7 @@ async function addAdminVolunteer() {
             document.getElementById('vol-mgmt-user-id').value = '';
             alert(
                 data.message ||
-                    'Volunteer assigned. They must complete registration in the doctor portal; free ticket (₹0) and messages are sent only after that.'
+                    'Volunteer assigned. They must complete registration in the applicant portal; free ticket (₹0) and messages are sent only after that.'
             );
             refreshVolunteerAdminPanels();
         } else alert(data.error || 'Failed');
@@ -4328,7 +4328,7 @@ async function addAdminVolunteer() {
 
 async function approveAdminVolunteer(volId) {
     const admin = getStoredAdminUser();
-    if (!confirm('Issue free volunteer ticket (₹0)? Doctor must have completed seminar registration first.')) return;
+    if (!confirm('Issue free volunteer ticket (₹0)? Applicant must have completed seminar registration first.')) return;
     try {
         const res = await fetch(`/api/admin/volunteers/${volId}/approve`, {
             method: 'POST',
@@ -4776,7 +4776,7 @@ async function loadAdminCaseResults() {
         const passPct = 60;
         const passMin = (totalMax * passPct) / 100;
         let html =
-            '<table class="data-table"><thead><tr><th>Rank</th><th>App</th><th>Doctor</th><th>Topic</th><th>Avg / ' +
+            '<table class="data-table"><thead><tr><th>Rank</th><th>App</th><th>Applicant</th><th>Topic</th><th>Avg / ' +
             escAdmin(String(totalMax)) +
             '</th><th>Judges</th><th>Auto eligibility</th><th>Status</th></tr></thead><tbody>';
         rows.forEach((r, idx) => {
@@ -5409,7 +5409,7 @@ async function saveAdminRegistrationOverride() {
         const data = await res.json();
         if (data.success) {
             loadAdminRegistrationOverrides();
-            alert('Override saved — doctor can register while seminar is closed.');
+            alert('Override saved — applicant can register while seminar is closed.');
         } else alert(data.error || 'Failed');
     } catch (e) {
         console.error(e);
@@ -5639,7 +5639,7 @@ async function toggleDisable(userId, disable) {
 function renderAdminUserCancellationTab(bodyEl, userId) {
     const rows = (__adminUserDetailCache && __adminUserDetailCache.cancellationRequests) || [];
     let html =
-        '<p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Cancellation requests submitted by this doctor (IST refund policy applied on approve).</p>';
+        '<p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Cancellation requests submitted by this applicant (IST refund policy applied on approve).</p>';
     html += '<table class="data-table"><thead><tr><th>Requested</th><th>App</th><th>Seminar</th><th>Reason</th><th>Policy refund</th><th>Status</th><th></th></tr></thead><tbody>';
     if (!rows.length) {
         html += '<tr><td colspan="7">No cancellation requests</td></tr>';
@@ -5876,12 +5876,12 @@ function renderDoctorsUsersTable() {
     doctorsBody.innerHTML = '';
     if (!all.length) {
         doctorsBody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;">No doctors registered</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;">No applicants registered</td></tr>';
         return;
     }
     if (!rows.length) {
         doctorsBody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;">No doctors match your search.</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;">No applicants match your search.</td></tr>';
         return;
     }
     rows.forEach((u) => {
@@ -6033,7 +6033,7 @@ function renderAdminVolunteersTable() {
                 '<span style="font-size:0.8rem;color:#b45309;">Awaiting registration</span> ' +
                 `<button type="button" class="btn-primary" style="padding:4px 8px;font-size:0.8rem;margin-left:6px;" onclick="approveAdminVolunteer(${v.id})">Issue ticket (₹0)</button>`;
         } else if (!hasTicket) {
-            actions = '<span style="font-size:0.8rem;color:#64748b;">Waiting for doctor to register</span>';
+            actions = '<span style="font-size:0.8rem;color:#64748b;">Waiting for applicant to register</span>';
         }
         tbody.innerHTML += `<tr>
                 <td>${escAdmin(name)}<div class="muted">${escAdmin(v.user_id_string)} · ${escAdmin(v.email)}</div></td>
@@ -6703,7 +6703,7 @@ async function adminLiveEditOtpPayload(targetUserId) {
     }
     if (__requireAdminSensitiveOtp && (!__adminSensitivePhoneOtpToken || !__adminSensitiveEmailOtpToken)) {
         alert(
-            'Admin OTP is required. Open Doctor applications (admin) or Global Settings, verify your email and WhatsApp codes, then save again.'
+            'Admin OTP is required. Open Applicant applications (admin) or Global Settings, verify your email and WhatsApp codes, then save again.'
         );
         return null;
     }
@@ -7112,7 +7112,7 @@ async function adminVerifySeminarApplication(appId, decision) {
     const ncismOk = !!document.getElementById('admin-verify-ncism')?.checked;
     const certificateOk = !!document.getElementById('admin-verify-cert')?.checked;
     if (decision !== 'approve' && !reason) {
-        return alert('Please enter a reason so the doctor knows what to fix.');
+        return alert('Please enter a reason so the applicant knows what to fix.');
     }
     if (decision === 'approve' && !infoOk) {
         return alert('Check that applicant details are correct before approving.');
@@ -7120,7 +7120,7 @@ async function adminVerifySeminarApplication(appId, decision) {
     const labels = {
         approve: 'Approve this application?',
         reject_documents: 'Request document re-upload on the same application number?',
-        request_documents: 'Ask the doctor to upload additional verification documents?',
+        request_documents: 'Ask the applicant to upload additional verification documents?',
         reject_application: 'Reject this entire application?'
     };
     if (!confirm(labels[decision] || 'Continue?')) return;
@@ -7824,7 +7824,7 @@ async function savePaymentGatewaysSettings() {
         setAdminSettingsSaveMsg(
             defaultPg
                 ? `Payment gateways saved. Default live gateway set to ${defaultPg} (Site configuration).`
-                : 'Payment gateways saved. Enable Razorpay or Cashfree Live mode for doctor payments.'
+                : 'Payment gateways saved. Enable Razorpay or Cashfree Live mode for applicant payments.'
         );
     } catch (err) {
         console.error(err);
@@ -8026,7 +8026,7 @@ async function proxyPollPaymentOnce() {
             stopProxyPaymentPoll();
             if (pollSt) {
                 pollSt.style.color = '#15803d';
-                pollSt.textContent = data.message || 'Payment received — doctor dashboard updated.';
+                pollSt.textContent = data.message || 'Payment received — applicant dashboard updated.';
             }
             alert(data.message || 'Payment complete.');
             return;
@@ -8824,7 +8824,7 @@ function updateSeminarPolicyPreviews() {
             const parsed = JSON.parse(built);
             const enabled = (parsed.fields || []).filter((f) => f.enabled !== false);
             let prev =
-                'Doctors will see: ' +
+                'Applicants will see: ' +
                 (enabled.length
                     ? enabled.map((f) => f.label || f.key).join(', ')
                     : 'no fields (check at least one is enabled)');
@@ -8846,7 +8846,7 @@ async function purgeAdminSeminarTestData(seminarId, title) {
         !confirm(
             'Purge ALL registration data for "' +
                 title +
-                '"?\n\nRemoves applications, orders, tickets, scans, and feedback for this seminar. Doctor accounts stay registered. The seminar record is kept unless you check "also delete seminar" below.'
+                '"?\n\nRemoves applications, orders, tickets, scans, and feedback for this seminar. Applicant accounts stay registered. The seminar record is kept unless you check "also delete seminar" below.'
         )
     ) {
         return;
@@ -8995,7 +8995,7 @@ async function saveAdminPortalYear() {
                     year +
                     '. All active seminars now use portal year ' +
                     year +
-                    '. Doctors and the public site will list seminars for this year.'
+                    '. Applicants and the public site will list seminars for this year.'
             );
         } else alert(data.error || 'Could not save portal year');
     } catch (e) {
@@ -9177,7 +9177,7 @@ async function saveSeminar(e) {
                 adminPortalYear +
                 '). Save anyway? Tip: set the header Portal year to ' +
                 data.portal_year +
-                ' to align doctor and public listings.'
+                ' to align applicant and public listings.'
         );
         if (!ok) return;
     }
@@ -9965,13 +9965,13 @@ async function adminLookupDoctorForSupportTicket() {
     if (!q) {
         if (msgEl) {
             msgEl.style.color = '#b91c1c';
-            msgEl.textContent = 'Enter the doctor 12-digit portal user ID or email, then click Look up doctor.';
+            msgEl.textContent = 'Enter the applicant 12-digit portal user ID or email, then click Look up doctor.';
         }
         return;
     }
     if (msgEl) {
         msgEl.style.color = '#64748b';
-        msgEl.textContent = 'Looking up doctor…';
+        msgEl.textContent = 'Looking up applicant…';
     }
     try {
         const res = await fetch(
@@ -9984,7 +9984,7 @@ async function adminLookupDoctorForSupportTicket() {
         if (!res.ok || !data.doctor) {
             if (msgEl) {
                 msgEl.style.color = '#b91c1c';
-                msgEl.textContent = data.error || 'Doctor not found.';
+                msgEl.textContent = data.error || 'Applicant not found.';
             }
             return;
         }
@@ -10006,7 +10006,7 @@ async function adminLookupDoctorForSupportTicket() {
                 )
                 .join('');
             prev.innerHTML =
-                '<p style="margin:0 0 8px;font-weight:700;color:#1e40af;">Confirm this doctor before creating the ticket</p>' +
+                '<p style="margin:0 0 8px;font-weight:700;color:#1e40af;">Confirm this applicant before creating the ticket</p>' +
                 '<p style="margin:4px 0;"><strong>Name:</strong> ' +
                 escAdmin(data.doctor.name) +
                 '</p>' +
@@ -10030,7 +10030,7 @@ async function adminLookupDoctorForSupportTicket() {
         }
         if (msgEl) {
             msgEl.style.color = '#059669';
-            msgEl.textContent = 'Doctor found. You can create the support ticket now.';
+            msgEl.textContent = 'Applicant found. You can create the support ticket now.';
         }
     } catch (e) {
         console.error(e);
@@ -10059,7 +10059,7 @@ async function adminCreateSupportTicketForDoctor() {
     if (!__adminStResolvedDoctor || !__adminStResolvedDoctor.id) {
         if (msgEl) {
             msgEl.style.color = '#b91c1c';
-            msgEl.textContent = 'Click Look up doctor first and confirm the details shown.';
+            msgEl.textContent = 'Click Look up applicant first and confirm the details shown.';
         }
         return;
     }
@@ -11958,7 +11958,7 @@ async function adminPriorityInviteDoctor() {
     const msgEl = document.getElementById('case-priority-msg');
     const adm = getStoredAdminUser();
     if (!programId) return alert('Select a case program');
-    if (!userRef) return alert('Enter doctor portal ID or email');
+    if (!userRef) return alert('Enter applicant portal ID or email');
     if (!adm || !adm.id) return alert('Admin session required');
     if (msgEl) msgEl.textContent = 'Creating…';
     try {
@@ -13048,7 +13048,7 @@ async function lookupAdminCreateOrder() {
     const q = document.getElementById('co-user-query')?.value?.trim();
     const box = document.getElementById('co-lookup-result');
     const panel = document.getElementById('co-pay-panel');
-    if (!adm?.id || !sid || !q) return alert('Select seminar and enter doctor User ID, email, or phone.');
+    if (!adm?.id || !sid || !q) return alert('Select seminar and enter applicant User ID, email, or phone.');
     if (box) box.innerHTML = 'Looking up…';
     if (panel) panel.classList.add('hidden');
     try {
@@ -13120,7 +13120,7 @@ async function lookupAdminCreateOrder() {
 
 async function ensureAdminCreateOrderRegistration() {
     const adm = getStoredAdminUser();
-    if (!__coLookup?.found || !__coLookup.user?.id) return alert('Look up a doctor first.');
+    if (!__coLookup?.found || !__coLookup.user?.id) return alert('Look up an applicant first.');
     const sid = document.getElementById('co-seminar')?.value;
     try {
         const res = await fetch('/api/admin/payments/ensure-registration', {
@@ -13144,7 +13144,7 @@ async function ensureAdminCreateOrderRegistration() {
 
 async function initiateAdminCreateOrderPayment() {
     const adm = getStoredAdminUser();
-    if (!adm?.id || !__coRegId) return alert('Look up doctor and ensure application first.');
+    if (!adm?.id || !__coRegId) return alert('Look up applicant and ensure application first.');
     const methodId = document.getElementById('co-method')?.value || __coMethodId || 'dqr';
     const amount = parseFloat(document.getElementById('co-amount')?.value || '0');
     const discount = parseFloat(document.getElementById('co-discount')?.value || '0');
@@ -13199,7 +13199,7 @@ async function initiateAdminCreateOrderPayment() {
             if (!opened && msg) {
                 msg.style.color = '#b45309';
                 msg.textContent =
-                    'Checkout could not open. Allow pop-ups, then click Start payment again or use Check status after the doctor pays.';
+                    'Checkout could not open. Allow pop-ups, then click Start payment again or use Check status after the applicant pays.';
             }
             return;
         }
@@ -13320,7 +13320,7 @@ async function createAdminSupplementalPayment() {
         if (!res.ok) throw new Error(data.error || 'Failed');
         if (st) {
             st.style.color = '#15803d';
-            st.textContent = 'Charge created (id ' + data.id + '). Doctor will see it under Payments.';
+            st.textContent = 'Charge created (id ' + data.id + '). Applicant will see it under Payments.';
         }
         loadAdminSupplementalPayments();
     } catch (e) {
@@ -13408,7 +13408,7 @@ async function adminRefundOrderPrompt(orderDbId) {
 async function adminCancelPendingOrder(orderDbId) {
     const adm = getStoredAdminUser();
     if (!adm?.id) return alert('Not logged in.');
-    if (!confirm('Cancel this pending order? The doctor can start a new payment attempt.')) return;
+    if (!confirm('Cancel this pending order? The applicant can start a new payment attempt.')) return;
     try {
         const res = await fetch('/api/admin/payments/cancel-order', {
             method: 'POST',
@@ -13740,7 +13740,7 @@ async function openAdminOrderReceipt(orderDbId) {
         '<p class="sub">Vaidya Gogate Memorial Foundation — seminar portal</p>',
         '<button type="button" class="btn-print no-print" onclick="window.print()">Print / Save as PDF</button>',
         '<table>',
-        `<tr><td>Doctor name</td><td>${esc(docName)}</td></tr>`,
+        `<tr><td>Applicant name</td><td>${esc(docName)}</td></tr>`,
         `<tr><td>Email</td><td>${esc(o.email || '—')}</td></tr>`,
         `<tr><td>Phone</td><td>${esc(o.phone || '—')}</td></tr>`,
         `<tr><td>Public user ID</td><td><code>${uidStr}</code></td></tr>`,

@@ -1959,7 +1959,7 @@ function sanitizeScrollingAnnouncements(arr) {
             const t = String(a.title || '');
             const b = String(a.body || '');
             if (/test seminar/i.test(t) || /introduction to ayurveda/i.test(t)) return false;
-            if (t.startsWith('Seminar — ') && b.includes('Apply from the doctor portal') && b.includes(' — ')) {
+            if (t.startsWith('Seminar — ') && b.includes('Apply from the applicant portal') && b.includes(' — ')) {
                 return false;
             }
             return true;
@@ -2033,7 +2033,7 @@ function buildSeminarRegistrationAnnouncement(row) {
     }
     return {
         title: `Registration open — ${title}`,
-        body: `Registration is now open. Apply from the doctor portal.${eventBit}`,
+        body: `Registration is now open. Apply from the applicant portal.${eventBit}`,
         date: new Date().toISOString().slice(0, 10),
         autoFromSeminarId: row.id,
         link: '/doctor.html'
@@ -2120,7 +2120,7 @@ function announceSeminarRegistrationOnCreate(seminarId, cb) {
             const msg =
                 portalProduct.FEATURES.productId === 'autism'
                     ? `${row.title || 'Event'}: registration is open. Visit the applicant portal or public pre-registration form.`
-                    : `${row.title || 'Seminar'}: registration is open. Apply from the doctor portal.`;
+                    : `${row.title || 'Seminar'}: registration is open. Apply from the applicant portal.`;
             const pushCms = () => syncSeminarTickerAnnouncement(sid, cb);
             db.run(`INSERT INTO notices (seminar_id, message, pdf_path) VALUES (?, ?, NULL)`, [sid, msg], () =>
                 pushCms()
@@ -5839,7 +5839,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
     userId = parsePositiveUserId(userId);
     if (!userId) {
         return res.status(400).json({
-            error: 'Invalid user session. Sign out of the doctor portal, sign in again with your email, then resubmit.'
+            error: 'Invalid user session. Sign out of the applicant portal, sign in again with your email, then resubmit.'
         });
     }
     seminarId = parseInt(seminarId, 10);
@@ -8014,14 +8014,14 @@ function doctorAccountBlockForScan(row) {
     if (!row) return null;
     if (Number(row.doctor_is_banned) === 1) {
         return {
-            error: 'Entry denied — doctor account is banned.',
+            error: 'Entry denied — applicant account is banned.',
             accountStatus: 'BANNED',
             banReason: row.doctor_ban_reason || null
         };
     }
     if (Number(row.doctor_is_disabled) === 1) {
         return {
-            error: 'Entry denied — doctor account is disabled.',
+            error: 'Entry denied — applicant account is disabled.',
             accountStatus: 'DISABLED'
         };
     }
@@ -8551,7 +8551,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                     newScanCount >= scansRequired;
                                 let scanMsg = portalProduct.FEATURES.noFees
                                     ? 'Check-in recorded.'
-                                    : 'Attendance marked. Doctor tracking updated.';
+                                    : 'Attendance marked. Applicant tracking updated.';
                                 if (scansRequired === 2) {
                                     if (newScanCount === 1) {
                                         scanMsg = portalProduct.FEATURES.noFees
@@ -9034,8 +9034,8 @@ app.post('/api/admin/seminars/:id/purge-test-data', (req, res) => {
         res.json({
             success: true,
             message: deleteSeminar
-                ? 'Seminar and all related registration data removed. Doctor accounts were not deleted.'
-                : 'All registrations and seminar activity data removed. Seminar record kept. Doctor accounts were not deleted.',
+                ? 'Seminar and all related registration data removed. Applicant accounts were not deleted.'
+                : 'All registrations and seminar activity data removed. Seminar record kept. Applicant accounts were not deleted.',
             ...result
         });
     });
@@ -10033,7 +10033,7 @@ app.get('/api/admin/users/lookup', (req, res) => {
             return res.json({
                 found: false,
                 hint:
-                    'No account in the database matches that search. If you just created a user, the save may have failed — create again. For Mr Nitin Thatte, search Nitin or thattenitin13@gmail.com (portal ID 645390302736, Doctors tab).'
+                    'No account in the database matches that search. If you just created a user, the save may have failed — create again. For Mr Nitin Thatte, search Nitin or thattenitin13@gmail.com (portal ID 645390302736, Applicants tab).'
             });
         }
         const matches = rows.map(adminUserLookup.mapUserForAdminResponse);
@@ -10050,7 +10050,7 @@ app.get('/api/admin/users/lookup', (req, res) => {
                     ? `${matches.length} accounts match — pick the correct one in the list below.`
                     : accountList === 'staff'
                       ? 'Open Staff users tab'
-                      : 'Open Doctors tab (includes public website sign-ups)'
+                      : 'Open Applicants tab (includes public website sign-ups)'
         });
     });
 });
@@ -11621,7 +11621,7 @@ app.post('/api/admin/users/create', (req, res) => {
     if (createKind === 'staff') {
         if (!userRole || userRole === 'doctor') {
             return res.status(400).json({
-                error: 'Select a staff role (Judge, Co Admin, Scanner, or Reviewer). Doctor accounts belong under Doctors → Create doctor.'
+                error: 'Select a staff role (Judge, Co Admin, Scanner, or Reviewer). Applicant accounts belong under Applicants → Create doctor.'
             });
         }
         if (!userRoles.ADMIN_CREATABLE_STAFF_ROLES.includes(userRole)) {
@@ -11690,7 +11690,7 @@ app.post('/api/admin/users/create', (req, res) => {
                             if (/unique|duplicate/i.test(String(err.message || ''))) {
                                 return res.status(409).json({
                                     error:
-                                        'Portal user ID already exists, or email is already used by a doctor account. Staff test accounts may share an email — use a new portal ID.'
+                                        'Portal user ID already exists, or email is already used by an applicant account. Staff test accounts may share an email — use a new portal ID.'
                                 });
                             }
                             return res.status(500).json({ error: err.message });
@@ -11759,7 +11759,7 @@ app.post('/api/admin/users/create', (req, res) => {
                 if (taken) {
                     const list = userRoles.isDoctorPortalAccount(existing) ? 'Doctors' : 'Staff users';
                     return res.status(409).json({
-                        error: `This email is already used by a doctor account (${list}, portal ID ${existing && existing.user_id_string ? existing.user_id_string : '—'}). Create a staff test account with the same email under Staff users instead.`,
+                        error: `This email is already used by an applicant account (${list}, portal ID ${existing && existing.user_id_string ? existing.user_id_string : '—'}). Create a staff test account with the same email under Staff users instead.`,
                         existingUserId: existing && existing.id,
                         existingUser: existing ? adminUserLookup.mapUserForAdminResponse(existing) : null,
                         accountList: userRoles.isDoctorPortalAccount(existing) ? 'doctors' : 'staff'
@@ -11909,7 +11909,7 @@ app.post('/api/admin/users/:userId/doctor-access', (req, res) => {
         if (e0) return res.status(500).json({ error: e0.message });
         if (!row0) return res.status(404).json({ error: 'User not found' });
         const ur = String(row0.user_role || row0.role || '').toLowerCase();
-        if (ur !== 'doctor') return res.status(400).json({ error: 'Doctor access settings are only valid for doctor accounts.' });
+        if (ur !== 'doctor') return res.status(400).json({ error: 'Applicant access settings are only valid for applicant accounts.' });
         db.run(
             `UPDATE users SET doctor_category = ?, doctor_modules = ? WHERE id = ?`,
             [doctor_category, modulesJson, uid],
@@ -12915,7 +12915,7 @@ app.put('/api/admin/users/:userId/doctor-profile', (req, res) => {
                         resource_id: String(uid),
                         meta: { adminUserId: aid }
                     });
-                    res.json({ success: true, message: 'Doctor profile updated' });
+                    res.json({ success: true, message: 'Applicant profile updated' });
                 };
                 if (row) {
                     return db.run(
@@ -13673,17 +13673,17 @@ app.post('/api/admin/email/bulk', (req, res) => {
 /** Resolve portal user ID (12-digit), USR_… string, email, or small internal users.id. */
 function resolveDoctorUserRef(raw, cb) {
     const s = String(raw || '').trim();
-    if (!s) return cb(new Error('Doctor user identifier is required'));
+    if (!s) return cb(new Error('Applicant user identifier is required'));
 
     const finish = (e, row) => {
         if (e) return cb(e);
-        if (!row) return cb(new Error('No doctor account found for that identifier.'));
+        if (!row) return cb(new Error('No applicant account found for that identifier.'));
         const role = String(row.user_role || row.role || '').toLowerCase();
         if (role && role !== 'doctor' && role !== 'judge_user') {
-            return cb(new Error('That account is not a doctor portal user (role: ' + role + ').'));
+            return cb(new Error('That account is not an applicant portal user (role: ' + role + ').'));
         }
         if (Number(row.is_disabled) === 1) {
-            return cb(new Error('That doctor account is disabled.'));
+            return cb(new Error('That applicant account is disabled.'));
         }
         cb(null, row);
     };
@@ -13733,7 +13733,7 @@ function resolveDoctorUserRef(raw, cb) {
 
     return cb(
         new Error(
-            'Enter the doctor 12-digit portal user ID (shown in admin user list), or the small internal account number — not the portal ID in the numeric-only field.'
+            'Enter the applicant 12-digit portal user ID (shown in admin user list), or the small internal account number — not the portal ID in the numeric-only field.'
         )
     );
 }
@@ -14052,7 +14052,7 @@ app.post('/api/admin/support-ticket/create', (req, res) => {
         return res.status(400).json({ error: 'actingAdminId is required' });
     }
     if (!targetRef) {
-        return res.status(400).json({ error: 'Doctor portal user ID or account reference is required' });
+        return res.status(400).json({ error: 'Applicant portal user ID or account reference is required' });
     }
     assertAdminPortalActor(actingAdminId, (eAct) => {
         if (eAct) return res.status(eAct.message === 'FORBIDDEN' ? 403 : 500).json({ error: 'Admin access required' });

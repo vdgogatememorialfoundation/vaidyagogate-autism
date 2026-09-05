@@ -2591,7 +2591,7 @@ function switchTab(tabId, menuEl) {
     }
     const pane = document.getElementById(tabId);
     if (!pane) {
-        console.warn('[doctor] Unknown tab:', tabId);
+        console.warn('[applicant] Unknown tab:', tabId);
         return;
     }
     if (typeof closeDoctorMobileNav === 'function') closeDoctorMobileNav();
@@ -2742,7 +2742,7 @@ function applyCaseFormConfigFromProgram(program) {
         let parts = [];
         if (program.instructions) parts.push(program.instructions);
         if (program.maxPresentationsPerUser)
-            parts.push('Up to ' + program.maxPresentationsPerUser + ' presentation(s) per doctor in this program.');
+            parts.push('Up to ' + program.maxPresentationsPerUser + ' presentation(s) per applicant in this program.');
         if (program.showSeatsPublic !== false && program.slotsRemaining != null)
             parts.push(program.slotsRemaining + ' slot(s) remaining.');
         note.textContent = parts.join(' ');
@@ -2941,7 +2941,7 @@ async function loadDoctorVolunteerPanel() {
 
 async function submitCasePresentation() {
     const uid = doctorNumericUserId();
-    if (!uid) return alert('Please sign in again to the doctor portal, then submit your application.');
+    if (!uid) return alert('Please sign in again to the applicant portal, then submit your application.');
     if (!activeCaseProgramId) return alert('Select a program first');
     const form = {
         fname: document.getElementById('case-fname')?.value || '',

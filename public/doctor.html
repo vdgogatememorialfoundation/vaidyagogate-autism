@@ -8,7 +8,7 @@
     <link rel="icon" href="/favicon.ico" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Doctor's Portal | VGMF National Seminar</title>
+    <title>Applicant Portal | VGMF National Seminar</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css">
@@ -119,13 +119,13 @@
     <div id="auth-overlay">
         <div class="doctor-auth-card" style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:420px;box-shadow:0 24px 50px rgba(15,118,110,0.2);border:1px solid #99f6e4;">
             <div data-site-logo data-logo-height="44px" style="margin-bottom:12px;"></div>
-            <h2 id="doctor-auth-title" style="color:#0f766e;margin-bottom:12px;font-size:1.35rem;">Doctor's Portal Sign In</h2>
+            <h2 id="doctor-auth-title" style="color:#0f766e;margin-bottom:12px;font-size:1.35rem;">Applicant Portal Sign In</h2>
             <div class="ak-auth-tabs" role="tablist" aria-label="Account access">
                 <button type="button" id="doctor-auth-tab-login" class="ak-auth-tab is-active" role="tab" aria-selected="true" onclick="DoctorAuthUi.switchDoctorAuthTab('login')">Sign in</button>
                 <button type="button" id="doctor-auth-tab-signup" class="ak-auth-tab" role="tab" aria-selected="false" onclick="DoctorAuthUi.switchDoctorAuthTab('signup')">Create account</button>
             </div>
             <div id="doctor-auth-login-panel">
-            <p style="color:#64748b;font-size:0.88rem;margin-bottom:14px;">Sign in with your doctor account.</p>
+            <p style="color:#64748b;font-size:0.88rem;margin-bottom:14px;">Sign in with your applicant account.</p>
             <form id="doctor-login-form">
                 <label style="display:block;font-size:0.82rem;font-weight:700;color:#0f766e;margin:10px 0 6px;">Email</label>
                 <input type="email" id="doctor-login-email" required autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
@@ -158,7 +158,7 @@
             </form>
             </div>
             <div id="doctor-auth-signup-panel" class="hidden">
-                <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Register as a doctor delegate (same account works on web and app).</p>
+                <p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Register as an applicant delegate (same account works on web and app).</p>
                 <form id="doctor-signup-form">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
                         <input type="text" id="doctor-signup-firstname" placeholder="First name" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;">
@@ -203,7 +203,7 @@
                 <div class="doctor-sidebar-photo-wrap hidden" id="sidebar-profile-photo-wrap">
                     <img id="sidebar-profile-photo" class="doctor-sidebar-photo" alt="Your profile photo" src="">
                 </div>
-                <h2>Doctor's Portal</h2>
+                <h2>Applicant Portal</h2>
                 <p>VGMF National Seminar (<span id="doctor-portal-year-label">2026</span>)</p>
             </div>
             <div class="menu-items">
@@ -230,10 +230,10 @@
         <div class="main-content">
             <header class="top-header">
                 <button type="button" class="doctor-menu-toggle" id="doctor-menu-toggle" aria-label="Open menu"><i class="fas fa-bars"></i></button>
-                <div class="header-title">Vaidya Gogate Memorial Foundation — Doctor's Portal</div>
+                <div class="header-title">Vaidya Gogate Memorial Foundation — Applicant Portal</div>
                 <div class="user-info">
                     <img id="header-profile-photo" class="doctor-header-photo hidden" alt="Profile photo" src="">
-                    <span class="hi-user" id="header-name">Hi, Doctor</span>
+                    <span class="hi-user" id="header-name">Hi, Applicant</span>
                     <span class="user-id" id="header-id">ID: —</span>
                     <span class="portal-login-time hidden" id="header-login-time"></span>
                     <a href="/" class="header-link doctor-web-only" target="_blank"><i class="fas fa-external-link-alt"></i> Public site</a>

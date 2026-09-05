@@ -531,7 +531,7 @@
         }
         setText('footer-foundation-heading', (header.foundationName || '').trim() || 'Vaidya Gogate Memorial Foundation');
         setText('footer-explore-title', foot.exploreTitle || 'Explore');
-        setText('footer-doctor-title', foot.doctorTitle || 'Doctor access');
+        setText('footer-doctor-title', foot.doctorTitle || 'Applicant access');
         const contactCol = document.querySelector('.footer-col h4');
         if (foot.contactTitle) {
             const contactH = document.getElementById('footer-contact-heading');
