@@ -1,0 +1,680 @@
+/**
+ * Applicant portal — "Bright" theme (v3).
+ * Loaded last: overrides the inline base styles, autism-portal-v2 and the tracker.
+ */
+.autism-dashboard.ak-portal-dash {
+    --ab-ink: #0f172a;
+    --ab-muted: #475569;
+    --ab-green: #16a34a;
+    --ab-green-deep: #15803d;
+    --ab-green-soft: #dcfce7;
+    --ab-sky: #0ea5e9;
+    --ab-sky-soft: #e0f2fe;
+    --ab-sun: #f59e0b;
+    --ab-sun-soft: #fef3c7;
+    --ab-rose: #ec4899;
+    --ab-rose-soft: #fce7f3;
+    --ab-violet: #7c3aed;
+    --ab-violet-soft: #ede9fe;
+    --ab-card: #ffffff;
+    --ab-radius: 20px;
+    --ab-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+    --ab-shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.12);
+    --doctor-text: var(--ab-ink);
+    font-family: 'Plus Jakarta Sans', 'Nunito', system-ui, sans-serif;
+    color: var(--ab-ink);
+    background:
+        radial-gradient(900px 500px at -10% -10%, #dbeafe 0%, transparent 60%),
+        radial-gradient(800px 500px at 110% 0%, #dcfce7 0%, transparent 60%),
+        radial-gradient(700px 500px at 50% 120%, #fef3c7 0%, transparent 60%),
+        #f8fbff;
+    background-attachment: fixed;
+}
+
+/* Floating decorative shapes ------------------------------------------ */
+.ab-blobs {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.ab-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    opacity: 0.55;
+    animation: ab-float 14s ease-in-out infinite;
+}
+.ab-blob--1 { width: 220px; height: 220px; left: 12%; top: 70%; background: radial-gradient(circle at 30% 30%, #86efac, #22c55e); }
+.ab-blob--2 { width: 160px; height: 160px; right: 8%; top: 12%; background: radial-gradient(circle at 30% 30%, #fde68a, #f59e0b); animation-delay: -4s; }
+.ab-blob--3 { width: 120px; height: 120px; right: 25%; bottom: 8%; background: radial-gradient(circle at 30% 30%, #c4b5fd, #8b5cf6); animation-delay: -8s; }
+.ab-blob--4 { width: 90px; height: 90px; left: 45%; top: 8%; background: radial-gradient(circle at 30% 30%, #bae6fd, #0ea5e9); animation-delay: -2s; }
+.ab-puzzle {
+    position: absolute;
+    font-size: 64px;
+    opacity: 0.12;
+    animation: ab-spin-slow 40s linear infinite;
+}
+@keyframes ab-float {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(18px, -26px, 0) scale(1.06); }
+}
+@keyframes ab-spin-slow { to { transform: rotate(360deg); } }
+@keyframes ab-fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes ab-pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    70% { transform: scale(1.04); opacity: 1; }
+    100% { transform: none; }
+}
+@keyframes ab-pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.45); }
+    100% { box-shadow: 0 0 0 14px rgba(22, 163, 74, 0); }
+}
+@keyframes ab-shimmer {
+    from { background-position: -400px 0; }
+    to { background-position: 400px 0; }
+}
+@keyframes ak-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ab-blob, .ab-puzzle, .ab-anim-in, .ak-track-v3-step.is-current .ak-track-v3-icon { animation: none !important; }
+}
+
+.autism-dashboard.ak-portal-dash .dashboard-container { position: relative; z-index: 1; }
+
+/* Sidebar --------------------------------------------------------------- */
+.autism-dashboard.ak-portal-dash .sidebar {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-right: 1px solid rgba(15, 23, 42, 0.06);
+    color: var(--ab-ink);
+    box-shadow: 8px 0 40px rgba(37, 99, 235, 0.05);
+}
+.autism-dashboard.ak-portal-dash .sidebar-header {
+    border-bottom: 1px dashed #e2e8f0;
+    text-align: center;
+}
+.autism-dashboard.ak-portal-dash .sidebar-header h2 {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.35rem;
+    color: var(--ab-ink);
+    background: linear-gradient(90deg, #16a34a, #0ea5e9, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.autism-dashboard.ak-portal-dash .sidebar-header p {
+    color: var(--ab-muted);
+    letter-spacing: 0.08em;
+}
+.autism-dashboard.ak-portal-dash .doctor-sidebar-photo { border-color: #86efac; }
+.autism-dashboard.ak-portal-dash .menu-items { padding: 14px 0 28px; gap: 4px; }
+.autism-dashboard.ak-portal-dash .menu-item {
+    color: var(--ab-ink);
+    font-weight: 700;
+    border-left: 0;
+    border-radius: 14px;
+    margin: 0 12px;
+    width: calc(100% - 24px);
+    padding: 10px 12px;
+    gap: 12px;
+    position: relative;
+    transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.autism-dashboard.ak-portal-dash .menu-item i {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    opacity: 1;
+    background: #f1f5f9;
+    color: #475569;
+    transition: transform 0.2s ease;
+}
+.autism-dashboard.ak-portal-dash .menu-item:hover { background: #f8fafc; transform: translateX(3px); }
+.autism-dashboard.ak-portal-dash .menu-item:hover i { transform: rotate(-8deg) scale(1.08); }
+.autism-dashboard.ak-portal-dash .menu-item.active {
+    background: linear-gradient(135deg, #f0fdf4, #ecfeff);
+    color: var(--ab-ink);
+    box-shadow: inset 0 0 0 1px #bbf7d0;
+}
+.autism-dashboard.ak-portal-dash .menu-item.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 10px;
+    bottom: 10px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: var(--ab-green);
+}
+/* icon chip colours per menu entry */
+.ak-portal-dash .menu-item[data-tab="tab-dashboard"] i { background: #dbeafe; color: #1d4ed8; }
+.ak-portal-dash .menu-item[data-tab="tab-profile"] i { background: #fce7f3; color: #be185d; }
+.ak-portal-dash .menu-item[data-tab="tab-seminars"] i { background: #dcfce7; color: #15803d; }
+.ak-portal-dash .menu-item[data-tab="tab-prereg"] i { background: #fef3c7; color: #b45309; }
+.ak-portal-dash .menu-item[data-tab="tab-applications"] i { background: #d1fae5; color: #047857; }
+.ak-portal-dash .menu-item[data-tab="tab-competition"] i { background: #fef9c3; color: #a16207; }
+.ak-portal-dash .menu-item[data-tab="tab-abstract"] i,
+.ak-portal-dash .menu-item[data-tab="tab-case-track"] i { background: #ede9fe; color: #6d28d9; }
+.ak-portal-dash .menu-item[data-tab="tab-feedback"] i { background: #ffedd5; color: #c2410c; }
+.ak-portal-dash .menu-item[data-tab="tab-support"] i { background: #e0f2fe; color: #0369a1; }
+.ak-portal-dash .menu-item[data-tab="tab-ticket"] i { background: #ccfbf1; color: #0f766e; }
+.ak-portal-dash .menu-item[data-tab="tab-certificate"] i { background: #fef3c7; color: #92400e; }
+.ak-portal-dash .menu-item[data-tab="tab-reset-pwd"] i { background: #f1f5f9; color: #334155; }
+.ak-portal-dash .menu-item[data-tab="tab-orders"] i,
+.ak-portal-dash .menu-item[data-tab="tab-receipts"] i,
+.ak-portal-dash .menu-item[data-tab="tab-payments"] i { background: #e2e8f0; color: #334155; }
+.ab-menu-badge {
+    margin-left: auto;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--ab-green);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: ab-pop 0.4s ease-out;
+}
+
+/* Header ---------------------------------------------------------------- */
+.autism-dashboard.ak-portal-dash .top-header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    padding: 12px 26px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+.autism-dashboard.ak-portal-dash .header-title {
+    color: var(--ab-ink);
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.05rem;
+}
+.autism-dashboard.ak-portal-dash .hi-user { color: var(--ab-ink); }
+.autism-dashboard.ak-portal-dash .user-id {
+    background: var(--ab-green-soft);
+    color: var(--ab-green-deep);
+    border-color: #bbf7d0;
+    cursor: pointer;
+}
+.autism-dashboard.ak-portal-dash .user-id:hover { background: #bbf7d0; }
+.autism-dashboard.ak-portal-dash .doctor-header-photo { border-color: #86efac; background: var(--ab-green-soft); }
+.autism-dashboard.ak-portal-dash .header-link { color: var(--ab-sky); font-weight: 700; }
+.autism-dashboard.ak-portal-dash #btn-logout {
+    background: #fff;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    box-shadow: none;
+}
+.autism-dashboard.ak-portal-dash #btn-logout:hover { background: #fef2f2; }
+.ab-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--ab-green-soft);
+    color: var(--ab-green-deep);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.ab-live-pill i { font-size: 0.45rem; animation: ak-pulse 1.2s infinite; }
+
+/* Notification bars / announcements ------------------------------------ */
+.autism-dashboard.ak-portal-dash .notification-bar {
+    border-radius: 14px;
+    margin: 16px 26px 0;
+    font-weight: 600;
+    animation: ab-fade-up 0.4s ease-out;
+}
+.autism-dashboard.ak-portal-dash .announcements-box {
+    margin: 16px 26px 0;
+    border-radius: var(--ab-radius);
+    background: linear-gradient(135deg, #fffbeb, #fff);
+    border: 1px solid #fde68a;
+    box-shadow: var(--ab-shadow);
+    padding: 16px 20px;
+}
+.autism-dashboard.ak-portal-dash .announcements-box h4 { color: #b45309 !important; }
+.autism-dashboard.ak-portal-dash .announcements-box li { color: var(--ab-ink) !important; }
+
+/* Content, cards, titles ------------------------------------------------ */
+.autism-dashboard.ak-portal-dash .content-area { padding: 22px 26px 40px; }
+.autism-dashboard.ak-portal-dash .section-title {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    color: var(--ab-ink);
+    font-size: 1.6rem;
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.autism-dashboard.ak-portal-dash .section-title::after {
+    content: '';
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #86efac, #bae6fd, transparent);
+}
+.autism-dashboard.ak-portal-dash .card {
+    background: var(--ab-card);
+    border-radius: var(--ab-radius);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: var(--ab-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.autism-dashboard.ak-portal-dash .card:hover { box-shadow: var(--ab-shadow-lg); }
+.autism-dashboard.ak-portal-dash .card h3 { color: var(--ab-ink) !important; }
+.autism-dashboard.ak-portal-dash .tab-pane:not(.hidden) { animation: ab-fade-up 0.35s ease-out; }
+.autism-dashboard.ak-portal-dash p[style*="color: #64748b"],
+.autism-dashboard.ak-portal-dash p[style*="color:#64748b"] { color: var(--ab-muted) !important; }
+
+/* Buttons --------------------------------------------------------------- */
+.autism-dashboard.ak-portal-dash .btn-primary {
+    background: linear-gradient(135deg, #16a34a, #0ea5e9);
+    border-radius: 12px;
+    border: 0;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.22);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.autism-dashboard.ak-portal-dash .btn-primary:hover { transform: translateY(-1px); filter: saturate(1.1); box-shadow: 0 12px 26px rgba(14, 165, 233, 0.3); }
+.autism-dashboard.ak-portal-dash .btn-primary:active { transform: translateY(0) scale(0.98); }
+.autism-dashboard.ak-portal-dash .btn-warning { border-radius: 12px; }
+
+/* Stat cards ------------------------------------------------------------ */
+.autism-dashboard.ak-portal-dash .stat-grid { gap: 14px; }
+.autism-dashboard.ak-portal-dash .stat-card {
+    border: 0;
+    border-top: 0;
+    border-radius: 18px;
+    padding: 18px 16px 16px;
+    background: #fff;
+    box-shadow: var(--ab-shadow);
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.autism-dashboard.ak-portal-dash .stat-card:hover { transform: translateY(-4px); box-shadow: var(--ab-shadow-lg); }
+.autism-dashboard.ak-portal-dash .stat-card::before {
+    content: '';
+    position: absolute;
+    right: -24px;
+    top: -24px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--ab-stat, #dcfce7);
+    opacity: 0.9;
+}
+.autism-dashboard.ak-portal-dash .stat-card h4 {
+    font-size: 2.1rem;
+    color: var(--ab-ink);
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    position: relative;
+}
+.autism-dashboard.ak-portal-dash .stat-card p { color: var(--ab-muted); position: relative; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(1) { --ab-stat: #dbeafe; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(2) { --ab-stat: #dcfce7; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(3) { --ab-stat: #fef3c7; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(4) { --ab-stat: #ede9fe; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(5) { --ab-stat: #e0f2fe; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(6) { --ab-stat: #fce7f3; }
+.autism-dashboard.ak-portal-dash .stat-card:nth-child(7) { --ab-stat: #f1f5f9; }
+
+/* Hub tiles ------------------------------------------------------------- */
+.autism-dashboard.ak-portal-dash .ak-hub-tile {
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.autism-dashboard.ak-portal-dash .ak-hub-tile:hover {
+    transform: translateY(-4px) rotate(-0.5deg);
+    border-color: #86efac;
+    box-shadow: 0 16px 34px rgba(22, 163, 74, 0.14);
+}
+.autism-dashboard.ak-portal-dash .ak-hub-tile i {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #dcfce7, #e0f2fe);
+    color: #15803d;
+    font-size: 1.15rem;
+}
+.autism-dashboard.ak-portal-dash .ak-hub-tile span { color: var(--ab-ink); font-weight: 800; }
+
+/* Tables ---------------------------------------------------------------- */
+.autism-dashboard.ak-portal-dash .data-table { border-radius: 14px; overflow: hidden; }
+.autism-dashboard.ak-portal-dash .data-table th {
+    background: #f1f5f9;
+    color: var(--ab-ink);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.autism-dashboard.ak-portal-dash .data-table tr:hover td { background: #f8fafc; }
+
+/* ---- Welcome hero + journey + countdown (new dashboard widgets) ------- */
+.ab-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+    gap: 16px;
+    margin-bottom: 18px;
+}
+@media (max-width: 900px) { .ab-hero { grid-template-columns: 1fr; } }
+.ab-hero-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 24px 26px;
+    color: #fff;
+    background: linear-gradient(120deg, #16a34a 0%, #0ea5e9 55%, #7c3aed 120%);
+    box-shadow: 0 20px 50px rgba(14, 165, 233, 0.25);
+    animation: ab-fade-up 0.45s ease-out;
+}
+.ab-hero-card::after {
+    content: '';
+    position: absolute;
+    right: -60px;
+    bottom: -80px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+}
+.ab-hero-card::before {
+    content: '';
+    position: absolute;
+    right: 90px;
+    top: -60px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+}
+.ab-hero-eyebrow { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.9; }
+.ab-hero-card h2 {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.9rem;
+    margin: 6px 0 6px;
+    line-height: 1.15;
+}
+.ab-hero-card p { font-size: 0.95rem; opacity: 0.95; max-width: 520px; }
+.ab-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; position: relative; z-index: 1; }
+.ab-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+    font-family: inherit;
+}
+.ab-chip:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
+.ab-hero-art {
+    position: absolute;
+    right: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    grid-template-columns: repeat(2, 42px);
+    gap: 8px;
+    z-index: 1;
+}
+.ab-hero-art span {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.22);
+    animation: ab-float 6s ease-in-out infinite;
+}
+.ab-hero-art span:nth-child(2) { animation-delay: -1.5s; }
+.ab-hero-art span:nth-child(3) { animation-delay: -3s; }
+.ab-hero-art span:nth-child(4) { animation-delay: -4.5s; }
+@media (max-width: 640px) { .ab-hero-art { display: none; } }
+
+.ab-countdown {
+    border-radius: 24px;
+    padding: 20px 22px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--ab-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: ab-fade-up 0.5s ease-out;
+}
+.ab-countdown-label { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ab-green-deep); }
+.ab-countdown-title { font-weight: 800; font-size: 1.05rem; color: var(--ab-ink); }
+.ab-countdown-date { color: var(--ab-muted); font-size: 0.88rem; display: flex; align-items: center; gap: 6px; }
+.ab-countdown-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+.ab-countdown-num {
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f0fdf4, #fff);
+    border: 1px solid #bbf7d0;
+}
+.ab-countdown-num b {
+    display: block;
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.6rem;
+    color: var(--ab-ink);
+    line-height: 1;
+}
+.ab-countdown-num small { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ab-muted); font-weight: 700; }
+.ab-countdown-today {
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #78350f;
+    font-weight: 800;
+    text-align: center;
+}
+.ab-countdown-empty { color: var(--ab-muted); font-size: 0.9rem; }
+
+/* Journey (progress across the whole programme) */
+.ab-journey {
+    border-radius: 24px;
+    padding: 20px 22px 18px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--ab-shadow);
+    margin-bottom: 18px;
+    animation: ab-fade-up 0.55s ease-out;
+}
+.ab-journey-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.ab-journey-head h3 { margin: 0; font-size: 1.05rem; color: var(--ab-ink); display: flex; align-items: center; gap: 8px; }
+.ab-journey-steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    position: relative;
+}
+@media (max-width: 720px) { .ab-journey-steps { grid-template-columns: repeat(3, 1fr); row-gap: 18px; } }
+.ab-jstep {
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    padding: 0 4px;
+}
+.ab-jstep::before {
+    content: '';
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: #e2e8f0;
+    z-index: 0;
+}
+.ab-jstep:last-child::before { display: none; }
+@media (max-width: 720px) { .ab-jstep:nth-child(3)::before { display: none; } }
+.ab-jstep.is-done::before { background: var(--ab-green); }
+.ab-jstep-dot {
+    position: relative;
+    z-index: 1;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 3px solid #cbd5e1;
+    color: #94a3b8;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+.ab-jstep:hover .ab-jstep-dot { transform: scale(1.08); }
+.ab-jstep.is-done .ab-jstep-dot { background: var(--ab-green); border-color: var(--ab-green); color: #fff; }
+.ab-jstep.is-current .ab-jstep-dot { border-color: var(--ab-green); color: var(--ab-green-deep); animation: ab-pulse-ring 1.6s ease-out infinite; }
+.ab-jstep b { display: block; font-size: 0.8rem; color: var(--ab-ink); }
+.ab-jstep small { display: block; font-size: 0.7rem; color: var(--ab-muted); margin-top: 2px; }
+.ab-journey-bar { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; margin-top: 14px; }
+.ab-journey-bar > div { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #22c55e, #16a34a); transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* Tips carousel */
+.ab-tips {
+    margin-top: 16px;
+    border-radius: 20px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #f0f9ff, #f0fdf4);
+    border: 1px dashed #bae6fd;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+.ab-tips i.ab-tips-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ab-sky);
+    font-size: 1.1rem;
+    box-shadow: var(--ab-shadow);
+    flex-shrink: 0;
+}
+.ab-tips-body { flex: 1; min-width: 0; }
+.ab-tips-body b { display: block; color: var(--ab-ink); font-size: 0.9rem; }
+.ab-tips-body p { margin: 2px 0 0; color: var(--ab-muted); font-size: 0.85rem; }
+.ab-tips-dots { display: flex; gap: 5px; }
+.ab-tips-dots span { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; }
+.ab-tips-dots span.on { background: var(--ab-green); width: 18px; border-radius: 4px; }
+
+/* Skeleton */
+.ab-skel {
+    height: 14px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+    background-size: 800px 100%;
+    animation: ab-shimmer 1.3s infinite linear;
+}
+
+/* ---- Main registration / pre-reg tracker: black text, green ring+line - */
+.ak-portal-dash .ak-track-card-v3 {
+    --ak-track-accent: #16a34a;
+    --ak-track-accent-soft: rgba(22, 163, 74, 0.16);
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--ab-shadow);
+}
+.ak-portal-dash .ak-track-card-v3__bar { background: linear-gradient(90deg, #16a34a, #22c55e) !important; }
+.ak-portal-dash .ak-track-card-v3__progress-fill { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.ak-portal-dash .ak-track-v3-body strong,
+.ak-portal-dash .ak-track-v3-step.is-done .ak-track-v3-body strong,
+.ak-portal-dash .ak-track-v3-step.is-current .ak-track-v3-body strong,
+.ak-portal-dash .ak-track-v3-step.is-upcoming .ak-track-v3-body strong {
+    color: #000 !important;
+}
+.ak-portal-dash .ak-track-v3-body p { color: #1f2937; }
+.ak-portal-dash .ak-track-v3-step.is-upcoming .ak-track-v3-body p { color: #4b5563; }
+.ak-portal-dash .ak-track-v3-when { color: #000 !important; font-weight: 700; }
+.ak-portal-dash .ak-track-v3-step:not(:last-child)::after { background: #cbd5e1; width: 3px; left: 20.5px; }
+.ak-portal-dash .ak-track-v3-step.is-done:not(:last-child)::after { background: #16a34a; }
+.ak-portal-dash .ak-track-v3-step.is-current:not(:last-child)::after { background: linear-gradient(180deg, #16a34a 0%, #16a34a 45%, #cbd5e1 100%); }
+.ak-portal-dash .ak-track-v3-icon { border-color: #86efac; color: #16a34a; background: #fff; border-width: 3px; }
+.ak-portal-dash .ak-track-v3-step.is-done .ak-track-v3-icon { background: #16a34a; border-color: #16a34a; color: #fff; }
+.ak-portal-dash .ak-track-v3-step.is-current .ak-track-v3-icon {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.18);
+    animation: ab-pulse-ring 1.6s ease-out infinite;
+}
+.ak-portal-dash .ak-track-v3-step.is-upcoming .ak-track-v3-icon { background: #fff; border-color: #86efac; color: #86efac; }
+.ak-portal-dash .ak-track-v3-step.is-fail .ak-track-v3-icon { background: #dc2626; border-color: #dc2626; }
+.ak-portal-dash .ak-track-v3-step.is-fail .ak-track-v3-body strong { color: #000 !important; }
+.ak-portal-dash .ak-track-card-v3__progress-label { color: #000; }
+.ak-portal-dash #seminar-track-live,
+.ak-portal-dash #prereg-track-live,
+.ak-portal-dash #comp-track-live { color: #000 !important; }
+
+/* ---- Login overlay ---------------------------------------------------- */
+.autism-dashboard.ak-portal-dash #auth-overlay {
+    background:
+        radial-gradient(700px 400px at 10% 10%, rgba(134, 239, 172, 0.55), transparent 60%),
+        radial-gradient(700px 400px at 90% 90%, rgba(186, 230, 253, 0.6), transparent 60%),
+        rgba(248, 251, 255, 0.92);
+    backdrop-filter: blur(8px);
+}
+.autism-dashboard.ak-portal-dash .doctor-auth-card {
+    border-radius: 24px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: var(--ab-shadow-lg) !important;
+    animation: ab-pop 0.45s ease-out;
+}
+.autism-dashboard.ak-portal-dash .doctor-auth-card h2 { color: var(--ab-ink) !important; font-family: 'Fredoka', 'Baloo 2', sans-serif; }
+.autism-dashboard.ak-portal-dash .doctor-auth-card input { border-radius: 12px !important; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .autism-dashboard.ak-portal-dash .content-area { padding: 14px 14px 32px; }
+    .autism-dashboard.ak-portal-dash .notification-bar,
+    .autism-dashboard.ak-portal-dash .announcements-box { margin-left: 14px; margin-right: 14px; }
+    .autism-dashboard.ak-portal-dash .section-title { font-size: 1.3rem; }
+    .ab-hero-card h2 { font-size: 1.5rem; }
+}

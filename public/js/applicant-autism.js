@@ -2753,7 +2753,7 @@
                     s.at && (s.state === 'completed' || s.state === 'active')
                         ? '<p class="ak-track-v3-when">' + escapeAkHtml(formatAkTrackWhen(s.at)) + '</p>'
                         : s.state === 'pending'
-                          ? '<p class="ak-track-v3-when" style="color:#94a3b8!important;">Upcoming</p>'
+                          ? '<p class="ak-track-v3-when ak-track-v3-when--upcoming">Upcoming</p>'
                           : '';
                 return (
                     '<div class="' +
