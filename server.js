@@ -61,7 +61,8 @@ const seminarCapacity = require('./lib/seminar-capacity');
 const ticketScanEvents = require('./lib/ticket-scan-events');
 const feedbackFormConfig = require('./lib/feedback-form-config');
 const { registerLiveScannerRoutes } = require('./lib/routes-live-scanner');
-const { registerPosRoutes } = require('./lib/pos-onspot');
+const { registerPosRoutes, seminarIsFree } = require('./lib/pos-onspot');
+const { registerOnspotLinkRoutes } = require('./lib/onspot-links');
 const siteSeoMod = require('./lib/site-seo');
 const siteFavicon = require('./lib/site-favicon');
 const emailDeliveryPolicy = require('./lib/email-delivery-policy');
@@ -1958,7 +1959,7 @@ function sanitizeScrollingAnnouncements(arr) {
             const t = String(a.title || '');
             const b = String(a.body || '');
             if (/test seminar/i.test(t) || /introduction to ayurveda/i.test(t)) return false;
-            if (t.startsWith('Seminar — ') && b.includes('Apply from the doctor portal') && b.includes(' — ')) {
+            if (t.startsWith('Seminar — ') && b.includes('Apply from the applicant portal') && b.includes(' — ')) {
                 return false;
             }
             return true;
@@ -2032,7 +2033,7 @@ function buildSeminarRegistrationAnnouncement(row) {
     }
     return {
         title: `Registration open — ${title}`,
-        body: `Registration is now open. Apply from the doctor portal.${eventBit}`,
+        body: `Registration is now open. Apply from the applicant portal.${eventBit}`,
         date: new Date().toISOString().slice(0, 10),
         autoFromSeminarId: row.id,
         link: '/doctor.html'
@@ -2119,7 +2120,7 @@ function announceSeminarRegistrationOnCreate(seminarId, cb) {
             const msg =
                 portalProduct.FEATURES.productId === 'autism'
                     ? `${row.title || 'Event'}: registration is open. Visit the applicant portal or public pre-registration form.`
-                    : `${row.title || 'Seminar'}: registration is open. Apply from the doctor portal.`;
+                    : `${row.title || 'Seminar'}: registration is open. Apply from the applicant portal.`;
             const pushCms = () => syncSeminarTickerAnnouncement(sid, cb);
             db.run(`INSERT INTO notices (seminar_id, message, pdf_path) VALUES (?, ?, NULL)`, [sid, msg], () =>
                 pushCms()
@@ -2498,11 +2499,20 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                                 }
                             ];
                             const eventLabel = row.seminar_title || 'the event';
+                            const attendeesLine =
+                                attendeesCount != null
+                                    ? 'Attendees: ' +
+                                      attendeesCount +
+                                      ' (' +
+                                      ticketAttendees.attendeesValidityLabel(attendeesCount) +
+                                      ')'
+                                    : '';
                             const waLine =
                                 'Your e-ticket for ' +
                                 eventLabel +
                                 ' is ready.\nTicket ID: ' +
                                 ticketId +
+                                (attendeesLine ? '\n' + attendeesLine : '') +
                                 '\nDownload / print: ' +
                                 pdfUrl;
                             if (sendEmail && u.email) {
@@ -2519,8 +2529,9 @@ function runNotifyTicketIssued(userId, registrationId, ticketId, opts) {
                                             pdfUrl +
                                             '">' +
                                             pdfUrl +
-                                            '</a></p>',
-                                        text: 'E-ticket: ' + pdfUrl,
+                                            '</a></p>' +
+                                            (attendeesLine ? '<p><strong>' + attendeesLine + '</strong></p>' : ''),
+                                        text: 'E-ticket: ' + pdfUrl + (attendeesLine ? '\n' + attendeesLine : ''),
                                         event_key: 'TICKET_ISSUED',
                                         immediate: drainImmediate
                                     },
@@ -3597,11 +3608,12 @@ app.get('/api/auth/signup-otp-required', withIntegrationSettingsLoaded, (req, re
 
 app.get('/api/auth/login-otp-required', withIntegrationSettingsLoaded, (req, res) => {
     const portal = portalAuthPolicy.normalizeLoginPortal(req.query && req.query.portal);
-    const channels = portalAuthPolicy.loginOtpChannels();
-    const passwordless = portalAuthPolicy.passwordlessLoginEnabled() && !portalAuthPolicy.isStaffPortal(portal);
+    const channels = portalAuthPolicy.loginOtpChannelsForPortal(portal);
+    const passwordless = portalAuthPolicy.passwordlessForPortal(portal);
     res.json({
-        required: portalAuthPolicy.applicantLoginOtpRequired(portal),
+        required: portalAuthPolicy.loginOtpRequiredForPortal(portal),
         passwordless,
+        emailOtpLogin: portalAuthPolicy.isEmailOtpLoginPortal(portal),
         whatsapp: channels.whatsapp,
         email: channels.email,
         channels,
@@ -3728,11 +3740,73 @@ app.post('/api/auth/login-otp/precheck', (req, res) => {
     });
 });
 
+/** Staff/scanner OTP portals: pick the matching staff account for the email (never an applicant). */
+function findStaffUserForOtpPortal(emailNorm, portal, cb) {
+    const userRoles = require('./lib/user-roles');
+    db.all(
+        `SELECT id, user_id_string, first_name, last_name, email, phone, password, role, user_role,
+                COALESCE(is_disabled, 0) AS is_disabled, COALESCE(is_banned, 0) AS is_banned,
+                admin_modules, doctor_category, doctor_modules,
+                COALESCE(email_verified, 1) AS email_verified
+         FROM users
+         WHERE ${authUsers.sqlEmailMatches('email')} AND ${authUsers.sqlUserActive('is_disabled')}`,
+        [emailNorm],
+        (err, rows) => {
+            if (err) return cb(err);
+            const all = rows || [];
+            if (!all.length) return cb(null, null, { reason: 'none' });
+            if (all.some((r) => userRoles.isSuperAdminAccount(r)) && !all.some((r) => userRoles.isStaffPortalAccount(r))) {
+                return cb(null, null, { reason: 'superadmin' });
+            }
+            let staff = all.filter((r) => userRoles.isStaffPortalAccount(r));
+            if (portal === 'scanner') {
+                const scanners = staff.filter((r) => {
+                    const ur = userRoles.effectiveUserRole(r);
+                    return ur === 'scanner_portal_user' || ur === 'scanner_dashboard_user' || ur === 'co_admin';
+                });
+                if (scanners.length) staff = scanners;
+            }
+            if (!staff.length) return cb(null, null, { reason: 'applicant' });
+            cb(null, staff[0]);
+        }
+    );
+}
+
 function resolveLoginUserForOtp(email, password, cb, options) {
     const requirePassword = options && options.requirePassword === true;
     const phoneRaw = options && options.phone;
     const phoneOnly = !!(options && options.phoneOnly);
     const channel = String((options && options.channel) || '').toLowerCase();
+    const otpPortal = portalAuthPolicy.normalizeLoginPortal((options && options.portal) || 'public');
+
+    if (portalAuthPolicy.isEmailOtpLoginPortal(otpPortal)) {
+        const staffEmailV = contactValidation.validateEmail(email || '');
+        if (!staffEmailV.valid) return cb(null, { status: 400, error: staffEmailV.message });
+        return findStaffUserForOtpPortal(staffEmailV.cleanedEmail, otpPortal, (err, row, info) => {
+            if (err) return cb(err);
+            if (row) return cb(null, { status: 200, row });
+            const reason = (info && info.reason) || 'none';
+            if (reason === 'superadmin') {
+                return cb(null, {
+                    status: 403,
+                    error: 'Super administrators sign in with email and password at the admin console (/admin).'
+                });
+            }
+            if (reason === 'applicant') {
+                return cb(null, {
+                    status: 403,
+                    error:
+                        otpPortal === 'scanner'
+                            ? 'This email is not a scanner or staff account. Applicants sign in at /dashboard.'
+                            : 'This email is not a staff account. Applicants sign in at /dashboard.'
+                });
+            }
+            return cb(null, {
+                status: 401,
+                error: 'No staff account found with this email. Ask your administrator to create one.'
+            });
+        });
+    }
 
     if (phoneOnly) {
         const phoneV = contactValidation.validatePhone(phoneRaw);
@@ -3861,23 +3935,26 @@ app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAux
 app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliaryTables, (req, res) => {
     const { email, password, channel, phone } = req.body || {};
     const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
-    if (!portalAuthPolicy.applicantLoginOtpRequired(loginPortal)) {
+    if (!portalAuthPolicy.loginOtpRequiredForPortal(loginPortal)) {
         return res.status(400).json({ error: 'Login OTP is disabled. Sign in with your email and password.' });
     }
-    const phoneOnly = !email && !!phone;
-    if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
+    const staffOtpPortal = portalAuthPolicy.isEmailOtpLoginPortal(loginPortal);
+    const phoneOnly = !staffOtpPortal && !email && !!phone;
+    if (!phoneOnly && !email) {
+        return res.status(400).json({ error: staffOtpPortal ? 'Email is required' : 'Phone is required' });
+    }
     if (!channel) return res.status(400).json({ error: 'channel is required' });
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
-    const loginChannels = portalAuthPolicy.loginOtpChannels();
+    const loginChannels = portalAuthPolicy.loginOtpChannelsForPortal(loginPortal);
     if (channel === 'phone' && !loginChannels.whatsapp) {
         return res.status(400).json({ error: 'WhatsApp login OTP is disabled.' });
     }
     if (channel === 'email' && !loginChannels.email) {
         return res.status(400).json({ error: 'Email login OTP is disabled.' });
     }
-    const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
+    const requirePassword = !portalAuthPolicy.passwordlessForPortal(loginPortal);
     resolveLoginUserForOtp(
         email || null,
         password,
@@ -3886,10 +3963,10 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         if (out.status !== 200) {
             return res.status(out.status).json({ error: out.error, needsSignup: !!out.needsSignup });
         }
-        if (portalAuthPolicy.isStaffPortalAccount(out.row)) {
+        if (!staffOtpPortal && portalAuthPolicy.isStaffPortalAccount(out.row)) {
             return res.status(400).json({
                 error:
-                    'Login OTP is not used for staff accounts. Sign in with email and password at the admin, judge, or scanner portal.'
+                    'Staff accounts sign in with an email OTP at the staff portal (/staff) or scanner portal (/scanner).'
             });
         }
         authLoginOtp.sendLoginOtpChannel(
@@ -3910,24 +3987,28 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         }
         res.json(payload);
     },
-            { forceResend: !!(req.body && req.body.forceResend), channel }
+            { forceResend: !!(req.body && req.body.forceResend), channel, portal: loginPortal }
         );
     },
-        { requirePassword, phone, phoneOnly, channel }
+        { requirePassword, phone, phoneOnly, channel, portal: loginPortal }
     );
 });
 
 app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
     const { email, password, channel, code, phone } = req.body || {};
-    const phoneOnly = !email && !!phone;
-    if (!phoneOnly && !email) return res.status(400).json({ error: 'Phone is required' });
+    const loginPortal = portalAuthPolicy.normalizeLoginPortal((req.body && req.body.portal) || 'doctor');
+    const staffOtpPortal = portalAuthPolicy.isEmailOtpLoginPortal(loginPortal);
+    const phoneOnly = !staffOtpPortal && !email && !!phone;
+    if (!phoneOnly && !email) {
+        return res.status(400).json({ error: staffOtpPortal ? 'Email is required' : 'Phone is required' });
+    }
     if (!channel || !code) {
         return res.status(400).json({ error: 'channel and code are required' });
     }
     if (channel !== 'phone' && channel !== 'email') {
         return res.status(400).json({ error: 'channel must be phone or email' });
     }
-    const requirePassword = !portalAuthPolicy.passwordlessLoginEnabled();
+    const requirePassword = !portalAuthPolicy.passwordlessForPortal(loginPortal);
     resolveLoginUserForOtp(
         email || null,
         password,
@@ -3960,7 +4041,7 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
                 }
             );
         },
-        { requirePassword, phone, phoneOnly, channel }
+        { requirePassword, phone, phoneOnly, channel, portal: loginPortal }
     );
 });
 
@@ -4585,9 +4666,9 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         const loginPortal = portalAuthPolicy.normalizeLoginPortal(
             (req.body && req.body.portal) || 'public'
         );
-        const applicantPasswordless =
-            passwordless && loginPortal !== 'admin' && loginPortal !== 'staff';
-        const phoneOnlyLogin = applicantPasswordless && !email && phone;
+        const staffOtpPortal = portalAuthPolicy.isEmailOtpLoginPortal(loginPortal);
+        const applicantPasswordless = portalAuthPolicy.passwordlessForPortal(loginPortal);
+        const phoneOnlyLogin = applicantPasswordless && !staffOtpPortal && !email && phone;
         let phoneNorm = null;
         if (phoneOnlyLogin) {
             const phoneV = contactValidation.validatePhone(phone);
@@ -4596,7 +4677,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
         } else if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
-        if (!passwordless && !phoneOnlyLogin && (password === undefined || password === null)) {
+        if (!applicantPasswordless && !phoneOnlyLogin && (password === undefined || password === null)) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
         const portalIdLogin = email ? usersEmailPolicy.isPortalIdLogin(email) : false;
@@ -4607,7 +4688,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                 return res.status(400).json({ error: loginEmailV.message });
             }
         }
-        const loginChannels = portalAuthPolicy.loginOtpChannels();
+        const loginChannels = portalAuthPolicy.loginOtpChannelsForPortal(loginPortal);
         const lookupPassword = applicantPasswordless ? '' : password;
 
         function processLoginRow(err, row, extra) {
@@ -4760,7 +4841,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                         delete row.password;
                         normalizeAuthUserRow(row);
                         const isStaffLogin = loginPortal === 'admin' || loginPortal === 'staff';
-                        const requiresReset = isStaffLogin && Number(row.require_password_reset) === 1;
+                        const requiresReset = isStaffLogin && !staffOtpPortal && Number(row.require_password_reset) === 1;
                         if (requiresReset) {
                             row.require_password_reset = 1;
                         }
@@ -4768,7 +4849,7 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
                     });
                 }
 
-                if (loginOtpRequired(loginPortal) && !portalAuthPolicy.isStaffPortalAccount(row)) {
+                if (loginOtpRequired(loginPortal) && (staffOtpPortal || !portalAuthPolicy.isStaffPortalAccount(row))) {
                     if (loginChannels.whatsapp && !phoneOtpToken) {
                         return res.status(400).json({ error: 'WhatsApp OTP verification is required to log in.' });
                     }
@@ -4804,6 +4885,33 @@ app.post('/api/auth/login', withAuxiliaryTables, (req, res) => {
 
         if (phoneOnlyLogin) {
             return authUsers.findUserByPhone(db, phoneNorm, (err, row) => processLoginRow(err, row, null));
+        }
+        if (staffOtpPortal) {
+            if (portalIdLogin) {
+                return res.status(400).json({
+                    error: 'Sign in with your staff email and the OTP sent to it.'
+                });
+            }
+            return findStaffUserForOtpPortal(loginEmailV.cleanedEmail, loginPortal, (err, row, info) => {
+                if (err) return res.status(500).json({ error: err.message });
+                if (!row) {
+                    const reason = (info && info.reason) || 'none';
+                    if (reason === 'superadmin') {
+                        return res.status(403).json({
+                            error: 'Super administrators use the full admin console.',
+                            hint: 'Sign in at /admin with email and password.'
+                        });
+                    }
+                    return res.status(reason === 'applicant' ? 403 : 401).json({
+                        error:
+                            reason === 'applicant'
+                                ? 'This account cannot sign in to this staff portal. Applicants sign in at /dashboard.'
+                                : 'No staff account found with this email.',
+                        needsSignup: false
+                    });
+                }
+                processLoginRow(null, row, null);
+            });
         }
         usersEmailPolicy.findUserForLogin(
             db,
@@ -5731,7 +5839,7 @@ app.post('/api/applications/submit', withApplicationSubmitUpload, (req, res) => 
     userId = parsePositiveUserId(userId);
     if (!userId) {
         return res.status(400).json({
-            error: 'Invalid user session. Sign out of the doctor portal, sign in again with your email, then resubmit.'
+            error: 'Invalid user session. Sign out of the applicant portal, sign in again with your email, then resubmit.'
         });
     }
     seminarId = parseInt(seminarId, 10);
@@ -7870,6 +7978,7 @@ function doctorPayloadFromScanRow(row, extra) {
         applicationNo: row.application_no,
         seminarTitle: row.seminar_title,
         ticketId: row.ticket_id_string,
+        attendeesCount: ticketAttendees.resolveAttendeesCount(row),
         profilePhotoUrl: doctorProfileUrlFromRow(row)
     };
     return extra ? Object.assign(base, extra) : base;
@@ -7884,13 +7993,15 @@ const SCANNER_TICKET_LOOKUP_SQL = `
                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name, u.email AS doctor_email, u.phone AS doctor_phone,
                IFNULL(u.is_disabled, 0) AS doctor_is_disabled, IFNULL(u.is_banned, 0) AS doctor_is_banned, u.ban_reason AS doctor_ban_reason,
                dp.profile_photo_path AS profile_photo_path,
+               p.form_data AS prereg_form_data,
                r.id AS registration_id, r.application_no, r.form_data, r.status AS registration_status, o.status AS payment_status
         FROM tickets t
         JOIN orders o ON t.order_id = o.id
         JOIN registrations r ON o.registration_id = r.id
         JOIN seminars s ON r.seminar_id = s.id
         JOIN users u ON t.user_id = u.id
-        LEFT JOIN doctor_profile dp ON dp.user_id = u.id`;
+        LEFT JOIN doctor_profile dp ON dp.user_id = u.id
+        LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id`;
 
 function ticketLookupInvalid(row) {
     if (!row) return false;
@@ -7903,14 +8014,14 @@ function doctorAccountBlockForScan(row) {
     if (!row) return null;
     if (Number(row.doctor_is_banned) === 1) {
         return {
-            error: 'Entry denied — doctor account is banned.',
+            error: 'Entry denied — applicant account is banned.',
             accountStatus: 'BANNED',
             banReason: row.doctor_ban_reason || null
         };
     }
     if (Number(row.doctor_is_disabled) === 1) {
         return {
-            error: 'Entry denied — doctor account is disabled.',
+            error: 'Entry denied — applicant account is disabled.',
             accountStatus: 'DISABLED'
         };
     }
@@ -7984,11 +8095,13 @@ const SCANNER_REG_LOOKUP_SQL = `
                u.id AS doctor_user_id, u.user_id_string AS doctor_user_id_string,
                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name, u.email AS doctor_email, u.phone AS doctor_phone,
                IFNULL(u.is_disabled, 0) AS doctor_is_disabled, IFNULL(u.is_banned, 0) AS doctor_is_banned, u.ban_reason AS doctor_ban_reason,
-               dp.profile_photo_path AS profile_photo_path
+               dp.profile_photo_path AS profile_photo_path,
+               p.form_data AS prereg_form_data
         FROM registrations r
         JOIN users u ON u.id = r.user_id
         JOIN seminars s ON s.id = r.seminar_id
         LEFT JOIN doctor_profile dp ON dp.user_id = u.id
+        LEFT JOIN preregistrations p ON p.user_id = r.user_id AND p.seminar_id = r.seminar_id
         LEFT JOIN orders o ON o.registration_id = r.id AND lower(trim(o.status)) = 'success'
         LEFT JOIN tickets t ON t.order_id = o.id`;
 
@@ -8026,7 +8139,8 @@ function registrationRowToTicketScanShape(row) {
         payment_status: row.payment_status,
         order_id_string: row.order_id_string,
         order_db_id: row.order_db_id,
-        user_id: row.user_id
+        user_id: row.user_id,
+        prereg_form_data: row.prereg_form_data
     };
 }
 
@@ -8437,7 +8551,7 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                                     newScanCount >= scansRequired;
                                 let scanMsg = portalProduct.FEATURES.noFees
                                     ? 'Check-in recorded.'
-                                    : 'Attendance marked. Doctor tracking updated.';
+                                    : 'Attendance marked. Applicant tracking updated.';
                                 if (scansRequired === 2) {
                                     if (newScanCount === 1) {
                                         scanMsg = portalProduct.FEATURES.noFees
@@ -8920,8 +9034,8 @@ app.post('/api/admin/seminars/:id/purge-test-data', (req, res) => {
         res.json({
             success: true,
             message: deleteSeminar
-                ? 'Seminar and all related registration data removed. Doctor accounts were not deleted.'
-                : 'All registrations and seminar activity data removed. Seminar record kept. Doctor accounts were not deleted.',
+                ? 'Seminar and all related registration data removed. Applicant accounts were not deleted.'
+                : 'All registrations and seminar activity data removed. Seminar record kept. Applicant accounts were not deleted.',
             ...result
         });
     });
@@ -9919,7 +10033,7 @@ app.get('/api/admin/users/lookup', (req, res) => {
             return res.json({
                 found: false,
                 hint:
-                    'No account in the database matches that search. If you just created a user, the save may have failed — create again. For Mr Nitin Thatte, search Nitin or thattenitin13@gmail.com (portal ID 645390302736, Doctors tab).'
+                    'No account in the database matches that search. If you just created a user, the save may have failed — create again. For Mr Nitin Thatte, search Nitin or thattenitin13@gmail.com (portal ID 645390302736, Applicants tab).'
             });
         }
         const matches = rows.map(adminUserLookup.mapUserForAdminResponse);
@@ -9936,7 +10050,7 @@ app.get('/api/admin/users/lookup', (req, res) => {
                     ? `${matches.length} accounts match — pick the correct one in the list below.`
                     : accountList === 'staff'
                       ? 'Open Staff users tab'
-                      : 'Open Doctors tab (includes public website sign-ups)'
+                      : 'Open Applicants tab (includes public website sign-ups)'
         });
     });
 });
@@ -10790,16 +10904,24 @@ function requireAdminActor(req, res, next) {
 }
 
 registerLiveScannerRoutes(app, { db, requireAdminActor });
-registerPosRoutes(app, {
+const posOnspot = registerPosRoutes(app, {
     db,
     generateId,
     requireAdminActor,
     getOrCreatePendingOrder,
     fulfillRegistrationPayment,
     seminarCapacity,
-    activityLog,
-    notifyTicketIssued,
-    emailDeliveryPolicy
+    activityLog
+});
+registerOnspotLinkRoutes(app, {
+    db,
+    requireAdminActor,
+    loadRegistrationFormConfig,
+    registrationFormFieldsForPortal,
+    publicBaseUrl: () => require('./lib/notification-engine').publicBaseUrl(),
+    registerOnSpot: posOnspot.registerOnSpot,
+    seminarIsFree,
+    seminarCapacity
 });
 
 app.get('/api/public/feedback-form', (req, res) => {
@@ -11499,7 +11621,7 @@ app.post('/api/admin/users/create', (req, res) => {
     if (createKind === 'staff') {
         if (!userRole || userRole === 'doctor') {
             return res.status(400).json({
-                error: 'Select a staff role (Judge, Co Admin, Scanner, or Reviewer). Doctor accounts belong under Doctors → Create doctor.'
+                error: 'Select a staff role (Judge, Co Admin, Scanner, or Reviewer). Applicant accounts belong under Applicants → Create doctor.'
             });
         }
         if (!userRoles.ADMIN_CREATABLE_STAFF_ROLES.includes(userRole)) {
@@ -11568,7 +11690,7 @@ app.post('/api/admin/users/create', (req, res) => {
                             if (/unique|duplicate/i.test(String(err.message || ''))) {
                                 return res.status(409).json({
                                     error:
-                                        'Portal user ID already exists, or email is already used by a doctor account. Staff test accounts may share an email — use a new portal ID.'
+                                        'Portal user ID already exists, or email is already used by an applicant account. Staff test accounts may share an email — use a new portal ID.'
                                 });
                             }
                             return res.status(500).json({ error: err.message });
@@ -11637,7 +11759,7 @@ app.post('/api/admin/users/create', (req, res) => {
                 if (taken) {
                     const list = userRoles.isDoctorPortalAccount(existing) ? 'Doctors' : 'Staff users';
                     return res.status(409).json({
-                        error: `This email is already used by a doctor account (${list}, portal ID ${existing && existing.user_id_string ? existing.user_id_string : '—'}). Create a staff test account with the same email under Staff users instead.`,
+                        error: `This email is already used by an applicant account (${list}, portal ID ${existing && existing.user_id_string ? existing.user_id_string : '—'}). Create a staff test account with the same email under Staff users instead.`,
                         existingUserId: existing && existing.id,
                         existingUser: existing ? adminUserLookup.mapUserForAdminResponse(existing) : null,
                         accountList: userRoles.isDoctorPortalAccount(existing) ? 'doctors' : 'staff'
@@ -11787,7 +11909,7 @@ app.post('/api/admin/users/:userId/doctor-access', (req, res) => {
         if (e0) return res.status(500).json({ error: e0.message });
         if (!row0) return res.status(404).json({ error: 'User not found' });
         const ur = String(row0.user_role || row0.role || '').toLowerCase();
-        if (ur !== 'doctor') return res.status(400).json({ error: 'Doctor access settings are only valid for doctor accounts.' });
+        if (ur !== 'doctor') return res.status(400).json({ error: 'Applicant access settings are only valid for applicant accounts.' });
         db.run(
             `UPDATE users SET doctor_category = ?, doctor_modules = ? WHERE id = ?`,
             [doctor_category, modulesJson, uid],
@@ -12793,7 +12915,7 @@ app.put('/api/admin/users/:userId/doctor-profile', (req, res) => {
                         resource_id: String(uid),
                         meta: { adminUserId: aid }
                     });
-                    res.json({ success: true, message: 'Doctor profile updated' });
+                    res.json({ success: true, message: 'Applicant profile updated' });
                 };
                 if (row) {
                     return db.run(
@@ -13551,17 +13673,17 @@ app.post('/api/admin/email/bulk', (req, res) => {
 /** Resolve portal user ID (12-digit), USR_… string, email, or small internal users.id. */
 function resolveDoctorUserRef(raw, cb) {
     const s = String(raw || '').trim();
-    if (!s) return cb(new Error('Doctor user identifier is required'));
+    if (!s) return cb(new Error('Applicant user identifier is required'));
 
     const finish = (e, row) => {
         if (e) return cb(e);
-        if (!row) return cb(new Error('No doctor account found for that identifier.'));
+        if (!row) return cb(new Error('No applicant account found for that identifier.'));
         const role = String(row.user_role || row.role || '').toLowerCase();
         if (role && role !== 'doctor' && role !== 'judge_user') {
-            return cb(new Error('That account is not a doctor portal user (role: ' + role + ').'));
+            return cb(new Error('That account is not an applicant portal user (role: ' + role + ').'));
         }
         if (Number(row.is_disabled) === 1) {
-            return cb(new Error('That doctor account is disabled.'));
+            return cb(new Error('That applicant account is disabled.'));
         }
         cb(null, row);
     };
@@ -13611,7 +13733,7 @@ function resolveDoctorUserRef(raw, cb) {
 
     return cb(
         new Error(
-            'Enter the doctor 12-digit portal user ID (shown in admin user list), or the small internal account number — not the portal ID in the numeric-only field.'
+            'Enter the applicant 12-digit portal user ID (shown in admin user list), or the small internal account number — not the portal ID in the numeric-only field.'
         )
     );
 }
@@ -13930,7 +14052,7 @@ app.post('/api/admin/support-ticket/create', (req, res) => {
         return res.status(400).json({ error: 'actingAdminId is required' });
     }
     if (!targetRef) {
-        return res.status(400).json({ error: 'Doctor portal user ID or account reference is required' });
+        return res.status(400).json({ error: 'Applicant portal user ID or account reference is required' });
     }
     assertAdminPortalActor(actingAdminId, (eAct) => {
         if (eAct) return res.status(eAct.message === 'FORBIDDEN' ? 403 : 500).json({ error: 'Admin access required' });

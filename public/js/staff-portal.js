@@ -60,7 +60,7 @@
         const lead = document.querySelector('.ak-login-header p');
         if (lead) {
             lead.textContent =
-                'Sign in with your co-admin or staff account to manage registrations, tracking, and check-in tools assigned to you.';
+                'Enter your staff email and we will send a one-time sign-in code — no password needed. Manage registrations, tracking, and check-in tools assigned to you.';
         }
 
         const sidebarTitle = document.querySelector('.sidebar-header h2');

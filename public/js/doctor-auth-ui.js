@@ -42,7 +42,7 @@
             btnUp.setAttribute('aria-selected', !showLogin ? 'true' : 'false');
         }
         const title = document.getElementById('doctor-auth-title');
-        if (title) title.textContent = showLogin ? "Doctor's Portal Sign In" : 'Create doctor account';
+        if (title) title.textContent = showLogin ? 'Applicant Portal Sign In' : 'Create applicant account';
     }
 
     function signupOtpDest(channel) {

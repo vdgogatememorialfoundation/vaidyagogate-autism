@@ -25,6 +25,7 @@
         if (!s) return null;
         if (/Z$|[+-]\d{2}(:?\d{2})?$/i.test(s)) return new Date(s);
         let norm = s.includes('T') ? s : s.replace(' ', 'T');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(norm)) norm += 'T00:00:00';
         if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(norm)) norm += ':00';
         // Naive = IST wall clock (no Z — avoids shifting 9:45 AM to midnight/wrong hour).
         return new Date(norm + IST_OFFSET);
@@ -155,6 +156,27 @@
         });
     }
 
+    /** DATE columns arrive as UTC midnight (= 05:30 IST); never show that as a time. */
+    function isDateOnlyValue(iso, istHour, istMinute) {
+        const raw = iso instanceof Date ? iso.toISOString() : String(iso || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return true;
+        if (/T00:00(:00(\.\d+)?)?Z$/i.test(raw) || /T00:00(:00(\.\d+)?)?[+-]00:?00$/i.test(raw)) return true;
+        const storedAsUtc = /Z$/i.test(raw) || /[+-]00:?00$/i.test(raw);
+        if (storedAsUtc && ((istHour === 5 && istMinute === 30) || (istHour > 0 && istHour < 3))) return true;
+        return false;
+    }
+
+    /** Calendar day only, e.g. "5 Sept 2026". */
+    function formatEventDateOnly(iso) {
+        const local = toDatetimeLocal(iso);
+        if (!local) return iso ? String(iso).trim() : '';
+        const datePart = local.split('T')[0];
+        const anchor = parsePortalDateTime(datePart + 'T12:00:00' + IST_OFFSET);
+        return anchor
+            ? anchor.toLocaleDateString('en-IN', { timeZone: PORTAL_DISPLAY_TZ, day: 'numeric', month: 'short', year: 'numeric' })
+            : datePart;
+    }
+
     function formatEventDisplay(iso) {
         const local = toDatetimeLocal(iso);
         if (!local) return iso ? String(iso).trim() : '';
@@ -174,9 +196,7 @@
         const hh = parseInt(hm[0], 10) || 0;
         const mm = parseInt(hm[1], 10) || 0;
         if (hh === 0 && mm === 0) return dateLine;
-        const raw = String(iso).trim();
-        const storedAsUtc = /Z$/i.test(raw) || /[+-]00:00$/i.test(raw);
-        if (storedAsUtc && hh > 0 && hh < 3) return dateLine;
+        if (isDateOnlyValue(iso, hh, mm)) return dateLine;
         const h12 = hh % 12 || 12;
         const ampm = hh >= 12 ? 'pm' : 'am';
         return dateLine + ', ' + h12 + ':' + String(mm).padStart(2, '0') + ' ' + ampm;
@@ -241,6 +261,8 @@
         formatStored,
         formatLong: formatPortalDateTimeLong,
         formatEvent: formatEventDisplay,
+        formatEventDateOnly: formatEventDateOnly,
+        isDateOnlyValue: isDateOnlyValue,
         formatScan: formatScanDateTime,
         parseDb: parseDbDateTime,
         formatDb: formatDbDateTime

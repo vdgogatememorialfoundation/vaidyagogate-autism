@@ -154,6 +154,14 @@
         empty.classList.toggle('hidden', !hasEvent || hasCards);
     }
 
+    function formatEventDateOnly(value) {
+        if (!value) return 'Not set';
+        if (window.PortalDateTime && typeof window.PortalDateTime.formatEventDateOnly === 'function') {
+            return window.PortalDateTime.formatEventDateOnly(value);
+        }
+        return formatEventDate(value);
+    }
+
     function formatEventDate(value) {
         if (!value) return 'Not set';
         if (window.PortalDateTime && typeof window.PortalDateTime.formatEvent === 'function') {
@@ -173,24 +181,31 @@
     function setAttendanceEvent(seminar) {
         const title = document.getElementById('live-attendance-title');
         const date = document.getElementById('live-attendance-date');
-        if (title) title.textContent = seminar ? seminar.title || 'Attendance list' : 'Attendance list';
+        if (title) title.textContent = seminar ? seminar.title || 'Attendees' : 'Attendees';
         if (date) {
             date.textContent = seminar
-                ? 'Check-in date: ' + formatEventDate(selectedCheckinDate(seminar))
+                ? 'Check-in date: ' + formatEventDateOnly(selectedCheckinDate(seminar))
                 : 'Choose an event to view its check-in date.';
         }
     }
 
-    function renderAttendance(attendees, emptyMessage) {
+    function renderAttendance(attendees, emptyMessage, summary) {
         const list = document.getElementById('live-attendance-list');
         const count = document.getElementById('live-attendance-count');
+        const sub = document.getElementById('live-attendance-summary');
         if (!list) return;
         const rows = Array.isArray(attendees) ? attendees : [];
+        const checkedIn = summary && summary.checkedIn != null ? Number(summary.checkedIn) : rows.filter((r) => r.checked_in).length;
         if (count) count.textContent = String(rows.length);
+        if (sub) {
+            sub.textContent = rows.length
+                ? checkedIn + ' checked in · ' + (rows.length - checkedIn) + ' yet to arrive'
+                : '';
+        }
         if (!rows.length) {
             list.innerHTML =
                 '<p class="kiosk-attendance-empty">' +
-                esc(emptyMessage || 'No attendees have checked in for this event yet.') +
+                esc(emptyMessage || 'No main registrations or e-tickets for this event yet.') +
                 '</p>';
             return;
         }
@@ -199,8 +214,15 @@
                 const name =
                     [person.first_name, person.middle_name, person.last_name].filter(Boolean).join(' ') || 'Attendee';
                 const identifier = person.application_no || person.ticket_id_string || person.user_id_string || '—';
+                const pax = Number(person.attendees_count) > 1 ? ' · ' + Number(person.attendees_count) + ' attendees' : '';
+                const isIn = !!person.checked_in;
+                const state = isIn
+                    ? '<span class="kiosk-attendance-state is-in"><i class="fas fa-circle-check"></i> Checked in</span>'
+                    : '<span class="kiosk-attendance-state">' +
+                      (person.ticket_id_string ? 'E-ticket issued' : 'Registered') +
+                      '</span>';
                 return (
-                    '<div class="kiosk-attendance-item">' +
+                    '<div class="kiosk-attendance-item' + (isIn ? ' is-checked-in' : '') + '">' +
                     '<span class="kiosk-attendance-avatar" aria-hidden="true">' +
                     esc(initials(name)) +
                     '</span>' +
@@ -208,8 +230,11 @@
                     esc(name) +
                     '</strong><span class="kiosk-attendance-meta">' +
                     esc(identifier) +
-                    (person.scan_time ? ' · ' + esc(formatCardTime(person.scan_time)) : '') +
-                    '</span></div></div>'
+                    pax +
+                    (isIn && person.scan_time ? ' · ' + esc(formatCardTime(person.scan_time)) : '') +
+                    '</span></div>' +
+                    state +
+                    '</div>'
                 );
             })
             .join('');
@@ -219,7 +244,7 @@
         const sid = document.getElementById('live-scanner-seminar').value;
         if (!sid) return;
         const data = await api('/api/admin/live-scanner/attendance?seminarId=' + encodeURIComponent(sid));
-        renderAttendance(data.attendees);
+        renderAttendance(data.attendees, null, data);
     }
 
     function tickClock() {
@@ -362,7 +387,7 @@
             if (sel.value) startPoll();
             else {
                 stopPoll();
-                renderAttendance([], 'Choose an event to view checked-in attendees.');
+                renderAttendance([], 'Choose an event to view its attendees.');
             }
             updateEmptyState();
         });

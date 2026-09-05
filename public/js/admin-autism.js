@@ -1883,7 +1883,7 @@
         patchApplicationsMenu();
         document.querySelectorAll('[data-admin-module="tab-behalf-reg"]').forEach((el) => {
             if (el.querySelector('i')) {
-                el.innerHTML = '<i class="fas fa-file-medical"></i> Doctor applications';
+                el.innerHTML = '<i class="fas fa-file-medical"></i> Applicant applications';
             }
         });
         const staffNote = document.querySelector('#tab-staff-users p');

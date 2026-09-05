@@ -15,16 +15,17 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/scanner-portal.css">
+    <link rel="stylesheet" href="/css/scanner-portal.css?v=autism8">
     <link rel="stylesheet" href="/css/autism-scanner.css?v=4">
     <link rel="stylesheet" href="/css/autism-portals-theme.css?v=3">
+    <link rel="stylesheet" href="/css/email-otp-login.css?v=1">
 </head>
 <body class="scanner-body autism-scanner ak-portal-scan">
     <div id="auth-overlay" class="auth-overlay-scanner">
         <div class="auth-card-scanner">
             <div class="auth-brand" data-site-logo data-logo-height="56px" aria-hidden="true"></div>
             <h2><i class="fas fa-qrcode"></i> Staff check-in</h2>
-            <p class="auth-sub">Scanner account only — no public website access from this app.</p>
+            <p class="auth-sub">Scanner account only — sign in with the one-time code emailed to you.</p>
             <form id="scanner-login-form" autocomplete="off">
                 <label for="scanner-email">Email</label>
                 <input type="email" id="scanner-email" name="scanner-portal-email" required autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="email">
@@ -148,7 +149,8 @@
     <script src="/js/portal-datetime.js"></script>
     <script src="/js/site-branding.js"></script>
     <script src="/js/portal-auth.js"></script>
-    <script src="/js/scanner-app.js?v=autism7"></script>
+    <script src="/js/email-otp-login.js?v=1"></script>
+    <script src="/js/scanner-app.js?v=autism9"></script>
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=1"></script>
 </body>

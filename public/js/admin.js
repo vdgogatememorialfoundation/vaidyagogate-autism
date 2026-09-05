@@ -608,7 +608,38 @@ function bindAdminLoginForm() {
     const form = document.getElementById('admin-login-form');
     if (!form || form.dataset.akLoginBound === '1') return;
     form.dataset.akLoginBound = '1';
+    if (window.PORTAL_IS_STAFF && window.EmailOtpLogin) {
+        const otpPanel = document.getElementById('admin_login_otp_panel');
+        if (otpPanel) otpPanel.style.display = 'none';
+        const emailLabel = form.querySelector('label[for="admin-email"]');
+        if (emailLabel) emailLabel.textContent = 'Staff email';
+        const forgot = document.getElementById('forgot-password-link');
+        if (forgot) forgot.style.display = 'none';
+        window.EmailOtpLogin.mount({
+            portal: 'staff',
+            formId: 'admin-login-form',
+            emailInputId: 'admin-email',
+            passwordInputId: 'admin-password',
+            onError: showAdminLoginError,
+            onSuccess: (user) => {
+                clearAdminLoginError();
+                finishAdminLogin(user);
+            }
+        });
+        return;
+    }
     form.addEventListener('submit', adminLoginFormSubmit);
+}
+
+function finishAdminLogin(user) {
+    localStorage.setItem('admin_auth', 'true');
+    localStorage.setItem('admin_user', JSON.stringify(user));
+    __adminLoginPhoneOtpToken = null;
+    __adminLoginEmailOtpToken = null;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    document.getElementById('dashboard-main').classList.remove('hidden');
+    loadAllData();
+    applyCoAdminSidebarVisibility();
 }
 window.bindAdminLoginForm = bindAdminLoginForm;
 window.__akRebindAdminLoginForm = bindAdminLoginForm;
@@ -682,14 +713,7 @@ async function adminLoginFormSubmit(e) {
             );
             return;
         }
-        localStorage.setItem('admin_auth', 'true');
-        localStorage.setItem('admin_user', JSON.stringify(data.user));
-        __adminLoginPhoneOtpToken = null;
-        __adminLoginEmailOtpToken = null;
-        document.getElementById('auth-overlay').classList.add('hidden');
-        document.getElementById('dashboard-main').classList.remove('hidden');
-        loadAllData();
-        applyCoAdminSidebarVisibility();
+        finishAdminLogin(data.user);
     } catch (err) {
         console.error(err);
         showAdminLoginError(
@@ -1289,9 +1313,18 @@ function adminUserStatusBadge(u) {
 }
 
 function adminUserToggleBtn(u) {
-    return u.is_disabled
-        ? `<button class="btn-success" onclick="toggleDisable(${u.id}, false)">Enable</button>`
-        : `<button class="btn-danger" onclick="toggleDisable(${u.id}, true)">Disable</button>`;
+    const on = !u.is_disabled;
+    return `<label class="adm-switch${on ? ' is-on' : ''}" title="${on ? 'Account active — click to disable' : 'Account disabled — click to enable'}">
+        <input type="checkbox" ${on ? 'checked' : ''} onchange="adminSwitchToggleDisable(this, ${u.id})" aria-label="${on ? 'Disable' : 'Enable'} account">
+        <span class="adm-switch-track"><span class="adm-switch-thumb"></span></span>
+        <span class="adm-switch-label">${on ? 'Active' : 'Disabled'}</span>
+    </label>`;
+}
+
+async function adminSwitchToggleDisable(input, userId) {
+    const disable = !input.checked;
+    const done = await toggleDisable(userId, disable);
+    if (done === false) input.checked = !input.checked;
 }
 
 function openAdminCreateUserModal(kind) {
@@ -1325,7 +1358,7 @@ function openAdminCreateUserModal(kind) {
         }
     }
     const title = modal.querySelector('h2');
-    if (title) title.textContent = kind === 'doctor' ? 'Register new doctor' : 'Register new staff user';
+    if (title) title.textContent = kind === 'doctor' ? 'Register new applicant' : 'Register new staff user';
     modal.classList.remove('hidden');
 }
 
@@ -1423,7 +1456,7 @@ function adminStaffRoleOptionsHtml(userRole) {
                 `<option value="${val}" ${ur === val ? 'selected' : ''}>${label}</option>`
         )
         .join('') +
-        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Doctor (doctor portal)</option>`
+        `<option value="doctor" ${userRole === 'doctor' ? 'selected' : ''}>Applicant (applicant portal)</option>`
     );
 }
 
@@ -1494,7 +1527,7 @@ function renderStaffUsersTable(staffList) {
         staffBody.innerHTML =
             '<tr><td colspan="9" style="text-align:center;">No staff users match this search. ' +
             (total
-                ? `${total} staff account${total === 1 ? '' : 's'} exist — <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.82rem;" onclick="adminClearStaffUsersSearch()">Clear search</button> to show all. Also check the <strong>Doctors</strong> tab if the account was saved as Doctor.</td></tr>`
+                ? `${total} staff account${total === 1 ? '' : 's'} exist — <button type="button" class="btn-primary" style="padding:4px 10px;font-size:0.82rem;" onclick="adminClearStaffUsersSearch()">Clear search</button> to show all. Also check the <strong>Applicants</strong> tab if the account was saved as Doctor.</td></tr>`
                 : '</td></tr>');
         return;
     }
@@ -1656,7 +1689,7 @@ async function updateUserRole(userId, newRole) {
             const tab =
                 newRole === 'doctor' ? 'tab-doctors' : 'tab-staff-users';
             if (newRole === 'doctor') {
-                alert(`Role updated to Doctor. Account is now under the Doctors tab (doctor portal login).`);
+                alert(`Role updated to Doctor. Account is now under the Applicants tab (applicant portal login).`);
             } else {
                 alert(`Role updated to ${newRole}. Account is under Staff users.`);
             }
@@ -1687,7 +1720,7 @@ async function adminMoveUserToStaffRole(userId) {
 }
 
 async function adminMoveUserToDoctorPortal(userId) {
-    if (!confirm('Move this account to the Doctor portal? They will sign in at the doctor login page (not staff portals).')) return;
+    if (!confirm('Move this account to the Applicant portal? They will sign in at the applicant login page (not staff portals).')) return;
     await updateUserRole(userId, 'doctor');
     switchTab('tab-doctors');
     window.__highlightAdminUserId = userId;
@@ -1705,10 +1738,10 @@ async function saveDoctorAccess(userId, doctorCategory, doctorModules) {
             })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.success) return { ok: false, error: data.error || 'Could not save doctor access.' };
+        if (!res.ok || !data.success) return { ok: false, error: data.error || 'Could not save applicant access.' };
         return { ok: true, data };
     } catch (_) {
-        return { ok: false, error: 'Network error saving doctor access.' };
+        return { ok: false, error: 'Network error saving applicant access.' };
     }
 }
 
@@ -1719,7 +1752,7 @@ async function saveDoctorAccessFromList(userId) {
     const r = await saveDoctorAccess(userId, category, {});
     if (!r.ok) return alert(r.error);
     await loadUsers();
-    alert('Doctor access updated.');
+    alert('Applicant access updated.');
 }
 
 async function saveDoctorAccessFromDetail(userId) {
@@ -1737,7 +1770,7 @@ async function saveDoctorAccessFromDetail(userId) {
         __adminUserDetailCache.user.doctor_modules = JSON.stringify(r.data.doctor_modules || modules || {});
     }
     await loadUsers();
-    alert('Doctor access saved.');
+    alert('Applicant access saved.');
 }
 
 const WEBSITE_MENU_PAGE_DEFS = [
@@ -1766,9 +1799,9 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-contact-inquiries', 'Website contact'],
     ['tab-email-compose', 'Send email'],
     ['tab-transfer', 'Transfer applications'],
-    ['tab-behalf-reg', 'Doctor applications'],
+    ['tab-behalf-reg', 'Applicant applications'],
     ['tab-reg-form', 'Registration form fields'],
-    ['tab-site-cms', 'Website & doctor updates'],
+    ['tab-site-cms', 'Website & applicant updates'],
     ['tab-portal-auth', 'Portal sign-in'],
     ['tab-admin-payments', 'Payments'],
     ['tab-certificates', 'Certificate management'],
@@ -1782,7 +1815,7 @@ const ADMIN_MODULE_TAB_DEFS = [
     ['tab-live-scanner', 'Live check-in board'],
     ['tab-pos', 'On-spot POS'],
     ['tab-feedback-form', 'Feedback form editor'],
-    ['tab-activity-logs', 'User & doctor activity'],
+    ['tab-activity-logs', 'User & applicant activity'],
     ['tab-notifications', 'Notifications'],
     ['tab-system-platform', 'System health'],
     ['tab-system-users', 'User health'],
@@ -1851,7 +1884,7 @@ async function initAdminPosTab() {
         const res = await fetch('/api/seminars?bucket=current');
         const data = await res.json();
         const list = data.seminars || data || [];
-        sel.innerHTML = '<option value="">Select seminar</option>';
+        sel.innerHTML = '<option value="">Select event</option>';
         list.forEach((s) => {
             const o = document.createElement('option');
             o.value = s.id;
@@ -1860,12 +1893,62 @@ async function initAdminPosTab() {
             sel.appendChild(o);
         });
         sel.onchange = () => {
-            const opt = sel.selectedOptions[0];
-            const priceEl = document.getElementById('pos-amount');
-            if (priceEl && opt && opt.dataset.price) priceEl.value = opt.dataset.price;
+            refreshAdminPosSeminarInfo();
+            loadOnspotLinks();
+            loadOnspotSubmissions();
         };
+        refreshAdminPosSeminarInfo();
+        loadOnspotLinks();
+        loadOnspotSubmissions();
+        startOnspotSubmissionsLive();
     } catch (e) {
         console.warn(e);
+    }
+}
+
+async function refreshAdminPosSeminarInfo() {
+    const sel = document.getElementById('pos-seminar');
+    const info = document.getElementById('pos-seminar-info');
+    const amountWrap = document.getElementById('pos-amount-wrap');
+    const amountEl = document.getElementById('pos-amount');
+    const link = document.getElementById('pos-onspot-link-wrap');
+    if (!sel) return;
+    const sid = sel.value;
+    if (!sid) {
+        if (info) info.textContent = '';
+        if (amountWrap) amountWrap.style.display = '';
+        if (link) link.style.display = 'none';
+        return;
+    }
+    const aid = adminActorId();
+    if (link) link.style.display = '';
+    try {
+        const res = await fetch(
+            '/api/admin/pos/seminar-info?seminarId=' + encodeURIComponent(sid) + '&actingAdminId=' + encodeURIComponent(aid || '')
+        );
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        window.__posSeminarInfo = d;
+        if (amountWrap) amountWrap.style.display = d.isFree ? 'none' : '';
+        if (amountEl && !d.isFree) amountEl.value = d.price || '';
+        if (amountEl && d.isFree) amountEl.value = '0';
+        if (info) {
+            const seats = d.unlimited
+                ? 'Unlimited seats'
+                : d.filled + ' / ' + d.capacity + ' seats filled' + (d.full ? ' — FULL (staff override allowed)' : '');
+            info.innerHTML =
+                '<span class="pos-pill ' +
+                (d.isFree ? 'pos-pill-free' : 'pos-pill-paid') +
+                '">' +
+                (d.isFree ? 'FREE EVENT — no payment' : 'Paid event — ₹' + escAdmin(d.price)) +
+                '</span> <span class="pos-pill ' +
+                (d.full ? 'pos-pill-full' : '') +
+                '">' +
+                escAdmin(seats) +
+                '</span>';
+        }
+    } catch (e) {
+        if (info) info.textContent = e.message;
     }
 }
 
@@ -1873,6 +1956,12 @@ async function submitAdminPosRegistration() {
     const actor = getStoredAdminUser();
     if (!actor) return alert('Sign in as admin first.');
     const status = document.getElementById('pos-status');
+    const result = document.getElementById('pos-result');
+    const btn = document.getElementById('pos-submit-btn');
+    if (btn) btn.disabled = true;
+    status.textContent = 'Registering…';
+    status.style.color = '#475569';
+    if (result) result.innerHTML = '';
     try {
         const res = await fetch('/api/admin/pos/register', {
             method: 'POST',
@@ -1885,22 +1974,246 @@ async function submitAdminPosRegistration() {
                 lastName: document.getElementById('pos-lname').value,
                 phone: document.getElementById('pos-phone').value,
                 email: document.getElementById('pos-email').value,
+                attendeesCount: (document.getElementById('pos-attendees') || {}).value || '',
                 amount: document.getElementById('pos-amount').value,
-                paymentMethod: 'cash',
+                paymentMethod: (document.getElementById('pos-payment-method') || {}).value || 'cash',
                 sendTicketEmail: !!(document.getElementById('pos-send-ticket-email') || {}).checked
             })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        let note =
-            'Done. Ticket ' + (data.ticketId || '—') + ' — doctor must complete profile in portal.';
-        if (data.emailNote) note += ' ' + data.emailNote;
-        status.textContent = note;
+        status.textContent = data.message || 'Done.';
         status.style.color = '#059669';
+        if (result) {
+            const rows = [
+                ['Ticket ID', data.ticketId || '—'],
+                ['Application no.', data.applicationNo || '—'],
+                ['Attendees', data.attendeesCount != null ? data.attendeesCount : '—'],
+                ['Entry', data.isFree ? 'FREE' : '₹' + (data.amount || 0) + ' received'],
+                ['Login email', data.loginEmail || '—'],
+                ['Temporary password', data.temporaryPassword || (data.newAccount ? '—' : 'Existing account')],
+                ['Email', data.emailNote || '']
+            ];
+            result.innerHTML =
+                '<div class="pos-result-card">' +
+                rows
+                    .map(([k, v]) => '<div><span>' + escAdmin(k) + '</span><strong>' + escAdmin(String(v)) + '</strong></div>')
+                    .join('') +
+                (data.ticketUrl
+                    ? '<a class="btn-primary" style="margin-top:10px;display:inline-block;" target="_blank" rel="noopener" href="' +
+                      escAdmin(data.ticketUrl) +
+                      '">Open QR ticket</a>'
+                    : '') +
+                '</div>';
+        }
+        ['pos-fname', 'pos-mname', 'pos-lname', 'pos-phone', 'pos-email'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        refreshAdminPosSeminarInfo();
     } catch (e) {
         status.textContent = e.message;
         status.style.color = '#b91c1c';
+    } finally {
+        if (btn) btn.disabled = false;
     }
+}
+
+function onspotFmtTime(v) {
+    if (!v) return '';
+    const s = String(v).replace(' ', 'T');
+    const d = new Date(/[Zz]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z');
+    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function createOnspotLink() {
+    const aid = adminActorId();
+    const sid = (document.getElementById('pos-seminar') || {}).value;
+    const latest = document.getElementById('onspot-link-latest');
+    if (!aid || !sid) return alert('Select an event first.');
+    try {
+        const res = await fetch('/api/admin/onspot-links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                actingAdminId: aid,
+                seminarId: sid,
+                hours: (document.getElementById('onspot-link-hours') || {}).value || 12
+            })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        renderOnspotLatestLink(d.link);
+        loadOnspotLinks();
+    } catch (e) {
+        if (latest) latest.innerHTML = '<p style="color:#b91c1c;font-weight:600;">' + escAdmin(e.message) + '</p>';
+    }
+}
+
+function renderOnspotLatestLink(link) {
+    const latest = document.getElementById('onspot-link-latest');
+    if (!latest || !link) return;
+    const qr = link.qrPath + '?actingAdminId=' + encodeURIComponent(adminActorId() || '');
+    latest.innerHTML =
+        '<div class="onspot-link-box">' +
+        '<strong>New link ready</strong> (valid until ' + escAdmin(onspotFmtTime(link.expires_at)) + ')<br>' +
+        '<a href="' + escAdmin(link.url) + '" target="_blank" rel="noopener">' + escAdmin(link.url) + '</a>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+        '<button type="button" class="btn-primary" onclick="navigator.clipboard.writeText(' + JSON.stringify(link.url).replace(/"/g, '&quot;') + ').then(()=>this.textContent=\'Copied!\')">Copy link</button>' +
+        '<a class="btn-primary" style="background:#0d9488;" target="_blank" rel="noopener" href="' + escAdmin(qr) + '">Open QR to display</a>' +
+        '</div>' +
+        '<img src="' + escAdmin(qr) + '" alt="QR code for on-spot form link">' +
+        '</div>';
+}
+
+async function loadOnspotLinks() {
+    const aid = adminActorId();
+    const sid = (document.getElementById('pos-seminar') || {}).value;
+    const list = document.getElementById('onspot-links-list');
+    if (!aid || !list) return;
+    if (!sid) {
+        list.innerHTML = '';
+        return;
+    }
+    try {
+        const res = await fetch('/api/admin/onspot-links?seminarId=' + encodeURIComponent(sid) + '&actingAdminId=' + encodeURIComponent(aid));
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        const links = d.links || [];
+        if (!links.length) {
+            list.innerHTML = '<p style="color:#64748b;font-size:0.85rem;">No links generated yet for this event.</p>';
+            return;
+        }
+        list.innerHTML =
+            '<table class="data-table"><thead><tr><th>Link</th><th>Expires</th><th>Uses</th><th>Status</th><th></th></tr></thead><tbody>' +
+            links
+                .map(
+                    (l) =>
+                        '<tr><td style="word-break:break-all;font-size:0.8rem;"><a href="' + escAdmin(l.url) + '" target="_blank" rel="noopener">' + escAdmin(l.url) + '</a></td>' +
+                        '<td>' + escAdmin(onspotFmtTime(l.expires_at)) + '</td>' +
+                        '<td>' + escAdmin(String(l.submissions || 0)) + '</td>' +
+                        '<td>' + (l.expired ? '<span class="pos-pill pos-pill-full">Expired</span>' : '<span class="pos-pill pos-pill-free">Active</span>') + '</td>' +
+                        '<td>' + (l.expired ? '' : '<button type="button" class="btn-primary" style="background:#b91c1c;padding:4px 8px;" onclick="deactivateOnspotLink(' + l.id + ')">Disable</button>') + '</td></tr>'
+                )
+                .join('') +
+            '</tbody></table>';
+    } catch (e) {
+        list.innerHTML = '<p style="color:#b91c1c;">' + escAdmin(e.message) + '</p>';
+    }
+}
+
+async function deactivateOnspotLink(id) {
+    const aid = adminActorId();
+    if (!aid || !confirm('Disable this link? Applicants will no longer be able to open it.')) return;
+    await fetch('/api/admin/onspot-links/' + id + '/deactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actingAdminId: aid })
+    });
+    loadOnspotLinks();
+}
+
+let __onspotLiveTimer = null;
+function startOnspotSubmissionsLive() {
+    if (__onspotLiveTimer) return;
+    __onspotLiveTimer = setInterval(() => {
+        const pane = document.getElementById('tab-pos');
+        if (pane && !pane.classList.contains('hidden') && !document.hidden) loadOnspotSubmissions(true);
+    }, 8000);
+}
+
+async function loadOnspotSubmissions(silent) {
+    const aid = adminActorId();
+    const tbody = document.getElementById('onspot-submissions-list');
+    if (!aid || !tbody) return;
+    const sid = (document.getElementById('pos-seminar') || {}).value;
+    const status = (document.getElementById('onspot-sub-status') || {}).value || 'pending';
+    try {
+        const res = await fetch(
+            '/api/admin/onspot-submissions?status=' + encodeURIComponent(status) +
+                (sid ? '&seminarId=' + encodeURIComponent(sid) : '') +
+                '&actingAdminId=' + encodeURIComponent(aid)
+        );
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        const badge = document.getElementById('onspot-pending-badge');
+        if (badge) {
+            const pendingCount = status === 'pending' ? d.total : d.pending;
+            badge.style.display = pendingCount ? '' : 'none';
+            badge.textContent = pendingCount + ' pending';
+        }
+        const rows = d.submissions || [];
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b;">No submissions.</td></tr>';
+            return;
+        }
+        const isFree = !!(window.__posSeminarInfo && window.__posSeminarInfo.isFree);
+        tbody.innerHTML = rows
+            .map((r) => {
+                const name = [r.first_name, r.middle_name, r.last_name].filter(Boolean).join(' ');
+                const st = String(r.status || 'pending').toLowerCase();
+                const pill =
+                    st === 'promoted'
+                        ? '<span class="pos-pill pos-pill-free">In main registration' + (r.application_no ? ' · ' + escAdmin(r.application_no) : '') + '</span>'
+                        : st === 'rejected'
+                          ? '<span class="pos-pill pos-pill-full">Rejected</span>'
+                          : '<span class="pos-pill pos-pill-paid">Pending</span>';
+                const action =
+                    st === 'pending'
+                        ? '<button type="button" class="btn-primary" style="padding:6px 10px;" onclick="promoteOnspotSubmission(' + r.id + ',' + (isFree ? 'true' : 'false') + ')">Add to main registration</button> ' +
+                          '<button type="button" class="btn-primary" style="padding:6px 10px;background:#64748b;" onclick="rejectOnspotSubmission(' + r.id + ')">Reject</button>'
+                        : '';
+                return (
+                    '<tr><td>' + escAdmin(onspotFmtTime(r.created_at)) + '</td>' +
+                    '<td><strong>' + escAdmin(name) + '</strong></td>' +
+                    '<td style="font-size:0.85rem;">' + escAdmin(r.phone || '') + (r.email ? '<br>' + escAdmin(r.email) : '') + '</td>' +
+                    '<td>' + escAdmin(String(r.attendees_count || 1)) + '</td>' +
+                    '<td>' + escAdmin(r.seminar_title || '') + '</td>' +
+                    '<td>' + pill + '</td><td style="white-space:nowrap;">' + action + '</td></tr>'
+                );
+            })
+            .join('');
+    } catch (e) {
+        if (!silent) tbody.innerHTML = '<tr><td colspan="7" style="color:#b91c1c;">' + escAdmin(e.message) + '</td></tr>';
+    }
+}
+
+async function promoteOnspotSubmission(id, isFree) {
+    const aid = adminActorId();
+    if (!aid) return;
+    let amount = '';
+    if (!isFree) {
+        amount = prompt('Amount received at desk (₹). Leave blank to use the event price.', '');
+        if (amount === null) return;
+    }
+    try {
+        const res = await fetch('/api/admin/onspot-submissions/' + id + '/promote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid, amount, paymentMethod: 'cash', sendTicketEmail: true })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        alert(
+            'Added to main registration.\nTicket: ' + (d.ticketId || '—') +
+                (d.temporaryPassword ? '\nLogin: ' + d.loginEmail + '\nTemp password: ' + d.temporaryPassword : '') +
+                '\n' + (d.emailNote || '')
+        );
+        loadOnspotSubmissions();
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+async function rejectOnspotSubmission(id) {
+    const aid = adminActorId();
+    if (!aid || !confirm('Reject this submission?')) return;
+    await fetch('/api/admin/onspot-submissions/' + id + '/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actingAdminId: aid })
+    });
+    loadOnspotSubmissions();
 }
 
 function adminActorId() {
@@ -2655,7 +2968,7 @@ async function flushBehalfRegistrationSave(manual) {
     const sid = parseInt((document.getElementById('behalf-seminar-select') || {}).value, 10);
     const ta = document.getElementById('behalf-form-json');
     if (!Number.isInteger(docId) || docId < 1 || !Number.isInteger(sid) || sid < 1) {
-        if (st) st.textContent = 'Select a doctor and seminar to enable auto-save.';
+        if (st) st.textContent = 'Select an applicant and seminar to enable auto-save.';
         return;
     }
     let formData;
@@ -2803,7 +3116,7 @@ async function adminCreateUser() {
         return;
     }
     if (createKind === 'doctor' && userRole !== 'doctor') {
-        alert('Use “Create doctor” with role Doctor, or use “Create staff user” for other roles.');
+        alert('Use “Create applicant” with role Applicant, or use “Create staff user” for other roles.');
         return;
     }
     
@@ -2828,7 +3141,7 @@ async function adminCreateUser() {
         __requireAdminSensitiveOtp &&
         (!__adminSensitivePhoneOtpToken || !__adminSensitiveEmailOtpToken)
     ) {
-        return alert('Verify both your admin email and WhatsApp OTP before creating a doctor account.');
+        return alert('Verify both your admin email and WhatsApp OTP before creating an applicant account.');
     }
 
     const adm = getStoredAdminUser();
@@ -3131,7 +3444,7 @@ function renderAdminUserDetailTab() {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div>
                     <h4>Account (editable)</h4>
-                    <p class="muted" style="font-size:0.85rem;">Portal login — admin OTP may be required to save doctor accounts only.</p>
+                    <p class="muted" style="font-size:0.85rem;">Portal login — admin OTP may be required to save applicant accounts only.</p>
                     <p><strong>User ID:</strong> ${escAdmin(u.user_id_string)}</p>
                     <p><strong>Account created:</strong> ${formatAdminAccountDateTime(u.created_at)}</p>
                     <p><strong>Account activated:</strong> ${adminAccountActivationLabel(u)}</p>
@@ -3184,7 +3497,7 @@ function renderAdminUserDetailTab() {
                                 }> ${title}</label>`
                         ).join('')}
                     </div>
-                    <button type="button" class="btn-primary" style="margin-top:10px;background:#0f766e;" onclick="saveDoctorAccessFromDetail(${u.id})">Save doctor access</button>
+                    <button type="button" class="btn-primary" style="margin-top:10px;background:#0f766e;" onclick="saveDoctorAccessFromDetail(${u.id})">Save applicant access</button>
                     </div>`
                             : ''
                     }
@@ -3479,7 +3792,7 @@ async function dispatchAllAdminCertificates() {
     if (!sid) return alert('Select a seminar');
     if (
         !confirm(
-            'Send certificate notifications (email + WhatsApp) to every doctor with an enabled certificate for this seminar?'
+            'Send certificate notifications (email + WhatsApp) to every applicant with an enabled certificate for this seminar?'
         )
     ) {
         return;
@@ -3751,13 +4064,13 @@ async function bulkEnableAdminCertificates(enabled) {
                     .map((s) => 'User #' + s.userId + ': ' + (s.error || 'skipped'))
                     .join('\n');
                 alert(
-                    'Some doctors were not enabled (PRN No. and Application No. are required on every certificate):\n\n' +
+                    'Some applicants were not enabled (PRN No. and Application No. are required on every certificate):\n\n' +
                         lines
                 );
             }
             if (enabled && data.templateMissing) {
                 alert(
-                    'Certificate enabled for selected doctors.\n\nApply the VGMF certificate design (or upload a custom template) in this tab — until then, doctors will see “approved” but cannot view the certificate yet.'
+                    'Certificate enabled for selected doctors.\n\nApply the VGMF certificate design (or upload a custom template) in this tab — until then, applicants will see “approved” but cannot view the certificate yet.'
                 );
             }
         } else alert(data.error || 'Failed');
@@ -3993,7 +4306,7 @@ async function addAdminVolunteer() {
     const userIdString = String(document.getElementById('vol-mgmt-user-id')?.value || '').trim();
     const notes = document.getElementById('vol-mgmt-notes')?.value || '';
     const duties = document.getElementById('vol-mgmt-duties')?.value || '';
-    if (!sid || !userIdString) return alert('Seminar and doctor portal User ID required');
+    if (!sid || !userIdString) return alert('Seminar and applicant portal User ID required');
     try {
         const admin = getStoredAdminUser();
         const res = await fetch('/api/admin/volunteers', {
@@ -4013,7 +4326,7 @@ async function addAdminVolunteer() {
             document.getElementById('vol-mgmt-user-id').value = '';
             alert(
                 data.message ||
-                    'Volunteer assigned. They must complete registration in the doctor portal; free ticket (₹0) and messages are sent only after that.'
+                    'Volunteer assigned. They must complete registration in the applicant portal; free ticket (₹0) and messages are sent only after that.'
             );
             refreshVolunteerAdminPanels();
         } else alert(data.error || 'Failed');
@@ -4024,7 +4337,7 @@ async function addAdminVolunteer() {
 
 async function approveAdminVolunteer(volId) {
     const admin = getStoredAdminUser();
-    if (!confirm('Issue free volunteer ticket (₹0)? Doctor must have completed seminar registration first.')) return;
+    if (!confirm('Issue free volunteer ticket (₹0)? Applicant must have completed seminar registration first.')) return;
     try {
         const res = await fetch(`/api/admin/volunteers/${volId}/approve`, {
             method: 'POST',
@@ -4472,7 +4785,7 @@ async function loadAdminCaseResults() {
         const passPct = 60;
         const passMin = (totalMax * passPct) / 100;
         let html =
-            '<table class="data-table"><thead><tr><th>Rank</th><th>App</th><th>Doctor</th><th>Topic</th><th>Avg / ' +
+            '<table class="data-table"><thead><tr><th>Rank</th><th>App</th><th>Applicant</th><th>Topic</th><th>Avg / ' +
             escAdmin(String(totalMax)) +
             '</th><th>Judges</th><th>Auto eligibility</th><th>Status</th></tr></thead><tbody>';
         rows.forEach((r, idx) => {
@@ -5105,7 +5418,7 @@ async function saveAdminRegistrationOverride() {
         const data = await res.json();
         if (data.success) {
             loadAdminRegistrationOverrides();
-            alert('Override saved — doctor can register while seminar is closed.');
+            alert('Override saved — applicant can register while seminar is closed.');
         } else alert(data.error || 'Failed');
     } catch (e) {
         console.error(e);
@@ -5310,8 +5623,11 @@ async function initAdminScannerLogsTab() {
 
 async function toggleDisable(userId, disable) {
     const adm = getStoredAdminUser();
-    if (!adm || !adm.id) return alert('Not logged in.');
-    if (!confirm(`Are you sure you want to ${disable ? 'disable' : 'enable'} this user?`)) return;
+    if (!adm || !adm.id) {
+        alert('Not logged in.');
+        return false;
+    }
+    if (!confirm(`Are you sure you want to ${disable ? 'disable' : 'enable'} this user?`)) return false;
     try {
         const res = await fetch('/api/admin/users/toggle_disable', {
             method: 'POST',
@@ -5319,23 +5635,28 @@ async function toggleDisable(userId, disable) {
             body: JSON.stringify({ userId, disable, actingAdminId: adm.id })
         });
         const data = await res.json();
-        if (!res.ok) return alert(data.error || 'Failed');
+        if (!res.ok) {
+            alert(data.error || 'Failed');
+            return false;
+        }
         if (__adminUserDetailCache && __adminUserDetailCache.user && Number(__adminUserDetailCache.user.id) === Number(userId)) {
             __adminUserDetailCache.user.is_disabled = disable ? 1 : 0;
             renderAdminUserDetailActions();
             renderAdminUserDetailTab();
         }
         loadUsers();
+        return true;
     } catch (err) {
         console.error(err);
         alert('Network error.');
+        return false;
     }
 }
 
 function renderAdminUserCancellationTab(bodyEl, userId) {
     const rows = (__adminUserDetailCache && __adminUserDetailCache.cancellationRequests) || [];
     let html =
-        '<p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Cancellation requests submitted by this doctor (IST refund policy applied on approve).</p>';
+        '<p style="color:#64748b;font-size:0.88rem;margin-bottom:12px;">Cancellation requests submitted by this applicant (IST refund policy applied on approve).</p>';
     html += '<table class="data-table"><thead><tr><th>Requested</th><th>App</th><th>Seminar</th><th>Reason</th><th>Policy refund</th><th>Status</th><th></th></tr></thead><tbody>';
     if (!rows.length) {
         html += '<tr><td colspan="7">No cancellation requests</td></tr>';
@@ -5572,12 +5893,12 @@ function renderDoctorsUsersTable() {
     doctorsBody.innerHTML = '';
     if (!all.length) {
         doctorsBody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;">No doctors registered</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;">No applicants registered</td></tr>';
         return;
     }
     if (!rows.length) {
         doctorsBody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;">No doctors match your search.</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;">No applicants match your search.</td></tr>';
         return;
     }
     rows.forEach((u) => {
@@ -5729,7 +6050,7 @@ function renderAdminVolunteersTable() {
                 '<span style="font-size:0.8rem;color:#b45309;">Awaiting registration</span> ' +
                 `<button type="button" class="btn-primary" style="padding:4px 8px;font-size:0.8rem;margin-left:6px;" onclick="approveAdminVolunteer(${v.id})">Issue ticket (₹0)</button>`;
         } else if (!hasTicket) {
-            actions = '<span style="font-size:0.8rem;color:#64748b;">Waiting for doctor to register</span>';
+            actions = '<span style="font-size:0.8rem;color:#64748b;">Waiting for applicant to register</span>';
         }
         tbody.innerHTML += `<tr>
                 <td>${escAdmin(name)}<div class="muted">${escAdmin(v.user_id_string)} · ${escAdmin(v.email)}</div></td>
@@ -6399,7 +6720,7 @@ async function adminLiveEditOtpPayload(targetUserId) {
     }
     if (__requireAdminSensitiveOtp && (!__adminSensitivePhoneOtpToken || !__adminSensitiveEmailOtpToken)) {
         alert(
-            'Admin OTP is required. Open Doctor applications (admin) or Global Settings, verify your email and WhatsApp codes, then save again.'
+            'Admin OTP is required. Open Applicant applications (admin) or Global Settings, verify your email and WhatsApp codes, then save again.'
         );
         return null;
     }
@@ -6808,7 +7129,7 @@ async function adminVerifySeminarApplication(appId, decision) {
     const ncismOk = !!document.getElementById('admin-verify-ncism')?.checked;
     const certificateOk = !!document.getElementById('admin-verify-cert')?.checked;
     if (decision !== 'approve' && !reason) {
-        return alert('Please enter a reason so the doctor knows what to fix.');
+        return alert('Please enter a reason so the applicant knows what to fix.');
     }
     if (decision === 'approve' && !infoOk) {
         return alert('Check that applicant details are correct before approving.');
@@ -6816,7 +7137,7 @@ async function adminVerifySeminarApplication(appId, decision) {
     const labels = {
         approve: 'Approve this application?',
         reject_documents: 'Request document re-upload on the same application number?',
-        request_documents: 'Ask the doctor to upload additional verification documents?',
+        request_documents: 'Ask the applicant to upload additional verification documents?',
         reject_application: 'Reject this entire application?'
     };
     if (!confirm(labels[decision] || 'Continue?')) return;
@@ -7520,7 +7841,7 @@ async function savePaymentGatewaysSettings() {
         setAdminSettingsSaveMsg(
             defaultPg
                 ? `Payment gateways saved. Default live gateway set to ${defaultPg} (Site configuration).`
-                : 'Payment gateways saved. Enable Razorpay or Cashfree Live mode for doctor payments.'
+                : 'Payment gateways saved. Enable Razorpay or Cashfree Live mode for applicant payments.'
         );
     } catch (err) {
         console.error(err);
@@ -7722,7 +8043,7 @@ async function proxyPollPaymentOnce() {
             stopProxyPaymentPoll();
             if (pollSt) {
                 pollSt.style.color = '#15803d';
-                pollSt.textContent = data.message || 'Payment received — doctor dashboard updated.';
+                pollSt.textContent = data.message || 'Payment received — applicant dashboard updated.';
             }
             alert(data.message || 'Payment complete.');
             return;
@@ -8520,7 +8841,7 @@ function updateSeminarPolicyPreviews() {
             const parsed = JSON.parse(built);
             const enabled = (parsed.fields || []).filter((f) => f.enabled !== false);
             let prev =
-                'Doctors will see: ' +
+                'Applicants will see: ' +
                 (enabled.length
                     ? enabled.map((f) => f.label || f.key).join(', ')
                     : 'no fields (check at least one is enabled)');
@@ -8542,7 +8863,7 @@ async function purgeAdminSeminarTestData(seminarId, title) {
         !confirm(
             'Purge ALL registration data for "' +
                 title +
-                '"?\n\nRemoves applications, orders, tickets, scans, and feedback for this seminar. Doctor accounts stay registered. The seminar record is kept unless you check "also delete seminar" below.'
+                '"?\n\nRemoves applications, orders, tickets, scans, and feedback for this seminar. Applicant accounts stay registered. The seminar record is kept unless you check "also delete seminar" below.'
         )
     ) {
         return;
@@ -8691,7 +9012,7 @@ async function saveAdminPortalYear() {
                     year +
                     '. All active seminars now use portal year ' +
                     year +
-                    '. Doctors and the public site will list seminars for this year.'
+                    '. Applicants and the public site will list seminars for this year.'
             );
         } else alert(data.error || 'Could not save portal year');
     } catch (e) {
@@ -8873,7 +9194,7 @@ async function saveSeminar(e) {
                 adminPortalYear +
                 '). Save anyway? Tip: set the header Portal year to ' +
                 data.portal_year +
-                ' to align doctor and public listings.'
+                ' to align applicant and public listings.'
         );
         if (!ok) return;
     }
@@ -9661,13 +9982,13 @@ async function adminLookupDoctorForSupportTicket() {
     if (!q) {
         if (msgEl) {
             msgEl.style.color = '#b91c1c';
-            msgEl.textContent = 'Enter the doctor 12-digit portal user ID or email, then click Look up doctor.';
+            msgEl.textContent = 'Enter the applicant 12-digit portal user ID or email, then click Look up doctor.';
         }
         return;
     }
     if (msgEl) {
         msgEl.style.color = '#64748b';
-        msgEl.textContent = 'Looking up doctor…';
+        msgEl.textContent = 'Looking up applicant…';
     }
     try {
         const res = await fetch(
@@ -9680,7 +10001,7 @@ async function adminLookupDoctorForSupportTicket() {
         if (!res.ok || !data.doctor) {
             if (msgEl) {
                 msgEl.style.color = '#b91c1c';
-                msgEl.textContent = data.error || 'Doctor not found.';
+                msgEl.textContent = data.error || 'Applicant not found.';
             }
             return;
         }
@@ -9702,7 +10023,7 @@ async function adminLookupDoctorForSupportTicket() {
                 )
                 .join('');
             prev.innerHTML =
-                '<p style="margin:0 0 8px;font-weight:700;color:#1e40af;">Confirm this doctor before creating the ticket</p>' +
+                '<p style="margin:0 0 8px;font-weight:700;color:#1e40af;">Confirm this applicant before creating the ticket</p>' +
                 '<p style="margin:4px 0;"><strong>Name:</strong> ' +
                 escAdmin(data.doctor.name) +
                 '</p>' +
@@ -9726,7 +10047,7 @@ async function adminLookupDoctorForSupportTicket() {
         }
         if (msgEl) {
             msgEl.style.color = '#059669';
-            msgEl.textContent = 'Doctor found. You can create the support ticket now.';
+            msgEl.textContent = 'Applicant found. You can create the support ticket now.';
         }
     } catch (e) {
         console.error(e);
@@ -9755,7 +10076,7 @@ async function adminCreateSupportTicketForDoctor() {
     if (!__adminStResolvedDoctor || !__adminStResolvedDoctor.id) {
         if (msgEl) {
             msgEl.style.color = '#b91c1c';
-            msgEl.textContent = 'Click Look up doctor first and confirm the details shown.';
+            msgEl.textContent = 'Click Look up applicant first and confirm the details shown.';
         }
         return;
     }
@@ -11654,7 +11975,7 @@ async function adminPriorityInviteDoctor() {
     const msgEl = document.getElementById('case-priority-msg');
     const adm = getStoredAdminUser();
     if (!programId) return alert('Select a case program');
-    if (!userRef) return alert('Enter doctor portal ID or email');
+    if (!userRef) return alert('Enter applicant portal ID or email');
     if (!adm || !adm.id) return alert('Admin session required');
     if (msgEl) msgEl.textContent = 'Creating…';
     try {
@@ -12744,7 +13065,7 @@ async function lookupAdminCreateOrder() {
     const q = document.getElementById('co-user-query')?.value?.trim();
     const box = document.getElementById('co-lookup-result');
     const panel = document.getElementById('co-pay-panel');
-    if (!adm?.id || !sid || !q) return alert('Select seminar and enter doctor User ID, email, or phone.');
+    if (!adm?.id || !sid || !q) return alert('Select seminar and enter applicant User ID, email, or phone.');
     if (box) box.innerHTML = 'Looking up…';
     if (panel) panel.classList.add('hidden');
     try {
@@ -12816,7 +13137,7 @@ async function lookupAdminCreateOrder() {
 
 async function ensureAdminCreateOrderRegistration() {
     const adm = getStoredAdminUser();
-    if (!__coLookup?.found || !__coLookup.user?.id) return alert('Look up a doctor first.');
+    if (!__coLookup?.found || !__coLookup.user?.id) return alert('Look up an applicant first.');
     const sid = document.getElementById('co-seminar')?.value;
     try {
         const res = await fetch('/api/admin/payments/ensure-registration', {
@@ -12840,7 +13161,7 @@ async function ensureAdminCreateOrderRegistration() {
 
 async function initiateAdminCreateOrderPayment() {
     const adm = getStoredAdminUser();
-    if (!adm?.id || !__coRegId) return alert('Look up doctor and ensure application first.');
+    if (!adm?.id || !__coRegId) return alert('Look up applicant and ensure application first.');
     const methodId = document.getElementById('co-method')?.value || __coMethodId || 'dqr';
     const amount = parseFloat(document.getElementById('co-amount')?.value || '0');
     const discount = parseFloat(document.getElementById('co-discount')?.value || '0');
@@ -12895,7 +13216,7 @@ async function initiateAdminCreateOrderPayment() {
             if (!opened && msg) {
                 msg.style.color = '#b45309';
                 msg.textContent =
-                    'Checkout could not open. Allow pop-ups, then click Start payment again or use Check status after the doctor pays.';
+                    'Checkout could not open. Allow pop-ups, then click Start payment again or use Check status after the applicant pays.';
             }
             return;
         }
@@ -13016,7 +13337,7 @@ async function createAdminSupplementalPayment() {
         if (!res.ok) throw new Error(data.error || 'Failed');
         if (st) {
             st.style.color = '#15803d';
-            st.textContent = 'Charge created (id ' + data.id + '). Doctor will see it under Payments.';
+            st.textContent = 'Charge created (id ' + data.id + '). Applicant will see it under Payments.';
         }
         loadAdminSupplementalPayments();
     } catch (e) {
@@ -13104,7 +13425,7 @@ async function adminRefundOrderPrompt(orderDbId) {
 async function adminCancelPendingOrder(orderDbId) {
     const adm = getStoredAdminUser();
     if (!adm?.id) return alert('Not logged in.');
-    if (!confirm('Cancel this pending order? The doctor can start a new payment attempt.')) return;
+    if (!confirm('Cancel this pending order? The applicant can start a new payment attempt.')) return;
     try {
         const res = await fetch('/api/admin/payments/cancel-order', {
             method: 'POST',
@@ -13436,7 +13757,7 @@ async function openAdminOrderReceipt(orderDbId) {
         '<p class="sub">Vaidya Gogate Memorial Foundation — seminar portal</p>',
         '<button type="button" class="btn-print no-print" onclick="window.print()">Print / Save as PDF</button>',
         '<table>',
-        `<tr><td>Doctor name</td><td>${esc(docName)}</td></tr>`,
+        `<tr><td>Applicant name</td><td>${esc(docName)}</td></tr>`,
         `<tr><td>Email</td><td>${esc(o.email || '—')}</td></tr>`,
         `<tr><td>Phone</td><td>${esc(o.phone || '—')}</td></tr>`,
         `<tr><td>Public user ID</td><td><code>${uidStr}</code></td></tr>`,
