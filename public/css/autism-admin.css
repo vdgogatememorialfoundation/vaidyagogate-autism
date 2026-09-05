@@ -300,3 +300,14 @@ body.autism-admin.ak-portal-staff #ak-admin-staff-link {
 .onspot-link-box { padding:12px; border-radius:10px; background:#eff6ff; border:1px solid #bfdbfe; font-size:0.85rem; word-break:break-all; }
 .onspot-link-box img { display:block; margin-top:8px; width:160px; height:160px; background:#fff; border-radius:8px; padding:6px; }
 @media (max-width:640px){ .pos-result-card { grid-template-columns:1fr; } }
+
+/* Account active/disabled slider switch (applicant + staff tables) */
+.adm-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; vertical-align: middle; margin: 0 6px; user-select: none; }
+.adm-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.adm-switch-track { position: relative; width: 44px; height: 24px; border-radius: 999px; background: #cbd5e1; transition: background .2s ease; flex: none; }
+.adm-switch-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(15,23,42,.25); transition: transform .2s ease; }
+.adm-switch.is-on .adm-switch-track { background: #16a34a; }
+.adm-switch.is-on .adm-switch-thumb { transform: translateX(20px); }
+.adm-switch input:focus-visible + .adm-switch-track { outline: 2px solid #0ea5e9; outline-offset: 2px; }
+.adm-switch-label { font-size: .8rem; font-weight: 700; color: #64748b; }
+.adm-switch.is-on .adm-switch-label { color: #15803d; }

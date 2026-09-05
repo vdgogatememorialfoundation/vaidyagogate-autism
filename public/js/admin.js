@@ -1313,9 +1313,18 @@ function adminUserStatusBadge(u) {
 }
 
 function adminUserToggleBtn(u) {
-    return u.is_disabled
-        ? `<button class="btn-success" onclick="toggleDisable(${u.id}, false)">Enable</button>`
-        : `<button class="btn-danger" onclick="toggleDisable(${u.id}, true)">Disable</button>`;
+    const on = !u.is_disabled;
+    return `<label class="adm-switch${on ? ' is-on' : ''}" title="${on ? 'Account active — click to disable' : 'Account disabled — click to enable'}">
+        <input type="checkbox" ${on ? 'checked' : ''} onchange="adminSwitchToggleDisable(this, ${u.id})" aria-label="${on ? 'Disable' : 'Enable'} account">
+        <span class="adm-switch-track"><span class="adm-switch-thumb"></span></span>
+        <span class="adm-switch-label">${on ? 'Active' : 'Disabled'}</span>
+    </label>`;
+}
+
+async function adminSwitchToggleDisable(input, userId) {
+    const disable = !input.checked;
+    const done = await toggleDisable(userId, disable);
+    if (done === false) input.checked = !input.checked;
 }
 
 function openAdminCreateUserModal(kind) {
@@ -5614,8 +5623,11 @@ async function initAdminScannerLogsTab() {
 
 async function toggleDisable(userId, disable) {
     const adm = getStoredAdminUser();
-    if (!adm || !adm.id) return alert('Not logged in.');
-    if (!confirm(`Are you sure you want to ${disable ? 'disable' : 'enable'} this user?`)) return;
+    if (!adm || !adm.id) {
+        alert('Not logged in.');
+        return false;
+    }
+    if (!confirm(`Are you sure you want to ${disable ? 'disable' : 'enable'} this user?`)) return false;
     try {
         const res = await fetch('/api/admin/users/toggle_disable', {
             method: 'POST',
@@ -5623,16 +5635,21 @@ async function toggleDisable(userId, disable) {
             body: JSON.stringify({ userId, disable, actingAdminId: adm.id })
         });
         const data = await res.json();
-        if (!res.ok) return alert(data.error || 'Failed');
+        if (!res.ok) {
+            alert(data.error || 'Failed');
+            return false;
+        }
         if (__adminUserDetailCache && __adminUserDetailCache.user && Number(__adminUserDetailCache.user.id) === Number(userId)) {
             __adminUserDetailCache.user.is_disabled = disable ? 1 : 0;
             renderAdminUserDetailActions();
             renderAdminUserDetailTab();
         }
         loadUsers();
+        return true;
     } catch (err) {
         console.error(err);
         alert('Network error.');
+        return false;
     }
 }
 

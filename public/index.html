@@ -23,12 +23,13 @@
     <link rel="stylesheet" href="/css/nexgen-ai.css?v=8">
     <link rel="stylesheet" href="/css/autism-sunlit-theme.css?v=3">
     <link rel="stylesheet" href="/css/autism-orbit-theme.css?v=1">
+    <link rel="stylesheet" href="/css/autism-bright-site.css?v=1">
     <script src="/js/autism-media-safe.js?v=3"></script>
     <script src="/js/site-seo.js?v=20260529b"></script>
     <script src="/js/site-branding.js?v=20260529b"></script>
     <script src="/js/portal-datetime.js"></script>
 </head>
-<body class="congress-site autism-kids ak-portal ak-v2 nexgen-ai" data-portal-theme="public">
+<body class="congress-site autism-kids ak-portal ak-v2 nexgen-ai ab-site" data-portal-theme="public">
     <canvas id="nx-particles" class="nx-particles" aria-hidden="true"></canvas>
     <div class="ak-bg-shapes" aria-hidden="true">
         <span class="ak-shape ak-shape-1"></span>
@@ -103,36 +104,50 @@
     <div class="cg-nav-backdrop" id="cg-nav-backdrop" aria-hidden="true"></div>
     </div>
 
-    <section class="ak-hero-v2 ak-reveal-v2" id="ak-hero" data-ak-home-only aria-label="Welcome">
-        <div class="nx-hero-orb nx-hero-orb-a" aria-hidden="true"></div>
-        <div class="nx-hero-orb nx-hero-orb-b" aria-hidden="true"></div>
-        <div class="ak-hero-v2-grid">
-            <div class="ak-hero-v2-copy">
-                <span class="ak-hero-v2-badge"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Autism Awareness Programme 2026</span>
-                <h1>Warm welcome for <em>every unique mind</em></h1>
-                <p class="ak-hero-v2-lead">Register in minutes, get helpful email updates, and manage everything from one friendly dashboard — competitions, e-tickets, and certificates. Always free for families and schools.</p>
-                <p class="nx-typing-wrap" aria-hidden="true"><i class="fas fa-sparkles"></i> <span id="nx-typing-line"></span></p>
-                <div class="ak-hero-v2-cta">
-                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-bolt" aria-hidden="true"></i> Create free account</button>
-                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost hidden" id="ak-hero-public-prereg-btn"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Pre-register (no sign-in)</button>
-                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost" data-ak-goto-dashboard><i class="fas fa-chart-line" aria-hidden="true"></i> My dashboard</button>
+    <section class="ak-hero-v2 ak-reveal-v2 ab-hero" id="ak-hero" data-ak-home-only aria-label="Welcome">
+        <div class="ab-hero-bg" aria-hidden="true">
+            <span class="ab-orb ab-orb-a"></span>
+            <span class="ab-orb ab-orb-b"></span>
+            <span class="ab-orb ab-orb-c"></span>
+            <span class="ab-float ab-float-1"><i class="fas fa-puzzle-piece"></i></span>
+            <span class="ab-float ab-float-2"><i class="fas fa-star"></i></span>
+            <span class="ab-float ab-float-3"><i class="fas fa-heart"></i></span>
+            <span class="ab-float ab-float-4"><i class="fas fa-rainbow"></i></span>
+            <span class="ab-float ab-float-5"><i class="fas fa-music"></i></span>
+        </div>
+        <div class="ak-hero-v2-grid ab-hero-grid">
+            <div class="ak-hero-v2-copy ab-hero-copy">
+                <span class="ak-hero-v2-badge ab-hero-badge"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Autism Awareness Programme <span id="ab-hero-year">2026</span></span>
+                <h1 class="ab-hero-title">Every child shines <em>in their own colour</em></h1>
+                <p class="ak-hero-v2-lead ab-hero-lead">Join our free awareness programme — pre-register in a minute, track every step live in your applicant dashboard, and receive QR e-tickets and certificates by email.</p>
+                <p class="nx-typing-wrap ab-typing" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i> <span id="nx-typing-line"></span></p>
+                <div class="ak-hero-v2-cta ab-hero-cta">
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-primary ab-btn ab-btn-primary" data-portal-auth="signup" onclick="openRegisterModal(); return false;"><i class="fas fa-bolt" aria-hidden="true"></i> Create free account</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost ab-btn ab-btn-soft hidden" id="ak-hero-public-prereg-btn"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Pre-register (no sign-in)</button>
+                    <button type="button" class="ak-btn-v2 ak-btn-v2-ghost ab-btn ab-btn-ghost" data-ak-goto-dashboard><i class="fas fa-chart-line" aria-hidden="true"></i> My dashboard</button>
                 </div>
-                <div class="ak-hero-chips">
-                    <span class="ak-hero-chip"><i class="fas fa-palette" style="color:#a78bfa"></i> Competitions</span>
-                    <span class="ak-hero-chip"><i class="fas fa-ticket-alt" style="color:#38bdf8"></i> Digital e-tickets</span>
-                    <span class="ak-hero-chip"><i class="fas fa-award" style="color:#0891b2"></i> Certificates</span>
-                </div>
-                <div class="nx-ai-stats nx-ai-stats-2" aria-label="Programme highlights">
-                    <div class="nx-ai-stat"><strong>100%</strong><span>Free access</span></div>
-                    <div class="nx-ai-stat"><strong>24/7</strong><span>Portal online</span></div>
+                <div class="ab-hero-trust" aria-label="Programme highlights">
+                    <div class="ab-trust"><i class="fas fa-indian-rupee-sign"></i><div><strong>Free for families</strong><span>No registration fee</span></div></div>
+                    <div class="ab-trust"><i class="fas fa-qrcode"></i><div><strong>QR e-tickets</strong><span>Attendee count included</span></div></div>
+                    <div class="ab-trust"><i class="fas fa-satellite-dish"></i><div><strong>Live tracking</strong><span>Status updates in realtime</span></div></div>
                 </div>
             </div>
-            <div class="ak-hero-v2-art">
-                <div class="ak-hero-photo-stack">
-                    <img class="ak-hero-photo-main" src="/images/autism/children-group.svg" alt="Children enjoying a group activity outdoors" width="520" height="520" loading="eager" decoding="async">
-                    <img class="ak-hero-photo-sub" src="/images/autism/hero-illustration.svg" alt="Smiling children at a school programme" width="200" height="200" loading="lazy" decoding="async">
-                    <img class="ak-hero-photo-sub ak-hero-photo-sub-b" src="/images/autism/hero-illustration.svg" alt="Children learning together in class" width="200" height="200" loading="lazy" decoding="async">
+            <div class="ak-hero-v2-art ab-hero-art">
+                <div class="ab-art-stage">
+                    <div class="ab-art-ring ab-art-ring-1"></div>
+                    <div class="ab-art-ring ab-art-ring-2"></div>
+                    <img class="ab-art-main ak-hero-photo-main" src="/images/autism/children-group.svg" alt="Children enjoying a group activity outdoors" width="520" height="520" loading="eager" decoding="async">
+                    <div class="ab-art-card ab-art-card-1"><i class="fas fa-ticket-alt"></i><div><b>E-ticket issued</b><span>3 attendees · QR ready</span></div></div>
+                    <div class="ab-art-card ab-art-card-2"><i class="fas fa-check-circle"></i><div><b>Pre-registration approved</b><span>Main registration unlocked</span></div></div>
+                    <img class="ab-art-sub ak-hero-photo-sub" src="/images/autism/hero-illustration.svg" alt="Smiling children at a school programme" width="160" height="160" loading="lazy" decoding="async">
+                    <div class="ab-art-card ab-art-card-3"><i class="fas fa-award"></i><div><b>Certificate ready</b><span>Download from dashboard</span></div></div>
                 </div>
+            </div>
+        </div>
+        <div class="ab-marquee" aria-hidden="true">
+            <div class="ab-marquee-track">
+                <span><i class="fas fa-puzzle-piece"></i> Awareness</span><span><i class="fas fa-hands-helping"></i> Inclusion</span><span><i class="fas fa-palette"></i> Creative competitions</span><span><i class="fas fa-qrcode"></i> QR e-tickets</span><span><i class="fas fa-award"></i> Certificates</span><span><i class="fas fa-users"></i> Family friendly</span><span><i class="fas fa-school"></i> Schools welcome</span>
+                <span><i class="fas fa-puzzle-piece"></i> Awareness</span><span><i class="fas fa-hands-helping"></i> Inclusion</span><span><i class="fas fa-palette"></i> Creative competitions</span><span><i class="fas fa-qrcode"></i> QR e-tickets</span><span><i class="fas fa-award"></i> Certificates</span><span><i class="fas fa-users"></i> Family friendly</span><span><i class="fas fa-school"></i> Schools welcome</span>
             </div>
         </div>
     </section>
@@ -2193,5 +2208,6 @@
     <script src="/js/autism-theme.js?v=3"></script>
     <script src="/js/autism-terminology.js?v=2"></script>
     <script src="/js/public-prereg-home.js?v=20260617c"></script>
+    <script src="/js/autism-bright-site.js?v=1"></script>
 </body>
 </html>
