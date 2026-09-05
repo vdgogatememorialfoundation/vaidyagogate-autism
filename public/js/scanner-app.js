@@ -247,8 +247,14 @@
     function metaHtml(d, extra) {
         const rows = [
             ['Name', d.name],
-            ['Doctor ID', d.userIdString],
+            ['Applicant ID', d.userIdString],
             ['Ticket ID', d.ticketId || d.ticket_id_string],
+            [
+                'Attendees',
+                Number(d.attendeesCount) >= 1
+                    ? Number(d.attendeesCount) + (Number(d.attendeesCount) === 1 ? ' person' : ' people') + ' allowed on this pass'
+                    : ''
+            ],
             ['Account', d.accountStatus || (d.account_status || '')],
             ['Registration', d.registrationType || d.registration_status || '—'],
             ['Entry', 'FREE'],
@@ -265,7 +271,10 @@
         ];
         let h = '<dl class="result-meta">';
         rows.forEach(([k, v]) => {
-            if (v) h += '<dt>' + k + '</dt><dd>' + String(v).replace(/</g, '&lt;') + '</dd>';
+            if (v) {
+                const cls = k === 'Attendees' ? ' class="result-meta-attendees"' : '';
+                h += '<dt' + cls + '>' + k + '</dt><dd' + cls + '>' + String(v).replace(/</g, '&lt;') + '</dd>';
+            }
         });
         if (extra) h += '<dd>' + extra + '</dd>';
         return h + '</dl>';
@@ -518,7 +527,9 @@
         if (typeof PortalAuth !== 'undefined' && PortalAuth.renderLoginTime) {
             PortalAuth.renderLoginTime('scanner-login-time', u);
         }
-        const requiresReset = (loginData && loginData.requiresPasswordReset) || Number(u.require_password_reset) === 1;
+        const requiresReset =
+            !!(loginData && loginData.requiresPasswordReset) ||
+            (!window.EmailOtpLogin && Number(u.require_password_reset) === 1);
         if (requiresReset) {
             const overlay = document.getElementById('password-reset-overlay');
             if (overlay) overlay.classList.remove('hidden');
@@ -528,21 +539,44 @@
         loadCheckinSeminars().then(() => startCam()).catch(console.error);
     }
 
-    PortalAuth.bindLoginForm({
-        portal: 'scanner',
-        formId: 'scanner-login-form',
-        otpPanelId: 'scanner-login-otp-panel',
-        emailInputId: 'scanner-email',
-        passwordInputId: 'scanner-password',
-        otpPrefix: 'scanner',
-        resendEmailBtnId: 'scanner-resend-otp-email',
-        resendPhoneBtnId: 'scanner-resend-otp-phone',
-        onSuccess: showScan,
-        onError: (msg) => {
-            loginErr.textContent = msg;
-            loginErr.classList.remove('hidden');
-        }
-    });
+    const scannerLoginError = (msg) => {
+        loginErr.textContent = msg;
+        loginErr.classList.remove('hidden');
+    };
+    if (window.EmailOtpLogin) {
+        const legacyOtpPanel = document.getElementById('scanner-login-otp-panel');
+        if (legacyOtpPanel) legacyOtpPanel.remove();
+        window.EmailOtpLogin.mount({
+            portal: 'scanner',
+            formId: 'scanner-login-form',
+            emailInputId: 'scanner-email',
+            passwordInputId: 'scanner-password',
+            insertBeforeId: 'login-err',
+            onError: scannerLoginError,
+            onSuccess: (u, data) => {
+                loginErr.classList.add('hidden');
+                if (!PortalAuth.allowedForPortal(u, 'scanner')) {
+                    scannerLoginError('This account is not a scanner account. Ask your administrator for scanner access.');
+                    return false;
+                }
+                PortalAuth.setUser('scanner', u);
+                showScan(u, data);
+            }
+        });
+    } else {
+        PortalAuth.bindLoginForm({
+            portal: 'scanner',
+            formId: 'scanner-login-form',
+            otpPanelId: 'scanner-login-otp-panel',
+            emailInputId: 'scanner-email',
+            passwordInputId: 'scanner-password',
+            otpPrefix: 'scanner',
+            resendEmailBtnId: 'scanner-resend-otp-email',
+            resendPhoneBtnId: 'scanner-resend-otp-phone',
+            onSuccess: showScan,
+            onError: scannerLoginError
+        });
+    }
 
     document.getElementById('btn-reset')?.addEventListener('click', () => {
         resultBox.classList.add('hidden');

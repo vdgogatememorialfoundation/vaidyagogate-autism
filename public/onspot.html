@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#16a34a">
+    <link rel="icon" href="/favicon.ico" type="image/png" sizes="32x32">
+    <title>On-spot registration | Autism Awareness Programme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/onspot-form.css?v=20260905a">
+</head>
+<body>
+    <main class="os-wrap">
+        <header class="os-header">
+            <div class="os-badge"><i class="fas fa-bolt"></i> On-spot registration</div>
+            <h1 id="os-title">Loading event…</h1>
+            <p id="os-sub" class="os-sub"></p>
+            <p id="os-expiry" class="os-expiry"></p>
+        </header>
+
+        <section id="os-error" class="os-card os-error hidden" role="alert"></section>
+
+        <form id="os-form" class="os-card hidden" novalidate>
+            <h2><i class="fas fa-user"></i> Your details</h2>
+            <div class="os-grid">
+                <div class="os-field"><label for="os-fname">First name *</label><input id="os-fname" type="text" required autocomplete="given-name"></div>
+                <div class="os-field"><label for="os-mname">Middle name</label><input id="os-mname" type="text" autocomplete="additional-name"></div>
+                <div class="os-field"><label for="os-lname">Last name *</label><input id="os-lname" type="text" required autocomplete="family-name"></div>
+                <div class="os-field"><label for="os-phone">Mobile *</label><input id="os-phone" type="tel" inputmode="numeric" required autocomplete="tel"></div>
+                <div class="os-field"><label for="os-email">Email</label><input id="os-email" type="email" autocomplete="email" placeholder="For your e-ticket & login"></div>
+                <div class="os-field"><label for="os-attendees">Number of attendees *</label><input id="os-attendees" type="number" min="1" max="20" value="1" required></div>
+            </div>
+            <div id="os-fields-wrap" class="hidden">
+                <h2><i class="fas fa-clipboard-list"></i> Event form</h2>
+                <div id="os-fields" class="os-grid"></div>
+            </div>
+            <button type="submit" id="os-submit" class="os-btn"><i class="fas fa-paper-plane"></i> Submit to registration desk</button>
+            <p id="os-status" class="os-status"></p>
+        </form>
+
+        <section id="os-done" class="os-card os-done hidden">
+            <div class="os-check"><i class="fas fa-check"></i></div>
+            <h2>Submitted!</h2>
+            <p id="os-done-msg"></p>
+            <p class="os-ref">Reference: <strong id="os-ref"></strong></p>
+            <button type="button" class="os-btn os-btn-ghost" onclick="location.reload()"><i class="fas fa-user-plus"></i> Register another person</button>
+        </section>
+    </main>
+    <script src="/js/onspot-form.js?v=20260905a"></script>
+</body>
+</html>

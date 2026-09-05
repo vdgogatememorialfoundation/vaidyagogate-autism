@@ -13,7 +13,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/responsive-portals.css?v=20260904a">
-    <link rel="stylesheet" href="/css/autism-admin.css?v=5">
+    <link rel="stylesheet" href="/css/autism-admin.css?v=6">
+    <link rel="stylesheet" href="/css/email-otp-login.css?v=1">
     <link rel="stylesheet" href="/css/admin-prereg-tracking.css?v=4">
     <link rel="stylesheet" href="/css/admin-etickets.css?v=1">
     <link rel="stylesheet" href="/css/autism-clean-portals.css?v=1">
@@ -1997,23 +1998,57 @@
 
             <div id="tab-pos" class="tab-pane hidden">
                 <h2 style="margin-bottom:12px;">On-spot POS registration</h2>
-                <p style="color:#64748b;margin-bottom:16px;">Register an applicant at the venue, record the on-spot payment, and issue an e-ticket immediately. They can complete their profile later in the applicant portal.</p>
-                <div class="card" style="max-width:640px;">
+                <p style="color:#64748b;margin-bottom:16px;">Register an applicant at the venue and issue a QR e-ticket instantly. Free events skip payment automatically. Staff, admin, co-admin and superadmin can register even when the event is full. Login details + QR ticket link are emailed immediately.</p>
+                <div class="card" style="max-width:720px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div><label>Seminar</label><select id="pos-seminar" style="width:100%;padding:8px;"></select></div>
-                        <div><label>Amount (₹)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div style="grid-column:1/-1;"><label>Event</label><select id="pos-seminar" style="width:100%;padding:8px;"></select>
+                            <p id="pos-seminar-info" style="margin:8px 0 0;font-size:0.85rem;"></p>
+                        </div>
                         <div><label>First name</label><input type="text" id="pos-fname" style="width:100%;padding:8px;"></div>
                         <div><label>Middle name <span style="font-weight:400;color:#64748b;">(optional)</span></label><input type="text" id="pos-mname" style="width:100%;padding:8px;"></div>
                         <div><label>Last name</label><input type="text" id="pos-lname" style="width:100%;padding:8px;"></div>
                         <div><label>Phone</label><input type="text" id="pos-phone" style="width:100%;padding:8px;"></div>
-                        <div><label>Email (optional)</label><input type="email" id="pos-email" style="width:100%;padding:8px;"></div>
+                        <div><label>Email</label><input type="email" id="pos-email" style="width:100%;padding:8px;" placeholder="Needed to email login + QR ticket"></div>
+                        <div><label>Attendees on this pass</label><input type="number" id="pos-attendees" min="1" step="1" value="1" style="width:100%;padding:8px;"></div>
+                        <div id="pos-amount-wrap"><label>Amount received (₹)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
+                        <div><label>Payment method</label><select id="pos-payment-method" style="width:100%;padding:8px;"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select></div>
                     </div>
                     <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
-                        <input type="checkbox" id="pos-send-ticket-email" style="margin-top:3px;">
-                        <span>Queue ticket email after registration (off by default ... use printed QR at venue; avoids Zoho rate limits)</span>
+                        <input type="checkbox" id="pos-send-ticket-email" checked style="margin-top:3px;">
+                        <span>Email login details and QR ticket link immediately</span>
                     </label>
-                    <button type="button" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
+                    <button type="button" id="pos-submit-btn" class="btn-primary" style="margin-top:16px;" onclick="submitAdminPosRegistration()">Register &amp; issue ticket</button>
                     <p id="pos-status" style="margin-top:12px;font-weight:600;"></p>
+                    <div id="pos-result"></div>
+                </div>
+
+                <div id="pos-onspot-link-wrap" class="card" style="max-width:720px;margin-top:20px;display:none;">
+                    <h3 style="margin:0 0 6px;">Self-service on-spot form link</h3>
+                    <p style="color:#64748b;font-size:0.88rem;margin:0 0 12px;">Generate a temporary unique link (or QR) for the selected event. Applicants fill the event form on their phone; submissions appear under <strong>On-spot submissions</strong> where you can add them to main registration.</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+                        <div><label>Valid for (hours)</label><input type="number" id="onspot-link-hours" min="1" max="168" value="12" style="width:120px;padding:8px;"></div>
+                        <button type="button" class="btn-primary" onclick="createOnspotLink()">Generate link</button>
+                        <button type="button" class="btn-primary" style="background:#475569;" onclick="loadOnspotLinks()">Refresh list</button>
+                    </div>
+                    <div id="onspot-link-latest" style="margin-top:12px;"></div>
+                    <div id="onspot-links-list" style="margin-top:12px;"></div>
+                </div>
+
+                <div id="onspot-submissions-card" class="card" style="max-width:960px;margin-top:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                        <h3 style="margin:0;">On-spot submissions <span id="onspot-pending-badge" class="pos-pill pos-pill-paid" style="display:none;"></span></h3>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="onspot-sub-status" style="padding:6px;" onchange="loadOnspotSubmissions()"><option value="pending">Pending</option><option value="promoted">Added to main registration</option><option value="rejected">Rejected</option><option value="all">All</option></select>
+                            <button type="button" class="btn-primary" style="background:#475569;" onclick="loadOnspotSubmissions()"><i class="fas fa-sync"></i></button>
+                        </div>
+                    </div>
+                    <p style="color:#64748b;font-size:0.85rem;margin:6px 0 12px;">Live — refreshes automatically. Filtered by the event selected above (or all events when none is selected).</p>
+                    <div style="overflow:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Time</th><th>Applicant</th><th>Contact</th><th>Attendees</th><th>Event</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody id="onspot-submissions-list"><tr><td colspan="7" style="text-align:center;">Select an event or refresh…</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -2748,8 +2783,9 @@
     <script src="/js/user-roles.js?v=20260524a"></script>
     <script src="/js/admin-list-search.js?v=20260522a"></script>
     <script src="/js/autism-admin-api.js?v=3"></script>
-    <script src="/js/staff-portal.js?v=20260615a"></script>
-    <script src="/js/admin.js?v=20260904a"></script>
+    <script src="/js/email-otp-login.js?v=1"></script>
+    <script src="/js/staff-portal.js?v=20260615b"></script>
+    <script src="/js/admin.js?v=20260905b"></script>
     <script src="/js/admin-etickets.js?v=2"></script>
     <script src="/js/admin-prereg-tracking.js?v=15"></script>
     <script src="/js/admin-final-tracking.js?v=5"></script>

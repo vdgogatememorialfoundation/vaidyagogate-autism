@@ -286,3 +286,17 @@ body.autism-admin.ak-portal-staff .btn-primary {
 body.autism-admin.ak-portal-staff #ak-admin-staff-link {
     display: none !important;
 }
+
+/* On-spot POS */
+.pos-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; background:#e2e8f0; color:#334155; margin-right:6px; }
+.pos-pill-free { background:#dcfce7; color:#166534; }
+.pos-pill-paid { background:#fef3c7; color:#92400e; }
+.pos-pill-full { background:#fee2e2; color:#991b1b; }
+.pos-result-card { margin-top:12px; padding:14px 16px; border-radius:12px; background:#f0fdf4; border:1px solid #bbf7d0; display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
+.pos-result-card > div { display:flex; flex-direction:column; font-size:0.85rem; }
+.pos-result-card > div span { color:#64748b; }
+.pos-result-card > div strong { color:#0f172a; word-break:break-all; }
+.pos-result-card > a { grid-column:1/-1; justify-self:start; }
+.onspot-link-box { padding:12px; border-radius:10px; background:#eff6ff; border:1px solid #bfdbfe; font-size:0.85rem; word-break:break-all; }
+.onspot-link-box img { display:block; margin-top:8px; width:160px; height:160px; background:#fff; border-radius:8px; padding:6px; }
+@media (max-width:640px){ .pos-result-card { grid-template-columns:1fr; } }

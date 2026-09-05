@@ -261,6 +261,13 @@ body.scanner-body.has-logo-theme {
 
 .result-meta dt { font-weight: 700; font-size: 0.7rem; opacity: 0.92; }
 .result-meta dd { margin: 0 0 8px; word-break: break-word; }
+.result-meta dd.result-meta-attendees {
+    font-size: 1.05rem;
+    font-weight: 800;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.22);
+}
 
 .scan-result-top {
     display: flex;
