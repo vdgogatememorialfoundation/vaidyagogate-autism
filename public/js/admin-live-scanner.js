@@ -240,11 +240,65 @@
             .join('');
     }
 
+    let lastAttendance = [];
+    let lastPeopleArrived = null;
+    let flashTimer = null;
+
+    function pulse(el) {
+        if (!el) return;
+        el.classList.remove('is-pulse');
+        void el.offsetWidth;
+        el.classList.add('is-pulse');
+    }
+
+    function renderHeadcount(data) {
+        const coming = document.getElementById('hc-coming');
+        const arrived = document.getElementById('hc-arrived');
+        const expected = document.getElementById('hc-expected');
+        if (!coming || !arrived || !expected) return;
+        const c = Number(data.peopleComing) || 0;
+        const a = Number(data.peopleArrived) || 0;
+        const e = Number(data.peopleExpected) || 0;
+        if (coming.textContent !== String(c)) pulse(coming.parentElement);
+        coming.textContent = String(c);
+        arrived.textContent = String(a);
+        expected.textContent = String(e);
+        if (lastPeopleArrived != null && a > lastPeopleArrived) {
+            flashHeadcount('+' + (a - lastPeopleArrived) + (a - lastPeopleArrived === 1 ? ' person' : ' people') + ' just arrived \u00b7 ' + c + ' still coming');
+        }
+        lastPeopleArrived = a;
+    }
+
+    function flashHeadcount(text) {
+        const el = document.getElementById('hc-flash');
+        if (!el) return;
+        el.textContent = text;
+        el.hidden = false;
+        el.classList.remove('is-on');
+        void el.offsetWidth;
+        el.classList.add('is-on');
+        if (flashTimer) clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => {
+            el.classList.remove('is-on');
+            el.hidden = true;
+        }, 4000);
+    }
+
+    function paxForEvent(ev) {
+        if (Number(ev.attendeesCount) >= 1) return Number(ev.attendeesCount);
+        const hit = lastAttendance.find(
+            (a) => (ev.ticketId && a.ticket_id_string === ev.ticketId) || (ev.applicationNo && a.application_no === ev.applicationNo)
+        );
+        return hit && Number(hit.attendees_count) >= 1 ? Number(hit.attendees_count) : 1;
+    }
+
     async function refreshAttendance() {
         const sid = document.getElementById('live-scanner-seminar').value;
         if (!sid) return;
         const data = await api('/api/admin/live-scanner/attendance?seminarId=' + encodeURIComponent(sid));
+        lastAttendance = Array.isArray(data.attendees) ? data.attendees : [];
         renderAttendance(data.attendees, null, data);
+        renderHeadcount(data);
     }
 
     function tickClock() {
@@ -266,7 +320,8 @@
         el.className = 'scan-card is-new ' + cardClass(ev.outcome);
         el.dataset.id = String(ev.id);
         const outcomeLabel = String(ev.outcome || 'failed').replace(/_/g, ' ');
-        const name = ev.doctorName || 'Guest';
+        const name = ev.doctorName || ev.applicantName || 'Guest';
+        const pax = paxForEvent(ev);
         el.innerHTML =
             '<div class="scan-card-head">' +
             '<span class="scan-card-avatar" aria-hidden="true">' +
@@ -286,6 +341,10 @@
             '<span class="scan-card-time">' +
             esc(formatCardTime(ev.createdAt)) +
             '</span></div>' +
+            '<div class="scan-card-pax"><i class="fas fa-people-group"></i> ' +
+            pax +
+            (pax === 1 ? ' attendee' : ' attendees') +
+            ' on this pass</div>' +
             '<div class="scan-card-ids">' +
             '<div><span class="lbl">E-ticket</span><code>' +
             esc(ev.ticketId || '—') +
@@ -328,6 +387,9 @@
                     lastEventId = ev.id;
                     prependCard(ev);
                     playScanSound(ev.outcome);
+                    if (ev.outcome === 'success') {
+                        flashHeadcount(paxForEvent(ev) + (paxForEvent(ev) === 1 ? ' person' : ' people') + ' arriving \u2014 ' + (ev.doctorName || ev.applicantName || 'Guest'));
+                    }
                 }
             });
             await Promise.all([refreshStats(), refreshAttendance()]);
@@ -388,6 +450,8 @@
             else {
                 stopPoll();
                 renderAttendance([], 'Choose an event to view its attendees.');
+                lastPeopleArrived = null;
+                renderHeadcount({});
             }
             updateEmptyState();
         });

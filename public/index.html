@@ -243,12 +243,6 @@
                 <h3>Live updates</h3>
                 <p>Watch the announcement ticker and official notices for schedule changes and reminders.</p>
             </article>
-            <article class="ak-bento-card" id="home-prereg-search-card" style="display:none;">
-                <div class="ak-bento-icon" style="background:#dbeafe;color:#2563eb"><i class="fas fa-magnifying-glass"></i></div>
-                <h3>Find your registration</h3>
-                <p>Already pre-registered? Search by your name, email, phone, or application ID to check your status.</p>
-                <button type="button" class="ak-btn-sm" onclick="window.location.href='/preregister/search'"><i class="fas fa-search"></i> Search now</button>
-            </article>
             <article class="ak-bento-card">
                 <div class="ak-bento-icon" style="background:#ffe4e6;color:#e11d48"><i class="fas fa-envelope"></i></div>
                 <h3>Need help?</h3>
@@ -668,18 +662,12 @@
                 const li = a.closest('li');
                 if (li) li.style.display = isShown(key) ? '' : 'none';
             });
-            // Check prereg-search visibility based on API
-            const preregSearchNav = document.getElementById('nav-verify') || 
-                document.querySelector('#cg-nav-menu-links a[href="/preregister/search"]');
-            const preregSearchCard = document.getElementById('home-prereg-search-card');
-            fetch('/api/public/preregistrations/search/enabled')
-                .then(r => r.json())
-                .then(data => {
-                    const enabled = data.enabled;
-                    if (preregSearchNav) preregSearchNav.style.display = enabled ? '' : 'none';
-                    if (preregSearchCard) preregSearchCard.style.display = enabled ? '' : 'none';
-                })
-                .catch(() => {});
+            document
+                .querySelectorAll('a[href="/preregister/search"], a[data-menu-key="prereg-search"]')
+                .forEach((a) => {
+                    const li = a.closest('li');
+                    (li || a).style.display = 'none';
+                });
         }
 
         function setOtpPanelVisible(panel, visible) {
@@ -768,20 +756,6 @@
             }
             if (statusEl) statusEl.textContent = 'Sending OTP to WhatsApp…';
             loginOtpInflight = true;
-            // #region agent log
-            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-                body: JSON.stringify({
-                    sessionId: '7880d4',
-                    location: 'index.html:sendIndexLoginOtp',
-                    message: 'login otp send click',
-                    data: { forceResend: !!forceResend },
-                    timestamp: Date.now(),
-                    hypothesisId: 'B'
-                })
-            }).catch(() => {});
-            // #endregion
             try {
                 const res = await fetch('/api/auth/login-otp/send', {
                     method: 'POST',
@@ -1104,20 +1078,6 @@
                 return;
             }
             signupOtpInflight = true;
-            // #region agent log
-            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-                body: JSON.stringify({
-                    sessionId: '7880d4',
-                    location: 'index.html:sendSignupOtp',
-                    message: 'signup otp send click',
-                    data: { channel, forceResend: !!forceResend },
-                    timestamp: Date.now(),
-                    hypothesisId: 'B'
-                })
-            }).catch(() => {});
-            // #endregion
             try {
                 const res = await fetch('/api/otp/send', {
                     method: 'POST',

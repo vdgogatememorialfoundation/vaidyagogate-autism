@@ -1017,9 +1017,9 @@
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-signup-otp-whatsapp" checked> Signup WhatsApp OTP</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-signup-otp-email"> Signup email OTP</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-passwordless-login" checked> Passwordless login (OTP only, no password)</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-login-otp" checked> Extra login OTP after password (when not passwordless)</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-login-otp-whatsapp"> Login WhatsApp OTP</label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-login-otp-email" checked> Login email OTP</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-login-otp" checked> Require login OTP</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-login-otp-whatsapp"> Login WhatsApp OTP (passwordless)</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-login-otp-email" checked> Login email OTP (passwordless — applicants sign in with email code, no password)</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-email-verify"> Require email verification before login</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-admin-sensitive-otp"> Require admin OTP to create users / save behalf applications</label>
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;"><input type="checkbox" id="pa-req-behalf-applicant-otp" checked> Require applicant OTP (phone + email) when admin saves applicant application</label>
@@ -2011,7 +2011,7 @@
                         <div><label>Email</label><input type="email" id="pos-email" style="width:100%;padding:8px;" placeholder="Needed to email login + QR ticket"></div>
                         <div><label>Attendees on this pass</label><input type="number" id="pos-attendees" min="1" step="1" value="1" style="width:100%;padding:8px;"></div>
                         <div id="pos-amount-wrap"><label>Amount received (₹)</label><input type="number" id="pos-amount" min="0" step="1" style="width:100%;padding:8px;"></div>
-                        <div><label>Payment method</label><select id="pos-payment-method" style="width:100%;padding:8px;"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select></div>
+                        <div id="pos-method-wrap"><label>Payment method</label><select id="pos-payment-method" style="width:100%;padding:8px;"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select></div>
                     </div>
                     <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:0.88rem;color:#475569;max-width:560px;">
                         <input type="checkbox" id="pos-send-ticket-email" checked style="margin-top:3px;">
@@ -2068,6 +2068,24 @@
                     <textarea id="feedback-form-json" rows="10" style="width:100%;font-family:monospace;font-size:0.85rem;" onchange="loadAdminFeedbackFormConfigFromJson()"></textarea>
                     <button type="button" class="btn-primary" style="margin-top:12px;" onclick="saveAdminFeedbackFormConfig()">Save feedback form</button>
                     <p id="feedback-form-save-status" style="margin-top:10px;font-weight:600;"></p>
+                </div>
+                <div class="card" style="margin-top:16px;" id="feedback-schedule-card">
+                    <h3 style="margin:0 0 6px;color:#0c4a6e;"><i class="fas fa-calendar-check"></i> Schedule feedback form</h3>
+                    <p style="color:#64748b;margin:0 0 14px;font-size:0.9rem;">Choose when the feedback form opens for an event. When it opens, every registered attendee gets an email with the feedback link. Dates are IST; the form opens at the start of the open date and closes at the end of the close date.</p>
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end;">
+                        <div><label>Event</label><select id="fb-sched-seminar" style="width:100%;"></select></div>
+                        <div><label>Opens on</label><input type="date" id="fb-sched-open" style="width:100%;"></div>
+                        <div><label>Closes on (optional)</label><input type="date" id="fb-sched-close" style="width:100%;"></div>
+                        <button type="button" class="btn-primary" style="background:#0d9488;" onclick="saveFeedbackSchedule()">Schedule</button>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:500;"><input type="checkbox" id="fb-sched-notify" checked style="width:auto;"> Email attendees when the form opens</label>
+                    <p id="fb-sched-status" style="margin-top:8px;font-weight:600;"></p>
+                    <div class="admin-table-wrap" style="margin-top:12px;">
+                        <table>
+                            <thead><tr><th>Event</th><th>Opens</th><th>Closes</th><th>Status</th><th>Email notice</th><th>Actions</th></tr></thead>
+                            <tbody id="fb-sched-list"><tr><td colspan="6" style="color:#64748b;">No feedback schedules yet.</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -2365,6 +2383,11 @@
                 
                 <div class="card" style="margin-top: 20px;">
                     <h3>Payment Gateway Configurations</h3>
+                    <div id="pg-paid-events-row" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+                        <label style="display:flex;align-items:center;gap:10px;font-weight:700;color:#065f46;cursor:pointer;"><input type="checkbox" id="pg-paid-events-enabled" onchange="savePaidEventsEnabled(this.checked)"> Payment applicable (enable paid events)</label>
+                        <p style="margin:6px 0 0;font-size:0.82rem;color:#047857;">When on, events with a price above &#8377;0 collect payment through Razorpay before the e-ticket is issued; events priced &#8377;0 stay free. When off, every event is free and payment screens are hidden.</p>
+                        <p id="pg-paid-events-msg" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
+                    </div>
                     <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Live applicant payments use <strong>Razorpay</strong> or <strong>Cashfree</strong> only. Enable one (or both); saving updates the default gateway in Site configuration for new transactions.</p>
                     
                     <!-- Razorpay -->

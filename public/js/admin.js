@@ -412,11 +412,42 @@ async function adminDeleteUserAccount(userId, displayName, portalId) {
     }
 }
 
+function parseGrantedAdminModules(u) {
+    let raw = {};
+    try {
+        if (u && u.admin_modules && String(u.admin_modules).trim()) raw = JSON.parse(u.admin_modules);
+    } catch (_) {
+        raw = {};
+    }
+    return raw && typeof raw === 'object' ? raw : {};
+}
+
+/** Pull the latest module grants / role for the signed-in admin so changes apply without re-login. */
+async function refreshStoredAdminUserFromServer() {
+    const u = getStoredAdminUser();
+    if (!u || !u.id) return u;
+    try {
+        const res = await fetch('/api/admin/me?actingAdminId=' + encodeURIComponent(u.id), { cache: 'no-store' });
+        if (!res.ok) return u;
+        const d = await res.json();
+        if (!d || !d.user) return u;
+        const merged = Object.assign({}, u, d.user);
+        localStorage.setItem('admin_user', JSON.stringify(merged));
+        return merged;
+    } catch (_) {
+        return u;
+    }
+}
+
 function adminCanAccessTab(tabId) {
     let checkId = tabId === 'tab-seminar-details' ? 'tab-seminars' : tabId;
     if (checkId === 'tab-users') checkId = 'tab-staff-users';
+    const u = getStoredAdminUser();
+    const granted = parseGrantedAdminModules(u);
+    const hasGrants = Object.keys(granted).length > 0;
     if (window.PORTAL_IS_STAFF && window.STAFF_PORTAL_SUPER_ADMIN_ONLY && window.STAFF_PORTAL_SUPER_ADMIN_ONLY.has(checkId)) {
-        return false;
+        /* Explicit module grants from the super admin unlock otherwise restricted staff-portal tabs. */
+        if (!(hasGrants && granted[checkId] === true)) return false;
     }
     const autismPortalTabs = new Set([
         'tab-announcements',
@@ -433,18 +464,9 @@ function adminCanAccessTab(tabId) {
         const autismBypass = window.PORTAL_IS_AUTISM && autismPortalTabs.has(checkId);
         if (anyOn && globalPages[checkId] !== true && !autismBypass) return false;
     }
-    const u = getStoredAdminUser();
-    if (String(u.user_role || '').toLowerCase() !== 'co_admin') return true;
-    let raw = {};
-    try {
-        if (u.admin_modules && String(u.admin_modules).trim()) raw = JSON.parse(u.admin_modules);
-    } catch (_) {
-        raw = {};
-    }
-    if (!raw || typeof raw !== 'object') return true;
-    const keys = Object.keys(raw);
-    if (keys.length === 0) return true;
-    return raw[checkId] === true;
+    if (typeof isSuperAdminUser === 'function' && isSuperAdminUser()) return true;
+    if (!hasGrants) return true;
+    return granted[checkId] === true;
 }
 
 function applyCoAdminSidebarVisibility() {
@@ -487,7 +509,8 @@ window.onload = () => {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('dashboard-main').classList.remove('hidden');
         loadAllData();
-        loadPortalAuthAdminForm()
+        refreshStoredAdminUserFromServer()
+            .then(() => loadPortalAuthAdminForm())
             .then(() => applyCoAdminSidebarVisibility())
             .catch(() => applyCoAdminSidebarVisibility());
         refreshAdminSensitiveOtpRequirement();
@@ -1543,8 +1566,12 @@ function renderStaffUsersTable(staffList) {
                 ? '<span style="font-weight:700;color:#0f766e;">Super Admin</span><br><span style="font-size:0.78rem;color:#64748b;">Not listed here — use your admin login</span>'
                 : `<select onchange="updateUserRole(${u.id}, this.value)" style="width:100%;padding:5px;border-radius:4px;border:1px solid #ccc;">${adminStaffRoleOptionsHtml(userRole)}</select>`;
         const modulesBtn =
-            isSuperAdminUser() && String(userRole).toLowerCase() === 'co_admin'
+            isSuperAdminUser() && userRole !== 'super_admin'
                 ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#0d9488;" onclick="openAdminModulesModal(${u.id})">Modules</button>`
+                : '';
+        const resendBtn =
+            userRole !== 'super_admin' && u.email
+                ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#2563eb;" title="Email portal ID, a new temporary password and the staff login link" onclick="resendStaffAccountDetails(${u.id}, this)">Resend details</button>`
                 : '';
         staffBody.innerHTML += `
                 <tr${hi}>
@@ -1558,7 +1585,7 @@ function renderStaffUsersTable(staffList) {
                     <td>${adminUserStatusBadge(u)}</td>
                     <td>
                         <button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-right:6px;" onclick="openAdminUserDetail(${u.id})">View</button>
-                        ${adminUserToggleBtn(u)}${modulesBtn}
+                        ${adminUserToggleBtn(u)}${modulesBtn}${resendBtn}
                         ${
                             adminCanDeleteUsers()
                                 ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#b91c1c;" onclick="adminDeleteUserAccount(${u.id}, '${String((u.first_name || '') + ' ' + (u.last_name || '')).trim().replace(/'/g, "\\'")}', '${String(u.user_id_string || '').replace(/'/g, "\\'")}')">Delete</button>`
@@ -1567,6 +1594,46 @@ function renderStaffUsersTable(staffList) {
                     </td>
                 </tr>`;
     });
+}
+
+async function resendStaffAccountDetails(userId, btn) {
+    const aid = adminActorId();
+    if (!aid) return alert('Sign in to the admin console first.');
+    if (
+        !confirm(
+            'Resend staff portal account details?\n\nA NEW temporary password will be generated and emailed with the portal ID and login link. The old password will stop working.'
+        )
+    )
+        return;
+    const label = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+    }
+    try {
+        const res = await fetch('/api/admin/users/' + encodeURIComponent(userId) + '/resend-account-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.success) throw new Error(d.error || 'Could not resend account details');
+        alert(
+            (d.emailSent ? 'Account details sent to ' : 'Queued for ') +
+                (d.to || 'the account email') +
+                ' (portal ID ' +
+                (d.user_id_string || userId) +
+                ').' +
+                (d.warning ? '\n\nNote: ' + d.warning : '')
+        );
+    } catch (e) {
+        alert(e.message || 'Could not resend account details');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = label;
+        }
+    }
 }
 
 function adminFilterStaffUsersList() {
@@ -1869,10 +1936,10 @@ function openAdminLiveScannerBoard() {
     try {
         sessionStorage.setItem('admin_user', JSON.stringify(actor));
     } catch (_) {}
-    const w = window.open('/admin-live-scanner.html', '_blank', 'noopener,noreferrer');
+    const w = window.open('/admin-live-scanner', '_blank', 'noopener,noreferrer');
     if (!w) {
         if (confirm('Pop-up blocked. Open the live board in this tab instead?')) {
-            location.href = '/admin-live-scanner.html';
+            location.href = '/admin-live-scanner';
         }
     }
 }
@@ -1911,12 +1978,14 @@ async function refreshAdminPosSeminarInfo() {
     const info = document.getElementById('pos-seminar-info');
     const amountWrap = document.getElementById('pos-amount-wrap');
     const amountEl = document.getElementById('pos-amount');
+    const methodWrap = document.getElementById('pos-method-wrap');
     const link = document.getElementById('pos-onspot-link-wrap');
     if (!sel) return;
     const sid = sel.value;
     if (!sid) {
         if (info) info.textContent = '';
         if (amountWrap) amountWrap.style.display = '';
+        if (methodWrap) methodWrap.style.display = '';
         if (link) link.style.display = 'none';
         return;
     }
@@ -1930,12 +1999,13 @@ async function refreshAdminPosSeminarInfo() {
         if (!res.ok) throw new Error(d.error || 'Failed');
         window.__posSeminarInfo = d;
         if (amountWrap) amountWrap.style.display = d.isFree ? 'none' : '';
+        if (methodWrap) methodWrap.style.display = d.isFree ? 'none' : '';
         if (amountEl && !d.isFree) amountEl.value = d.price || '';
         if (amountEl && d.isFree) amountEl.value = '0';
         if (info) {
             const seats = d.unlimited
                 ? 'Unlimited seats'
-                : d.filled + ' / ' + d.capacity + ' seats filled' + (d.full ? ' — FULL (staff override allowed)' : '');
+                : d.filled + ' / ' + d.capacity + ' seats filled' + (d.full ? ' — FULL' : '');
             info.innerHTML =
                 '<span class="pos-pill ' +
                 (d.isFree ? 'pos-pill-free' : 'pos-pill-paid') +
@@ -2063,10 +2133,61 @@ function renderOnspotLatestLink(link) {
         '<a class="btn-primary" style="background:#0d9488;" target="_blank" rel="noopener" href="' + escAdmin(qr) + '">Open QR to display</a>' +
         '</div>' +
         '<img src="' + escAdmin(qr) + '" alt="QR code for on-spot form link">' +
+        onspotEmailFormHtml(link.id) +
         '</div>';
 }
 
+function onspotEmailFormHtml(linkId) {
+    return (
+        '<div class="onspot-email-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">' +
+        '<i class="fas fa-envelope" style="color:#0f766e;"></i>' +
+        '<input type="email" id="onspot-email-to-' + linkId + '" placeholder="applicant@email.com" style="flex:1;min-width:200px;padding:8px;">' +
+        '<input type="text" id="onspot-email-name-' + linkId + '" placeholder="Name (optional)" style="width:150px;padding:8px;">' +
+        '<button type="button" class="btn-primary" style="background:#0f766e;" onclick="emailOnspotLink(' + linkId + ', this)">Send link by email</button>' +
+        '<span id="onspot-email-msg-' + linkId + '" style="font-size:0.82rem;"></span>' +
+        '</div>'
+    );
+}
+
+async function emailOnspotLink(linkId, btn) {
+    const aid = adminActorId();
+    const to = ((document.getElementById('onspot-email-to-' + linkId) || {}).value || '').trim();
+    const name = ((document.getElementById('onspot-email-name-' + linkId) || {}).value || '').trim();
+    const msg = document.getElementById('onspot-email-msg-' + linkId);
+    if (!aid) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        if (msg) { msg.style.color = '#b91c1c'; msg.textContent = 'Enter a valid email.'; }
+        return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+        const res = await fetch('/api/admin/onspot-links/' + linkId + '/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid, email: to, name })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed');
+        if (msg) { msg.style.color = '#15803d'; msg.textContent = 'Sent to ' + to; }
+    } catch (e) {
+        if (msg) { msg.style.color = '#b91c1c'; msg.textContent = e.message; }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send link by email'; }
+    }
+}
+
+let __onspotLinksTimer = null;
+function ensureOnspotLinksAutoRefresh() {
+    if (__onspotLinksTimer) return;
+    __onspotLinksTimer = setInterval(() => {
+        const tab = document.getElementById('tab-pos');
+        if (!tab || tab.classList.contains('hidden') || document.hidden) return;
+        loadOnspotLinks();
+    }, 60 * 1000);
+}
+
 async function loadOnspotLinks() {
+    ensureOnspotLinksAutoRefresh();
     const aid = adminActorId();
     const sid = (document.getElementById('pos-seminar') || {}).value;
     const list = document.getElementById('onspot-links-list');
@@ -2093,7 +2214,12 @@ async function loadOnspotLinks() {
                         '<td>' + escAdmin(onspotFmtTime(l.expires_at)) + '</td>' +
                         '<td>' + escAdmin(String(l.submissions || 0)) + '</td>' +
                         '<td>' + (l.expired ? '<span class="pos-pill pos-pill-full">Expired</span>' : '<span class="pos-pill pos-pill-free">Active</span>') + '</td>' +
-                        '<td>' + (l.expired ? '' : '<button type="button" class="btn-primary" style="background:#b91c1c;padding:4px 8px;" onclick="deactivateOnspotLink(' + l.id + ')">Disable</button>') + '</td></tr>'
+                        '<td style="white-space:nowrap;">' +
+                        (l.expired
+                            ? ''
+                            : '<button type="button" class="btn-primary" style="background:#0f766e;padding:4px 8px;margin-right:6px;" onclick="renderOnspotLatestLink(' + escAdmin(JSON.stringify(l)) + ')">Show / Email</button>' +
+                              '<button type="button" class="btn-primary" style="background:#b91c1c;padding:4px 8px;" onclick="deactivateOnspotLink(' + l.id + ')">Disable</button>') +
+                        '</td></tr>'
                 )
                 .join('') +
             '</tbody></table>';
@@ -2232,6 +2358,165 @@ async function loadAdminFeedbackFormConfig() {
         renderFeedbackFormBuilder(cfg);
     } catch (e) {
         console.warn(e);
+    }
+    loadFeedbackSchedules();
+}
+
+async function loadFeedbackSchedules() {
+    const aid = adminActorId();
+    const sel = document.getElementById('fb-sched-seminar');
+    const body = document.getElementById('fb-sched-list');
+    if (!aid || !sel || !body) return;
+    try {
+        const [semRes, schedRes] = await Promise.all([
+            fetch('/api/admin/seminars/all', { cache: 'no-store' }),
+            fetch('/api/admin/feedback-schedules?actingAdminId=' + encodeURIComponent(aid), { cache: 'no-store' })
+        ]);
+        const seminars = semRes.ok ? await semRes.json() : [];
+        const sd = schedRes.ok ? await schedRes.json() : { schedules: [] };
+        const prev = sel.value;
+        let html = '<option value="">Select event</option>';
+        (Array.isArray(seminars) ? seminars : []).forEach((s) => {
+            html += `<option value="${s.id}">${escAdmin(s.title)}${s.event_date ? ' — ' + escAdmin(String(s.event_date).slice(0, 10)) : ''}</option>`;
+        });
+        sel.innerHTML = html;
+        if (prev) sel.value = prev;
+        const list = (sd && sd.schedules) || [];
+        if (!list.length) {
+            body.innerHTML = '<tr><td colspan="6" style="color:#64748b;">No feedback schedules yet.</td></tr>';
+        } else {
+            const stateBadge = (st) => {
+                const map = {
+                    open: ['Open now', '#166534', '#dcfce7'],
+                    scheduled: ['Scheduled', '#1d4ed8', '#dbeafe'],
+                    closed: ['Closed', '#7f1d1d', '#fee2e2']
+                };
+                const m = map[st] || ['Inactive', '#334155', '#e2e8f0'];
+                return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:700;color:${m[1]};background:${m[2]};">${m[0]}</span>`;
+            };
+            body.innerHTML = list
+                .map(
+                    (s) => `<tr>
+                        <td><strong>${escAdmin(s.seminar_title || 'Event #' + s.seminar_id)}</strong></td>
+                        <td style="white-space:nowrap;">${escAdmin(s.opens_on || '—')}</td>
+                        <td style="white-space:nowrap;">${escAdmin(s.closes_on || 'No close date')}</td>
+                        <td>${stateBadge(s.state)}</td>
+                        <td style="font-size:0.82rem;">${
+                            !s.notify_email
+                                ? 'Off'
+                                : s.notified_at
+                                  ? 'Sent to ' + Number(s.notified_count || 0) + ' attendee(s)'
+                                  : 'Will send when form opens'
+                        }</td>
+                        <td style="white-space:nowrap;">
+                            <button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;" onclick="editFeedbackSchedule(${s.seminar_id}, '${s.opens_on || ''}', '${s.closes_on || ''}', ${s.notify_email ? 'true' : 'false'})">Edit</button>
+                            ${s.state === 'open' ? `<button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#2563eb;" onclick="resendFeedbackScheduleEmail(${s.id}, this)">Send email now</button>` : ''}
+                            <button type="button" class="btn-primary" style="padding:5px 10px;font-size:0.8rem;margin-left:6px;background:#b91c1c;" onclick="deleteFeedbackSchedule(${s.id})">Remove</button>
+                        </td>
+                    </tr>`
+                )
+                .join('');
+        }
+        const st = document.getElementById('fb-sched-status');
+        if (st && sd && sd.emailConfigured === false) {
+            st.style.color = '#b45309';
+            st.textContent = 'Email is not configured — open notifications will be skipped until ZeptoMail is set up in Integrations.';
+        }
+    } catch (e) {
+        console.warn(e);
+    }
+}
+
+function editFeedbackSchedule(seminarId, opensOn, closesOn, notify) {
+    const sel = document.getElementById('fb-sched-seminar');
+    if (sel) sel.value = String(seminarId);
+    const o = document.getElementById('fb-sched-open');
+    const c = document.getElementById('fb-sched-close');
+    const n = document.getElementById('fb-sched-notify');
+    if (o) o.value = opensOn || '';
+    if (c) c.value = closesOn || '';
+    if (n) n.checked = !!notify;
+    if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function saveFeedbackSchedule() {
+    const aid = adminActorId();
+    const st = document.getElementById('fb-sched-status');
+    const seminarId = (document.getElementById('fb-sched-seminar') || {}).value;
+    const opensOn = (document.getElementById('fb-sched-open') || {}).value;
+    const closesOn = (document.getElementById('fb-sched-close') || {}).value;
+    const notify = !!((document.getElementById('fb-sched-notify') || {}).checked);
+    const setStatus = (msg, ok) => {
+        if (!st) return;
+        st.style.color = ok ? '#166534' : '#b91c1c';
+        st.textContent = msg;
+    };
+    if (!aid) return setStatus('Sign in to the admin console first.', false);
+    if (!seminarId) return setStatus('Select an event.', false);
+    if (!opensOn) return setStatus('Choose the date the feedback form opens.', false);
+    try {
+        const res = await fetch('/api/admin/feedback-schedules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid, seminarId, opensOn, closesOn: closesOn || null, notifyEmail: notify })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.success) throw new Error(d.error || 'Could not save schedule');
+        const s = d.schedule || {};
+        setStatus(
+            s.state === 'open'
+                ? 'Feedback form is open now' + (notify ? ' — email notification is being sent to attendees.' : '.')
+                : 'Scheduled: opens on ' + (s.opens_on || opensOn) + (notify ? ' (attendees will be emailed then).' : '.'),
+            true
+        );
+        loadFeedbackSchedules();
+    } catch (e) {
+        setStatus(e.message || 'Could not save schedule', false);
+    }
+}
+
+async function deleteFeedbackSchedule(id) {
+    const aid = adminActorId();
+    if (!aid || !confirm('Remove this feedback schedule? The form will fall back to the default rule (available after the event ends).')) return;
+    try {
+        const res = await fetch('/api/admin/feedback-schedules/' + encodeURIComponent(id) + '/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.success) throw new Error(d.error || 'Could not remove schedule');
+        loadFeedbackSchedules();
+    } catch (e) {
+        alert(e.message || 'Could not remove schedule');
+    }
+}
+
+async function resendFeedbackScheduleEmail(id, btn) {
+    const aid = adminActorId();
+    if (!aid || !confirm('Email the feedback link now to all attendees who have not submitted feedback yet?')) return;
+    const label = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+    }
+    try {
+        const res = await fetch('/api/admin/feedback-schedules/' + encodeURIComponent(id) + '/resend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: aid })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.success) throw new Error(d.error || 'Could not send emails');
+        alert('Feedback email sent to ' + d.sent + ' of ' + d.recipients + ' attendee(s).');
+        loadFeedbackSchedules();
+    } catch (e) {
+        alert(e.message || 'Could not send emails');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = label;
+        }
     }
 }
 
@@ -2410,7 +2695,7 @@ async function saveAdminModulesForTarget() {
         const data = await res.json();
         if (!res.ok || !data.success) return alert(data.error || 'Could not save modules.');
         document.getElementById('admin-modules-modal').classList.add('hidden');
-        alert('Module access updated. The co-admin must log in again to pick up changes in this browser session, or refresh if they are logged in as that user elsewhere.');
+        alert('Module access updated. It applies the next time that user opens or refreshes their portal.');
         loadUsers();
     } catch (e) {
         console.error(e);
@@ -7572,6 +7857,13 @@ async function loadSettings() {
         const ocrToggle = document.getElementById('setting-ncism-disable-ocr');
         if (ocrToggle) ocrToggle.checked = !!portalFlags.ncism_disable_ocr;
         await loadMaintenanceSettings();
+        const paidToggle = document.getElementById('pg-paid-events-enabled');
+        if (paidToggle) {
+            const on = String(settings.autism_payments_enabled || '') === '1';
+            paidToggle.checked = on;
+            window.PORTAL_PAYMENTS_ENABLED = on;
+            if (typeof window.applyAutismPaymentsVisibility === 'function') window.applyAutismPaymentsVisibility(on);
+        }
 
         // Load payment gateways
         const pgRes = await fetch('/api/admin/payment_gateways');
@@ -7776,6 +8068,26 @@ function previewLiveSiteDuringMaintenance() {
     window.open(url, '_blank', 'noopener');
 }
         
+async function savePaidEventsEnabled(on) {
+    const msg = document.getElementById('pg-paid-events-msg');
+    try {
+        const res = await fetch('/api/admin/global_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings: [{ key: 'autism_payments_enabled', value: on ? '1' : '0' }] })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || d.error) throw new Error(d.error || 'Save failed');
+        window.PORTAL_PAYMENTS_ENABLED = !!on;
+        if (typeof window.applyAutismPaymentsVisibility === 'function') window.applyAutismPaymentsVisibility(!!on);
+        if (msg) msg.textContent = on
+            ? 'Paid events enabled. Set a price on each paid event; enter Razorpay keys below and enable the gateway.'
+            : 'Paid events disabled — all events are free.';
+    } catch (e) {
+        if (msg) msg.textContent = 'Could not save: ' + e.message;
+    }
+}
+
 async function savePaymentGatewaysSettings() {
     const cfAppId = document.getElementById('pg-cashfree-app-id').value.trim();
     const cfSecret = document.getElementById('pg-cashfree-secret-key').value.trim();
@@ -12427,26 +12739,6 @@ async function loadPortalAuthAdminForm() {
     try {
         const res = await fetch(`/api/admin/portal-auth-config?actingAdminId=${encodeURIComponent(adm.id)}`);
         const d = await res.json();
-        // #region agent log
-        fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-            body: JSON.stringify({
-                sessionId: '7880d4',
-                location: 'admin.js:loadPortalAuthAdminForm',
-                message: 'loaded portal auth config',
-                data: {
-                    config: d.config,
-                    signupOtpEffective: d.signupOtpEffective,
-                    loginOtpEffective: d.loginOtpEffective,
-                    passwordlessLoginEffective: d.passwordlessLoginEffective,
-                    envOverrides: d.envOverrides || null
-                },
-                timestamp: Date.now(),
-                hypothesisId: 'A'
-            })
-        }).catch(() => {});
-        // #endregion
         if (!d.success || !d.config) return;
         const setChk = (id, val) => {
             const el = document.getElementById(id);
@@ -12559,7 +12851,23 @@ function wirePortalAuthAdminCheckboxCoupling() {
         if (pwdless.checked) reqLogin.checked = true;
     });
     reqLogin.addEventListener('change', () => {
-        if (!reqLogin.checked && pwdless.checked) pwdless.checked = false;
+        if (!reqLogin.checked) {
+            pwdless.checked = false;
+            ['pa-login-otp-whatsapp', 'pa-login-otp-email'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+        }
+    });
+    ['pa-login-otp-whatsapp', 'pa-login-otp-email'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', () => {
+            if (el.checked) {
+                reqLogin.checked = true;
+                pwdless.checked = true;
+            }
+        });
     });
 }
 
@@ -12582,6 +12890,7 @@ async function savePortalAuthAdminConfig() {
         requireAdminOtpForSensitive: gv('pa-req-admin-sensitive-otp'),
         requireBehalfApplicantOtp: gv('pa-req-behalf-applicant-otp')
     };
+    if (config.loginOtpEmail || config.loginOtpWhatsapp) config.passwordlessLogin = true;
     if (config.passwordlessLogin) config.requireLoginOtp = true;
     if (isSuperAdminUser()) {
         const adminEnabledPages = {};
@@ -12597,20 +12906,6 @@ async function savePortalAuthAdminConfig() {
         });
         config.websiteMenuPages = websiteMenuPages;
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-        body: JSON.stringify({
-            sessionId: '7880d4',
-            location: 'admin.js:savePortalAuthAdminConfig',
-            message: 'saving portal auth config',
-            data: { config },
-            timestamp: Date.now(),
-            hypothesisId: 'C'
-        })
-    }).catch(() => {});
-    // #endregion
     try {
         const res = await fetch('/api/admin/portal-auth-config', {
             method: 'POST',
@@ -12623,20 +12918,6 @@ async function savePortalAuthAdminConfig() {
             msg.textContent = data.success ? 'Portal auth policy saved.' : data.error || 'Save failed.';
         }
         if (data.success) {
-            // #region agent log
-            fetch('http://127.0.0.1:7443/ingest/c025a290-6dc9-4303-b02c-ec9c024914e8', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7880d4' },
-                body: JSON.stringify({
-                    sessionId: '7880d4',
-                    location: 'admin.js:savePortalAuthAdminConfig:afterSave',
-                    message: 'save response',
-                    data: { savedConfig: data.config },
-                    timestamp: Date.now(),
-                    hypothesisId: 'E'
-                })
-            }).catch(() => {});
-            // #endregion
             await loadPortalAuthAdminForm();
             await refreshAdminSensitiveOtpRequirement();
             applyCoAdminSidebarVisibility();
