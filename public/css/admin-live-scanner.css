@@ -686,3 +686,76 @@
         text-align: left;
     }
 }
+
+/* People headcount strip (coming / arrived / expected) */
+.kiosk-headcount {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    padding: 14px 22px 0;
+}
+.kiosk-headcount-item {
+    border-radius: 16px;
+    padding: 14px 18px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.25);
+}
+.kiosk-headcount--coming { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+.kiosk-headcount--arrived { background: linear-gradient(135deg, #10b981, #047857); }
+.kiosk-headcount--expected { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.kiosk-headcount-label { font-size: 0.85rem; font-weight: 700; opacity: 0.92; text-transform: uppercase; letter-spacing: 0.04em; }
+.kiosk-headcount-value { font-size: 3rem; line-height: 1; font-weight: 900; }
+.kiosk-headcount-sub { font-size: 0.8rem; opacity: 0.85; }
+.kiosk-headcount-item.is-pulse { animation: hcPulse 0.9s ease-out; }
+@keyframes hcPulse {
+    0% { transform: scale(1); filter: brightness(1); }
+    30% { transform: scale(1.04); filter: brightness(1.25); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+.kiosk-headcount-flash {
+    position: absolute;
+    left: 50%;
+    top: -6px;
+    transform: translate(-50%, -110%);
+    background: #fff;
+    color: #065f46;
+    font-weight: 900;
+    font-size: 1.15rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: 3px solid #10b981;
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.45);
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+}
+.kiosk-headcount-flash.is-on { animation: hcFlash 4s ease-out forwards; }
+@keyframes hcFlash {
+    0% { opacity: 0; transform: translate(-50%, -60%) scale(0.85); }
+    10% { opacity: 1; transform: translate(-50%, -110%) scale(1.05); }
+    20% { transform: translate(-50%, -110%) scale(1); }
+    30%, 50%, 70% { background: #ecfdf5; }
+    40%, 60% { background: #fff; }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -140%); }
+}
+.scan-card-pax {
+    margin: 6px 0 4px;
+    font-weight: 800;
+    color: #065f46;
+    background: #d1fae5;
+    border-radius: 8px;
+    padding: 4px 10px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 0.9rem;
+}
+@media (max-width: 760px) {
+    .kiosk-headcount { grid-template-columns: 1fr; padding: 12px 14px 0; }
+    .kiosk-headcount-value { font-size: 2.2rem; }
+}

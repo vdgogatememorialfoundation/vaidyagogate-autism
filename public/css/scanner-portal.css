@@ -440,3 +440,33 @@ body.scanner-body.has-logo-theme {
     display: none !important;
     pointer-events: none !important;
 }
+
+/* Attendee count badge shown on every scan result */
+.scan-attendees-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border: 2px solid #10b981;
+    color: #064e3b;
+    animation: scanBadgePop 0.35s ease-out;
+}
+.scan-attendees-num {
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #047857;
+    min-width: 44px;
+    text-align: center;
+}
+.scan-attendees-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+@keyframes scanBadgePop {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

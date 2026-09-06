@@ -54,9 +54,16 @@
     function renderFields(fields) {
         var wrap = qs('os-fields');
         var shown = 0;
+        var seen = {};
+        var coreLabel = /^(full\s*)?(first|middle|last)?\s*name|^e-?mail|^(mobile|phone|whatsapp|contact)\b|attendee/i;
+        wrap.innerHTML = '';
         (fields || []).forEach(function (f) {
             if (!f || !f.key || CORE_KEYS.indexOf(f.key) >= 0) return;
-            if (f.type === 'file' || f.hidden) return;
+            if (f.type === 'file' || f.hidden || f.enabled === false) return;
+            var k = String(f.key).toLowerCase();
+            if (seen[k]) return;
+            seen[k] = true;
+            if (coreLabel.test(String(f.label || '').trim()) && (f.type === 'text' || f.type === 'email' || f.type === 'tel' || f.type === 'number')) return;
             var fg = document.createElement('div');
             fg.className = 'os-field' + (f.type === 'textarea' ? ' os-full' : '');
             var input = buildInput(f);

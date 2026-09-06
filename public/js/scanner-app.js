@@ -244,6 +244,19 @@
         );
     }
 
+    function attendeesBadgeHtml(d) {
+        const n = Number(d && d.attendeesCount) >= 1 ? Number(d.attendeesCount) : 1;
+        return (
+            '<div class="scan-attendees-badge" aria-live="polite"><span class="scan-attendees-num">' +
+            n +
+            '</span><span class="scan-attendees-label">' +
+            (n === 1 ? 'attendee' : 'attendees') +
+            ' on this pass' +
+            (Number(d && d.attendeesCount) >= 1 ? '' : ' (not specified — default 1)') +
+            '</span></div>'
+        );
+    }
+
     function metaHtml(d, extra) {
         const rows = [
             ['Name', d.name],
@@ -269,7 +282,7 @@
                     : '—'
             ]
         ];
-        let h = '<dl class="result-meta">';
+        let h = attendeesBadgeHtml(d) + '<dl class="result-meta">';
         rows.forEach(([k, v]) => {
             if (v) {
                 const cls = k === 'Attendees' ? ' class="result-meta-attendees"' : '';

@@ -8,18 +8,32 @@
 
     const HIDE_MODULES = ['tab-admin-payments'];
 
-    const HIDE_TEXT = [
-        'judge',
-        'payment gateway'
-    ];
+    const HIDE_TEXT = ['judge'];
 
-    function hideMenuItems() {
+    function paymentsOn() {
+        return window.PORTAL_PAYMENTS_ENABLED === true;
+    }
+
+    /* Payment-related admin UI follows the "Payment applicable" toggle (Site configuration). */
+    function applyPaymentsVisibility(on) {
+        window.PORTAL_PAYMENTS_ENABLED = !!on;
         HIDE_MODULES.forEach((mod) => {
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
+                if (el.dataset.akRoleHidden === '1') return;
+                el.classList.toggle('hidden', !on);
+                el.style.display = on ? '' : 'none';
             });
         });
+        const priceInput = document.getElementById('seminar-price');
+        const priceRow = priceInput ? priceInput.closest('div') : null;
+        if (priceRow) {
+            priceRow.style.display = on ? '' : 'none';
+            if (!on && priceInput) priceInput.value = '0';
+        }
+    }
+    window.applyAutismPaymentsVisibility = applyPaymentsVisibility;
+
+    function hideMenuItems() {
         document.querySelectorAll('a, button, .menu-item').forEach((el) => {
             const t = (el.textContent || '').toLowerCase();
             if (HIDE_TEXT.some((k) => t.includes(k))) {
@@ -27,12 +41,11 @@
                 el.style.display = 'none';
             }
         });
-        const priceRow = document.getElementById('seminar-price')?.closest('div');
-        if (priceRow) {
-            priceRow.style.display = 'none';
-            const priceInput = document.getElementById('seminar-price');
-            if (priceInput) priceInput.value = '0';
-        }
+        applyPaymentsVisibility(paymentsOn());
+        fetch('/api/public/portal-product', { cache: 'no-store' })
+            .then((r) => r.json())
+            .then((d) => applyPaymentsVisibility(!!(d && d.features && d.features.hasPayments)))
+            .catch(() => {});
     }
 
     function injectPreregFields() {
@@ -2029,7 +2042,7 @@
             const origUpdate = updateAppStatus;
             window.updateAppStatus = async function (appId, status) {
                 const st = String(status || '').toLowerCase();
-                if (st === 'approved_pending_payment' || st === 'completed') {
+                if (!paymentsOn() && (st === 'approved_pending_payment' || st === 'completed')) {
                     return alert(
                         'Payment is not used on the autism portal. Approve the application, then issue the e-ticket from Main registration.'
                     );

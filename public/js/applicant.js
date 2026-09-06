@@ -592,10 +592,25 @@ function isApplicationDetailModalOpen() {
 }
 
 function shouldPollSeminarTracking() {
-    if (document.body.classList.contains('ak-portal-dash')) {
-        return false;
-    }
-    return doctorTabVisible('tab-applications') || isApplicationDetailModalOpen();
+    return (
+        doctorTabVisible('tab-applications') ||
+        doctorTabVisible('tab-main-reg-track') ||
+        doctorTabVisible('tab-main-reg-hub') ||
+        isApplicationDetailModalOpen()
+    );
+}
+
+function markSeminarTrackLive(state) {
+    document.querySelectorAll('#seminar-track-live').forEach((live) => {
+        live.classList.remove('hidden');
+        if (state === 'error') {
+            live.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Live update failed — retrying…';
+            return;
+        }
+        live.innerHTML =
+            '<span class="ak-live-dot" aria-hidden="true"></span> Live tracking — updates automatically' +
+            (state === 'updated' ? ' · updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
+    });
 }
 
 function shouldPollCertTracking() {
@@ -623,8 +638,7 @@ function stopSeminarTrackingPoll() {
         clearInterval(seminarTrackPollTimer);
         seminarTrackPollTimer = null;
     }
-    const live = document.getElementById('seminar-track-live');
-    if (live) live.classList.add('hidden');
+    document.querySelectorAll('#seminar-track-live').forEach((live) => live.classList.add('hidden'));
 }
 
 function stopCaseTrackingPoll() {
@@ -638,8 +652,7 @@ function stopCaseTrackingPoll() {
 
 function startSeminarTrackingPoll() {
     stopSeminarTrackingPoll();
-    const live = document.getElementById('seminar-track-live');
-    if (live) live.classList.remove('hidden');
+    markSeminarTrackLive('idle');
     seminarTrackPollTimer = setInterval(() => {
         if (shouldPollSeminarTracking()) loadApplications(true);
     }, DOCTOR_TRACK_POLL_MS);
@@ -4929,7 +4942,14 @@ async function loadApplications(silentPoll) {
         if (payload.portalYear) doctorPortalYear = payload.portalYear;
         const fp = seminarTrackFingerprint(userApplications);
         if (silentPoll && fp === _lastSeminarTrackFingerprint) return;
+        const changed = silentPoll && _lastSeminarTrackFingerprint && fp !== _lastSeminarTrackFingerprint;
         _lastSeminarTrackFingerprint = fp;
+        if (seminarTrackPollTimer) markSeminarTrackLive('updated');
+        if (changed && typeof showDoctorToast === 'function') {
+            try {
+                showDoctorToast('Main registration status updated');
+            } catch (_) {}
+        }
 
         if (list) list.innerHTML = '';
         if (trackerContainer) trackerContainer.innerHTML = '';
@@ -4996,7 +5016,27 @@ async function loadApplications(silentPoll) {
         }
     } catch (err) {
         console.error(err);
+        if (silentPoll && seminarTrackPollTimer) markSeminarTrackLive('error');
     }
+}
+
+function showDoctorToast(message) {
+    let host = document.getElementById('ak-toast-host');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'ak-toast-host';
+        host.setAttribute('aria-live', 'polite');
+        document.body.appendChild(host);
+    }
+    const el = document.createElement('div');
+    el.className = 'ak-toast';
+    el.innerHTML = '<i class="fas fa-bell"></i> ' + escapeHtml(message);
+    host.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 10);
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 400);
+    }, 4000);
 }
 
 let _doctorPayPollTimer = null;
@@ -6214,7 +6254,11 @@ async function loadDashboardFeedbackSeminars() {
         const seminars = Array.isArray(data) ? data : data.seminars || [];
         sel.innerHTML = '<option value="">— Select seminar —</option>';
         seminars.forEach((s) => {
-            const label = s.title || 'Seminar';
+            let label = s.title || 'Seminar';
+            if (s.feedback_closes_at) {
+                const d = new Date(new Date(s.feedback_closes_at).getTime() + 330 * 60000);
+                if (!Number.isNaN(d.getTime())) label += ' (open till ' + d.toISOString().slice(0, 10) + ')';
+            }
             sel.innerHTML += `<option value="${s.id}" data-registration-id="${s.registration_id || ''}">${escapeHtml(label)}</option>`;
         });
         if (!seminars.length) {

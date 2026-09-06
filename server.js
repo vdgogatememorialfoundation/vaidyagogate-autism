@@ -169,9 +169,8 @@ function bootstrapTimeoutMs() {
 }
 
 function paymentAmountForSeminar(row) {
-    if (portalProduct.FEATURES.noFees) return 0;
-    const p = row && row.price != null ? Number(row.price) : NaN;
-    return Number.isFinite(p) && p > 0 ? p : 1500;
+    if (!portalProduct.seminarRequiresPayment(row)) return 0;
+    return Number(row.price);
 }
 
 const seminarRegFlow = require('./lib/seminar-registration-flow');
@@ -211,10 +210,6 @@ function issueRegistrationTicketImmediately(registrationId, userId, seminarRow, 
 }
 
 function mountPaymentsRoutes() {
-    if (!portalProduct.FEATURES.hasPayments) {
-        console.log('[payments] Skipped — autism portal has no fees');
-        return;
-    }
     registerPaymentsRoutes(app, {
         db,
         generateId,
@@ -633,6 +628,11 @@ app.get(/\.html$/i, (req, res, next) => {
 app.get('/staff', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+
+app.get('/admin-live-scanner', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-live-scanner.html'));
+});
+app.get('/admin-live-scanner.html', (req, res) => res.redirect(302, '/admin-live-scanner'));
 
 app.use((req, res, next) => {
     if (!requestNeedsBootstrap(req)) return next();
@@ -3068,6 +3068,9 @@ function resolveDoctorPaymentOption(paymentOptionId, callback) {
 }
 
 function upsertGlobalSetting(key, value, cb) {
+    if (key === portalProduct.PAYMENTS_SETTING_KEY) {
+        portalProduct.setPaymentsEnabled(String(value).trim() === '1' || String(value).trim() === 'true');
+    }
     db.run(`UPDATE global_settings SET value = ? WHERE key = ?`, [value, key], function (uerr) {
         if (uerr) return cb && cb(uerr);
         if (this.changes > 0) return cb && cb(null);
@@ -3092,6 +3095,10 @@ function withIntegrationSettingsLoaded(req, res, next) {
 
 /** Preload integration keys + portal auth policy so first OTP send is fast (Render). */
 function warmOtpAndAuthCaches() {
+    portalProduct.loadPaymentsEnabled(db, (ePay, on) => {
+        if (ePay) console.warn('[warmup] payments flag:', ePay.message);
+        else console.log('[payments] paid events ' + (on ? 'ENABLED' : 'disabled'));
+    });
     integrationSettings.ensureIntegrationSettingsLoaded(db, (err) => {
         if (err) console.warn('[warmup] integrations:', err.message);
         portalAuthPolicy.loadPortalAuthConfig(db, (e2) => {
@@ -8755,7 +8762,7 @@ app.post('/api/admin/seminars', (req, res) => {
     const preRegStart = seminarDt.normalizeSeminarDateTimeForStorage(preregistration_start);
     const preRegEnd = seminarDt.normalizeSeminarRegistrationEndForStorage(preregistration_end);
     const eventDt = seminarDt.normalizeSeminarDateTimeForStorage(event_date);
-    const seminarPrice = portalProduct.FEATURES.noFees ? 0 : price || 0;
+    const seminarPrice = Number(price) > 0 ? Number(price) : 0;
     const finalRfj = seminarRegFlow.finalizeRegistrationFormJsonForStorage(null, rfj, req.body && req.body.seminar_flow);
     const bodyYear = req.body && req.body.portal_year != null ? parseInt(req.body.portal_year, 10) : null;
     portalTracking.getPortalYear(db, (ePy, defaultYear) => {
@@ -8859,7 +8866,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
     const preRegStart = seminarDt.normalizeSeminarDateTimeForStorage(preregistration_start);
     const preRegEnd = seminarDt.normalizeSeminarRegistrationEndForStorage(preregistration_end);
     const eventDt = seminarDt.normalizeSeminarDateTimeForStorage(event_date);
-    const seminarPrice = portalProduct.FEATURES.noFees ? 0 : price || 0;
+    const seminarPrice = Number(price) > 0 ? Number(price) : 0;
     portalTracking.getPortalYear(db, (ePy, defaultYear) => {
         if (ePy) return res.status(500).json({ error: ePy.message });
         const finalPortalYear = Number.isInteger(py) && py > 2000 ? py : defaultYear;
@@ -9702,10 +9709,17 @@ app.post('/api/admin/applications/status', (req, res) => {
     if (!ALLOWED_REGISTRATION_STATUSES.has(newSt)) {
         return res.status(400).json({ error: 'Invalid application status.' });
     }
-    db.get(`SELECT status FROM registrations WHERE id = ?`, [applicationId], (e0, prevRow) => {
+    db.get(
+        `SELECT r.status, s.price AS seminar_price FROM registrations r LEFT JOIN seminars s ON s.id = r.seminar_id WHERE r.id = ?`,
+        [applicationId],
+        (e0, prevRow) => {
         if (e0) return res.status(500).json({ error: e0.message });
         const prevStatus = String((prevRow && prevRow.status) || '').toLowerCase();
         const fromRejectedOrCancelled = prevStatus === 'rejected' || prevStatus === 'cancelled';
+        const seminarAmount = paymentAmountForSeminar({ price: prevRow && prevRow.seminar_price });
+        if (newSt === 'approved_pending_payment' && seminarAmount <= 0) {
+            newSt = 'pending_approval';
+        }
 
     db.run(`UPDATE registrations SET status = ? WHERE id = ?`, [newSt, applicationId], function(err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -9748,8 +9762,8 @@ app.post('/api/admin/applications/status', (req, res) => {
                 });
             });
         
-        if (newSt === 'approved_pending_payment' && portalProduct.FEATURES.hasPayments) {
-            getOrCreatePendingOrder(applicationId, 1500, () => {});
+        if (newSt === 'approved_pending_payment' && seminarAmount > 0) {
+            getOrCreatePendingOrder(applicationId, seminarAmount, () => {});
         }
         if (
             (newSt === 'e_ticket_issued' || newSt === 'completed') &&
@@ -9807,7 +9821,8 @@ app.post('/api/admin/applications/status', (req, res) => {
                       : 'Status updated successfully.'
         });
         });
-    });
+    }
+    );
 });
 
 // Payment Verification Endpoint
@@ -10904,6 +10919,14 @@ function requireAdminActor(req, res, next) {
 }
 
 registerLiveScannerRoutes(app, { db, requireAdminActor });
+const feedbackSchedule = require('./lib/feedback-schedule').registerFeedbackScheduleRoutes(app, {
+    db,
+    requireAdminActor,
+    publicBaseUrl: () => notifEngine.publicBaseUrl(),
+    sendEmail: require('./lib/email-service').sendEmail,
+    isEmailConfigured: require('./lib/email-service').isEmailConfigured,
+    logNotification: notifEngine.logNotification
+});
 const posOnspot = registerPosRoutes(app, {
     db,
     generateId,
@@ -10971,27 +10994,6 @@ app.get('/api/admin/portal-auth-config', (req, res) => {
                 passwordlessLoginEffective: portalAuthPolicy.passwordlessLoginEnabled(),
                 envOverrides
             };
-            // #region agent log
-            try {
-                fs.appendFileSync(
-                    path.join(__dirname, 'debug-7880d4.log'),
-                    JSON.stringify({
-                        sessionId: '7880d4',
-                        timestamp: Date.now(),
-                        location: 'server.js:GET portal-auth-config',
-                        message: 'admin load portal auth',
-                        data: {
-                            config: payload.config,
-                            signupOtpEffective: payload.signupOtpEffective,
-                            loginOtpEffective: payload.loginOtpEffective,
-                            passwordlessLoginEffective: payload.passwordlessLoginEffective,
-                            envOverrides
-                        },
-                        hypothesisId: 'A'
-                    }) + '\n'
-                );
-            } catch (_) {}
-            // #endregion
             res.json(payload);
         });
     });
@@ -11354,27 +11356,6 @@ app.post('/api/admin/portal-auth-config', (req, res) => {
         if (e) return res.status(500).json({ error: e.message });
         if (!adm) return res.status(403).json({ error: 'Invalid administrator' });
         const merged = portalAuthPolicy.merge(config);
-        // #region agent log
-        try {
-            fs.appendFileSync(
-                path.join(__dirname, 'debug-7880d4.log'),
-                JSON.stringify({
-                    sessionId: '7880d4',
-                    timestamp: Date.now(),
-                    location: 'server.js:POST portal-auth-config',
-                    message: 'admin save portal auth',
-                    data: {
-                        incoming: config,
-                        merged,
-                        envOverrides: portalAuthPolicy.getEnvOtpOverrides
-                            ? portalAuthPolicy.getEnvOtpOverrides()
-                            : {}
-                    },
-                    hypothesisId: 'C'
-                }) + '\n'
-            );
-        } catch (_) {}
-        // #endregion
         const isSuper =
             String(adm.role || '').toLowerCase() === 'admin' &&
             String(adm.user_role || '').toLowerCase() !== 'co_admin';
@@ -12349,6 +12330,27 @@ app.get('/api/judge/abstracts', (req, res) => {
     });
 });
 
+// Signed-in admin/staff: current role + module grants (sidebar refresh without re-login)
+app.get('/api/admin/me', (req, res) => {
+    const aid = parseInt(req.query.actingAdminId, 10);
+    if (!Number.isInteger(aid) || aid < 1) return res.status(400).json({ error: 'actingAdminId required' });
+    db.get(
+        `SELECT id, role, user_role, admin_modules, IFNULL(is_disabled,0) AS is_disabled, IFNULL(is_banned,0) AS is_banned FROM users WHERE id = ?`,
+        [aid],
+        (e, row) => {
+            if (e) return res.status(500).json({ error: e.message });
+            if (!row) return res.status(404).json({ error: 'User not found' });
+            if (Number(row.is_disabled) === 1 || Number(row.is_banned) === 1) {
+                return res.status(403).json({ error: 'Account disabled' });
+            }
+            res.json({
+                success: true,
+                user: { id: row.id, role: row.role, user_role: row.user_role, admin_modules: row.admin_modules || '' }
+            });
+        }
+    );
+});
+
 // Super admin: set co-admin module visibility (JSON map of tab id -> boolean)
 app.post('/api/admin/users/:userId/modules', (req, res) => {
     const targetId = parseInt(req.params.userId, 10);
@@ -12367,6 +12369,71 @@ app.post('/api/admin/users/:userId/modules', (req, res) => {
             if (err2) return res.status(500).json({ error: err2.message });
             res.json({ success: true });
         });
+    });
+});
+
+// Resend staff portal account details (portal ID + fresh temporary password + login link) by email/WhatsApp
+app.post('/api/admin/users/:userId/resend-account-details', withIntegrationSettingsLoaded, (req, res) => {
+    const targetId = parseInt(req.params.userId, 10);
+    const actorId = parseInt((req.body || {}).actingAdminId, 10);
+    if (!Number.isInteger(targetId) || !Number.isInteger(actorId)) {
+        return res.status(400).json({ error: 'actingAdminId and user path id are required' });
+    }
+    db.get(`SELECT id, role, user_role FROM users WHERE id = ?`, [actorId], (e, actor) => {
+        if (e) return res.status(500).json({ error: e.message });
+        if (!actor || String(actor.role || '').toLowerCase() !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        const userRoles = require('./lib/user-roles');
+        db.get(
+            `SELECT id, user_id_string, email, role, user_role, IFNULL(is_disabled,0) AS is_disabled FROM users WHERE id = ?`,
+            [targetId],
+            (e2, target) => {
+                if (e2) return res.status(500).json({ error: e2.message });
+                if (!target) return res.status(404).json({ error: 'User not found' });
+                if (userRoles.isDoctorPortalAccount(target)) {
+                    return res.status(400).json({ error: 'Only staff portal accounts can be resent from here.' });
+                }
+                if (Number(target.is_disabled) === 1) {
+                    return res.status(400).json({ error: 'Account is disabled. Enable it before resending details.' });
+                }
+                if (!String(target.email || '').trim()) {
+                    return res.status(400).json({ error: 'This account has no email address.' });
+                }
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+                let tempPassword = '';
+                for (let i = 0; i < 12; i++) tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+                db.run(
+                    `UPDATE users SET password = ?, require_password_reset = 0 WHERE id = ?`,
+                    [tempPassword, targetId],
+                    (e3) => {
+                        if (e3) return res.status(500).json({ error: e3.message });
+                        activityLog.logFromRequest(db, req, {
+                            user_id: actorId,
+                            user_role: actor.user_role || actor.role,
+                            action: 'admin.resend_staff_account_details',
+                            meta: { targetUserId: targetId, portalId: target.user_id_string }
+                        });
+                        notifEngine.notifyAccountCreatedWithCredentials(db, targetId, tempPassword, (eN, result) => {
+                            flushNotificationQueue();
+                            const emailRes = (result && result.email) || {};
+                            const emailOk = !!(emailRes.ok || emailRes.sent || emailRes.success);
+                            res.json({
+                                success: true,
+                                emailSent: emailOk,
+                                warning: eN
+                                    ? String(eN.message || eN)
+                                    : emailOk
+                                      ? undefined
+                                      : emailRes.error || emailRes.hint || 'Email could not be confirmed as sent — check Notifications log.',
+                                to: target.email,
+                                user_id_string: target.user_id_string
+                            });
+                        });
+                    }
+                );
+            }
+        );
     });
 });
 
@@ -13231,10 +13298,13 @@ const FEEDBACK_ELIGIBLE_STATUSES = new Set([
     'approved_pending_payment'
 ]);
 
-function isFeedbackEligibleRegistration(row) {
+function isFeedbackEligibleRegistration(row, scheduleMap) {
     if (!row) return false;
-    if (isSeminarEnded(row.event_date)) return true;
     const st = String(row.status || '').toLowerCase();
+    if (st === 'rejected' || st === 'cancelled') return false;
+    const sched = scheduleMap && row.seminar_id != null ? scheduleMap.get(Number(row.seminar_id)) : null;
+    if (sched) return feedbackSchedule.windowState(sched) === 'open';
+    if (isSeminarEnded(row.event_date)) return true;
     return FEEDBACK_ELIGIBLE_STATUSES.has(st);
 }
 
@@ -13264,15 +13334,21 @@ app.post('/api/feedback/submit', (req, res) => {
                         error: 'You must be registered for this seminar before submitting feedback.'
                     });
                 }
+                feedbackSchedule.loadScheduleMap((_eMap, schedMap) => {
                 if (
-                    !isFeedbackEligibleRegistration({
-                        event_date: sem.event_date,
-                        status: reg.status
-                    })
+                    !isFeedbackEligibleRegistration(
+                        {
+                            seminar_id: sid,
+                            event_date: sem.event_date,
+                            status: reg.status
+                        },
+                        schedMap
+                    )
                 ) {
                     return res.status(400).json({
-                        error:
-                            'Feedback is available after the seminar ends, or once your registration is approved or completed.'
+                        error: schedMap && schedMap.get(sid)
+                            ? 'The feedback form for this event is not open right now.'
+                            : 'Feedback is available after the seminar ends, or once your registration is approved or completed.'
                     });
                 }
 
@@ -13339,6 +13415,7 @@ app.post('/api/feedback/submit', (req, res) => {
                         );
                     }
                 );
+                });
             }
         );
         });
@@ -13362,8 +13439,15 @@ app.get('/api/feedback/eligible-seminars/:userId', (req, res) => {
         [uid],
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
-            const eligible = (rows || []).filter(isFeedbackEligibleRegistration);
-            res.json(eligible);
+            feedbackSchedule.loadScheduleMap((_e, schedMap) => {
+                const eligible = (rows || [])
+                    .filter((r) => isFeedbackEligibleRegistration(Object.assign({ seminar_id: r.id }, r), schedMap))
+                    .map((r) => {
+                        const sc = schedMap.get(Number(r.id));
+                        return sc && sc.closes_at ? Object.assign({}, r, { feedback_closes_at: sc.closes_at }) : r;
+                    });
+                res.json(eligible);
+            });
         }
     );
 });

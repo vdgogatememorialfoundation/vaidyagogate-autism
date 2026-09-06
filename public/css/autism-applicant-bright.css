@@ -678,3 +678,46 @@
     .autism-dashboard.ak-portal-dash .section-title { font-size: 1.3rem; }
     .ab-hero-card h2 { font-size: 1.5rem; }
 }
+
+/* Realtime main-registration tracking indicator + toast */
+.ak-live-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #16a34a;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6);
+    animation: ak-live-pulse 1.6s ease-out infinite;
+}
+@keyframes ak-live-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+#seminar-track-live { color: #111827 !important; }
+#ak-toast-host {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+.ak-toast {
+    background: #111827;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+    border-left: 4px solid #16a34a;
+}
+.ak-toast.show { opacity: 1; transform: translateY(0); }

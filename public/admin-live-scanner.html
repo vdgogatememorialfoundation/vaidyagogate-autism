@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,700;1,9..40,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/admin-live-scanner.css?v=20260904a">
+    <link rel="stylesheet" href="/css/admin-live-scanner.css?v=20260905b">
 </head>
 <body class="live-scanner-page">
     <header class="kiosk-topbar">
@@ -43,6 +43,25 @@
             </a>
         </div>
     </header>
+
+    <section id="kiosk-headcount" class="kiosk-headcount" aria-live="polite" aria-label="People count">
+        <div class="kiosk-headcount-item kiosk-headcount--coming">
+            <span class="kiosk-headcount-label"><i class="fas fa-person-walking-arrow-right"></i> People coming</span>
+            <strong id="hc-coming" class="kiosk-headcount-value">0</strong>
+            <span class="kiosk-headcount-sub">yet to arrive</span>
+        </div>
+        <div class="kiosk-headcount-item kiosk-headcount--arrived">
+            <span class="kiosk-headcount-label"><i class="fas fa-people-group"></i> People arrived</span>
+            <strong id="hc-arrived" class="kiosk-headcount-value">0</strong>
+            <span class="kiosk-headcount-sub">checked in so far</span>
+        </div>
+        <div class="kiosk-headcount-item kiosk-headcount--expected">
+            <span class="kiosk-headcount-label"><i class="fas fa-users"></i> Total expected</span>
+            <strong id="hc-expected" class="kiosk-headcount-value">0</strong>
+            <span class="kiosk-headcount-sub">from all passes</span>
+        </div>
+        <div id="hc-flash" class="kiosk-headcount-flash" hidden></div>
+    </section>
 
     <section class="kiosk-stats" aria-label="Check-in statistics">
         <article class="kiosk-stat kiosk-stat--ok">
@@ -102,7 +121,7 @@
         </div>
     </main>
     <script src="/js/portal-datetime.js?v=20260905a"></script>
-    <script src="/js/admin-live-scanner.js?v=20260905a"></script>
+    <script src="/js/admin-live-scanner.js?v=20260905b"></script>
     <script src="/js/portal-content-protection.js?v=4"></script>
 </body>
 </html>
