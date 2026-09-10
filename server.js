@@ -3927,7 +3927,7 @@ app.post('/api/auth/login-otp/send-both', withIntegrationSettingsLoaded, withAux
             if (e2) return res.status(500).json({ error: e2.message });
             if (!result.ok) {
                 return res.status(result.status || 503).json({
-                    error: result.error || 'Could not deliver OTP on all channels. Check messaging configuration.',
+                    error: result.error || 'Could not deliver the sign-in email. Check email configuration.',
                     channels: result.results
                 });
             }
@@ -3951,14 +3951,11 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         return res.status(400).json({ error: staffOtpPortal ? 'Email is required' : 'Phone is required' });
     }
     if (!channel) return res.status(400).json({ error: 'channel is required' });
-    if (channel !== 'phone' && channel !== 'email') {
-        return res.status(400).json({ error: 'channel must be phone or email' });
+    if (channel !== 'email') {
+        return res.status(400).json({ error: 'Sign-in OTP is sent by email only.' });
     }
     const loginChannels = portalAuthPolicy.loginOtpChannelsForPortal(loginPortal);
-    if (channel === 'phone' && !loginChannels.whatsapp) {
-        return res.status(400).json({ error: 'WhatsApp login OTP is disabled.' });
-    }
-    if (channel === 'email' && !loginChannels.email) {
+    if (!loginChannels.email) {
         return res.status(400).json({ error: 'Email login OTP is disabled.' });
     }
     const requirePassword = !portalAuthPolicy.passwordlessForPortal(loginPortal);
@@ -3988,6 +3985,7 @@ app.post('/api/auth/login-otp/send', withIntegrationSettingsLoaded, withAuxiliar
         const payload = { success: true, ttlMinutes: result.ttlMinutes };
         if (result.debugCode) payload.debugCode = result.debugCode;
         if (result.warning) payload.warning = result.warning;
+        if (result.sentTo) payload.sentTo = result.sentTo;
         if (result.reused) {
             payload.reused = true;
             payload.message = result.message || authLoginOtp.OTP_REUSE_MSG;
@@ -4012,8 +4010,8 @@ app.post('/api/auth/login-otp/verify', withAuxiliaryTables, (req, res) => {
     if (!channel || !code) {
         return res.status(400).json({ error: 'channel and code are required' });
     }
-    if (channel !== 'phone' && channel !== 'email') {
-        return res.status(400).json({ error: 'channel must be phone or email' });
+    if (channel !== 'email') {
+        return res.status(400).json({ error: 'Sign-in OTP is verified by email only.' });
     }
     const requirePassword = !portalAuthPolicy.passwordlessForPortal(loginPortal);
     resolveLoginUserForOtp(
