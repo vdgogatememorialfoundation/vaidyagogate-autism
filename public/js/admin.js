@@ -12751,7 +12751,6 @@ async function loadPortalAuthAdminForm() {
         setChk('pa-signup-otp-email', d.config.signupOtpEmail === true);
         setChk('pa-passwordless-login', d.config.passwordlessLogin === true);
         setChk('pa-req-login-otp', d.config.requireLoginOtp);
-        setChk('pa-login-otp-whatsapp', d.config.loginOtpWhatsapp !== false);
         setChk('pa-login-otp-email', d.config.loginOtpEmail === true);
         setChk('pa-req-email-verify', d.config.requireEmailVerification);
         setChk('pa-req-admin-sensitive-otp', d.config.requireAdminOtpForSensitive);
@@ -12884,13 +12883,13 @@ async function savePortalAuthAdminConfig() {
         signupOtpEmail: gv('pa-signup-otp-email'),
         passwordlessLogin: gv('pa-passwordless-login'),
         requireLoginOtp: gv('pa-req-login-otp'),
-        loginOtpWhatsapp: gv('pa-login-otp-whatsapp'),
+        loginOtpWhatsapp: false,
         loginOtpEmail: gv('pa-login-otp-email'),
         requireEmailVerification: gv('pa-req-email-verify'),
         requireAdminOtpForSensitive: gv('pa-req-admin-sensitive-otp'),
         requireBehalfApplicantOtp: gv('pa-req-behalf-applicant-otp')
     };
-    if (config.loginOtpEmail || config.loginOtpWhatsapp) config.passwordlessLogin = true;
+    if (config.loginOtpEmail) config.passwordlessLogin = true;
     if (config.passwordlessLogin) config.requireLoginOtp = true;
     if (isSuperAdminUser()) {
         const adminEnabledPages = {};
