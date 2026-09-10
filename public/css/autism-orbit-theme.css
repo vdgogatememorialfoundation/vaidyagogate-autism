@@ -167,3 +167,99 @@ body.autism-kids.ak-v2 .cg-fab-register { background: linear-gradient(135deg, va
     body.autism-kids.ak-v2 .ak-hero-v2-copy,
     body.autism-kids.ak-v2 .ak-hero-v2-art { animation: none !important; }
 }
+
+/* Dedicated visual-mode layer: keeps the new composition resilient against legacy theme selectors. */
+body.orbit-light-v2 {
+    background: #f4fbfc !important;
+    color: #183b56 !important;
+}
+body.orbit-light-v2 .nx-particles {
+    opacity: .13 !important;
+    mix-blend-mode: multiply;
+}
+body.orbit-light-v2 .orbit-visual-rail {
+    position: fixed;
+    right: 12px;
+    top: 42%;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #4b9b92;
+    font-size: .56rem;
+    font-weight: 800;
+    letter-spacing: .18em;
+    writing-mode: vertical-rl;
+    opacity: .72;
+    pointer-events: none;
+}
+body.orbit-light-v2 .orbit-visual-rail i {
+    width: 1px;
+    height: 28px;
+    background: #9dd8cf;
+}
+body.orbit-light-v2 .ak-hero-v2 {
+    min-height: 560px;
+    isolation: isolate;
+}
+body.orbit-light-v2 .ak-hero-v2-grid { min-height: 470px; }
+body.orbit-light-v2 .ak-hero-v2-copy { position: relative; z-index: 2; }
+body.orbit-light-v2 .ak-hero-v2-art { position: relative; z-index: 2; }
+body.orbit-light-v2 .orbit-hero-corner {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+}
+body.orbit-light-v2 .orbit-hero-corner span {
+    position: absolute;
+    display: block;
+    border: 1px solid rgba(8,127,115,.17);
+    border-radius: 50%;
+}
+body.orbit-light-v2 .orbit-hero-corner span:nth-child(1) { width: 22px; height: 22px; background: #f1c466; border: 0; box-shadow: 0 0 0 6px rgba(241,196,102,.12); }
+body.orbit-light-v2 .orbit-hero-corner span:nth-child(2) { width: 78px; height: 78px; }
+body.orbit-light-v2 .orbit-hero-corner span:nth-child(3) { width: 136px; height: 136px; border-style: dashed; animation: orbit-ring-spin 18s linear infinite; }
+body.orbit-light-v2 .orbit-hero-corner-a { right: 33%; top: 10%; width: 140px; height: 140px; }
+body.orbit-light-v2 .orbit-hero-corner-b { left: 40%; bottom: 2%; width: 96px; height: 96px; transform: scale(.7); opacity: .8; }
+body.orbit-light-v2 .orbit-hero-corner-b span:nth-child(1) { background: #ec7758; }
+body.orbit-light-v2 .orbit-hero-corner-b span:nth-child(2),
+body.orbit-light-v2 .orbit-hero-corner-b span:nth-child(3) { border-color: rgba(236,119,88,.20); }
+body.orbit-light-v2 .ak-pillars,
+body.orbit-light-v2 .ak-journey,
+body.orbit-light-v2 .ak-bento { position: relative; }
+body.orbit-light-v2 .ak-pillars::before,
+body.orbit-light-v2 .ak-bento::before {
+    content: '';
+    display: block;
+    width: 46px;
+    height: 4px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #078b83, #ec7758);
+}
+body.orbit-light-v2 .ak-pillar,
+body.orbit-light-v2 .ak-step,
+body.orbit-light-v2 .ak-bento-card { animation: orbit-surface-in .55s both; }
+body.orbit-light-v2 .ak-pillar:nth-child(2),
+body.orbit-light-v2 .ak-step:nth-child(2),
+body.orbit-light-v2 .ak-bento-card:nth-child(2) { animation-delay: .08s; }
+body.orbit-light-v2 .ak-pillar:nth-child(3),
+body.orbit-light-v2 .ak-step:nth-child(3),
+body.orbit-light-v2 .ak-bento-card:nth-child(3) { animation-delay: .16s; }
+body.orbit-light-v2 .ak-step:nth-child(4) { animation-delay: .24s; }
+@keyframes orbit-ring-spin { to { transform: rotate(360deg); } }
+@keyframes orbit-surface-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 960px) {
+    body.orbit-light-v2 .orbit-visual-rail { display: none; }
+    body.orbit-light-v2 .orbit-hero-corner-a { right: 8%; top: 6%; transform: scale(.72); }
+    body.orbit-light-v2 .orbit-hero-corner-b { left: 8%; bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.orbit-light-v2 .orbit-hero-corner span:nth-child(3),
+    body.orbit-light-v2 .ak-pillar,
+    body.orbit-light-v2 .ak-step,
+    body.orbit-light-v2 .ak-bento-card { animation: none !important; }
+}

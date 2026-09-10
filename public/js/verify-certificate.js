@@ -6,7 +6,7 @@
         token: '',
         certId: null,
         maskedEmail: '',
-        maskedPhone: '',
+        certificateId: '',
         displayName: '',
         schedule: [],
         countdownTimer: null
@@ -174,7 +174,7 @@
             state.certKind = data.certKind || '';
             state.displayName = data.displayName || '';
             state.maskedEmail = data.maskedEmail || '';
-            state.maskedPhone = data.maskedPhone || '';
+            state.certificateId = data.certificateId || ('CERT-' + String(data.seminar?.id || state.seminarId || '0') + '-' + String(data.certId || '0'));
             if (data.applicationNo) state.applicationNo = data.applicationNo;
             if (data.prn) state.prn = data.prn;
             if (data.seminar && data.seminar.id) {
@@ -202,10 +202,8 @@
                     kindLabel +
                     ' found for ' +
                     (data.displayName || 'participant') +
-                    '. One-time passwords will be sent to ' +
+                    '. An email OTP will be sent to ' +
                     state.maskedEmail +
-                    ' and WhatsApp ' +
-                    state.maskedPhone +
                     '.';
             }
             showMsg(msg, '', '');
@@ -224,24 +222,16 @@
         const sendBtn = document.getElementById('cv-send-otp-btn');
         const confirmBtn = document.getElementById('cv-confirm-btn');
         if (sendBtn) sendBtn.disabled = true;
-        showMsg(msg, 'Sending one-time password codes…', 'info');
+        showMsg(msg, 'Sending email OTP…', 'info');
         try {
-            const res = await fetch('/api/public/certificate-verify/otp/send-both', {
+            const res = await fetch('/api/public/certificate-verify/otp/send-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(lookupPayload())
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Could not send one-time passwords');
-            showMsg(
-                msg,
-                'One-time passwords sent to ' +
-                    (data.maskedEmail || state.maskedEmail) +
-                    ' and ' +
-                    (data.maskedPhone || state.maskedPhone) +
-                    '. Enter both codes below.',
-                'ok'
-            );
+            showMsg(msg, 'Email OTP sent to ' + (data.maskedEmail || state.maskedEmail) + '. Enter it below.', 'ok');
             if (sendBtn) sendBtn.style.display = 'none';
             if (confirmBtn) confirmBtn.style.display = 'block';
         } catch (e) {
@@ -255,22 +245,20 @@
     async function confirmVerify() {
         const msg = document.getElementById('cv-otp-msg');
         const emailCode = String(document.getElementById('cv-email-otp')?.value || '').trim();
-        const phoneCode = String(document.getElementById('cv-phone-otp')?.value || '').trim();
-        if (!emailCode || !phoneCode) {
-            showMsg(msg, 'Enter both email and WhatsApp one-time password codes.', 'err');
+        if (!emailCode) {
+            showMsg(msg, 'Enter the email one-time password.', 'err');
             return;
         }
         const btn = document.getElementById('cv-confirm-btn');
         if (btn) btn.disabled = true;
         showMsg(msg, 'Verifying…', 'info');
         try {
-            const res = await fetch('/api/public/certificate-verify/confirm', {
+            const res = await fetch('/api/public/certificate-verify/confirm-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...lookupPayload(),
-                    emailCode,
-                    phoneCode
+                    emailCode
                 })
             });
             const data = await res.json();
@@ -283,6 +271,9 @@
                         ? 'Volunteer'
                         : 'Participation';
                 meta.innerHTML =
+                    '<dt>Certificate ID</dt><dd>' +
+                    escapeHtml(data.certificateId || state.certificateId) +
+                    '</dd>' +
                     '<dt>Certificate type</dt><dd>' +
                     escapeHtml(kindLabel) +
                     '</dd>' +
@@ -319,9 +310,8 @@
         state.certId = null;
         state.displayName = '';
         state.maskedEmail = '';
-        state.maskedPhone = '';
+        state.certificateId = '';
         document.getElementById('cv-email-otp').value = '';
-        document.getElementById('cv-phone-otp').value = '';
         document.getElementById('cv-send-otp-btn').style.display = 'block';
         document.getElementById('cv-confirm-btn').style.display = 'none';
         refreshCountdownUi();

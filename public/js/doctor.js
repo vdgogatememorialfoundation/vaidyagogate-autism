@@ -4786,19 +4786,17 @@ async function processPayment(appId, amount, appNo, paymentOption, cancelPending
 window.processPayment = processPayment;
 
 function downloadDoctorCertificate(viewUrl, seminarTitle) {
-    const url = String(viewUrl || '');
-    if (!url || url === '#') return;
-    const w = window.open(url, '_blank');
-    if (w) {
-        w.addEventListener('load', function onLd() {
-            w.removeEventListener('load', onLd);
-            try {
-                w.print();
-            } catch (_) {}
-        });
-    } else {
-        alert('Allow pop-ups to download or print your certificate.');
-    }
+    const raw = String(viewUrl || '');
+    if (!raw || raw === '#') return;
+    const url = raw + (raw.includes('?') ? '&' : '?') + 'download=1';
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 }
 
 async function loadDoctorCertificateTracking(quiet) {
@@ -4853,7 +4851,9 @@ async function loadDoctorCertificateTracking(quiet) {
                     escapeHtml(r.seminarTitle || '—') +
                     '</td><td><code>' +
                     escapeHtml(r.applicationNo || '—') +
-                    '</code></td><td>' +
+                    '</code><br><small style="color:#64748b;">' +
+                    escapeHtml(r.certificateId || ('CERT-' + String(r.seminarId || '0') + '-' + String(r.certId || '0'))) +
+                    '</small></td><td>' +
                     escapeHtml(scanLbl) +
                     '</td><td style="font-weight:600;color:' +
                     statusColor +
