@@ -3064,7 +3064,7 @@ let currentCaseViewIndex = 0;
 
 function isBuiltinCertificateTemplate(path) {
     const p = String(path || '');
-    return p === '__builtin_vgmf_participant__' || p === '__builtin_vgmf_volunteer__';
+    return p === '__builtin_vgmf_participant__' || p === '__builtin_vgmf_volunteer__' || p === '__builtin_vgmf_competition__';
 }
 
 function certificateViewUrl(c, isVolunteer) {

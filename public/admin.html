@@ -1605,7 +1605,7 @@
             <!-- Certificate management -->
             <div id="tab-certificates" class="tab-pane hidden cert-mgmt-theme">
                 <h2 class="cert-mgmt-heading">Certificate Management</h2>
-                <p class="cert-mgmt-intro">Apply the <strong>VGMF gold certificate design</strong> for <strong>participant</strong> and <strong>volunteer</strong> separately, then enable each type from the candidates list (switch Template type). Participation certificates require venue check-in; volunteer certificates can be enabled for approved volunteers. Each certificate must show <strong>PRN No.</strong>, <strong>Application No.</strong>, and a <strong>verification QR</strong>.</p>
+                <p class="cert-mgmt-intro">Apply the <strong>VGMF gold certificate design</strong> for <strong>participant</strong>, <strong>competition</strong> and <strong>volunteer</strong> separately, then enable each type from the candidates list (switch Template type). Participation certificates require venue check-in; competition certificates are based on the account's competition entry record; volunteer certificates can be enabled for approved volunteers. One account can hold both a participation and a competition certificate for the same event. Each certificate shows <strong>PRN No.</strong>, <strong>Application / Entry No.</strong>, and a <strong>verification QR</strong>.</p>
                 <div class="card cert-mgmt-card">
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
@@ -1616,6 +1616,7 @@
                             <label>Template type</label>
                             <select id="cert-mgmt-type" style="width:100%;padding:8px;" onchange="loadCertTemplateConfig(); loadAdminCertificateCandidates();">
                                 <option value="participant">Participant</option>
+                                <option value="competition">Competition</option>
                                 <option value="volunteer">Volunteer</option>
                             </select>
                         </div>
@@ -1627,6 +1628,7 @@
                     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
                         <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('participant')"><i class="fas fa-award"></i> VGMF design ... Participant</button>
                         <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('volunteer')"><i class="fas fa-hands-helping"></i> VGMF design ... Volunteer</button>
+                        <button type="button" class="btn-primary cert-btn-gold" onclick="applyAdminBuiltinCertificate('competition')"><i class="fas fa-trophy"></i> VGMF design ... Competition</button>
                         <button type="button" class="btn-primary" style="background:#475569;" onclick="uploadAdminCertificateTemplate()"><i class="fas fa-upload"></i> Upload custom file</button>
                     </div>
                     <p id="cert-mgmt-msg" style="margin-top:10px;font-size:0.88rem;"></p>
@@ -1641,6 +1643,7 @@
                         <div><label>Lead line</label><input id="cert-cfg-lead" style="width:100%;padding:6px;"></div>
                         <div style="grid-column:1/-1;"><label>Body (participant)</label><textarea id="cert-cfg-body-p" rows="2" style="width:100%;padding:6px;"></textarea></div>
                         <div style="grid-column:1/-1;"><label>Body (volunteer)</label><textarea id="cert-cfg-body-v" rows="2" style="width:100%;padding:6px;"></textarea></div>
+                        <div style="grid-column:1/-1;"><label>Body (competition) — placeholders: {{competition_title}}, {{competition_category}}</label><textarea id="cert-cfg-body-c" rows="2" style="width:100%;padding:6px;"></textarea></div>
                         <div><label>Venue override</label><input id="cert-cfg-venue" style="width:100%;padding:6px;" placeholder="Leave blank for CMS / seminar"></div>
                         <div><label>Date override</label><input id="cert-cfg-date" style="width:100%;padding:6px;" placeholder="Leave blank for seminar date"></div>
                         <div><label>Left signature title</label><input id="cert-cfg-sig-l" style="width:100%;padding:6px;"></div>
@@ -1695,8 +1698,8 @@
                         <p id="cert-candidates-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th><input type="checkbox" id="cert-cand-select-all" onchange="toggleAllCertCandidates(this.checked)"></th><th>PRN No.</th><th>Name</th><th>Application No.</th><th>Reg. status</th><th>Paid</th><th>Scans</th><th>Ticket</th><th>Certificate</th></tr></thead>
-                        <tbody id="cert-mgmt-list"><tr><td colspan="9" style="text-align:center;">Select a seminar</td></tr></tbody>
+                        <thead><tr><th><input type="checkbox" id="cert-cand-select-all" onchange="toggleAllCertCandidates(this.checked)"></th><th>PRN No.</th><th>Name</th><th id="cert-mgmt-app-head">Application No.</th><th id="cert-mgmt-status-head">Reg. status</th><th>Paid</th><th>Scans</th><th>Ticket</th><th>Certificate</th></tr></thead>
+                        <tbody id="cert-mgmt-list"><tr><td colspan="9" style="text-align:center;">Select an event</td></tr></tbody>
                     </table>
                 </div>
             </div>

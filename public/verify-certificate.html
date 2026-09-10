@@ -41,13 +41,14 @@
                 <div class="cv-field">
                     <label for="cv-cert-kind">Certificate type</label>
                     <select id="cv-cert-kind">
-                        <option value="">Either (use QR if both match)</option>
+                        <option value="">Any (use QR if more than one matches)</option>
                         <option value="participant">Participation</option>
+                        <option value="competition">Competition</option>
                         <option value="volunteer">Volunteer</option>
                     </select>
                 </div>
                 <div class="cv-field">
-                    <label for="cv-application">Application or volunteer ticket number</label>
+                    <label for="cv-application">Application no., competition entry no. or volunteer ticket number</label>
                     <input type="text" id="cv-application" inputmode="numeric" placeholder="APP_… or VOL_… ticket ID" maxlength="24">
                 </div>
                 <div class="cv-field">
