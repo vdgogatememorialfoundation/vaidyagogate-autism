@@ -210,3 +210,70 @@ body.autism-admin .ak-login-card { border: 1px solid #d7e8ef !important; box-sha
     body.autism-admin .btn,
     body.autism-admin button { animation: none !important; transition: none !important; }
 }
+
+/* Mobile operations drawer */
+.admin-header-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.admin-menu-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    padding: 9px;
+    border: 1px solid #cfe5ea;
+    border-radius: 12px;
+    background: #f6fffd;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(42, 91, 115, .08);
+}
+.admin-menu-toggle span {
+    display: block;
+    height: 2px;
+    margin: 4px 0;
+    border-radius: 2px;
+    background: #08766e;
+    transition: transform .2s ease, opacity .2s ease;
+}
+.admin-menu-toggle.is-open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.admin-menu-toggle.is-open span:nth-child(2) { opacity: 0; }
+.admin-menu-toggle.is-open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.admin-pos-shortcut { white-space: nowrap; }
+@media (max-width: 700px) {
+    body.autism-admin.admin-menu-open { overflow: hidden; }
+    body.autism-admin .admin-menu-toggle { display: inline-block; flex: 0 0 auto; }
+    body.autism-admin .sidebar {
+        position: fixed;
+        z-index: 1000;
+        inset: 0 auto 0 0;
+        width: min(84vw, 310px);
+        height: 100vh;
+        transform: translateX(-105%);
+        transition: transform .24s ease, box-shadow .24s ease;
+        box-shadow: 20px 0 50px rgba(42, 91, 115, .18) !important;
+    }
+    body.autism-admin .sidebar.is-mobile-open { transform: translateX(0); }
+    body.autism-admin .sidebar::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: rgba(222, 242, 242, .56);
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .24s ease;
+    }
+    body.autism-admin .sidebar.is-mobile-open::before { opacity: 1; pointer-events: auto; }
+    body.autism-admin .main-content { min-width: 0; }
+    body.autism-admin .top-header { align-items: flex-start; gap: 12px; }
+    body.autism-admin .admin-header-actions { justify-content: flex-end; gap: 7px !important; }
+    body.autism-admin .admin-header-actions label,
+    body.autism-admin .admin-header-actions > a { display: none; }
+    body.autism-admin .admin-pos-shortcut { display: inline-flex; font-size: .76rem !important; padding: 7px 9px !important; }
+    body.autism-admin #btn-change-password { font-size: 0 !important; padding: 8px 10px !important; }
+    body.autism-admin #btn-change-password i { font-size: .9rem; margin: 0; }
+    body.autism-admin #btn-logout { font-size: 0 !important; padding: 8px 10px !important; }
+    body.autism-admin #btn-logout i { font-size: .9rem; margin: 0; }
+    body.autism-admin .top-header h2 { font-size: 1rem; line-height: 1.2; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-menu-toggle span, body.autism-admin .sidebar, body.autism-admin .sidebar::before { transition: none !important; }
+}
