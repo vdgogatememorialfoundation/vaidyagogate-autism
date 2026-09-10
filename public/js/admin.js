@@ -4019,7 +4019,7 @@ async function loadCertVerifySettings() {
             status.textContent =
                 'Public verification is live for “' +
                 (data.title || 'this seminar') +
-                '”. Visitors can verify participant and volunteer certificates at /verify-certificate.html';
+                '”. Visitors can verify participant, competition and volunteer certificates at /verify-certificate.html';
         } else if (data.enabled && data.countdown) {
             status.style.color = '#0369a1';
             status.textContent =
@@ -4120,6 +4120,7 @@ function readCertConfigFromForm() {
         leadText: document.getElementById('cert-cfg-lead')?.value || '',
         bodyParticipant: document.getElementById('cert-cfg-body-p')?.value || '',
         bodyVolunteer: document.getElementById('cert-cfg-body-v')?.value || '',
+        bodyCompetition: document.getElementById('cert-cfg-body-c')?.value || '',
         venueOverride: document.getElementById('cert-cfg-venue')?.value || '',
         dateOverride: document.getElementById('cert-cfg-date')?.value || '',
         sigLeftTitle: document.getElementById('cert-cfg-sig-l')?.value || '',
@@ -4147,6 +4148,7 @@ function fillCertConfigForm(cfg) {
     set('cert-cfg-lead', c.leadText);
     set('cert-cfg-body-p', c.bodyParticipant);
     set('cert-cfg-body-v', c.bodyVolunteer);
+    set('cert-cfg-body-c', c.bodyCompetition);
     set('cert-cfg-venue', c.venueOverride);
     set('cert-cfg-date', c.dateOverride);
     set('cert-cfg-sig-l', c.sigLeftTitle);
@@ -6225,26 +6227,42 @@ function renderAdminCertificateCandidatesTable() {
     if (!tbody) return;
     const sid = document.getElementById('cert-mgmt-seminar')?.value;
     if (!sid) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Select a seminar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Select an event</td></tr>';
         return;
     }
     const certType = document.getElementById('cert-mgmt-type')?.value || 'participant';
+    const isVol = certType === 'volunteer';
+    const isComp = certType === 'competition';
+    const appOf = (r) => (isVol ? r.ticket_id_string || r.application_no : r.application_no);
     const all = __adminCertCandidatesCache || [];
     const q = adminSearchQ('cert-candidates-search');
     const rows = adminSearchFilter(all, q, (r) => {
         const name = [r.first_name, r.last_name].filter(Boolean).join(' ');
-        const appDisplay =
-            certType === 'volunteer' ? r.ticket_id_string || r.application_no : r.application_no;
-        return [r.user_id_string, name, appDisplay, r.reg_status, r.order_status, r.ticket_id_string]
+        return [
+            r.user_id_string,
+            name,
+            r.competition_recipient,
+            appOf(r),
+            r.reg_status,
+            r.order_status,
+            r.ticket_id_string,
+            r.competition_title,
+            r.competition_category_label
+        ]
             .join(' ')
             .toLowerCase();
     });
     adminSearchSetCount('cert-candidates-search-count', q, rows.length, all.length, 'candidates');
+    const appHead = document.getElementById('cert-mgmt-app-head');
+    if (appHead) appHead.textContent = isComp ? 'Entry No. / Competition' : isVol ? 'Ticket / Application No.' : 'Application No.';
+    const statusHead = document.getElementById('cert-mgmt-status-head');
+    if (statusHead) statusHead.textContent = isComp ? 'Entry status' : 'Reg. status';
     if (!all.length) {
-        const emptyMsg =
-            certType === 'volunteer'
-                ? 'No approved volunteers for this seminar yet.'
-                : 'No registrations for this seminar yet.';
+        const emptyMsg = isVol
+            ? 'No approved volunteers for this event yet.'
+            : isComp
+              ? 'No competition entries for this event yet.'
+              : 'No registrations for this event yet.';
         tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">${emptyMsg}</td></tr>`;
         return;
     }
@@ -6255,8 +6273,12 @@ function renderAdminCertificateCandidatesTable() {
     }
     tbody.innerHTML = '';
     rows.forEach((r) => {
-        const name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
-        const paid = r.order_status === 'success' ? 'Yes' : 'No';
+        const accountName = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
+        const name =
+            isComp && r.competition_recipient && r.competition_recipient !== accountName
+                ? `${escAdmin(r.competition_recipient)} <span style="color:#64748b;font-size:0.85em;">(${escAdmin(accountName)})</span>`
+                : escAdmin(accountName);
+        const paid = r.order_status === 'success' ? 'Yes' : isComp && !r.registration_id ? '—' : 'No';
         const scansReq = Number(r.cert_scans_required) === 2 ? 2 : 1;
         const scanCt = Number(r.scan_count) || 0;
         const checked =
@@ -6264,29 +6286,40 @@ function renderAdminCertificateCandidatesTable() {
                 ? 'Yes (' + scanCt + '/' + scansReq + ')'
                 : scanCt > 0
                   ? scanCt + '/' + scansReq
-                  : 'No';
-        const certLabel = certType === 'volunteer' ? 'Volunteer cert' : 'Participant cert';
+                  : isComp
+                    ? '—'
+                    : 'No';
+        const certLabel = isVol ? 'Volunteer cert' : isComp ? 'Competition cert' : 'Participant cert';
         const cert = r.cert_enabled
             ? 'Enabled'
-            : certType === 'volunteer'
+            : isVol
               ? 'Ready'
-              : r.scan_verified
-                ? 'Eligible'
-                : 'Locked';
-        const appDisplay =
-            certType === 'volunteer' ? r.ticket_id_string || r.application_no : r.application_no;
-        const appCell = appDisplay
+              : isComp
+                ? Number(r.competition_eligible) === 1
+                    ? 'Eligible'
+                    : 'Locked'
+                : r.scan_verified
+                  ? 'Eligible'
+                  : 'Locked';
+        const appDisplay = appOf(r);
+        let appCell = appDisplay
             ? escAdmin(appDisplay)
             : '<span style="color:#b91c1c;font-weight:600;">Missing</span>';
+        if (isComp) {
+            const compBits = [r.competition_category_label, r.competition_title].filter(Boolean).map(escAdmin);
+            if (compBits.length) {
+                appCell += `<div style="color:#475569;font-size:0.85em;">${compBits.join(' · ')}</div>`;
+            }
+        }
         const prnCell = r.user_id_string
             ? escAdmin(r.user_id_string)
             : '<span style="color:#b91c1c;">Missing PRN</span>';
         tbody.innerHTML += `<tr>
                 <td><input type="checkbox" class="cert-cand-cb" data-user-id="${r.user_id}" value="${r.user_id}"></td>
                 <td>${prnCell}</td>
-                <td>${escAdmin(name)}</td>
+                <td>${name}</td>
                 <td>${appCell}</td>
-                <td>${escAdmin(r.reg_status || '—')}</td>
+                <td>${escAdmin(String(r.reg_status || '—').replace(/_/g, ' '))}</td>
                 <td>${paid}</td>
                 <td>${checked}</td>
                 <td><code>${escAdmin(r.ticket_id_string || '—')}</code></td>

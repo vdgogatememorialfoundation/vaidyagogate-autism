@@ -221,16 +221,18 @@
     async function refreshJourney() {
         const id = uid();
         if (!id) return;
-        const [prereg, apps, tickets, certs] = await Promise.all([
+        const [prereg, apps, tickets, certs, compCerts] = await Promise.all([
             getJson('/api/preregistrations/' + id).catch(() => []),
             getJson('/api/applications/' + id).catch(() => []),
             getJson('/api/doctor/event-tickets/' + id).catch(() => []),
-            getJson('/api/doctor/certificates/' + id).catch(() => [])
+            getJson('/api/doctor/certificates/' + id).catch(() => []),
+            getJson('/api/doctor/competition-certificates/' + id).catch(() => [])
         ]);
         const pr = Array.isArray(prereg) ? prereg : [];
         const ap = Array.isArray(apps) ? apps : [];
         const tk = Array.isArray(tickets) ? tickets : [];
-        const ce = Array.isArray(certs) ? certs : (certs && Array.isArray(certs.certificates) ? certs.certificates : []);
+        const ceBase = Array.isArray(certs) ? certs : (certs && Array.isArray(certs.certificates) ? certs.certificates : []);
+        const ce = ceBase.concat((Array.isArray(compCerts) ? compCerts : []).filter((c) => Number(c.enabled) === 1));
 
         const prApproved = pr.filter((r) => /approved|completed/i.test(String(r.status || ''))).length;
         const apOk = ap.filter((r) => /completed|approved|e_ticket|checked_in|certificate/i.test(String(r.status || ''))).length;

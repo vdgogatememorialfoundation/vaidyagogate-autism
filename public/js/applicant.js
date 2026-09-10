@@ -3533,13 +3533,15 @@ let currentCaseViewIndex = 0;
 
 function isBuiltinCertificateTemplate(path) {
     const p = String(path || '');
-    return p === '__builtin_vgmf_participant__' || p === '__builtin_vgmf_volunteer__';
+    return p === '__builtin_vgmf_participant__' || p === '__builtin_vgmf_volunteer__' || p === '__builtin_vgmf_competition__';
 }
 
 function certificateViewUrl(c, isVolunteer) {
     const uid = currentUser && currentUser.id != null ? Number(currentUser.id) : 0;
     if (!uid || !c.id) return '#';
-    const q = isVolunteer ? `vc=${c.id}&uid=${uid}` : `uc=${c.id}&uid=${uid}`;
+    const kind = c._competition ? 'competition' : isVolunteer ? 'volunteer' : 'participant';
+    const param = kind === 'competition' ? 'cc' : kind === 'volunteer' ? 'vc' : 'uc';
+    const q = `${param}=${c.id}&uid=${uid}` + (kind === 'participant' ? '' : `&type=${kind}`);
     return `/certificate/view?${q}`;
 }
 
@@ -3576,22 +3578,31 @@ async function loadDoctorCertificates() {
             wrap.innerHTML = '<p style="color:#b91c1c;">Please sign out and sign in again.</p>';
             return;
         }
-        const certFetches = [fetch('/api/doctor/certificates/' + uid)];
+        const certFetches = [
+            fetch('/api/doctor/certificates/' + uid),
+            fetch('/api/doctor/competition-certificates/' + uid)
+        ];
         if (!document.body.classList.contains('ak-portal-dash')) {
             certFetches.push(fetch('/api/doctor/volunteer-certificates/' + uid));
         }
-        const [res, vres] = await Promise.all(certFetches);
+        const [res, cres, vres] = await Promise.all(certFetches);
         let rows = await res.json().catch(() => []);
         if (!res.ok) {
             const msg = (rows && rows.error) || 'Could not load certificates';
             throw new Error(msg);
         }
+        let crows = await cres.json().catch(() => []);
+        if (!cres.ok || !Array.isArray(crows)) crows = [];
         let vrows = [];
         if (vres && typeof vres.json === 'function') {
             vrows = await vres.json().catch(() => []);
             if (!vres.ok && !Array.isArray(vrows)) vrows = [];
         }
-        const all = [...(Array.isArray(rows) ? rows : []), ...(Array.isArray(vrows) ? vrows.map((v) => ({ ...v, _volunteer: true })) : [])];
+        const all = [
+            ...(Array.isArray(rows) ? rows : []),
+            ...crows.map((c) => ({ ...c, _competition: true })),
+            ...(Array.isArray(vrows) ? vrows.map((v) => ({ ...v, _volunteer: true })) : [])
+        ];
         if (!all.length) {
             wrap.innerHTML = doctorCertificateLockedBlock();
             return;
@@ -3601,11 +3612,18 @@ async function loadDoctorCertificates() {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.marginBottom = '16px';
-            const title = escapeHtml((c.seminar_title || 'Seminar') + (c._volunteer ? ' (Volunteer)' : ''));
+            const suffix = c._volunteer
+                ? ' (Volunteer)'
+                : c._competition
+                  ? ' (Competition' + (c.competition_category_label ? ' — ' + c.competition_category_label : '') + ')'
+                  : ' (Participation)';
+            const title = escapeHtml((c.seminar_title || 'Event') + suffix);
             const name = escapeHtml(c.display_name || '');
             if (!c.enabled) {
                 card.innerHTML = `<h4 style="margin:0 0 12px;">${title}</h4>${doctorCertificateLockedBlock(
-                    'Your certificate is not available yet. It will appear here after check-in when issued.'
+                    c._competition
+                        ? 'Your competition certificate is not available yet. It will appear here once issued.'
+                        : 'Your certificate is not available yet. It will appear here after check-in when issued.'
                 )}`;
                 wrap.appendChild(card);
                 return;

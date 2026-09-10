@@ -89,6 +89,7 @@ function volunteerTicketDeps() {
 const authUsers = require('./lib/auth-users');
 const authLoginOtp = require('./lib/auth-login-otp');
 const certRender = require('./lib/certificate-render');
+const certKinds = require('./lib/certificate-kinds');
 const certTemplateCfg = require('./lib/certificate-template-config');
 const certVerify = require('./lib/certificate-verify');
 const scannerCertDisplay = require('./lib/scanner-certificate-display');
@@ -8938,6 +8939,7 @@ function deleteRegistrationCascade(registrationId, cb) {
         [`DELETE FROM application_edits WHERE application_id = ?`, [rid]],
         [`DELETE FROM user_certificates WHERE registration_id = ?`, [rid]],
         [`DELETE FROM volunteer_certificates WHERE registration_id = ?`, [rid]],
+        [`DELETE FROM competition_certificates WHERE registration_id = ?`, [rid]],
         [`DELETE FROM interactive_session_registrations WHERE registration_id = ?`, [rid]],
         [`UPDATE case_submissions SET registration_id = NULL WHERE registration_id = ?`, [rid]],
         [`DELETE FROM refunds WHERE registration_id = ?`, [rid]],
@@ -10347,9 +10349,7 @@ app.post('/api/admin/certificates/builtin-template', (req, res) => {
     const seminarId = parseInt(req.body && req.body.seminarId, 10);
     const adminUserId = parseInt(req.body && req.body.adminUserId, 10);
     const certType =
-        req.body && String(req.body.certType || 'participant').toLowerCase() === 'volunteer'
-            ? 'volunteer'
-            : 'participant';
+        certKinds.normalizeCertKind(req.body && req.body.certType);
     if (!Number.isInteger(seminarId) || seminarId < 1) {
         return res.status(400).json({ error: 'seminarId is required' });
     }
@@ -10368,7 +10368,7 @@ app.post('/api/admin/certificates/builtin-template', (req, res) => {
 app.get('/api/admin/certificates/template-config', (req, res) => {
     const seminarId = parseInt(req.query.seminarId, 10);
     const certType =
-        String(req.query.certType || 'participant').toLowerCase() === 'volunteer' ? 'volunteer' : 'participant';
+        certKinds.normalizeCertKind(req.query.certType);
     if (!Number.isInteger(seminarId) || seminarId < 1) {
         return res.status(400).json({ error: 'seminarId is required' });
     }
@@ -10392,9 +10392,7 @@ app.get('/api/admin/certificates/template-config', (req, res) => {
 app.post('/api/admin/certificates/signature-image', withMemoryAwareUpload('signatureFile'), (req, res) => {
     const seminarId = parseInt(req.body && req.body.seminarId, 10);
     const certType =
-        req.body && String(req.body.certType || 'participant').toLowerCase() === 'volunteer'
-            ? 'volunteer'
-            : 'participant';
+        certKinds.normalizeCertKind(req.body && req.body.certType);
     const side = String((req.body && req.body.side) || 'right').toLowerCase() === 'left' ? 'left' : 'right';
     if (!req.file) return res.status(400).json({ error: 'signatureFile is required (PNG or JPEG)' });
     if (!Number.isInteger(seminarId) || seminarId < 1) {
@@ -10462,9 +10460,7 @@ app.post('/api/admin/certificates/template', withMemoryAwareUpload('templateFile
     if (!Number.isInteger(seminarId) || seminarId < 1) return res.status(400).json({ error: 'seminarId is required' });
 
     const certType =
-        req.body && String(req.body.certType || 'participant').toLowerCase() === 'volunteer'
-            ? 'volunteer'
-            : 'participant';
+        certKinds.normalizeCertKind(req.body && req.body.certType);
     fileStore.persistMulterFile(db, req.file, uploadsDir, (pErr, relPath) => {
         if (pErr) return res.status(500).json({ error: pErr.message });
         db.run(
@@ -10718,10 +10714,10 @@ function sendCertificateVerifyOtpChannel(channel, destination, meta, cb) {
 }
 
 app.post('/api/public/certificate-verify/otp/send-both', withIntegrationSettingsLoaded, (req, res) => {
-    const { seminarId, applicationNo, prn, token } = req.body || {};
+    const { seminarId, applicationNo, prn, token, certKind } = req.body || {};
     certVerify.resolveCertForPublicLookup(
         db,
-        { seminarId, applicationNo, prn, token },
+        { seminarId, applicationNo, prn, token, certKind },
         (err, out) => {
             if (err) return res.status(500).json({ error: err.message });
             if (!out || !out.ok) return res.status(400).json(out || { ok: false, error: 'Lookup failed' });
@@ -10774,13 +10770,13 @@ app.post('/api/public/certificate-verify/otp/send-both', withIntegrationSettings
 });
 
 app.post('/api/public/certificate-verify/confirm', (req, res) => {
-    const { seminarId, applicationNo, prn, token, emailCode, phoneCode } = req.body || {};
+    const { seminarId, applicationNo, prn, token, certKind, emailCode, phoneCode } = req.body || {};
     if (!emailCode || !phoneCode) {
         return res.status(400).json({ error: 'Email and WhatsApp OTP codes are both required.' });
     }
     certVerify.resolveCertForPublicLookup(
         db,
-        { seminarId, applicationNo, prn, token },
+        { seminarId, applicationNo, prn, token, certKind },
         (err, out) => {
             if (err) return res.status(500).json({ error: err.message });
             if (!out || !out.ok) return res.status(400).json(out || { ok: false, error: 'Lookup failed' });

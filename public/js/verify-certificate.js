@@ -195,9 +195,11 @@
                 const kindLabel =
                     data.certKind === 'volunteer'
                         ? 'Volunteer certificate'
-                        : data.certKind === 'participant'
-                          ? 'Participation certificate'
-                          : 'Certificate';
+                        : data.certKind === 'competition'
+                          ? 'Competition certificate'
+                          : data.certKind === 'participant'
+                            ? 'Participation certificate'
+                            : 'Certificate';
                 hint.textContent =
                     kindLabel +
                     ' found for ' +
@@ -278,10 +280,9 @@
             document.getElementById('cv-result-message').textContent = data.message || '';
             const meta = document.getElementById('cv-result-meta');
             if (meta) {
+                const kindNow = data.certKind || state.certKind;
                 const kindLabel =
-                    data.certKind === 'volunteer' || state.certKind === 'volunteer'
-                        ? 'Volunteer'
-                        : 'Participation';
+                    kindNow === 'volunteer' ? 'Volunteer' : kindNow === 'competition' ? 'Competition' : 'Participation';
                 meta.innerHTML =
                     '<dt>Certificate type</dt><dd>' +
                     escapeHtml(kindLabel) +
