@@ -9369,6 +9369,8 @@ function editSeminar(index) {
     document.getElementById('seminar-reg-start').value = formatDt(s.registration_start);
     document.getElementById('seminar-reg-end').value = formatDt(s.registration_end);
     document.getElementById('seminar-event-date').value = formatDt(s.event_date);
+    const tex = document.getElementById('seminar-ticket-expires-at');
+    if (tex) tex.value = formatDt(s.ticket_expiry_at);
     const py = document.getElementById('seminar-portal-year');
     if (py) py.value = s.portal_year || adminPortalYear || new Date().getFullYear();
     
@@ -9462,6 +9464,11 @@ async function saveSeminar(e) {
             return window.PortalDateTime
                 ? window.PortalDateTime.fromDatetimeLocal(raw)
                 : raw;
+        })(),
+        ticket_expiry_at: (() => {
+            const raw = (document.getElementById('seminar-ticket-expires-at') || {}).value;
+            if (!raw || !String(raw).trim()) return null;
+            return window.PortalDateTime ? window.PortalDateTime.fromDatetimeLocal(raw) : raw;
         })(),
         capacity: seminarCapacity,
         show_seats_public: seminarUnlimited ? false : document.getElementById('seminar-show-seats-public')?.checked === true,

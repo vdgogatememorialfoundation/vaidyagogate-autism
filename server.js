@@ -30,6 +30,7 @@ const countriesList = require('./lib/countries');
 const designatedNotify = require('./lib/designated-notify');
 const ticketHtml = require('./lib/ticket-html');
 const ticketAttendees = require('./lib/ticket-attendees');
+const ticketExpiry = require('./lib/ticket-expiry');
 const {
     validateDynamicForm,
     normalizeFields,
@@ -1327,6 +1328,7 @@ function ensurePortalSchema(next) {
                                             ignoreSchemaMigrationErr(h7d);
                                         db.run(`ALTER TABLE seminars ADD COLUMN show_seats_public INTEGER DEFAULT 1`, (h7s) => {
                                             ignoreSchemaMigrationErr(h7s);
+                                            db.run(`ALTER TABLE seminars ADD COLUMN ticket_expiry_at TEXT`, ignoreSchemaMigrationErr);
                                             ticketScanEvents.ensureTicketScanEventsTable(db, () => {});
                                         db.run(`ALTER TABLE tickets ADD COLUMN ticket_id_string TEXT`, (e2) => {
                                             ignoreSchemaMigrationErr(e2);
@@ -6849,9 +6851,10 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
     const uid = parseInt(req.params.userId, 10);
     if (Number.isNaN(uid)) return res.status(400).json({ error: 'Invalid user' });
     db.all(
-        `SELECT t.id as ticket_row_id, t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
+        `SELECT t.id as ticket_row_id, t.ticket_id_string, t.qr_code_data, t.is_scanned, IFNULL(t.scan_count, 0) AS scan_count, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
                 o.order_id_string, o.amount, o.status as order_status, o.payment_date,
                 r.application_no, r.status as registration_status, r.form_data, s.title as seminar_title, s.id as seminar_id,
+                s.event_date, s.ticket_expiry_at,
                 p.form_data AS prereg_form_data
          FROM tickets t
          JOIN orders o ON t.order_id = o.id
@@ -6870,6 +6873,8 @@ app.get('/api/doctor/event-tickets/:userId', (req, res) => {
                 });
                 const copy = Object.assign({}, row);
                 if (attendeesCount != null) copy.attendees_count = attendeesCount;
+                copy.is_expired = ticketExpiry.isTicketExpired(row);
+                copy.ticket_expiry_at_label = ticketExpiry.ticketExpiryLabel(row) || null;
                 delete copy.form_data;
                 return copy;
             });
@@ -6888,9 +6893,9 @@ function sendTicketDocumentHtml(req, res) {
         : 'WHERE TRIM(t.ticket_id_string) = TRIM(?)';
     const params = internalRowId ? [ticketId, internalRowId] : [ticketId];
     db.get(
-        `SELECT t.ticket_id_string, t.qr_code_data, t.is_scanned, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
-                r.application_no, r.user_id, r.seminar_id, r.form_data, o.status AS payment_status,
-                s.title AS seminar_title, s.event_date, s.location_url, s.portal_year,
+        `SELECT t.ticket_id_string, t.qr_code_data, t.is_scanned, IFNULL(t.scan_count, 0) AS scan_count, t.scan_time, IFNULL(t.is_valid, 1) AS is_valid,
+                r.application_no, r.user_id, r.seminar_id, r.form_data, r.status AS registration_status, o.status AS payment_status,
+                s.title AS seminar_title, s.event_date, s.ticket_expiry_at, s.location_url, s.portal_year,
                 u.first_name, u.last_name,
                 p.form_data AS prereg_form_data
          FROM tickets t
@@ -6923,9 +6928,13 @@ function sendTicketDocumentHtml(req, res) {
                         display_name: [row.first_name, row.last_name].filter(Boolean).join(' '),
                         qr_code_data: row.qr_code_data,
                         is_scanned: row.is_scanned,
+                        scan_count: row.scan_count,
                         scan_time: row.scan_time,
                         payment_status: row.payment_status,
+                        registration_status: row.registration_status,
                         is_valid: row.is_valid,
+                        is_expired: ticketExpiry.isTicketExpired(row),
+                        ticket_expiry_at_label: ticketExpiry.ticketExpiryLabel(row),
                         form_data: row.form_data,
                         prereg_form_data: row.prereg_form_data,
                         attendees_count: attendeesCount
@@ -7995,7 +8004,7 @@ const SCANNER_TICKET_LOOKUP_SQL = `
         SELECT t.id AS ticket_id, t.is_scanned, IFNULL(t.scan_count, 0) AS scan_count, t.ticket_id_string, IFNULL(t.is_valid, 1) AS is_valid,
                t.qr_code_data,
                s.id AS seminar_id, s.checkin_enabled, s.checkin_date, s.title AS seminar_title,
-               s.event_date, IFNULL(s.cert_scans_required, 1) AS cert_scans_required,
+               s.event_date, s.ticket_expiry_at, IFNULL(s.cert_scans_required, 1) AS cert_scans_required,
                u.id AS doctor_user_id, u.user_id_string AS doctor_user_id_string,
                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name, u.email AS doctor_email, u.phone AS doctor_phone,
                IFNULL(u.is_disabled, 0) AS doctor_is_disabled, IFNULL(u.is_banned, 0) AS doctor_is_banned, u.ban_reason AS doctor_ban_reason,
@@ -8013,6 +8022,7 @@ const SCANNER_TICKET_LOOKUP_SQL = `
 function ticketLookupInvalid(row) {
     if (!row) return false;
     if (Number(row.is_valid) === 0 || row.is_valid === false) return true;
+    if (ticketExpiry.isTicketExpired(row)) return true;
     const regSt = String(row.registration_status || '').toLowerCase();
     return regSt === 'cancelled' || regSt === 'rejected';
 }
@@ -8097,7 +8107,7 @@ const SCANNER_REG_LOOKUP_SQL = `
         SELECT r.id AS registration_id, r.application_no, r.form_data, r.status AS registration_status, r.user_id,
                o.id AS order_db_id, o.order_id_string, o.status AS payment_status,
                t.id AS ticket_id, t.ticket_id_string, t.is_scanned, IFNULL(t.scan_count, 0) AS scan_count, t.qr_code_data, IFNULL(t.is_valid, 1) AS is_valid,
-               s.id AS seminar_id, s.checkin_enabled, s.checkin_date, s.title AS seminar_title, s.event_date,
+               s.id AS seminar_id, s.checkin_enabled, s.checkin_date, s.title AS seminar_title, s.event_date, s.ticket_expiry_at,
                IFNULL(s.cert_scans_required, 1) AS cert_scans_required,
                u.id AS doctor_user_id, u.user_id_string AS doctor_user_id_string,
                u.first_name AS doctor_first_name, u.last_name AS doctor_last_name, u.email AS doctor_email, u.phone AS doctor_phone,
@@ -8129,6 +8139,10 @@ function registrationRowToTicketScanShape(row) {
         seminar_id: row.seminar_id,
         checkin_enabled: row.checkin_enabled,
         checkin_date: row.checkin_date,
+        event_date: row.event_date,
+        ticket_expiry_at: row.ticket_expiry_at,
+        scan_count: row.scan_count,
+        cert_scans_required: row.cert_scans_required,
         seminar_title: row.seminar_title,
         doctor_user_id: row.doctor_user_id,
         doctor_user_id_string: row.doctor_user_id_string,
@@ -8195,6 +8209,8 @@ function scannerVerifyJsonFromRow(row, extras) {
             registrationStatus: row.registration_status,
             isScanned: !!row.is_scanned,
             invalid: ticketLookupInvalid(row),
+            expired: ticketExpiry.isTicketExpired(row),
+            ticketExpiresAt: ticketExpiry.ticketExpiryLabel(row) || null,
             checkinEnabled: !!row.checkin_enabled,
             checkinDate: row.checkin_date
         },
@@ -8411,6 +8427,17 @@ app.post('/api/scanner/mark', assertAutismScannerApi, (req, res) => {
                         success: false,
                         error: 'Ticket is no longer valid (cancelled registration).',
                         doctor: doctorPayloadFromScanRow(row)
+                    });
+                }
+                if (ticketExpiry.isTicketExpired(row)) {
+                    logScanDashboard(selectedSeminarId, staffId, 'expired', 'Ticket expired (event over, never scanned)', row);
+                    scanNotifyCheckInFailed(row, ticketExpiry.EXPIRED_MSG);
+                    return res.status(403).json({
+                        success: false,
+                        expired: true,
+                        error: ticketExpiry.EXPIRED_MSG,
+                        sound: 'error',
+                        doctor: doctorPayloadFromScanRow(row, { ticketId: row.ticket_id_string })
                     });
                 }
                 const scansRequired = certVerify.normalizeCertScansRequired(row.cert_scans_required);
@@ -8737,7 +8764,8 @@ app.post('/api/admin/seminars', (req, res) => {
         public_list_enabled,
         cert_scans_required,
         is_active,
-        show_seats_public
+        show_seats_public,
+        ticket_expiry_at
     } = req.body;
     const certScansReq = certVerify.normalizeCertScansRequired(cert_scans_required);
     const rfj = registration_form_json != null && String(registration_form_json).trim() !== '' ? String(registration_form_json) : null;
@@ -8762,6 +8790,7 @@ app.post('/api/admin/seminars', (req, res) => {
     const preRegStart = seminarDt.normalizeSeminarDateTimeForStorage(preregistration_start);
     const preRegEnd = seminarDt.normalizeSeminarRegistrationEndForStorage(preregistration_end);
     const eventDt = seminarDt.normalizeSeminarDateTimeForStorage(event_date);
+    const ticketExpiresAt = seminarDt.normalizeSeminarDateTimeForStorage(ticket_expiry_at);
     const seminarPrice = Number(price) > 0 ? Number(price) : 0;
     const finalRfj = seminarRegFlow.finalizeRegistrationFormJsonForStorage(null, rfj, req.body && req.body.seminar_flow);
     const bodyYear = req.body && req.body.portal_year != null ? parseInt(req.body.portal_year, 10) : null;
@@ -8769,8 +8798,8 @@ app.post('/api/admin/seminars', (req, res) => {
         const portalYear =
             Number.isInteger(bodyYear) && bodyYear > 2000 ? bodyYear : defaultYear;
         db.run(
-            `INSERT INTO seminars (title, description, registration_start, registration_end, preregistration_start, preregistration_end, event_date, capacity, price, checkin_enabled, checkin_date, location_url, terms_conditions, hero_image_path, flyer_path, gallery_paths, registration_form_json, preregistration_form_json, cancellation_policy_json, whatsapp_group_url, otp_on_application, otp_on_step1, otp_on_submit, public_list_enabled, cert_scans_required, portal_year, is_active, show_seats_public) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO seminars (title, description, registration_start, registration_end, preregistration_start, preregistration_end, event_date, capacity, price, checkin_enabled, checkin_date, location_url, terms_conditions, hero_image_path, flyer_path, gallery_paths, registration_form_json, preregistration_form_json, cancellation_policy_json, whatsapp_group_url, otp_on_application, otp_on_step1, otp_on_submit, public_list_enabled, cert_scans_required, portal_year, is_active, show_seats_public, ticket_expiry_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 title,
                 description,
@@ -8799,7 +8828,8 @@ app.post('/api/admin/seminars', (req, res) => {
                 certScansReq,
                 portalYear,
                 activeFlag,
-                showSeats
+                showSeats,
+                ticketExpiresAt
             ],
             function (err) {
             if (err) return res.status(500).json({ error: err.message });
@@ -8841,7 +8871,8 @@ app.put('/api/admin/seminars/:id', (req, res) => {
         public_list_enabled,
         cert_scans_required,
         portal_year,
-        show_seats_public
+        show_seats_public,
+        ticket_expiry_at
     } = req.body;
     const certScansReq = certVerify.normalizeCertScansRequired(cert_scans_required);
     const rfj = registration_form_json != null && String(registration_form_json).trim() !== '' ? String(registration_form_json) : null;
@@ -8866,6 +8897,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
     const preRegStart = seminarDt.normalizeSeminarDateTimeForStorage(preregistration_start);
     const preRegEnd = seminarDt.normalizeSeminarRegistrationEndForStorage(preregistration_end);
     const eventDt = seminarDt.normalizeSeminarDateTimeForStorage(event_date);
+    const ticketExpiresAt = seminarDt.normalizeSeminarDateTimeForStorage(ticket_expiry_at);
     const seminarPrice = Number(price) > 0 ? Number(price) : 0;
     portalTracking.getPortalYear(db, (ePy, defaultYear) => {
         if (ePy) return res.status(500).json({ error: ePy.message });
@@ -8879,7 +8911,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
                 req.body && req.body.seminar_flow
             );
             db.run(
-            `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, preregistration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=? WHERE id=?`,
+            `UPDATE seminars SET title=?, description=?, registration_start=?, registration_end=?, preregistration_start=?, preregistration_end=?, event_date=?, capacity=?, price=?, checkin_enabled=?, checkin_date=?, is_active=?, location_url=?, terms_conditions=?, hero_image_path=?, flyer_path=?, gallery_paths=?, registration_form_json=?, preregistration_form_json=?, cancellation_policy_json=?, whatsapp_group_url=?, otp_on_application=?, otp_on_step1=?, otp_on_submit=?, public_list_enabled=?, cert_scans_required=?, portal_year=?, show_seats_public=?, ticket_expiry_at=? WHERE id=?`,
             [
                 title,
                 description,
@@ -8909,6 +8941,7 @@ app.put('/api/admin/seminars/:id', (req, res) => {
                 certScansReq,
                 finalPortalYear,
                 showSeats,
+                ticketExpiresAt,
                 req.params.id
             ],
             function (err) {
