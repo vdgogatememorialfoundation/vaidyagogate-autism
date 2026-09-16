@@ -6127,13 +6127,16 @@ async function loadDoctorEventTickets() {
         let html = '<div style="display:flex;flex-direction:column;gap:20px;">';
         rows.forEach((t) => {
             const regSt = String(t.registration_status || '').toLowerCase();
-            const invalid = regSt === 'cancelled' || regSt === 'rejected' || t.is_valid === 0;
+            const expired = !!t.is_expired && !t.is_scanned;
+            const invalid = regSt === 'cancelled' || regSt === 'rejected' || t.is_valid === 0 || expired;
             const qrPayload = ticketQrScanPayload(t);
             const showQr = !invalid && !t.is_scanned && qrPayload;
             const qr = showQr ? ticketQrImageUrl(t) : '';
             const scanned = t.is_scanned
                 ? `Checked in · ${t.scan_time ? formatScanDateTime(t.scan_time) : 'venue'}`
-                : 'Not scanned yet — show this QR at entry';
+                : t.ticket_expires_at_label
+                  ? `Not scanned yet — show this QR at entry (valid until ${t.ticket_expires_at_label})`
+                  : 'Not scanned yet — show this QR at entry';
             const attendeesCount = Number(t.attendees_count);
             const entryPassLine =
                 window.PORTAL_IS_AUTISM && Number.isInteger(attendeesCount) && attendeesCount >= 1
@@ -6145,11 +6148,13 @@ async function loadDoctorEventTickets() {
                 window.PORTAL_IS_AUTISM && !invalid && !t.is_scanned
                     ? '<p style="margin:4px 0;font-size:0.82rem;font-weight:800;letter-spacing:0.08em;color:#047857;">FREE</p>'
                     : '';
-            const statusLine = invalid
+            const statusLine = expired
+                ? `<p style="margin:8px 0 0;font-size:0.9rem;color:#b91c1c;font-weight:600;">Expired — the event is over and this e-ticket was not scanned${t.ticket_expires_at_label ? ' (expired ' + escapeHtml(t.ticket_expires_at_label) + ')' : ''}.</p>`
+                : invalid
                 ? `<p style="margin:8px 0 0;font-size:0.9rem;color:#b91c1c;font-weight:600;">Invalid — registration ${regSt === 'cancelled' ? 'cancelled' : regSt === 'rejected' ? 'rejected' : 'no longer active'}. Do not use this QR for entry.</p>`
                 : `<p style="margin:8px 0 0;font-size:0.85rem;color:#64748b;">${escapeHtml(scanned)}</p>`;
             html += `<div style="border:1px solid ${invalid ? '#fecaca' : '#e2e8f0'};border-radius:12px;padding:16px;display:grid;grid-template-columns:128px 1fr;gap:16px;align-items:start;${invalid ? 'opacity:0.85;background:#fef2f2;' : ''}">
-                <div>${qr ? `<img src="${qr}" alt="QR code" style="width:128px;height:128px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;">` : (t.is_scanned ? '<span style="color:#059669;font-size:0.85rem;font-weight:700;"><i class="fas fa-check-circle"></i> QR used at entry</span>' : '<span style="color:#94a3b8;font-size:0.85rem;">QR unavailable</span>')}</div>
+                <div>${qr ? `<img src="${qr}" alt="QR code" style="width:128px;height:128px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;">` : (t.is_scanned ? '<span style="color:#059669;font-size:0.85rem;font-weight:700;"><i class="fas fa-check-circle"></i> QR used at entry</span>' : expired ? '<span style="color:#b91c1c;font-size:0.85rem;font-weight:800;letter-spacing:0.08em;"><i class="fas fa-clock"></i> EXPIRED</span>' : '<span style="color:#94a3b8;font-size:0.85rem;">QR unavailable</span>')}</div>
                 <div>
                     <h4 style="margin:0 0 8px;color:#1a237e;">${escapeHtml(t.seminar_title || 'Seminar')}</h4>
                     <p style="margin:0 0 6px;font-size:0.9rem;"><strong>E‑ticket ID:</strong> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">${escapeHtml(t.ticket_id_string || '—')}</code></p>

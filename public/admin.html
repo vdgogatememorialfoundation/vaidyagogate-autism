@@ -2631,6 +2631,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div><label>Enable Check-in Scanning?</label><select id="seminar-checkin-enabled"><option value="0">No (Disabled)</option><option value="1">Yes (Enabled)</option></select></div>
                         <div><label>Check-in Allowed Date</label><input type="date" id="seminar-checkin-date"></div>
+                        <div><label>Ticket expiry <span style="font-weight:normal;color:#64748b;">(IST)</span></label><input type="datetime-local" id="seminar-ticket-expires-at"><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Unscanned e-tickets (status still "E-ticket issued") expire at this time. Leave blank = end of event day (23:59).</p></div>
                         <div><label>Scans required for certificate</label><select id="seminar-cert-scans-required"><option value="1">1 scan (entry only)</option><option value="2">2 scans (entry + exit)</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Applicants need this many ticket scans before a certificate can be enabled.</p></div>
                         <div><label>Publish participant list on website?</label><select id="seminar-public-list-enabled"><option value="0">No ... Verify page hidden</option><option value="1">Yes ... show paid &amp; admitted delegates</option></select><p style="font-size:0.78rem;color:#64748b;margin-top:4px;">Enable only after verification and payments are complete.</p></div>
                     </div>
