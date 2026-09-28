@@ -242,6 +242,7 @@ function escapeHtmlDoctor(s) {
 async function generateCasePreviewPdf() {
     if (!window.jspdf) return;
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
@@ -3485,6 +3486,7 @@ async function downloadCaseApplicationPdf() {
     const c = userCaseApplications[currentCaseViewIndex];
     if (!c || !window.jspdf) return;
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
@@ -3987,6 +3989,7 @@ async function generatePdfBlob(qrImgElement) {
         return generateAutismRegistrationPdfBlob(qrImgElement);
     }
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
@@ -4086,6 +4089,7 @@ async function generatePdfBlob(qrImgElement) {
 
 async function generateAutismRegistrationPdfBlob(qrImgElement) {
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const seminarName = getSeminarTitleForRegistrationPdf();
@@ -5243,6 +5247,7 @@ document.getElementById('view-app-modal')?.querySelector('button:not(#view-app-d
 
 async function downloadViewedAutismAppPdf(app, formData) {
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const eventName = (app.seminar_title || app.title || '').trim();
@@ -5354,6 +5359,7 @@ async function downloadViewedAppPdf() {
     }
 
     await ensurePdfLogoDataUrl();
+    if (!window.jspdf) throw new Error('PDF library is still loading — please try again in a moment.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const accent = [15, 118, 110];
@@ -5620,6 +5626,7 @@ function openDoctorRazorpayCheckout(result, regId, methodId) {
         },
         theme: { color: '#0f766e' }
                 };
+                if (typeof Razorpay === 'undefined') { alert('Payment gateway is still loading — please wait a moment and try again.'); return; }
                 const rzp = new Razorpay(options);
     rzp.on('payment.failed', function (resp) {
         alert(

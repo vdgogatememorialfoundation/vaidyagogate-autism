@@ -8523,6 +8523,7 @@ function openAdminRazorpayCheckout(data, onPaid) {
             }
         }
     };
+    if (typeof Razorpay === 'undefined') { alert('Payment gateway is still loading — please wait a moment and try again.'); return; }
     const rzp = new Razorpay(options);
     rzp.on('payment.failed', function (resp) {
         alert(
@@ -10682,6 +10683,7 @@ function loadAllData() {
 
 function downloadParticipantsPdf() {
     if(currentSeminarApps.length === 0) return alert("No applications to download.");
+    if (!window.jspdf) return alert('PDF library is still loading — please try again in a moment.');
     
     // Assuming jsPDF and autoTable are loaded. (If autoTable is not loaded, we will fallback to a basic text list, but let's try to load it dynamically if needed or just use text for simplicity)
     const { jsPDF } = window.jspdf;

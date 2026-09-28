@@ -4609,6 +4609,7 @@ function openDoctorRazorpayCheckout(result, regId, methodId) {
         },
         theme: { color: '#0f766e' }
                 };
+                if (typeof Razorpay === 'undefined') { alert('Payment gateway is still loading — please wait a moment and try again.'); return; }
                 const rzp = new Razorpay(options);
     rzp.on('payment.failed', function (resp) {
         alert(

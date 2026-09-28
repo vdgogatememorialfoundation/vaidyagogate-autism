@@ -98,14 +98,22 @@
         ...SEMINAR_REPLACEMENTS
     ];
 
+    const SKIP_TAGS = new Set(SKIP_PARENT.split(','));
     function shouldSkipNode(node) {
         let p = node.parentElement;
         while (p) {
-            if (SKIP_PARENT.split(',').some((tag) => p.tagName === tag)) return true;
-            if (p.getAttribute && p.getAttribute('data-ak-no-relabel') === '1') return true;
+            if (SKIP_TAGS.has(p.tagName)) return true;
+            if (p.getAttribute('data-ak-no-relabel') === '1') return true;
             p = p.parentElement;
         }
         return false;
+    }
+
+    function setHtml(el, html) {
+        if (el && el.innerHTML !== html) el.innerHTML = html;
+    }
+    function setText(el, text) {
+        if (el && el.textContent !== text) el.textContent = text;
     }
 
     function replaceText(s) {
@@ -142,7 +150,8 @@
             ['placeholder', 'title', 'aria-label'].forEach((attr) => {
                 const v = el.getAttribute(attr);
                 if (v && /doctor|participant|seminar/i.test(v)) {
-                    el.setAttribute(attr, replaceText(v));
+                    const next = replaceText(v);
+                    if (next !== v) el.setAttribute(attr, next);
                 }
             });
         });
@@ -150,25 +159,23 @@
 
     function relabelAdminMenu() {
         document.querySelectorAll('[data-admin-module="tab-doctors"]').forEach((el) => {
-            el.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Applicants';
+            setHtml(el, '<i class="fas fa-users" aria-hidden="true"></i> Applicants');
         });
         const hideModules = ['tab-admin-payments', 'tab-case-mgmt'];
         hideModules.forEach((mod) => {
             document.querySelectorAll(`[data-admin-module="${mod}"]`).forEach((el) => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
+                if (!el.classList.contains('hidden')) el.classList.add('hidden');
+                if (el.style.display !== 'none') el.style.display = 'none';
             });
         });
-        const h2 = document.querySelector('#tab-doctors h2');
-        if (h2) h2.textContent = 'Applicants';
+        setText(document.querySelector('#tab-doctors h2'), 'Applicants');
         document.querySelectorAll('[data-admin-module="tab-seminars"]').forEach((el) => {
-            el.innerHTML = '<i class="fas fa-calendar-alt" aria-hidden="true"></i> Event management';
+            setHtml(el, '<i class="fas fa-calendar-alt" aria-hidden="true"></i> Event management');
         });
         document.querySelectorAll('[data-admin-module="tab-feedback"]').forEach((el) => {
-            el.innerHTML = '<i class="fas fa-comments" aria-hidden="true"></i> Event feedback';
+            setHtml(el, '<i class="fas fa-comments" aria-hidden="true"></i> Event feedback');
         });
-        const semH2 = document.querySelector('#tab-seminars h2');
-        if (semH2) semH2.textContent = 'Event management';
+        setText(document.querySelector('#tab-seminars h2'), 'Event management');
         const semH3 = document.querySelector('#tab-seminars h3');
         if (semH3 && /Active Seminars/i.test(semH3.textContent)) semH3.textContent = 'Active events';
     }
@@ -178,54 +185,92 @@
         if (!authTitle) return;
         const signupPanel = document.getElementById('doctor-auth-signup-panel');
         const onSignup = signupPanel && !signupPanel.classList.contains('hidden');
-        authTitle.textContent = onSignup ? 'Create your applicant account' : 'Welcome! Applicant sign in';
+        setText(authTitle, onSignup ? 'Create your applicant account' : 'Welcome! Applicant sign in');
     }
 
     function relabelApplicantDashboard() {
-        const banner = document.getElementById('profile-complete-banner');
-        if (banner) {
-            banner.innerHTML =
-                '<i class="fas fa-info-circle"></i> Complete your profile before registering for events.';
-        }
-        const dashIntro = document.querySelector('#tab-dashboard p');
-        if (dashIntro) {
-            dashIntro.innerHTML =
-                'Overview of your programme activity. Use the menu for pre-registration, registration, competitions, and tickets.';
-        }
+        setHtml(
+            document.getElementById('profile-complete-banner'),
+            '<i class="fas fa-info-circle"></i> Complete your profile before registering for events.'
+        );
+        setHtml(
+            document.querySelector('#tab-dashboard p'),
+            'Overview of your programme activity. Use the menu for pre-registration, registration, competitions, and tickets.'
+        );
         document.querySelectorAll('.menu-item').forEach((btn) => {
             const t = btn.textContent || '';
-            if (/Available Seminars/i.test(t)) btn.innerHTML = '<i class="fas fa-calendar-check"></i> Events';
-            if (/Seminar feedback/i.test(t)) btn.innerHTML = '<i class="fas fa-star"></i> Event feedback';
+            if (/Available Seminars/i.test(t)) setHtml(btn, '<i class="fas fa-calendar-check"></i> Events');
+            if (/Seminar feedback/i.test(t)) setHtml(btn, '<i class="fas fa-star"></i> Event feedback');
         });
-        const statPaid = document.querySelector('#stat-paid')?.closest('.stat-card')?.querySelector('p');
-        if (statPaid) statPaid.textContent = 'Confirmed';
-        const statReg = document.querySelector('#stat-registered')?.closest('.stat-card')?.querySelector('p');
-        if (statReg) statReg.textContent = 'Events joined';
+        setText(document.querySelector('#stat-paid')?.closest('.stat-card')?.querySelector('p'), 'Confirmed');
+        setText(document.querySelector('#stat-registered')?.closest('.stat-card')?.querySelector('p'), 'Events joined');
         const caseStat = document.getElementById('stat-abstracts')?.closest('.stat-card');
-        if (caseStat) caseStat.classList.add('hidden');
+        if (caseStat && !caseStat.classList.contains('hidden')) caseStat.classList.add('hidden');
         syncApplicantAuthTitle();
     }
 
-    function applyAll() {
-        walkText(document.body);
-        replaceAttributes(document.body);
-        if (document.body.classList.contains('ak-portal-admin')) relabelAdminMenu();
-        if (document.body.classList.contains('ak-portal-dash')) relabelApplicantDashboard();
+    let observer = null;
+    let applying = false;
+    const OBSERVE_OPTS = { childList: true, subtree: true, characterData: true };
+
+    function applyTo(root) {
+        if (root.nodeType === 3) {
+            if (!shouldSkipNode(root)) {
+                const next = replaceText(root.nodeValue);
+                if (next !== root.nodeValue) root.nodeValue = next;
+            }
+            return;
+        }
+        walkText(root);
+        if (root.querySelectorAll) replaceAttributes(root);
+    }
+
+    function applyAll(roots) {
+        if (!document.body) return;
+        applying = true;
+        if (observer) observer.disconnect();
+        try {
+            if (roots && roots.length) roots.forEach(applyTo);
+            else applyTo(document.body);
+            if (document.body.classList.contains('ak-portal-admin')) relabelAdminMenu();
+            if (document.body.classList.contains('ak-portal-dash')) relabelApplicantDashboard();
+        } finally {
+            if (observer) observer.observe(document.body, OBSERVE_OPTS);
+            applying = false;
+        }
     }
 
     let debounce;
-    function schedule() {
-        clearTimeout(debounce);
-        debounce = setTimeout(applyAll, 120);
+    let pendingRoots = new Set();
+    let pendingFull = false;
+    function flush() {
+        debounce = null;
+        const roots = pendingFull ? null : Array.from(pendingRoots).filter((n) => n.isConnected);
+        pendingRoots = new Set();
+        pendingFull = false;
+        applyAll(roots);
+    }
+    function schedule(mutations) {
+        if (applying) return;
+        if (mutations && mutations.length && pendingRoots.size < 200) {
+            mutations.forEach((m) => {
+                if (m.type === 'characterData') pendingRoots.add(m.target.parentElement || m.target);
+                else m.addedNodes.forEach((n) => pendingRoots.add(n));
+            });
+        } else {
+            pendingFull = true;
+        }
+        if (pendingRoots.size >= 200) pendingFull = true;
+        if (debounce) return;
+        debounce = setTimeout(flush, 120);
     }
 
     function init() {
         applyAll();
-        const obs = new MutationObserver(schedule);
-        obs.observe(document.body, { childList: true, subtree: true, characterData: true });
-        setTimeout(applyAll, 600);
-        setTimeout(applyAll, 2000);
-        setTimeout(applyAll, 5000);
+        observer = new MutationObserver(schedule);
+        observer.observe(document.body, OBSERVE_OPTS);
+        setTimeout(() => applyAll(), 600);
+        setTimeout(() => applyAll(), 2000);
     }
 
     global.AutismTerminology = { applyAll, replaceText, syncApplicantAuthTitle };

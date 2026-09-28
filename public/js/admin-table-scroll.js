@@ -66,8 +66,16 @@
         (root || document).querySelectorAll('table.data-table, .tab-pane table').forEach(enhance);
     }
 
+    let resyncQueued = false;
     function resyncAll() {
-        document.querySelectorAll('.tsx-bar').forEach((b) => b.__sync && b.__sync());
+        if (resyncQueued) return;
+        resyncQueued = true;
+        requestAnimationFrame(() => {
+            resyncQueued = false;
+            document.querySelectorAll('.tsx-bar').forEach((b) => {
+                if (b.__sync && b.offsetParent !== null) b.__sync();
+            });
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -77,16 +85,17 @@
             muts.forEach((m) => {
                 m.addedNodes.forEach((n) => {
                     if (n.nodeType !== 1) return;
-                    if (n.matches && n.matches('table')) {
+                    if (n.closest && n.closest('.tsx-bar')) return;
+                    if (n.matches('table')) {
                         enhance(n);
                         added = true;
-                    } else if (n.querySelectorAll) {
+                    } else if (n.querySelector('table') || n.closest('table')) {
                         scan(n);
                         added = true;
                     }
                 });
             });
-            if (added || muts.length) resyncAll();
+            if (added) resyncAll();
         });
         mo.observe(document.body, { childList: true, subtree: true });
         document.addEventListener('click', () => setTimeout(resyncAll, 60), true);
