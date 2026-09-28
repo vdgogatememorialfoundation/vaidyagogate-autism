@@ -1698,8 +1698,8 @@
                         <p id="cert-candidates-search-count" style="margin:6px 0 0;font-size:0.82rem;color:#64748b;"></p>
                     </div>
                     <table class="data-table">
-                        <thead><tr><th><input type="checkbox" id="cert-cand-select-all" onchange="toggleAllCertCandidates(this.checked)"></th><th>PRN No.</th><th>Name</th><th id="cert-mgmt-app-head">Application No.</th><th id="cert-mgmt-status-head">Reg. status</th><th>Paid</th><th>Scans</th><th>Ticket</th><th>Certificate</th></tr></thead>
-                        <tbody id="cert-mgmt-list"><tr><td colspan="9" style="text-align:center;">Select an event</td></tr></tbody>
+                        <thead><tr><th><input type="checkbox" id="cert-cand-select-all" onchange="toggleAllCertCandidates(this.checked)"></th><th>PRN No.</th><th>Name</th><th id="cert-mgmt-app-head">Application No.</th><th id="cert-mgmt-status-head">Reg. status</th><th>Paid</th><th>Scans</th><th>Ticket</th><th>Certificate</th><th>Actions</th></tr></thead>
+                        <tbody id="cert-mgmt-list"><tr><td colspan="10" style="text-align:center;">Select an event</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -2733,6 +2733,36 @@
     </div>
 
     <!-- Support Ticket Detail Modal -->
+    <div id="cert-edit-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 26px 30px; border-radius: 12px; width: 720px; max-width: 96vw; max-height: 92vh; overflow-y: auto; position: relative;">
+            <button type="button" onclick="closeCertEditModal()" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color:#1a237e;margin:0 0 4px;"><i class="fas fa-certificate"></i> Edit certificate</h2>
+            <p id="cert-edit-meta" style="color:#64748b;font-size:0.88rem;margin:0 0 16px;"></p>
+            <p style="color:#475569;font-size:0.85rem;margin:0 0 14px;">Leave a field blank to use the event template value shown as placeholder. Changes apply only to this person's certificate.</p>
+            <input type="hidden" id="cert-edit-kind"><input type="hidden" id="cert-edit-id">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="grid-column:1 / -1;"><label style="font-weight:600;font-size:0.9rem;">Recipient name</label><input type="text" id="cert-edit-recipientName" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Title</label><input type="text" id="cert-edit-title" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Subtitle</label><input type="text" id="cert-edit-subtitle" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div style="grid-column:1 / -1;"><label style="font-weight:600;font-size:0.9rem;">Lead text</label><input type="text" id="cert-edit-leadText" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div style="grid-column:1 / -1;"><label style="font-weight:600;font-size:0.9rem;">Body text <span style="color:#64748b;font-weight:400;">(supports &lt;strong&gt;, &lt;em&gt; and {{seminar_title}}, {{topic}}, {{recipient_name}}, {{date}}, {{venue}})</span></label><textarea id="cert-edit-body" rows="3" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;"></textarea></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Venue</label><input type="text" id="cert-edit-venueOverride" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Date (as printed)</label><input type="text" id="cert-edit-dateOverride" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Left signature title</label><input type="text" id="cert-edit-sigLeftTitle" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Right signatory name</label><input type="text" id="cert-edit-sigRightName" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+                <div><label style="font-weight:600;font-size:0.9rem;">Right signatory title</label><input type="text" id="cert-edit-sigRightTitle" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;"></div>
+            </div>
+            <p id="cert-edit-status" style="min-height:1.2em;font-size:0.88rem;color:#0f766e;margin:12px 0 0;"></p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
+                <button type="button" class="btn-primary" onclick="saveCertEdit()">Save changes</button>
+                <button type="button" class="btn-primary" style="background:#0369a1;" onclick="previewCertEdit()">Preview</button>
+                <button type="button" class="btn-primary" style="background:#15803d;" onclick="downloadCertEdit()">Download</button>
+                <button type="button" class="btn-primary" style="background:#b91c1c;" onclick="resetCertEdit()">Reset to template</button>
+                <button type="button" class="btn-primary" style="background:#64748b;" onclick="closeCertEditModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="ticket-detail-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
         <div style="background: white; padding: 30px; border-radius: 12px; width: 700px; max-height: 90vh; overflow-y: auto; position: relative;">
             <button onclick="document.getElementById('ticket-detail-modal').classList.add('hidden');" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>

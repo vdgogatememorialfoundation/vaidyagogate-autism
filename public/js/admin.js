@@ -4298,10 +4298,10 @@ async function loadAdminCertificateCandidates() {
     const tbody = document.getElementById('cert-mgmt-list');
     if (!tbody) return;
     if (!sid) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Select a seminar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Select a seminar</td></tr>';
         return;
     }
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading…</td></tr>';
     try {
         const certType = document.getElementById('cert-mgmt-type')?.value || 'participant';
         const res = await fetch(
@@ -4312,7 +4312,7 @@ async function loadAdminCertificateCandidates() {
         renderAdminCertificateCandidatesTable();
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="9">Error loading</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10">Error loading</td></tr>';
     }
 }
 
@@ -6227,7 +6227,7 @@ function renderAdminCertificateCandidatesTable() {
     if (!tbody) return;
     const sid = document.getElementById('cert-mgmt-seminar')?.value;
     if (!sid) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Select an event</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Select an event</td></tr>';
         return;
     }
     const certType = document.getElementById('cert-mgmt-type')?.value || 'participant';
@@ -6263,12 +6263,12 @@ function renderAdminCertificateCandidatesTable() {
             : isComp
               ? 'No competition entries for this event yet.'
               : 'No registrations for this event yet.';
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">${emptyMsg}</td></tr>`;
         return;
     }
     if (!rows.length) {
         tbody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;">No candidates match your search.</td></tr>';
+            '<tr><td colspan="10" style="text-align:center;">No candidates match your search.</td></tr>';
         return;
     }
     tbody.innerHTML = '';
@@ -6314,6 +6314,16 @@ function renderAdminCertificateCandidatesTable() {
         const prnCell = r.user_id_string
             ? escAdmin(r.user_id_string)
             : '<span style="color:#b91c1c;">Missing PRN</span>';
+        const certId = parseInt(r.certificate_id, 10);
+        const kind = r.cert_kind || certType;
+        const hasEdits = !!(r.has_overrides && Number(r.has_overrides) === 1);
+        const actions =
+            Number.isInteger(certId) && certId > 0
+                ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button type="button" class="btn-secondary" style="padding:4px 8px;font-size:0.8rem;" title="Download certificate" onclick="downloadAdminCertificate('${escAdmin(kind)}', ${certId})"><i class="fas fa-download"></i></button>
+                    <button type="button" class="btn-secondary" style="padding:4px 8px;font-size:0.8rem;${hasEdits ? 'border-color:#f59e0b;color:#b45309;' : ''}" title="${hasEdits ? 'Edit certificate (has custom edits)' : 'Edit certificate'}" onclick="openCertEditModal('${escAdmin(kind)}', ${certId})"><i class="fas fa-pen"></i></button>
+                   </div>`
+                : '<span style="color:#94a3b8;font-size:0.8rem;" title="Enable the certificate once to create it">Enable first</span>';
         tbody.innerHTML += `<tr>
                 <td><input type="checkbox" class="cert-cand-cb" data-user-id="${r.user_id}" value="${r.user_id}"></td>
                 <td>${prnCell}</td>
@@ -6324,8 +6334,139 @@ function renderAdminCertificateCandidatesTable() {
                 <td>${checked}</td>
                 <td><code>${escAdmin(r.ticket_id_string || '—')}</code></td>
                 <td title="${escAdmin(certLabel)}">${cert}</td>
+                <td>${actions}</td>
             </tr>`;
     });
+}
+
+const CERT_EDIT_FIELDS = [
+    'recipientName',
+    'title',
+    'subtitle',
+    'leadText',
+    'body',
+    'venueOverride',
+    'dateOverride',
+    'sigLeftTitle',
+    'sigRightName',
+    'sigRightTitle'
+];
+const CERT_EDIT_DEFAULT_KEY = { venueOverride: 'venue', dateOverride: 'date' };
+
+function adminCertUrl(kind, certId, suffix, extra) {
+    const adminUser = getStoredAdminUser();
+    const aid = adminUser ? adminUser.id : '';
+    return (
+        `/api/admin/certificates/${encodeURIComponent(kind)}/${encodeURIComponent(certId)}/${suffix}` +
+        `?actingAdminId=${encodeURIComponent(aid)}${extra || ''}`
+    );
+}
+
+function downloadAdminCertificate(kind, certId) {
+    window.open(adminCertUrl(kind, certId, 'view', '&download=1'), '_blank');
+}
+
+function previewAdminCertificate(kind, certId) {
+    window.open(adminCertUrl(kind, certId, 'view'), '_blank');
+}
+
+function certEditStatus(msg, isErr) {
+    const el = document.getElementById('cert-edit-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = isErr ? '#b91c1c' : '#0f766e';
+}
+
+function fillCertEditForm(detail) {
+    document.getElementById('cert-edit-kind').value = detail.kind;
+    document.getElementById('cert-edit-id').value = detail.id;
+    const meta = document.getElementById('cert-edit-meta');
+    if (meta) {
+        meta.textContent =
+            `${detail.kindLabel} · ${detail.accountName || '—'} · PRN ${detail.prn || '—'} · ` +
+            `${detail.certificateId} · ${detail.enabled ? 'Enabled' : 'Not enabled (applicant cannot see it yet)'}`;
+    }
+    const ov = detail.overrides || {};
+    const def = detail.defaults || {};
+    CERT_EDIT_FIELDS.forEach((k) => {
+        const el = document.getElementById('cert-edit-' + k);
+        if (!el) return;
+        el.value = ov[k] || '';
+        const ta = document.createElement('textarea');
+        ta.innerHTML = String(def[CERT_EDIT_DEFAULT_KEY[k] || k] || '').replace(/<[^>]+>/g, '');
+        el.placeholder = ta.value;
+    });
+}
+
+async function openCertEditModal(kind, certId) {
+    const modal = document.getElementById('cert-edit-modal');
+    if (!modal) return;
+    certEditStatus('Loading…');
+    modal.classList.remove('hidden');
+    try {
+        const res = await fetch(adminCertUrl(kind, certId, 'detail'));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load certificate');
+        fillCertEditForm(data);
+        certEditStatus('');
+    } catch (e) {
+        certEditStatus(e.message, true);
+    }
+}
+
+function closeCertEditModal() {
+    document.getElementById('cert-edit-modal')?.classList.add('hidden');
+}
+
+function collectCertEditOverrides() {
+    const out = {};
+    CERT_EDIT_FIELDS.forEach((k) => {
+        const v = (document.getElementById('cert-edit-' + k)?.value || '').trim();
+        if (v) out[k] = v;
+    });
+    return out;
+}
+
+async function submitCertOverrides(overrides, okMsg) {
+    const kind = document.getElementById('cert-edit-kind').value;
+    const certId = document.getElementById('cert-edit-id').value;
+    const adminUser = getStoredAdminUser();
+    certEditStatus('Saving…');
+    try {
+        const res = await fetch(adminCertUrl(kind, certId, 'overrides'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actingAdminId: adminUser ? adminUser.id : null, overrides })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
+        fillCertEditForm(data.detail);
+        certEditStatus(okMsg);
+        loadAdminCertificateCandidates();
+        return true;
+    } catch (e) {
+        certEditStatus(e.message, true);
+        return false;
+    }
+}
+
+function saveCertEdit() {
+    return submitCertOverrides(collectCertEditOverrides(), 'Saved. The applicant sees the updated certificate immediately.');
+}
+
+async function resetCertEdit() {
+    if (!confirm('Remove all custom edits for this certificate and use the event template?')) return;
+    await submitCertOverrides({}, 'Reset to template.');
+}
+
+async function previewCertEdit() {
+    if (!(await submitCertOverrides(collectCertEditOverrides(), 'Saved. Opening preview…'))) return;
+    previewAdminCertificate(document.getElementById('cert-edit-kind').value, document.getElementById('cert-edit-id').value);
+}
+
+async function downloadCertEdit() {
+    if (!(await submitCertOverrides(collectCertEditOverrides(), 'Saved. Downloading…'))) return;
+    downloadAdminCertificate(document.getElementById('cert-edit-kind').value, document.getElementById('cert-edit-id').value);
 }
 
 function renderAdminVolunteersTable() {

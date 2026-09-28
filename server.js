@@ -10604,6 +10604,47 @@ app.post('/api/admin/certificates/:id/toggle', (req, res) => {
     );
 });
 
+// Admin: per-person certificate view/download + edit (overrides stored per certificate row)
+app.get('/api/admin/certificates/:kind/:id/view', (req, res) => {
+    requireAdminActor(req, res, () => certRender.handleAdminViewRequest(db, req, res));
+});
+
+app.get('/api/admin/certificates/:kind/:id/detail', (req, res) => {
+    requireAdminActor(req, res, () => {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid certificate id' });
+        certRender.getCertEditDetail(db, req.params.kind, id, (err, detail) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!detail) return res.status(404).json({ error: 'Certificate not found' });
+            res.json(detail);
+        });
+    });
+});
+
+app.post('/api/admin/certificates/:kind/:id/overrides', (req, res) => {
+    requireAdminActor(req, res, (adm) => {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid certificate id' });
+        const overrides = (req.body && req.body.overrides) || {};
+        certRender.saveCertOverrides(db, req.params.kind, id, overrides, (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            if (!result.changed) return res.status(404).json({ error: 'Certificate not found' });
+            activityLog.logFromRequest(db, req, {
+                userId: adm.id,
+                userRole: 'admin',
+                action: 'certificate_override_saved',
+                resourceType: 'certificate',
+                resourceId: `${certKinds.normalizeCertKind(req.params.kind)}:${id}`,
+                meta: { keys: Object.keys(result.overrides) }
+            });
+            certRender.getCertEditDetail(db, req.params.kind, id, (e2, detail) => {
+                if (e2) return res.status(500).json({ error: e2.message });
+                res.json({ success: true, detail });
+            });
+        });
+    });
+});
+
 // Public certificate verification (enabled per seminar after event ends)
 function withCertVerifyReady(handler) {
     certVerify.ensureCertificateVerifySchema(
