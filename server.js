@@ -6705,6 +6705,7 @@ function mapDoctorCertificateTrackingRows(rows) {
             scanVerified: !!Number(row.scan_verified),
             certEnabled: !!Number(row.cert_enabled),
             certId: row.cert_id,
+            certificateId: certVerify.formatPublicCertificateId(row.public_certificate_no) || '',
             templatePath: row.template_path,
             certStatus,
             certStatusLabel,
@@ -6718,7 +6719,7 @@ const DOCTOR_CERT_TRACKING_SQL = `SELECT r.id AS registration_id, r.application_
                 o.status AS order_status,
                 t.id AS ticket_id, COALESCE(t.scan_count, 0) AS scan_count, COALESCE(t.is_scanned, 0) AS is_scanned,
                 t.scan_time, t.ticket_id_string,
-                uc.id AS cert_id, COALESCE(uc.scan_verified, 0) AS scan_verified, COALESCE(uc.enabled, 0) AS cert_enabled,
+                uc.id AS cert_id, uc.public_certificate_no, COALESCE(uc.scan_verified, 0) AS scan_verified, COALESCE(uc.enabled, 0) AS cert_enabled,
                 ct.file_path AS template_path
          FROM registrations r
          JOIN seminars s ON s.id = r.seminar_id
@@ -10708,17 +10709,23 @@ app.post('/api/public/certificate-verify/lookup', (req, res) => {
             }
             if (!out || !out.ok) return res.status(400).json(out || { ok: false, error: 'Lookup failed' });
             const certKind = out.cert.kind || 'participant';
-            res.json({
-                ok: true,
-                seminar: out.seminar,
-                certId: out.cert.id,
-                certKind,
-                certificateId: certVerify.formatPublicCertificateId(out.seminar.id, out.cert.id, certKind),
-                displayName: out.cert.displayName,
-                applicationNo: out.cert.applicationNo,
-                prn: out.cert.prn,
-                maskedEmail: certVerify.maskEmail(out.cert.email),
-                maskedPhone: certVerify.maskPhone(out.cert.phone)
+            certVerify.ensurePublicCertificateNo(db, certKind, out.cert.id, (idErr, publicNo) => {
+                if (idErr) {
+                    console.warn('[cert-verify] id:', idErr.message);
+                    return res.status(500).json({ error: 'Verification is temporarily unavailable. Please try again later.' });
+                }
+                res.json({
+                    ok: true,
+                    seminar: out.seminar,
+                    certId: out.cert.id,
+                    certKind,
+                    certificateId: publicNo,
+                    displayName: out.cert.displayName,
+                    applicationNo: out.cert.applicationNo,
+                    prn: out.cert.prn,
+                    maskedEmail: certVerify.maskEmail(out.cert.email),
+                    maskedPhone: certVerify.maskPhone(out.cert.phone)
+                });
             });
         }
     );
@@ -10898,21 +10905,20 @@ app.post('/api/public/certificate-verify/confirm', (req, res) => {
                                         );
                                     }
                                     const confirmedKind = out.cert.kind || 'participant';
-                                    res.json({
-                                        ok: true,
-                                        valid: true,
-                                        seminarTitle: out.seminar.title,
-                                        displayName: out.cert.displayName,
-                                        applicationNo: out.cert.applicationNo,
-                                        prn: out.cert.prn,
-                                        certKind: confirmedKind,
-                                        certificateId: certVerify.formatPublicCertificateId(
-                                            out.seminar.id,
-                                            out.cert.id,
-                                            confirmedKind
-                                        ),
-                                        message:
-                                            'This certificate is authentic and was issued by the Vaidya Gogate Memorial Foundation.'
+                                    certVerify.ensurePublicCertificateNo(db, confirmedKind, out.cert.id, (idErr, publicNo) => {
+                                        if (idErr) return res.status(500).json({ error: idErr.message });
+                                        res.json({
+                                            ok: true,
+                                            valid: true,
+                                            seminarTitle: out.seminar.title,
+                                            displayName: out.cert.displayName,
+                                            applicationNo: out.cert.applicationNo,
+                                            prn: out.cert.prn,
+                                            certKind: confirmedKind,
+                                            certificateId: publicNo,
+                                            message:
+                                                'This certificate is authentic and was issued by the Vaidya Gogate Memorial Foundation.'
+                                        });
                                     });
                                 }
                             );

@@ -174,7 +174,7 @@
             state.certKind = data.certKind || '';
             state.displayName = data.displayName || '';
             state.maskedEmail = data.maskedEmail || '';
-            state.certificateId = data.certificateId || ('CERT-' + String(data.seminar?.id || state.seminarId || '0') + '-' + String(data.certId || '0'));
+            state.certificateId = data.certificateId || '';
             if (data.applicationNo) state.applicationNo = data.applicationNo;
             if (data.prn) state.prn = data.prn;
             if (data.seminar && data.seminar.id) {

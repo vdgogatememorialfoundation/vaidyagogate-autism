@@ -4852,7 +4852,7 @@ async function loadDoctorCertificateTracking(quiet) {
                     '</td><td><code>' +
                     escapeHtml(r.applicationNo || '—') +
                     '</code><br><small style="color:#64748b;">' +
-                    escapeHtml(r.certificateId || ('CERT-' + String(r.seminarId || '0') + '-' + String(r.certId || '0'))) +
+                    escapeHtml(r.certificateId || '') +
                     '</small></td><td>' +
                     escapeHtml(scanLbl) +
                     '</td><td style="font-weight:600;color:' +

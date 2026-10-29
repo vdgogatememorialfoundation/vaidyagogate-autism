@@ -2,7 +2,7 @@
 
 Use this API on the main website so a visitor can type the Certificate ID printed on a certificate and see whether that certificate was issued.
 
-The portal assigns one ID whenever a participation or volunteer certificate is issued for an event. The same ID is printed on the certificate and included in the certificate email.
+Every participation and volunteer certificate gets one numeric ID from a single series. The first number is 200284. Each later certificate adds 1. The value is always shown as 12 digits, so the first ID is `000000200284` and the next is `000000200285`. The same ID is printed on the certificate and included in the certificate email.
 
 Base URL (production):
 
@@ -14,27 +14,27 @@ The browser on the main site can call this API directly. Cross-origin requests a
 
 ## Certificate ID
 
-| Kind | ID printed on new certificates | Example |
-|------|--------------------------------|---------|
-| Participation | `CERT-P-{eventId}-{certificateId}` | `CERT-P-12-345` |
-| Volunteer | `CERT-V-{eventId}-{certificateId}` | `CERT-V-4-8` |
+| | |
+|--|--|
+| Format | 12 digits, numbers only |
+| Series start | 200284 |
+| First ID | `000000200284` |
+| Next ID | `000000200285` |
 
-Older certificates may show `CERT-{eventId}-{certificateId}` (for example `CERT-12-345`). That form still verifies. If it ever matches both a participation and a volunteer certificate, the API asks for the `CERT-P-` or `CERT-V-` form.
-
-IDs are not case-sensitive. Spaces are ignored.
+Leading zeros are part of the ID. `200284` and `000000200284` verify as the same certificate. Older IDs printed as `CERT-P-…` or `CERT-V-…` still verify and return the 12-digit ID.
 
 A certificate verifies only after it has been issued (enabled) for that person. A draft record does not count as valid, and the response does not include the holder’s name in that case.
 
 ## Check a certificate
 
 ```http
-GET /api/public/certificates/verify?id=CERT-P-12-345
+GET /api/public/certificates/verify?id=000000200284
 ```
 
 The same check is available at:
 
 ```http
-GET /api/public/certificates/CERT-P-12-345
+GET /api/public/certificates/000000200284
 ```
 
 ### Valid certificate — `200`
@@ -44,7 +44,7 @@ GET /api/public/certificates/CERT-P-12-345
   "ok": true,
   "valid": true,
   "certificate": {
-    "certificateId": "CERT-P-12-345",
+    "certificateId": "000000200284",
     "type": "participant",
     "typeLabel": "Participation",
     "holderName": "Aarav Sharma",
@@ -58,8 +58,8 @@ GET /api/public/certificates/CERT-P-12-345
     "status": "issued",
     "issuedAt": "2026-04-03T10:00:00.000Z",
     "issuer": "Vaidya Gogate Memorial Foundation",
-    "verifyUrl": "https://autism.vaidyagogate.org/verify-certificate.html?id=CERT-P-12-345",
-    "apiUrl": "https://autism.vaidyagogate.org/api/public/certificates/verify?id=CERT-P-12-345"
+    "verifyUrl": "https://autism.vaidyagogate.org/verify-certificate.html?id=000000200284",
+    "apiUrl": "https://autism.vaidyagogate.org/api/public/certificates/verify?id=000000200284"
   }
 }
 ```
@@ -75,7 +75,7 @@ The response does **not** include email, phone, or the private QR token.
   "ok": false,
   "valid": false,
   "code": "INVALID_ID",
-  "error": "Enter a certificate ID such as CERT-P-12-345 or CERT-V-12-345."
+  "error": "Enter the 12-digit certificate ID, for example 000000200284."
 }
 ```
 
@@ -141,7 +141,7 @@ Limit: 40 requests per minute per IP address.
 ```html
 <form id="cert-check">
   <label for="cert-id">Certificate ID</label>
-  <input id="cert-id" name="id" placeholder="CERT-P-12-345" required>
+  <input id="cert-id" name="id" placeholder="000000200284" inputmode="numeric" maxlength="12" required>
   <button type="submit">Verify</button>
   <p id="cert-result"></p>
 </form>
@@ -172,7 +172,7 @@ Show `holderName`, `typeLabel`, `event.title`, `event.date`, and `certificateId`
 A person can also open the human check page:
 
 ```text
-https://autism.vaidyagogate.org/verify-certificate.html?id=CERT-P-12-345
+https://autism.vaidyagogate.org/verify-certificate.html?id=000000200284
 ```
 
 That page calls this same API.
@@ -180,5 +180,5 @@ That page calls this same API.
 ## cURL
 
 ```bash
-curl -sS "https://autism.vaidyagogate.org/api/public/certificates/verify?id=CERT-P-12-345"
+curl -sS "https://autism.vaidyagogate.org/api/public/certificates/verify?id=000000200284"
 ```
