@@ -3062,11 +3062,6 @@ function downloadCaseApplicationPdf() {
 
 let currentCaseViewIndex = 0;
 
-function isBuiltinCertificateTemplate(path) {
-    const p = String(path || '');
-    return p === '__builtin_vgmf_participant__' || p === '__builtin_vgmf_volunteer__';
-}
-
 function certificateViewUrl(c, isVolunteer) {
     const uid = currentUser && currentUser.id != null ? Number(currentUser.id) : 0;
     if (!uid || !c.id) return '#';
@@ -3138,32 +3133,15 @@ async function loadDoctorCertificates() {
                 return;
             }
             const viewUrl = certificateViewUrl(c, !!c._volunteer);
-            if (isBuiltinCertificateTemplate(c.template_path)) {
-                card.innerHTML =
-                    `<h4 style="margin:0 0 8px;color:#92400e;">${title}</h4>` +
-                    `<p style="font-size:0.88rem;color:#78716c;margin-bottom:10px;">${name}</p>` +
-                    `<div style="border:2px solid #e8d48a;border-radius:10px;overflow:hidden;"><iframe src="${viewUrl}" style="width:100%;min-height:420px;border:0;"></iframe></div>` +
-                    `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">` +
-                    `<a href="${viewUrl}" target="_blank" class="btn-primary" style="text-decoration:none;background:linear-gradient(135deg,#c9a227,#a67c00);padding:8px 14px;">Open</a>` +
-                    `<button type="button" class="btn-primary" style="background:#15803d;padding:8px 14px;" onclick="downloadDoctorCertificate('${viewUrl}')"><i class="fas fa-download"></i> Download PDF</button>` +
-                    `<button type="button" class="btn-primary" style="background:#475569;padding:8px 14px;" onclick="var w=window.open('${viewUrl}');if(w)w.print();">Print</button></div>`;
-                wrap.appendChild(card);
-                return;
-            }
-            const isImage = !c.mime_type || String(c.mime_type).startsWith('image/');
-            if (isImage) {
-                card.innerHTML = `<h4 style="margin:0 0 8px;">${title}</h4>
-                    <p style="font-size:0.88rem;color:#64748b;margin-bottom:8px;">${name}</p>
-                    <div style="position:relative;max-width:720px;margin:0 auto;">
-                        <img src="${c.template_path}" alt="Certificate" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;">
-                        <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:clamp(1rem,3vw,1.75rem);font-weight:700;color:#1e3a5f;text-align:center;width:80%;text-shadow:0 0 8px rgba(255,255,255,0.9);">${name}</div>
-                    </div>
-                    <button type="button" class="btn-primary" style="margin-top:12px;" onclick="window.print()">Print / Save as PDF</button>`;
-            } else {
-                card.innerHTML = `<h4 style="margin:0 0 8px;">${title}</h4>
-                    <p style="margin-bottom:12px;">${name}</p>
-                    <a href="${c.template_path}" target="_blank" class="btn-primary" style="display:inline-block;padding:8px 14px;text-decoration:none;">Download certificate</a>`;
-            }
+            card.innerHTML =
+                `<h4 style="margin:0 0 8px;">${title}</h4>` +
+                `<p style="font-size:0.88rem;color:#64748b;margin-bottom:10px;">${name}</p>` +
+                `<img src="${viewUrl}" alt="Certificate" style="width:100%;height:auto;display:block;border-radius:8px;border:1px solid #e2e8f0;background:#fff;">` +
+                `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">` +
+                `<a href="${viewUrl}" target="_blank" rel="noopener" class="btn-primary" style="text-decoration:none;padding:8px 14px;">Open</a>` +
+                `<button type="button" class="btn-primary" style="padding:8px 14px;" onclick="downloadDoctorCertificate('${viewUrl}')"><i class="fas fa-download"></i> Download</button>` +
+                `<button type="button" class="btn-primary" style="background:#475569;padding:8px 14px;" onclick="printCertificateImage('${viewUrl}')">Print</button>` +
+                `</div>`;
             wrap.appendChild(card);
         });
     } catch (e) {
@@ -4797,6 +4775,19 @@ function downloadDoctorCertificate(viewUrl, seminarTitle) {
     document.body.appendChild(link);
     link.click();
     link.remove();
+}
+
+function printCertificateImage(viewUrl) {
+    const raw = String(viewUrl || '');
+    if (!raw || raw === '#') return;
+    const w = window.open(raw, '_blank', 'noopener');
+    if (!w) return;
+    w.addEventListener('load', () => {
+        try {
+            w.focus();
+            w.print();
+        } catch (_) {}
+    });
 }
 
 async function loadDoctorCertificateTracking(quiet) {
