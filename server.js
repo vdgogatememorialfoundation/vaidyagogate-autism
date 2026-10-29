@@ -10622,6 +10622,55 @@ function withCertVerifyReady(handler) {
     );
 }
 
+function publicCertificateVerifyClientIp(req) {
+    const forwarded = String(req.headers['x-forwarded-for'] || '')
+        .split(',')[0]
+        .trim();
+    return forwarded || req.ip || (req.socket && req.socket.remoteAddress) || '';
+}
+
+function sendPublicCertificateVerify(req, res, rawId) {
+    if (!certVerify.allowPublicCertificateVerify(publicCertificateVerifyClientIp(req))) {
+        return res.status(429).json({
+            ok: false,
+            valid: false,
+            code: 'RATE_LIMITED',
+            error: 'Too many verification attempts. Please wait a minute and try again.'
+        });
+    }
+    withCertVerifyReady(() => {
+        certVerify.lookupCertificateByPublicId(db, rawId, (err, out) => {
+            res.setHeader('Cache-Control', 'no-store');
+            if (err) {
+                console.warn('[cert-verify] public id:', err.message);
+                return res.status(500).json({
+                    ok: false,
+                    valid: false,
+                    code: 'UNAVAILABLE',
+                    error: 'Verification is temporarily unavailable. Please try again later.'
+                });
+            }
+            const status = (out && out.httpStatus) || 500;
+            res.status(status).json(
+                (out && out.body) || {
+                    ok: false,
+                    valid: false,
+                    code: 'UNAVAILABLE',
+                    error: 'Verification is temporarily unavailable. Please try again later.'
+                }
+            );
+        });
+    });
+}
+
+app.get('/api/public/certificates/verify', (req, res) => {
+    sendPublicCertificateVerify(req, res, req.query.id);
+});
+
+app.get('/api/public/certificates/:certificateId', (req, res) => {
+    sendPublicCertificateVerify(req, res, req.params.certificateId);
+});
+
 app.get('/api/public/certificate-verify/seminars', (req, res) => {
     withCertVerifyReady(() => {
         certVerify.listPublicVerifySeminars(db, (err, list) => {
@@ -10658,11 +10707,13 @@ app.post('/api/public/certificate-verify/lookup', (req, res) => {
                 return res.status(500).json({ error: 'Verification is temporarily unavailable. Please try again later.' });
             }
             if (!out || !out.ok) return res.status(400).json(out || { ok: false, error: 'Lookup failed' });
+            const certKind = out.cert.kind || 'participant';
             res.json({
                 ok: true,
                 seminar: out.seminar,
                 certId: out.cert.id,
-                certKind: out.cert.kind || 'participant',
+                certKind,
+                certificateId: certVerify.formatPublicCertificateId(out.seminar.id, out.cert.id, certKind),
                 displayName: out.cert.displayName,
                 applicationNo: out.cert.applicationNo,
                 prn: out.cert.prn,
@@ -10846,6 +10897,7 @@ app.post('/api/public/certificate-verify/confirm', (req, res) => {
                                             v || { ok: false, error: 'OTP validation failed' }
                                         );
                                     }
+                                    const confirmedKind = out.cert.kind || 'participant';
                                     res.json({
                                         ok: true,
                                         valid: true,
@@ -10853,6 +10905,12 @@ app.post('/api/public/certificate-verify/confirm', (req, res) => {
                                         displayName: out.cert.displayName,
                                         applicationNo: out.cert.applicationNo,
                                         prn: out.cert.prn,
+                                        certKind: confirmedKind,
+                                        certificateId: certVerify.formatPublicCertificateId(
+                                            out.seminar.id,
+                                            out.cert.id,
+                                            confirmedKind
+                                        ),
                                         message:
                                             'This certificate is authentic and was issued by the Vaidya Gogate Memorial Foundation.'
                                     });

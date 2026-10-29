@@ -18,7 +18,17 @@
         <a href="/" class="cv-back"><i class="fas fa-arrow-left"></i> Back to seminar portal</a>
         <div class="cv-card">
             <h1><i class="fas fa-certificate"></i> Certificate authenticity check</h1>
-            <p class="cv-lead">Use this official verification panel to confirm that a Vaidya Gogate Memorial Foundation participant or volunteer certificate is valid and issued to the correct holder.</p>
+            <p class="cv-lead">Enter the Certificate ID printed on a Vaidya Gogate Memorial Foundation certificate. The same check is available to the main website.</p>
+
+            <div class="cv-id-box">
+                <div class="cv-field">
+                    <label for="cv-certificate-id">Certificate ID</label>
+                    <input type="text" id="cv-certificate-id" placeholder="CERT-P-12-345" autocomplete="off" maxlength="40" spellcheck="false">
+                </div>
+                <button type="button" class="cv-btn cv-btn-primary" id="cv-verify-id-btn">Verify certificate ID</button>
+                <p style="font-size:0.82rem;color:#64748b;margin:10px 0 0;">Participation certificates use CERT-P-. Volunteer certificates use CERT-V-. Older certificates printed as CERT-event-number still work.</p>
+                <div id="cv-id-msg" class="cv-msg" style="display:none;"></div>
+            </div>
 
             <div id="cv-step-countdown" class="cv-step">
                 <div class="cv-countdown">
@@ -87,7 +97,7 @@
     </div>
     <meta name="robots" content="index, follow">
     <script src="/js/site-seo.js?v=20260529b"></script>
-    <script src="/js/verify-certificate.js?v=2"></script>
+    <script src="/js/verify-certificate.js?v=3"></script>
     <script src="/js/portal-content-protection.js?v=2"></script>
 </body>
 </html>
