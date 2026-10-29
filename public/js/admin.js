@@ -11840,19 +11840,19 @@ function cmsDefaultHomePillars() {
             icon: 'fa-lightbulb',
             iconTone: 'blue',
             title: 'Awareness',
-            text: 'Learn about autism with simple talks, activities, and resources for your school and community.'
+            text: 'Talks, activities, and resources for schools, families, and the wider community.'
         },
         {
             icon: 'fa-hands-holding-heart',
             iconTone: 'violet',
             title: 'Inclusion',
-            text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+            text: "A welcoming programme that recognises every child's strengths."
         },
         {
             icon: 'fa-star',
             iconTone: 'mint',
             title: 'Celebration',
-            text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+            text: 'Competitions, certificates, and gatherings that bring families together.'
         }
     ];
 }
@@ -11868,21 +11868,21 @@ function cmsDefaultFeatureCards() {
 
 function cmsDefaultHomeJourney() {
     return {
-        title: 'How it works — easy peasy!',
-        subtitle: 'Four simple steps from sign-up to your e-ticket — all in your dashboard.',
+        title: 'How participation works',
+        subtitle: 'Four steps from account creation to your e-ticket, managed in your dashboard.',
         steps: [
-            { icon: 'fa-user-plus', title: '1. Sign up', text: 'Create your free account on this website in a few minutes.' },
-            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you are coming — open your dashboard after login.' },
-            { icon: 'fa-palette', title: '3. Register & compete', text: 'Complete registration and upload competition entries if you like.' },
-            { icon: 'fa-ticket-alt', title: '4. E-ticket', text: 'Download your e-ticket and bring it on event day. That is it!' }
+            { icon: 'fa-user-plus', title: '1. Create an account', text: 'Register on this website. There is no fee.' },
+            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you plan to attend, from the public form or your dashboard.' },
+            { icon: 'fa-palette', title: '3. Complete registration', text: 'Finish your application and submit competition entries if you wish.' },
+            { icon: 'fa-ticket-alt', title: '4. Collect your e-ticket', text: 'Download the QR pass and bring it on the day of the programme.' }
         ]
     };
 }
 
 function cmsDefaultHomeBento() {
     return {
-        title: 'Everything in one friendly place',
-        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        title: 'Programme services',
+        subtitle: 'Registration, e-tickets, certificates, and official notices in one place.',
         cards: [
             {
                 icon: 'fa-clipboard-check',
@@ -11913,8 +11913,8 @@ function cmsDefaultHomeBento() {
             {
                 icon: 'fa-envelope',
                 iconStyle: 'background:#ffe4e6;color:#e11d48',
-                title: 'Need help?',
-                text: 'Use Contact us — our team replies to registration and general questions.'
+                title: 'Enquiries',
+                text: 'Contact the foundation for registration and general questions.'
             }
         ]
     };
@@ -11922,10 +11922,10 @@ function cmsDefaultHomeBento() {
 
 function cmsDefaultHomeCtaBand() {
     return {
-        title: 'Ready to join us?',
+        title: 'Register for the programme',
         subtitle:
-            'Create your free account in minutes and complete each step in your dashboard.',
-        buttonText: 'Create free account'
+            'Create an account to pre-register, complete your application, and download your e-ticket.',
+        buttonText: 'Create an account'
     };
 }
 

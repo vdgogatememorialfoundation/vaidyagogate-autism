@@ -923,7 +923,7 @@ const DEFAULT_REGISTRATION_FORM_CONFIG_JSON = JSON.stringify(DEFAULT_REGISTRATIO
 
 const DEFAULT_PUBLIC_SITE_CMS = {
     version: 1,
-    tickerText: 'Limited seats available! Register before February 28th to get early bird discount.',
+    tickerText: 'Autism Awareness Programme — free registration for families, schools, and volunteers.',
     bannerImage: '',
     scrollingAnnouncements: [],
     aboutSections: [
@@ -973,46 +973,46 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         dateLine: 'Autism Awareness Programme 2026'
     },
     hero: {
-        eyebrow: 'Autism Awareness Programme 2026',
-        title: 'Every child shines in their own beautiful way',
+        eyebrow: 'Autism Awareness Programme',
+        title: 'Autism awareness for families and schools',
         subtitle:
-            'A warm, free programme for families and schools — sign up, pre-register, join creative competitions, and get your e-ticket. No fees, just community and care.',
+            "Register for the foundation's free programme. Track your application, receive a QR e-ticket, and verify certificates online.",
         venue: 'Pune, Maharashtra',
         image: '',
-        ctaPrimary: 'Start your journey',
+        ctaPrimary: 'Create an account',
         ctaSecondary: 'My dashboard'
     },
     helpBanner:
-        '<strong>New here?</strong> Tap <em>Join us</em> to create an account, then open <strong>My dashboard</strong> to pre-register and get your e-ticket.',
+        '<strong>New here?</strong> Create an account, then open <strong>My dashboard</strong> to pre-register and download your e-ticket.',
     homeJourney: {
-        title: 'How it works — easy peasy!',
-        subtitle: 'Four simple steps from sign-up to your e-ticket — all in your dashboard.',
+        title: 'How participation works',
+        subtitle: 'Four steps from account creation to your e-ticket, managed in your dashboard.',
         steps: [
             {
                 icon: 'fa-user-plus',
-                title: '1. Sign up',
-                text: 'Create your free account on this website in a few minutes.'
+                title: '1. Create an account',
+                text: 'Register on this website. There is no fee.'
             },
             {
                 icon: 'fa-clipboard-list',
                 title: '2. Pre-register',
-                text: 'Tell us you are coming — open your dashboard after login.'
+                text: 'Tell us you plan to attend, from the public form or your dashboard.'
             },
             {
                 icon: 'fa-palette',
-                title: '3. Register & compete',
-                text: 'Complete registration and upload competition entries if you like.'
+                title: '3. Complete registration',
+                text: 'Finish your application and submit competition entries if you wish.'
             },
             {
                 icon: 'fa-ticket-alt',
-                title: '4. E-ticket',
-                text: 'Download your e-ticket and bring it on event day. That is it!'
+                title: '4. Collect your e-ticket',
+                text: 'Download the QR pass and bring it on the day of the programme.'
             }
         ]
     },
     homeBento: {
-        title: 'Everything in one friendly place',
-        subtitle: 'Register online, track your progress, and stay updated — everything in one place.',
+        title: 'Programme services',
+        subtitle: 'Registration, e-tickets, certificates, and official notices in one place.',
         cards: [
             {
                 icon: 'fa-clipboard-check',
@@ -1042,17 +1042,17 @@ const DEFAULT_PUBLIC_SITE_CMS = {
             },
             {
                 icon: 'fa-envelope',
-                iconStyle: 'background:#ffe4e6;color:#e11d48',
-                title: 'Need help?',
-                text: 'Use Contact us — our team replies to registration and general questions.'
+                iconStyle: 'background:#f4eef8;color:#5b2d8a',
+                title: 'Enquiries',
+                text: 'Contact the foundation for registration and general questions.'
             }
         ]
     },
     homeCtaBand: {
-        title: 'Ready to join us?',
+        title: 'Register for the programme',
         subtitle:
-            'Create your free account in minutes and complete each step in your dashboard.',
-        buttonText: 'Create free account'
+            'Create an account to pre-register, complete your application, and download your e-ticket.',
+        buttonText: 'Create an account'
     },
     heroStats: [
         { value: '20+', label: 'Expert sessions' },
@@ -1064,19 +1064,19 @@ const DEFAULT_PUBLIC_SITE_CMS = {
             icon: 'fa-lightbulb',
             iconTone: 'blue',
             title: 'Awareness',
-            text: 'Learn about autism with simple talks, activities, and resources for your school and community.'
+            text: 'Talks, activities, and resources for schools, families, and the wider community.'
         },
         {
             icon: 'fa-hand-holding-heart',
             iconTone: 'violet',
             title: 'Inclusion',
-            text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+            text: "A welcoming programme that recognises every child's strengths."
         },
         {
             icon: 'fa-star',
             iconTone: 'mint',
             title: 'Celebration',
-            text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+            text: 'Competitions, certificates, and gatherings that bring families together.'
         }
     ],
     featuresSection: {
@@ -1123,7 +1123,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
         },
         {
             q: 'Can I enter competitions?',
-            a: 'Yes! During registration you can upload creative entries — drawings, photos, videos, or stories.'
+            a: 'During registration you may upload creative entries, including drawings, photographs, videos, or written work.'
         }
     ],
     seo: { ...siteSeoMod.DEFAULT_SEO },
@@ -1139,6 +1139,7 @@ const DEFAULT_PUBLIC_SITE_CMS = {
             { label: 'Home', section: 'home' },
             { label: 'About', section: 'about' },
             { label: 'Programme', section: 'schedule' },
+            { label: 'Verify a certificate', href: '/verify-certificate.html' },
             { label: 'Contact', section: 'contact' }
         ],
         doctorLinks: [
@@ -1810,6 +1811,191 @@ function loadRegistrationFormConfig(seminarIdOrNull, callback) {
     });
 }
 
+function replaceExactCopy(value, fromList, to) {
+    const current = String(value || '').trim();
+    return fromList.indexOf(current) !== -1 ? to : value;
+}
+
+/** Swap known playful homepage defaults for the institutional copy. Custom edits are left as saved. */
+function upgradeLegacyHomepageCopy(base) {
+    if (!base || typeof base !== 'object') return base;
+    const hero = base.hero && typeof base.hero === 'object' ? base.hero : null;
+    if (hero) {
+        hero.title = replaceExactCopy(
+            hero.title,
+            [
+                'Every child shines in their own beautiful way',
+                'Every child shines in their own colour',
+                'Every child shines in their own color'
+            ],
+            DEFAULT_PUBLIC_SITE_CMS.hero.title
+        );
+        hero.subtitle = replaceExactCopy(
+            hero.subtitle,
+            [
+                'A warm, free programme for families and schools — sign up, pre-register, join creative competitions, and get your e-ticket. No fees, just community and care.',
+                'Join our free awareness programme — pre-register in a minute, track every step live in your applicant dashboard, and receive QR e-tickets and certificates by email.'
+            ],
+            DEFAULT_PUBLIC_SITE_CMS.hero.subtitle
+        );
+        hero.ctaPrimary = replaceExactCopy(
+            hero.ctaPrimary,
+            ['Start your journey', 'Create free account'],
+            DEFAULT_PUBLIC_SITE_CMS.hero.ctaPrimary
+        );
+    }
+    base.tickerText = replaceExactCopy(
+        base.tickerText,
+        ['Limited seats available! Register before February 28th to get early bird discount.'],
+        DEFAULT_PUBLIC_SITE_CMS.tickerText
+    );
+    base.helpBanner = replaceExactCopy(
+        base.helpBanner,
+        [
+            '<strong>New here?</strong> Tap <em>Join us</em> to create an account, then open <strong>My dashboard</strong> to pre-register and get your e-ticket.',
+            '<strong><i class="fas fa-hand-point-right" aria-hidden="true"></i> New here?</strong> Tap <strong>Create free account</strong> above to sign up, then open <strong>My dashboard</strong> to pre-register and download your e-ticket.'
+        ],
+        DEFAULT_PUBLIC_SITE_CMS.helpBanner
+    );
+    const journey = base.homeJourney;
+    if (journey && typeof journey === 'object') {
+        const wasPlayful = ['How it works — easy peasy!', 'How it works - easy peasy!'].indexOf(
+            String(journey.title || '').trim()
+        ) !== -1;
+        if (wasPlayful) {
+            journey.title = DEFAULT_PUBLIC_SITE_CMS.homeJourney.title;
+            journey.subtitle = DEFAULT_PUBLIC_SITE_CMS.homeJourney.subtitle;
+        }
+        const stepText = {
+            'Create your free account on this website in a few minutes.':
+                DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[0].text,
+            'Tell us you are coming — open your dashboard after login.':
+                DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[1].text,
+            'Use the public form (no account) or pre-register from your dashboard after sign-in.':
+                DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[1].text,
+            'Complete registration and upload competition entries if you like.':
+                DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[2].text,
+            'Download your e-ticket and bring it on event day. That is it!':
+                DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[3].text
+        };
+        const stepTitle = {
+            '1. Sign up': DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[0].title,
+            '3. Register & compete': DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[2].title,
+            '4. E-ticket': DEFAULT_PUBLIC_SITE_CMS.homeJourney.steps[3].title
+        };
+        if (Array.isArray(journey.steps)) {
+            journey.steps.forEach((step) => {
+                if (!step) return;
+                const nextText = stepText[String(step.text || '').trim()];
+                const nextTitle = stepTitle[String(step.title || '').trim()];
+                if (nextText) step.text = nextText;
+                if (nextTitle) step.title = nextTitle;
+            });
+        }
+    }
+    const bento = base.homeBento;
+    if (bento && typeof bento === 'object') {
+        bento.title = replaceExactCopy(
+            bento.title,
+            ['Everything in one friendly place'],
+            DEFAULT_PUBLIC_SITE_CMS.homeBento.title
+        );
+        bento.subtitle = replaceExactCopy(
+            bento.subtitle,
+            [
+                'Register online, track your progress, and stay updated — everything in one place.',
+                'Register online, track your progress, and stay updated — built for families and schools.'
+            ],
+            DEFAULT_PUBLIC_SITE_CMS.homeBento.subtitle
+        );
+        if (Array.isArray(bento.cards)) {
+            bento.cards.forEach((card) => {
+                if (!card) return;
+                if (String(card.title || '').trim() === 'Need help?' &&
+                    String(card.text || '').trim() ===
+                        'Use Contact us — our team replies to registration and general questions.') {
+                    card.title = 'Enquiries';
+                    card.text = 'Contact the foundation for registration and general questions.';
+                }
+            });
+        }
+    }
+    const cta = base.homeCtaBand;
+    if (cta && typeof cta === 'object') {
+        if (String(cta.title || '').trim() === 'Ready to join us?') {
+            cta.title = DEFAULT_PUBLIC_SITE_CMS.homeCtaBand.title;
+        }
+        if (
+            String(cta.subtitle || '').trim() ===
+            'Create your free account in minutes and complete each step in your dashboard.'
+        ) {
+            cta.subtitle = DEFAULT_PUBLIC_SITE_CMS.homeCtaBand.subtitle;
+        }
+        if (String(cta.buttonText || '').trim() === 'Create free account') {
+            cta.buttonText = DEFAULT_PUBLIC_SITE_CMS.homeCtaBand.buttonText;
+        }
+    }
+    const pillarText = {
+        'Learn about autism with simple talks, activities, and resources for your school and community.':
+            DEFAULT_PUBLIC_SITE_CMS.homePillars[0].text,
+        "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all.":
+            DEFAULT_PUBLIC_SITE_CMS.homePillars[1].text,
+        'Creative competitions, certificates, and community events — share talents and make new friends.':
+            DEFAULT_PUBLIC_SITE_CMS.homePillars[2].text
+    };
+    if (Array.isArray(base.homePillars)) {
+        base.homePillars.forEach((pillar) => {
+            if (!pillar) return;
+            const next = pillarText[String(pillar.text || '').trim()];
+            if (next) pillar.text = next;
+        });
+    }
+    if (Array.isArray(base.featureCards) && base.featureCards.length === 4) {
+        const titles = base.featureCards.map((card) => String((card && card.title) || '').trim());
+        if (titles.join('|') === 'Warm & welcoming|Creative fun|Simple e-tickets|Helpful team') {
+            base.featureCards = DEFAULT_PUBLIC_SITE_CMS.featureCards.map((card) => ({ ...card }));
+        }
+    }
+    if (Array.isArray(base.faq)) {
+        base.faq.forEach((item) => {
+            if (!item) return;
+            if (
+                String(item.a || '').trim() ===
+                'Yes! During registration you can upload creative entries — drawings, photos, videos, or stories.'
+            ) {
+                item.a = DEFAULT_PUBLIC_SITE_CMS.faq[3].a;
+            }
+        });
+    }
+    if (Array.isArray(base.siteMenu)) {
+        base.siteMenu.forEach((item) => {
+            if (item && String(item.label || '').trim() === 'About us' && String(item.section || '') === 'about') {
+                item.label = 'About';
+            }
+        });
+    }
+    if (base.footer && typeof base.footer === 'object') {
+        base.footer.tagline = replaceExactCopy(
+            base.footer.tagline,
+            ['Promoting Ayurveda education since 1972'],
+            DEFAULT_PUBLIC_SITE_CMS.footer.tagline
+        );
+        if (Array.isArray(base.footer.exploreLinks)) {
+            const hasCertificate = base.footer.exploreLinks.some(
+                (link) => link && (link.href === '/verify-certificate.html' || /certificate/i.test(String(link.label || '')))
+            );
+            const onlySections = base.footer.exploreLinks.every((link) => link && link.section && !link.href);
+            if (!hasCertificate && onlySections && base.footer.exploreLinks.length <= 4) {
+                const contactAt = base.footer.exploreLinks.findIndex((link) => link && link.section === 'contact');
+                const certificateLink = { label: 'Verify a certificate', href: '/verify-certificate.html' };
+                if (contactAt >= 0) base.footer.exploreLinks.splice(contactAt, 0, certificateLink);
+                else base.footer.exploreLinks.push(certificateLink);
+            }
+        }
+    }
+    return base;
+}
+
 function loadPublicSiteCms(callback) {
     db.get(`SELECT value FROM global_settings WHERE key = 'public_site_cms'`, [], (err, row) => {
         let base = { ...DEFAULT_PUBLIC_SITE_CMS };
@@ -1881,6 +2067,11 @@ function loadPublicSiteCms(callback) {
         }
         if (!base.seo) base.seo = siteSeoMod.normalizeSeo(DEFAULT_PUBLIC_SITE_CMS.seo);
         base.scrollingAnnouncements = sanitizeScrollingAnnouncements(base.scrollingAnnouncements);
+        try {
+            upgradeLegacyHomepageCopy(base);
+        } catch (upgradeErr) {
+            console.warn('homepage copy upgrade:', upgradeErr && upgradeErr.message);
+        }
         callback(null, siteCmsHelpers.normalizeSiteCms(base));
     });
 }

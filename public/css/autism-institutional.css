@@ -1,0 +1,1031 @@
+/**
+ * Institutional public site.
+ * Loaded last so it replaces the bright / kids layers on the homepage,
+ * about, programme, contact, and account windows.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+body.autism-kids.ak-v2.vg-institutional,
+body.vg-institutional {
+    --inst-ink: #1a1230;
+    --inst-muted: #5c564e;
+    --inst-line: #e6e0d6;
+    --inst-cream: #f6f3ee;
+    --inst-paper: #fffdfb;
+    --inst-indigo: #5b2d8a;
+    --inst-indigo-deep: #24143f;
+    --inst-night: #140e22;
+    --inst-gold: #c4a574;
+    --inst-coral: #c4532a;
+    --inst-serif: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+    --inst-sans: 'Source Sans 3', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: var(--inst-sans) !important;
+    color: var(--inst-ink) !important;
+    background: var(--inst-cream) !important;
+    letter-spacing: 0;
+}
+
+body.vg-institutional button,
+body.vg-institutional input,
+body.vg-institutional select,
+body.vg-institutional textarea {
+    font-family: var(--inst-sans);
+}
+
+body.vg-institutional h1,
+body.vg-institutional h2,
+body.vg-institutional h3,
+body.vg-institutional h4 {
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.02em;
+    color: var(--inst-ink);
+}
+
+/* Playful layers */
+body.vg-institutional .nx-particles,
+body.vg-institutional .ak-bg-shapes,
+body.vg-institutional .ab-hero-bg,
+body.vg-institutional .ab-orb,
+body.vg-institutional .ab-float,
+body.vg-institutional .ab-art-ring,
+body.vg-institutional .ab-art-sub,
+body.vg-institutional .ab-marquee,
+body.vg-institutional .ab-typing,
+body.vg-institutional .nx-typing-wrap,
+body.vg-institutional #congress-hero-root {
+    display: none !important;
+}
+
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2::before,
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Preloader */
+body.vg-institutional #site-preloader {
+    background: var(--inst-night) !important;
+}
+body.vg-institutional .nx-preloader-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: transparent !important;
+    border: 1px solid var(--inst-gold);
+    color: var(--inst-gold) !important;
+    font-size: 1.15rem;
+    box-shadow: none !important;
+}
+body.vg-institutional .nx-preloader-bar {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 0 !important;
+}
+body.vg-institutional .nx-preloader-bar span {
+    background: var(--inst-gold) !important;
+}
+body.vg-institutional .nx-preloader-text {
+    color: #f4efe6 !important;
+    font-family: var(--inst-serif) !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.01em;
+}
+
+/* Utility and header */
+body.vg-institutional .cg-shell {
+    border-top: 3px solid var(--inst-gold);
+    background: var(--inst-paper);
+}
+body.ab-site.vg-institutional .cg-utility,
+body.ak-portal.vg-institutional .cg-utility {
+    background: var(--inst-night) !important;
+    color: #e8e2d6 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.01em;
+    border: 0 !important;
+}
+body.vg-institutional .cg-utility a,
+body.vg-institutional .cg-utility .cg-utility-item,
+body.vg-institutional .cg-utility-link {
+    color: #e8e2d6 !important;
+}
+body.ab-site.vg-institutional .cg-utility-signup {
+    background: transparent !important;
+    color: #f6f3ee !important;
+    border: 1px solid rgba(244, 239, 230, 0.45);
+    border-radius: 2px !important;
+    padding: 3px 10px !important;
+    font-weight: 600 !important;
+}
+body.autism-kids.ak-v2.vg-institutional .cg-header-row,
+body.vg-institutional .cg-header-row {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0 max(20px, calc((100% - 1120px) / 2));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    background: var(--inst-paper) !important;
+    border-bottom: 1px solid var(--inst-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+body.autism-kids.ak-v2.vg-institutional .cg-header,
+body.autism-kids.ak-v2.vg-institutional .cg-nav,
+body.ab-site.vg-institutional .cg-header,
+body.ab-site.vg-institutional .cg-nav {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+body.autism-kids.ak-v2.vg-institutional .cg-header {
+    flex: 1 1 auto;
+    grid-column: auto;
+}
+body.autism-kids.ak-v2.vg-institutional .cg-nav {
+    flex: 0 1 auto;
+    width: auto !important;
+    max-width: none !important;
+    padding: 0 !important;
+    position: static !important;
+}
+body.autism-kids.ak-v2.vg-institutional .cg-nav > span,
+body.vg-institutional #cg-nav-menu-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    width: auto;
+}
+body.vg-institutional .cg-ticker {
+    flex: 1 0 100%;
+}
+body.vg-institutional .cg-header-ticker .cg-ticker-viewport {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+}
+body.vg-institutional .cg-header-ticker .cg-ticker-track.ak-ticker-marquee {
+    animation-name: vg-ticker-read !important;
+}
+@keyframes vg-ticker-read {
+    0%, 22% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+body.ab-site.vg-institutional .cg-header,
+body.ak-portal.vg-institutional .cg-header {
+    background: var(--inst-paper) !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-bottom: 0 !important;
+}
+body.vg-institutional .cg-logo-text h1 {
+    font-family: var(--inst-serif) !important;
+    font-size: 1.05rem !important;
+    font-weight: 400 !important;
+    color: var(--inst-ink) !important;
+    letter-spacing: 0 !important;
+    line-height: 1.3 !important;
+}
+body.ab-site.vg-institutional .cg-logo-text p,
+body.vg-institutional .cg-logo-text p {
+    color: var(--inst-indigo) !important;
+    font-family: var(--inst-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+body.vg-institutional .cg-nav {
+    background: var(--inst-paper) !important;
+    border-bottom: 0 !important;
+}
+body.ab-site.vg-institutional .cg-nav a,
+body.autism-kids.ak-v2.vg-institutional .cg-nav a {
+    color: var(--inst-ink) !important;
+    font-family: var(--inst-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    border-radius: 2px !important;
+    letter-spacing: 0.01em;
+    transform: none !important;
+}
+body.ab-site.vg-institutional .cg-nav a i {
+    color: #8d8478;
+    width: 1em;
+    font-size: 0.82rem;
+}
+body.ab-site.vg-institutional .cg-nav a:hover,
+body.ab-site.vg-institutional .cg-nav a.active,
+body.autism-kids.ak-v2.vg-institutional .cg-nav a:hover,
+body.autism-kids.ak-v2.vg-institutional .cg-nav a.active {
+    background: transparent !important;
+    color: var(--inst-indigo) !important;
+    box-shadow: inset 0 -2px 0 var(--inst-gold);
+    transform: none !important;
+}
+body.ab-site.vg-institutional .cg-menu-toggle {
+    background: var(--inst-paper);
+    color: var(--inst-ink);
+    border: 1px solid var(--inst-line);
+    border-radius: 2px;
+}
+body.vg-institutional .cg-ticker {
+    background: #f3eee6 !important;
+    border-top: 1px solid var(--inst-line) !important;
+    border-bottom: 0 !important;
+    color: var(--inst-ink);
+}
+body.ab-site.vg-institutional .cg-ticker-badge,
+body.ak-portal.vg-institutional .cg-ticker-badge {
+    background: var(--inst-night) !important;
+    color: #f6f3ee !important;
+    border-radius: 2px !important;
+    font-family: var(--inst-sans) !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.68rem !important;
+}
+
+/* Hero */
+body.ab-site.vg-institutional .ab-hero,
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2 {
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    padding: 76px 28px 68px !important;
+    background:
+        radial-gradient(720px 360px at 100% 0%, rgba(196, 165, 116, 0.2), transparent 60%),
+        linear-gradient(165deg, #140e22 0%, #24143f 52%, #3b1d6a 100%) !important;
+}
+body.vg-institutional .ab-hero-grid,
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2-grid,
+body.vg-institutional .ak-hero-v2-grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+    grid-template-areas: 'copy art' !important;
+    gap: 56px;
+    align-items: center;
+}
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2-copy,
+body.vg-institutional .ab-hero-copy {
+    grid-area: copy;
+    animation: none !important;
+    text-align: left !important;
+}
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2-art,
+body.vg-institutional .ab-hero-art {
+    grid-area: art;
+    animation: none !important;
+    order: 0 !important;
+}
+body.autism-kids.ak-v2.vg-institutional .ak-hero-v2-art::before,
+body.autism-kids.ak-v2.vg-institutional .ak-steps::before {
+    display: none !important;
+    content: none !important;
+}
+body.ab-site.vg-institutional .ab-hero-badge,
+body.vg-institutional .ak-hero-v2-badge {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    background: transparent !important;
+    color: var(--inst-gold) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 0 14px !important;
+    font-family: var(--inst-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase;
+}
+body.ab-site.vg-institutional .ab-hero-title,
+body.vg-institutional .ak-hero-v2-copy h1 {
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    font-size: clamp(2.15rem, 4.4vw, 3.35rem) !important;
+    line-height: 1.18 !important;
+    color: #f7f3ec !important;
+    -webkit-text-fill-color: #f7f3ec !important;
+    background: none !important;
+    margin: 0 0 18px !important;
+    max-width: 16ch;
+}
+body.ab-site.vg-institutional .ab-hero-title em,
+body.vg-institutional .ak-hero-v2-copy h1 em {
+    font-style: italic;
+    font-weight: 400;
+    background: none !important;
+    -webkit-text-fill-color: #e7c7a4 !important;
+    color: #e7c7a4 !important;
+}
+body.ab-site.vg-institutional .ab-hero-lead,
+body.vg-institutional .ak-hero-v2-lead {
+    color: rgba(247, 243, 236, 0.86) !important;
+    font-size: 1.08rem !important;
+    line-height: 1.65 !important;
+    max-width: 38rem;
+    font-weight: 400 !important;
+}
+body.vg-institutional .ab-hero-cta,
+body.vg-institutional .ak-hero-v2-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+}
+body.ab-site.vg-institutional .ab-btn,
+body.vg-institutional .ak-btn-v2 {
+    border-radius: 2px !important;
+    padding: 13px 18px !important;
+    font-family: var(--inst-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.01em;
+    box-shadow: none !important;
+    transform: none !important;
+}
+body.ab-site.vg-institutional .ab-btn:hover,
+body.vg-institutional .ak-btn-v2:hover {
+    transform: none !important;
+}
+body.ab-site.vg-institutional .ab-btn-primary,
+body.vg-institutional .ak-btn-v2-primary,
+body.vg-institutional .ak-cta-band .ak-btn-v2-primary {
+    background: var(--inst-coral) !important;
+    color: #fff !important;
+    border: 1px solid var(--inst-coral) !important;
+}
+body.ab-site.vg-institutional .ab-btn-primary:hover,
+body.vg-institutional .ak-btn-v2-primary:hover {
+    background: #a84322 !important;
+}
+body.ab-site.vg-institutional .ab-btn-ghost,
+body.ab-site.vg-institutional .ab-btn-soft,
+body.vg-institutional .ak-btn-v2-ghost {
+    background: transparent !important;
+    color: #f7f3ec !important;
+    border: 1px solid rgba(247, 243, 236, 0.45) !important;
+}
+body.vg-institutional .ab-hero-trust {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 32px;
+    max-width: 560px;
+}
+body.vg-institutional .ab-trust {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+body.vg-institutional .ab-trust i {
+    width: auto;
+    height: auto;
+    background: transparent !important;
+    color: var(--inst-gold) !important;
+    font-size: 0.85rem;
+    margin-top: 4px;
+}
+body.vg-institutional .ab-trust strong {
+    display: block;
+    color: #f7f3ec;
+    font-family: var(--inst-sans);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+body.vg-institutional .ab-trust span {
+    display: block;
+    color: rgba(247, 243, 236, 0.68);
+    font-size: 0.78rem;
+}
+
+body.vg-institutional .ab-art-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: auto;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+body.ab-site.vg-institutional .ab-art-main,
+body.vg-institutional .ab-art-stage .ak-hero-photo-main {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: 340px !important;
+    object-fit: cover !important;
+    border-radius: 2px !important;
+    padding: 0 !important;
+    background: #2a2038 !important;
+    border: 1px solid rgba(196, 165, 116, 0.55) !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+body.vg-institutional .ab-art-card {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 253, 251, 0.96) !important;
+    border: 1px solid rgba(255, 253, 251, 0.2) !important;
+    border-radius: 2px !important;
+    padding: 10px 12px !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+body.vg-institutional .ab-art-card i {
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    background: #f4eef8 !important;
+    color: var(--inst-indigo) !important;
+}
+body.vg-institutional .ab-art-card b {
+    color: var(--inst-ink);
+    font-family: var(--inst-sans);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+body.vg-institutional .ab-art-card span {
+    color: var(--inst-muted);
+    font-size: 0.75rem;
+}
+
+/* Sections */
+body.vg-institutional .nx-section-label {
+    display: inline-block;
+    background: transparent !important;
+    color: var(--inst-indigo) !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-bottom: 8px;
+    font-family: var(--inst-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase;
+}
+body.vg-institutional .ak-public-prereg-home,
+body.ab-site.vg-institutional .ak-pillars,
+body.ab-site.vg-institutional .ak-journey,
+body.ab-site.vg-institutional .ak-bento,
+body.autism-kids.ak-v2.vg-institutional .ak-journey {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin-top: 0 !important;
+}
+body.vg-institutional .ak-public-prereg-home,
+body.vg-institutional .ak-pillars,
+body.vg-institutional .ak-journey,
+body.vg-institutional .ak-bento {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 64px 24px 8px;
+}
+body.vg-institutional .ak-journey {
+    padding-bottom: 24px;
+}
+body.vg-institutional .ak-journey-head,
+body.vg-institutional .ak-bento-head,
+body.vg-institutional .section-head {
+    text-align: left;
+    max-width: 40rem;
+    margin: 0 0 28px;
+}
+body.vg-institutional .section-head {
+    margin-left: 0;
+    margin-right: 0;
+}
+body.ab-site.vg-institutional .ak-journey-head h2,
+body.ab-site.vg-institutional .ak-bento-head h2,
+body.ab-site.vg-institutional #ak-public-prereg-title,
+body.ab-site.vg-institutional .section-head h2,
+body.vg-institutional .ak-cta-band h2 {
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    font-size: clamp(1.7rem, 3vw, 2.25rem) !important;
+    color: var(--inst-ink) !important;
+    -webkit-text-fill-color: var(--inst-ink) !important;
+    background: none !important;
+}
+body.vg-institutional .ak-cta-band h2 {
+    color: #f7f3ec !important;
+    -webkit-text-fill-color: #f7f3ec !important;
+}
+body.ab-site.vg-institutional .ak-journey-head p,
+body.ab-site.vg-institutional .ak-bento-head p,
+body.ab-site.vg-institutional .ak-public-prereg-lead,
+body.ab-site.vg-institutional .section-head p {
+    color: var(--inst-muted) !important;
+    font-size: 1.02rem !important;
+}
+
+body.ab-site.vg-institutional .ak-pillar,
+body.ab-site.vg-institutional .ak-step,
+body.ab-site.vg-institutional .ak-bento-card,
+body.ab-site.vg-institutional .feature-card,
+body.ab-site.vg-institutional .speaker-card,
+body.ab-site.vg-institutional .notices-panel,
+body.ab-site.vg-institutional .page-panel,
+body.ab-site.vg-institutional .faq-list details,
+body.vg-institutional .contact-info,
+body.vg-institutional .contact-form,
+body.ab-site.vg-institutional .ak-public-prereg-grid > *,
+body.ab-site.vg-institutional .open-seminars-strip > * {
+    background: var(--inst-paper) !important;
+    border: 1px solid var(--inst-line) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    color: var(--inst-ink);
+}
+body.ab-site.vg-institutional .ak-pillar:hover,
+body.ab-site.vg-institutional .ak-step:hover,
+body.ab-site.vg-institutional .ak-bento-card:hover,
+body.ab-site.vg-institutional .feature-card:hover,
+body.ab-site.vg-institutional .speaker-card:hover,
+body.vg-institutional .ak-pillar:hover,
+body.vg-institutional .ak-step:hover {
+    transform: none !important;
+    border-color: #d4c6ad !important;
+    box-shadow: none !important;
+}
+body.vg-institutional .ak-pillar h3,
+body.vg-institutional .ak-step h3,
+body.vg-institutional .ak-bento-card h3,
+body.vg-institutional .feature-card h3 {
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    color: var(--inst-ink) !important;
+}
+body.ab-site.vg-institutional .ak-pillar p,
+body.ab-site.vg-institutional .ak-step p,
+body.ab-site.vg-institutional .ak-bento-card p,
+body.ab-site.vg-institutional .feature-card p {
+    color: var(--inst-muted) !important;
+}
+body.autism-kids.ak-v2.vg-institutional .ak-bento-card,
+body.autism-kids.ak-v2.vg-institutional .ak-bento-card.wide {
+    background: var(--inst-paper) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+}
+body.vg-institutional .ak-pillar-icon,
+body.vg-institutional .ak-pillar-icon.blue,
+body.vg-institutional .ak-pillar-icon.violet,
+body.vg-institutional .ak-pillar-icon.mint,
+body.vg-institutional .ak-bento-icon,
+body.vg-institutional .feature-card .card-icon {
+    background: #f4eef8 !important;
+    color: var(--inst-indigo) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+}
+body.ab-site.vg-institutional .ak-step-icon,
+body.vg-institutional .ak-step:nth-child(1) .ak-step-icon,
+body.vg-institutional .ak-step:nth-child(2) .ak-step-icon,
+body.vg-institutional .ak-step:nth-child(3) .ak-step-icon,
+body.vg-institutional .ak-step:nth-child(4) .ak-step-icon {
+    width: 46px !important;
+    height: 46px !important;
+    margin: 0 auto 14px;
+    border-radius: 2px !important;
+    background: var(--inst-night) !important;
+    color: #f6f3ee !important;
+    font-size: 1rem !important;
+    box-shadow: none !important;
+}
+body.vg-institutional .ak-step {
+    text-align: left;
+    padding: 22px 20px !important;
+    background: var(--inst-paper) !important;
+    border: 1px solid var(--inst-line) !important;
+}
+body.vg-institutional .ak-step-icon {
+    margin-left: 0;
+}
+body.ab-site.vg-institutional .ak-steps .ak-step:not(:last-child)::after {
+    display: none !important;
+}
+body.vg-institutional .ak-steps {
+    gap: 16px;
+}
+
+/* Stats */
+body.ab-site.vg-institutional .vg-stats-strip,
+body.ak-portal.vg-institutional .vg-stats-strip,
+body.autism-kids.vg-institutional .vg-stats-strip {
+    max-width: none;
+    margin: 48px 0 0 !important;
+    padding: 28px 24px !important;
+    background: var(--inst-night) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+}
+body.vg-institutional .vg-stats-grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 8px 0 !important;
+    gap: 0 !important;
+}
+body.ab-site.vg-institutional .vg-stat,
+body.ak-portal.vg-institutional .vg-stat {
+    background: transparent !important;
+    border: 0 !important;
+    border-right: 1px solid rgba(244, 239, 230, 0.16) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 8px 18px !important;
+    text-align: left;
+}
+body.vg-institutional .vg-stat:last-child {
+    border-right: 0 !important;
+}
+body.vg-institutional .vg-stat:hover {
+    transform: none !important;
+}
+body.ab-site.vg-institutional .vg-stat strong,
+body.ak-portal.vg-institutional .vg-stat strong {
+    color: #f7f3ec !important;
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    font-size: 1.85rem !important;
+}
+body.ab-site.vg-institutional .vg-stat span,
+body.ak-portal.vg-institutional .vg-stat span {
+    color: rgba(247, 243, 236, 0.68) !important;
+    text-transform: none;
+    letter-spacing: 0.01em;
+    font-weight: 500 !important;
+}
+
+/* Lower homepage */
+body.vg-institutional .main-content {
+    max-width: 1120px;
+    padding-top: 56px;
+}
+body.ab-site.vg-institutional .help-banner {
+    background: var(--inst-paper) !important;
+    border: 1px solid var(--inst-line) !important;
+    border-left: 3px solid var(--inst-gold) !important;
+    color: var(--inst-ink) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+}
+body.ab-site.vg-institutional .ak-cta-band {
+    background: var(--inst-indigo-deep) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    padding: 40px 36px !important;
+}
+body.ab-site.vg-institutional .ak-cta-band::before {
+    display: none !important;
+}
+body.ab-site.vg-institutional .ak-cta-band p {
+    color: rgba(247, 243, 236, 0.78) !important;
+}
+body.ab-site.vg-institutional .ak-cta-band .ak-btn-v2-primary {
+    background: var(--inst-paper) !important;
+    color: var(--inst-ink) !important;
+    border-radius: 2px !important;
+    font-weight: 600 !important;
+}
+body.vg-institutional .notices-panel h3 i,
+body.vg-institutional .card-icon i {
+    color: var(--inst-indigo);
+}
+body.vg-institutional .schedule-table,
+body.vg-institutional .schedule-picker,
+body.vg-institutional .verify-panel {
+    background: var(--inst-paper);
+    border: 1px solid var(--inst-line);
+    border-radius: 2px;
+}
+body.vg-institutional .schedule-table th {
+    background: #f6f3ee;
+    color: var(--inst-ink);
+    font-family: var(--inst-sans);
+    font-weight: 600;
+}
+body.vg-institutional .btn-primary,
+body.vg-institutional button.btn-primary,
+body.ab-site.vg-institutional #authModal .btn-primary,
+body.ab-site.vg-institutional #authModal button[type="submit"] {
+    background: var(--inst-indigo) !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 2px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    font-family: var(--inst-sans) !important;
+}
+body.vg-institutional .btn-primary:hover,
+body.vg-institutional button.btn-primary:hover {
+    background: #4a2474 !important;
+}
+
+/* Floating actions */
+body.ab-site.vg-institutional .cg-fab-register,
+body.autism-kids.vg-institutional .cg-fab-register,
+body.ak-portal.vg-institutional .cg-fab-register {
+    display: none !important;
+}
+body.vg-institutional .cg-menu-toggle {
+    background: var(--inst-paper) !important;
+    color: var(--inst-ink) !important;
+    border: 1px solid var(--inst-line) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+}
+body.ab-site.vg-institutional .nx-sticky-cta {
+    background: var(--inst-paper) !important;
+    border-top: 1px solid var(--inst-line) !important;
+    box-shadow: none !important;
+}
+body.ab-site.vg-institutional .nx-sticky-primary,
+body.nexgen-ai.vg-institutional .nx-sticky-primary {
+    background: var(--inst-coral) !important;
+    color: #fff !important;
+    border-radius: 2px !important;
+    font-family: var(--inst-sans) !important;
+}
+body.ab-site.vg-institutional .nx-sticky-secondary,
+body.nexgen-ai.vg-institutional .nx-sticky-secondary {
+    background: transparent !important;
+    color: var(--inst-ink) !important;
+    border: 1px solid var(--inst-line) !important;
+    border-radius: 2px !important;
+    font-family: var(--inst-sans) !important;
+}
+
+/* Footer */
+body.ab-site.vg-institutional .footer,
+body.autism-kids.vg-institutional .footer,
+body.vg-institutional .footer {
+    background: var(--inst-night) !important;
+    color: #d9d1c5 !important;
+    border-top: 3px solid var(--inst-gold) !important;
+    margin-top: 24px;
+}
+body.vg-institutional .footer h4 {
+    font-family: var(--inst-sans) !important;
+    color: #f7f3ec !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem !important;
+}
+body.ab-site.vg-institutional .footer a,
+body.vg-institutional .footer a {
+    color: #d9d1c5 !important;
+}
+body.ab-site.vg-institutional .footer a:hover,
+body.vg-institutional .footer a:hover {
+    color: var(--inst-gold) !important;
+}
+body.vg-institutional .footer-bottom {
+    border-top: 1px solid rgba(244, 239, 230, 0.12);
+    color: #b7ad9f;
+}
+
+/* Account windows */
+body.autism-kids.vg-institutional .modal-content,
+body.ab-site.vg-institutional #authModal .modal-content,
+body.ab-site.vg-institutional #forgotPasswordModal .modal-content,
+body.ab-site.vg-institutional #resetPasswordModal .modal-content,
+body.ab-site.vg-institutional #signupSuccessModal .modal-content {
+    border-radius: 2px !important;
+    border: 1px solid var(--inst-line) !important;
+    box-shadow: 0 24px 60px rgba(20, 14, 34, 0.22) !important;
+    background: var(--inst-paper) !important;
+}
+body.vg-institutional .ak-auth-title {
+    font-family: var(--inst-serif) !important;
+    font-weight: 400 !important;
+    font-size: 1.45rem !important;
+    color: var(--inst-ink) !important;
+}
+body.vg-institutional .vg-auth-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+body.vg-institutional .vg-auth-lead {
+    color: var(--inst-muted);
+    font-size: 0.92rem;
+    margin: 6px 0 0;
+    line-height: 1.5;
+}
+body.vg-institutional .vg-auth-close {
+    background: none;
+    border: 0;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--inst-muted);
+    padding: 0 2px;
+}
+body.vg-institutional .ak-auth-tab.is-active {
+    color: var(--inst-indigo) !important;
+    border-color: var(--inst-indigo) !important;
+}
+
+/* Announcement */
+body.vg-institutional .sap-panel {
+    border-radius: 2px !important;
+    border-top: 3px solid var(--inst-gold);
+}
+
+/* Keep section content visible. Scroll-reveal starts at opacity 0 and leaves blank bands. */
+body.vg-institutional .ab-reveal,
+body.ab-site.vg-institutional .ab-reveal,
+body.vg-institutional .ak-reveal,
+body.vg-institutional .ak-reveal-v2,
+body.vg-institutional .nx-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+body.vg-institutional .contact-form input,
+body.vg-institutional .contact-form textarea,
+body.vg-institutional .contact-info,
+body.vg-institutional .page-panel,
+body.vg-institutional .form-group input,
+body.vg-institutional .form-group textarea,
+body.vg-institutional .form-group select {
+    border-color: #d9d0c4 !important;
+}
+body.vg-institutional .contact-form input,
+body.vg-institutional .contact-form textarea,
+body.vg-institutional .form-group input,
+body.vg-institutional .form-group textarea,
+body.vg-institutional .form-group select {
+    border-radius: 2px !important;
+    background: #fff !important;
+    color: var(--inst-ink) !important;
+    box-shadow: none !important;
+}
+body.vg-institutional .contact-form input:focus,
+body.vg-institutional .contact-form textarea:focus,
+body.vg-institutional .form-group input:focus,
+body.vg-institutional .form-group textarea:focus {
+    outline: none;
+    border-color: var(--inst-indigo) !important;
+    box-shadow: 0 0 0 3px rgba(91, 45, 138, 0.12) !important;
+}
+
+@media (min-width: 961px) {
+    body.vg-institutional #cg-nav-menu-links {
+        flex-wrap: nowrap;
+    }
+    body.vg-institutional #cg-nav-menu-links a {
+        white-space: nowrap;
+        padding: 10px 8px !important;
+        font-size: 0.9rem !important;
+    }
+    body.vg-institutional #cg-nav-menu-links a i {
+        display: none;
+    }
+}
+
+@media (max-width: 960px) {
+    body.ab-site.vg-institutional .ab-hero,
+    body.autism-kids.ak-v2.vg-institutional .ak-hero-v2 {
+        padding: 40px 18px 36px !important;
+    }
+    body.vg-institutional .ab-hero-grid,
+    body.autism-kids.ak-v2.vg-institutional .ak-hero-v2-grid,
+    body.vg-institutional .ak-hero-v2-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-areas: 'copy' 'art' !important;
+        gap: 28px;
+    }
+    body.autism-kids.ak-v2.vg-institutional .cg-header-row {
+        padding: 8px 16px !important;
+    }
+    body.autism-kids.ak-v2.vg-institutional .cg-menu-toggle,
+    body.autism-kids.ak-v2.vg-institutional .cg-nav.mobile-open .cg-nav-close {
+        display: inline-flex !important;
+    }
+    body.autism-kids.ak-v2.vg-institutional #cg-nav.cg-nav {
+        display: none !important;
+        position: fixed !important;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        width: min(320px, 88vw) !important;
+        height: 100dvh;
+        margin: 0;
+        padding: 72px 18px 24px !important;
+        flex-direction: column;
+        align-items: stretch;
+        background: var(--inst-paper) !important;
+        border-left: 1px solid var(--inst-line) !important;
+        box-shadow: -12px 0 40px rgba(20, 14, 34, 0.18) !important;
+        z-index: 10002;
+        overflow-y: auto;
+    }
+    body.autism-kids.ak-v2.vg-institutional #cg-nav.cg-nav.mobile-open {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        z-index: 10050 !important;
+        background: #fffdfb !important;
+        color: var(--inst-ink) !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: auto !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+    }
+    body.autism-kids.ak-v2.vg-institutional .cg-nav-backdrop.open {
+        display: block !important;
+        z-index: 10040 !important;
+        background: rgba(20, 14, 34, 0.46) !important;
+    }
+    body.autism-kids.ak-v2.vg-institutional #cg-nav.cg-nav > span,
+    body.autism-kids.ak-v2.vg-institutional #cg-nav-menu-links {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    body.autism-kids.ak-v2.vg-institutional #cg-nav.cg-nav a {
+        box-shadow: none !important;
+        padding: 12px 8px !important;
+    }
+    body.ab-site.vg-institutional .ab-hero-art {
+        order: 0 !important;
+    }
+    body.vg-institutional .ab-hero-copy {
+        order: -1;
+    }
+    body.ab-site.vg-institutional .ab-hero-title,
+    body.vg-institutional .ak-hero-v2-copy h1 {
+        max-width: none;
+    }
+    body.vg-institutional .ab-hero-trust {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    body.ab-site.vg-institutional .ab-art-main,
+    body.vg-institutional .ab-art-stage .ak-hero-photo-main {
+        height: 220px !important;
+    }
+    body.ak-portal.vg-institutional .vg-stat,
+    body.ab-site.vg-institutional .vg-stat {
+        border-right: 0 !important;
+        border-bottom: 1px solid rgba(244, 239, 230, 0.16) !important;
+        padding: 12px 4px !important;
+    }
+    body.vg-institutional .ak-pillars,
+    body.vg-institutional .ak-journey,
+    body.vg-institutional .ak-bento,
+    body.vg-institutional .ak-public-prereg-home {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.vg-institutional .ab-art-main,
+    body.vg-institutional .ab-art-card,
+    body.vg-institutional .cg-fab-register {
+        animation: none !important;
+    }
+}
