@@ -209,10 +209,10 @@
     ];
 
     const AUTISM_FEATURES = [
-        { icon: 'fa-heart', title: 'Warm & welcoming', text: 'A safe, friendly programme for children, families, and schools.' },
-        { icon: 'fa-palette', title: 'Creative fun', text: 'Join competitions — share drawings, photos, videos, and stories.' },
-        { icon: 'fa-ticket-alt', title: 'Simple e-tickets', text: 'Sign up, pre-register, and download your pass in a few clicks.' },
-        { icon: 'fa-hands-helping', title: 'Helpful team', text: 'Our volunteers guide you at every step — just ask!' }
+        { icon: 'fa-chalkboard-teacher', title: 'Sessions for families', text: 'Talks and workshops for parents, teachers, and caregivers.' },
+        { icon: 'fa-palette', title: 'Creative competitions', text: 'Submit drawings, photographs, videos, or written work.' },
+        { icon: 'fa-ticket-alt', title: 'QR e-tickets', text: 'Download your pass after registration and present it at check-in.' },
+        { icon: 'fa-hands-helping', title: 'Guided support', text: 'Staff and volunteers help you through registration and the event.' }
     ];
 
     function cmsResolveHomePillarsForSite(pillars) {
@@ -223,19 +223,19 @@
                 icon: 'fa-lightbulb',
                 iconTone: 'blue',
                 title: 'Awareness',
-                text: 'Learn about autism with simple talks, activities, and resources for your school and community.'
+                text: 'Talks, activities, and resources for schools, families, and the wider community.'
             },
             {
                 icon: 'fa-hand-holding-heart',
                 iconTone: 'violet',
                 title: 'Inclusion',
-                text: "Celebrate every child's strengths. Our programme is designed to be welcoming, safe, and joyful for all."
+                text: "A welcoming programme that recognises every child's strengths."
             },
             {
                 icon: 'fa-star',
                 iconTone: 'mint',
                 title: 'Celebration',
-                text: 'Creative competitions, certificates, and community events — share talents and make new friends.'
+                text: 'Competitions, certificates, and gatherings that bring families together.'
             }
         ];
     }
@@ -268,13 +268,13 @@
     }
 
     const DEFAULT_HOME_JOURNEY = {
-        title: 'How it works — easy peasy!',
-        subtitle: 'Four simple steps from sign-up to your e-ticket — all in your dashboard.',
+        title: 'How participation works',
+        subtitle: 'Four steps from account creation to your e-ticket, managed in your dashboard.',
         steps: [
-            { icon: 'fa-user-plus', title: '1. Sign up', text: 'Create your free account on this website in a few minutes.' },
-            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you are coming — open your dashboard after login.' },
-            { icon: 'fa-palette', title: '3. Register & compete', text: 'Complete registration and upload competition entries if you like.' },
-            { icon: 'fa-ticket-alt', title: '4. E-ticket', text: 'Download your e-ticket and bring it on event day. That is it!' }
+            { icon: 'fa-user-plus', title: '1. Create an account', text: 'Register on this website. There is no fee.' },
+            { icon: 'fa-clipboard-list', title: '2. Pre-register', text: 'Tell us you plan to attend, from the public form or your dashboard.' },
+            { icon: 'fa-palette', title: '3. Complete registration', text: 'Finish your application and submit competition entries if you wish.' },
+            { icon: 'fa-ticket-alt', title: '4. Collect your e-ticket', text: 'Download the QR pass and bring it on the day of the programme.' }
         ]
     };
 
@@ -290,8 +290,8 @@
     }
 
     const DEFAULT_HOME_BENTO = {
-        title: 'Everything in one friendly place',
-        subtitle: 'Register online, track your progress, and stay updated — built for families and schools.',
+        title: 'Programme services',
+        subtitle: 'Registration, e-tickets, certificates, and official notices in one place.',
         cards: [
             {
                 icon: 'fa-clipboard-check',
@@ -322,8 +322,8 @@
             {
                 icon: 'fa-envelope',
                 iconStyle: 'background:#ffe4e6;color:#e11d48',
-                title: 'Need help?',
-                text: 'Use Contact us — our team replies to registration and general questions.'
+                title: 'Enquiries',
+                text: 'Contact the foundation for registration and general questions.'
             }
         ]
     };
@@ -471,17 +471,24 @@
         const badge = document.querySelector('.ak-hero-v2-badge');
         if (badge && hero.eyebrow) {
             badge.innerHTML =
-                '<i class="fas fa-puzzle-piece" aria-hidden="true"></i> ' + escHtml(hero.eyebrow);
+                '<i class="fas fa-landmark" aria-hidden="true"></i> ' + escHtml(hero.eyebrow);
         }
         const h1 = document.querySelector('.ak-hero-v2-copy h1');
-        if (h1 && hero.title) h1.textContent = sanitizeDisplayText(hero.title);
+        if (h1 && hero.title) {
+            const title = sanitizeDisplayText(hero.title);
+            if (title === 'Autism awareness for families and schools') {
+                h1.innerHTML = 'Autism awareness for <em>families and schools</em>';
+            } else {
+                h1.textContent = title;
+            }
+        }
         const lead = document.querySelector('.ak-hero-v2-lead');
         if (lead && hero.subtitle) lead.textContent = sanitizeDisplayText(hero.subtitle);
         const primaryBtn = document.querySelector('.ak-hero-v2-cta .ak-btn-v2-primary');
         if (primaryBtn && hero.ctaPrimary) {
             const icon = primaryBtn.querySelector('i');
             primaryBtn.innerHTML =
-                (icon ? icon.outerHTML + ' ' : '<i class="fas fa-rocket" aria-hidden="true"></i> ') +
+                (icon ? icon.outerHTML + ' ' : '<i class="fas fa-user-plus" aria-hidden="true"></i> ') +
                 escHtml(hero.ctaPrimary);
         }
         const ghostBtn = document.querySelector('.ak-hero-v2-cta .ak-btn-v2-ghost');
@@ -542,8 +549,17 @@
         const exploreUl = document.getElementById('footer-explore-links');
         if (exploreUl && Array.isArray(foot.exploreLinks) && foot.exploreLinks.length) {
             exploreUl.innerHTML = foot.exploreLinks
-                .map(
-                    (l) =>
+                .map((l) => {
+                    if (l && l.href) {
+                        return (
+                            '<li><a href="' +
+                            escHtml(l.href) +
+                            '">' +
+                            escHtml(l.label || 'Link') +
+                            '</a></li>'
+                        );
+                    }
+                    return (
                         '<li><a href="#" data-menu-key="' +
                         escHtml(l.section || 'home') +
                         '" onclick="showSection(\'' +
@@ -551,7 +567,8 @@
                         '\'); return false;">' +
                         escHtml(l.label) +
                         '</a></li>'
-                )
+                    );
+                })
                 .join('');
         }
         const doctorUl = document.getElementById('footer-doctor-links');

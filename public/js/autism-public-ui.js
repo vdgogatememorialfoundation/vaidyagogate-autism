@@ -6,10 +6,10 @@
     if (!document.body.classList.contains('autism-kids')) return;
 
     const NAV_LABELS = {
-        about: 'About us',
+        about: 'About',
         schedule: 'Programme',
         verify: 'Find my registration',
-        contact: 'Get in touch'
+        contact: 'Contact'
     };
 
     function stripGalleryNav() {
@@ -30,7 +30,7 @@
     }
 
     const NAV_ICONS = {
-        about: 'fa-heart',
+        about: 'fa-landmark',
         schedule: 'fa-calendar-days',
         'prereg-search': 'fa-search',
         verify: 'fa-search',
@@ -48,11 +48,11 @@
 
     const fab = document.getElementById('cg-fab-register');
     if (fab) {
-        fab.innerHTML = '<i class="fas fa-heart" aria-hidden="true"></i> Join us';
+        fab.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i> Register';
     }
 
     document.querySelectorAll('.cg-utility-signup').forEach((el) => {
-        el.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i> Sign up free';
+        el.innerHTML = '<i class="fas fa-user-plus" aria-hidden="true"></i> Create account';
     });
 
     if (typeof window.applySiteMenu === 'function' && !window.applySiteMenu.__akNoGallery) {

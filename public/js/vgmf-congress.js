@@ -350,7 +350,7 @@
 
     const NAV_ICONS = {
         home: 'fa-home',
-        about: 'fa-heart',
+        about: 'fa-landmark',
         schedule: 'fa-calendar-days',
         verify: 'fa-search',
         contact: 'fa-envelope',
@@ -376,7 +376,12 @@
                 const label = esc(item.label || '');
                 const href = String(item.href || '').trim();
                 const section = String(item.section || '').trim().toLowerCase();
-                const iconCls = NAV_ICONS[section] || (item.key && NAV_ICONS[String(item.key).toLowerCase()]) || 'fa-circle';
+                const iconCls =
+                    NAV_ICONS[section] ||
+                    (item.key && NAV_ICONS[String(item.key).toLowerCase()]) ||
+                    (href.indexOf('verify-certificate') !== -1 ? 'fa-award' : '') ||
+                    (href.indexOf('preregister') !== -1 ? 'fa-search' : '') ||
+                    'fa-circle';
                 const iconHtml = '<i class="fas ' + iconCls + '" aria-hidden="true"></i> ';
                 if (href && (href.startsWith('/') || href.startsWith('http'))) {
                     const ext = href.startsWith('http') ? ' target="_blank" rel="noopener noreferrer"' : '';

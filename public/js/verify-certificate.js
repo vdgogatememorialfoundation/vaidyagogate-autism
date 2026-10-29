@@ -174,7 +174,7 @@
             state.certKind = data.certKind || '';
             state.displayName = data.displayName || '';
             state.maskedEmail = data.maskedEmail || '';
-            state.certificateId = data.certificateId || ('CERT-' + String(data.seminar?.id || state.seminarId || '0') + '-' + String(data.certId || '0'));
+            state.certificateId = data.certificateId || '';
             if (data.applicationNo) state.applicationNo = data.applicationNo;
             if (data.prn) state.prn = data.prn;
             if (data.seminar && data.seminar.id) {
@@ -263,34 +263,7 @@
             });
             const data = await res.json();
             if (!res.ok || !data.valid) throw new Error(data.error || 'Verification failed');
-            document.getElementById('cv-result-message').textContent = data.message || '';
-            const meta = document.getElementById('cv-result-meta');
-            if (meta) {
-                const kindLabel =
-                    data.certKind === 'volunteer' || state.certKind === 'volunteer'
-                        ? 'Volunteer'
-                        : 'Participation';
-                meta.innerHTML =
-                    '<dt>Certificate ID</dt><dd>' +
-                    escapeHtml(data.certificateId || state.certificateId) +
-                    '</dd>' +
-                    '<dt>Certificate type</dt><dd>' +
-                    escapeHtml(kindLabel) +
-                    '</dd>' +
-                    '<dt>Name on certificate</dt><dd>' +
-                    escapeHtml(data.displayName || state.displayName) +
-                    '</dd>' +
-                    '<dt>Seminar</dt><dd>' +
-                    escapeHtml(data.seminarTitle || '') +
-                    '</dd>' +
-                    '<dt>Application number</dt><dd>' +
-                    escapeHtml(data.applicationNo || state.applicationNo) +
-                    '</dd>' +
-                    '<dt>Participant PRN</dt><dd>' +
-                    escapeHtml(data.prn || state.prn) +
-                    '</dd>';
-            }
-            showStep('cv-step-result');
+            fillResult(data);
         } catch (e) {
             showMsg(msg, e.message || 'Verification failed', 'err');
         } finally {
@@ -317,14 +290,98 @@
         refreshCountdownUi();
     }
 
+    function fillResult(data) {
+        const cert = data.certificate || {};
+        const message = document.getElementById('cv-result-message');
+        if (message) {
+            message.textContent =
+                data.message ||
+                'This certificate is authentic and was issued by the Vaidya Gogate Memorial Foundation.';
+        }
+        const meta = document.getElementById('cv-result-meta');
+        if (meta) {
+            const event = cert.event || {};
+            meta.innerHTML =
+                '<dt>Certificate ID</dt><dd>' +
+                escapeHtml(cert.certificateId || data.certificateId || state.certificateId) +
+                '</dd>' +
+                '<dt>Certificate type</dt><dd>' +
+                escapeHtml(
+                    cert.typeLabel ||
+                        (cert.type === 'volunteer' || data.certKind === 'volunteer' ? 'Volunteer' : 'Participation')
+                ) +
+                '</dd>' +
+                '<dt>Name on certificate</dt><dd>' +
+                escapeHtml(cert.holderName || data.displayName || state.displayName) +
+                '</dd>' +
+                '<dt>Event</dt><dd>' +
+                escapeHtml(event.title || data.seminarTitle || '') +
+                (event.date ? ' (' + escapeHtml(event.date) + ')' : '') +
+                '</dd>' +
+                '<dt>Application number</dt><dd>' +
+                escapeHtml(cert.applicationNo || data.applicationNo || state.applicationNo) +
+                '</dd>' +
+                '<dt>Participant ID</dt><dd>' +
+                escapeHtml(cert.participantId || data.prn || state.prn) +
+                '</dd>';
+        }
+        showStep('cv-step-result');
+    }
+
+    async function verifyByCertificateId(rawId) {
+        const id = String(rawId || document.getElementById('cv-certificate-id')?.value || '').trim();
+        const msg = document.getElementById('cv-id-msg');
+        const btn = document.getElementById('cv-verify-id-btn');
+        const input = document.getElementById('cv-certificate-id');
+        if (input && id) input.value = id;
+        if (!id) {
+            showMsg(msg, 'Enter the certificate ID printed on the certificate.', 'err');
+            return;
+        }
+        if (btn) btn.disabled = true;
+        showMsg(msg, 'Checking certificate…', 'info');
+        try {
+            const res = await fetch('/api/public/certificates/verify?id=' + encodeURIComponent(id), {
+                headers: { Accept: 'application/json' }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.valid) {
+                showMsg(msg, (data && data.error) || 'No certificate was found for this ID.', 'err');
+                return;
+            }
+            showMsg(msg, '', '');
+            state.certificateId = data.certificate && data.certificate.certificateId;
+            fillResult(data);
+        } catch (e) {
+            showMsg(msg, e.message || 'Verification failed', 'err');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         state.token = qs('t');
+        const certificateId = qs('id');
+        if (certificateId) {
+            const input = document.getElementById('cv-certificate-id');
+            if (input) input.value = certificateId;
+        }
         loadSchedule().then(() => {
-            if (state.token) {
+            if (certificateId) {
+                showStep('cv-step-lookup');
+                verifyByCertificateId(certificateId);
+            } else if (state.token) {
                 showStep('cv-step-lookup');
                 doLookup();
             } else {
                 refreshCountdownUi();
+            }
+        });
+        document.getElementById('cv-verify-id-btn')?.addEventListener('click', () => verifyByCertificateId());
+        document.getElementById('cv-certificate-id')?.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                verifyByCertificateId();
             }
         });
         document.getElementById('cv-lookup-btn')?.addEventListener('click', doLookup);

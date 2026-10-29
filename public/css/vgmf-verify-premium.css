@@ -45,6 +45,12 @@ body.verify-page {
     line-height: 1.55;
 }
 
+.verify-page .cv-id-box {
+    margin: 0 0 22px;
+    padding: 0 0 18px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 .verify-page .cv-field {
     margin-bottom: 14px;
 }
